@@ -1,0 +1,8 @@
+<FlexQueryResponse queryName="trade_history" type="AF">
+<FlexStatements count="1">
+<FlexStatement accountId="U13798787" fromDate="20260112" toDate="20260112" period="LastBusinessDay" whenGenerated="20260113;120156">
+<Trades>
+</Trades>
+</FlexStatement>
+</FlexStatements>
+</FlexQueryResponse>

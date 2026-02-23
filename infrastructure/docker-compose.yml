@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.backend
+    container_name: ibkr-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - IBKR_HOST=${IBKR_HOST:-127.0.0.1}
+      - IBKR_PORT=${IBKR_PORT:-7497}
+      - IBKR_CLIENT_ID=${IBKR_CLIENT_ID:-1}
+      - DB_URL=${DB_URL:-sqlite:///./ibkr_analytics.db}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_LOG_LEVEL=${APP_LOG_LEVEL:-INFO}
+      - APP_UPDATE_INTERVAL_MINUTES=${APP_UPDATE_INTERVAL_MINUTES:-15}
+    volumes:
+      - ../backend:/app/backend
+      - ../config:/app/config
+      - backend_data:/app/data
+    networks:
+      - ibkr_network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.frontend
+    container_name: ibkr-frontend
+    ports:
+      - "8050:8050"
+    environment:
+      - API_BASE_URL=http://backend:8000/api
+    volumes:
+      - ../frontend:/app/frontend
+    depends_on:
+      - backend
+    networks:
+      - ibkr_network
+    restart: unless-stopped
+
+  # Optional: PostgreSQL database (uncomment for production)
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: ibkr-postgres
+  #   environment:
+  #     - POSTGRES_DB=ibkr_analytics
+  #     - POSTGRES_USER=ibkr_user
+  #     - POSTGRES_PASSWORD=ibkr_password
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - ibkr_network
+  #   restart: unless-stopped
+
+volumes:
+  backend_data:
+  # postgres_data:
+
+networks:
+  ibkr_network:
+    driver: bridge
+

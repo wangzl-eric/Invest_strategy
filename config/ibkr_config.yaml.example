@@ -1,0 +1,10 @@
+# IBKR Configuration Template
+# Copy this file to ibkr_config.yaml and fill in your values
+# DO NOT commit ibkr_config.yaml to version control
+
+ibkr:
+  host: "127.0.0.1"
+  port: 7497  # 7497 for paper trading, 7496 for live trading
+  client_id: 1
+  timeout: 30
+

@@ -1,0 +1,6 @@
+# Minimal symbol properties database for local Lean backtests.
+# Format:
+# market,symbol,securityType,description,quoteCurrency,contractMultiplier,minimumPriceVariation,lotSize,marketTicker,minimumOrderSize,priceMagnifier,strikeMultiplier
+market,symbol,securityType,description,quoteCurrency,contractMultiplier,minimumPriceVariation,lotSize,marketTicker,minimumOrderSize,priceMagnifier,strikeMultiplier
+usa,SPY,Equity,SPDR S&P 500 ETF,USD,1,0.01,1,SPY,1,1,1
+

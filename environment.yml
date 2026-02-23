@@ -1,0 +1,10 @@
+name: ibkr-analytics
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  # Prefer conda-forge for compiled deps, but keep pip for the repo pins.
+  - pip:
+      - -r requirements.txt
+

@@ -1,0 +1,58 @@
+# Application Configuration
+
+ibkr:
+  host: "127.0.0.1"
+  port: 7496  # 7497 for paper trading, 7496 for live trading
+  client_id: 1
+  timeout: 30
+
+# Flex Query Web Service Configuration
+# To set up Flex Queries:
+# 1. Log into IBKR Account Management (Client Portal)
+# 2. Go to: Performance & Reports → Flex Queries
+# 3. Create Activity Flex Query with desired sections (Trades, Positions, etc.)
+# 4. Go to: Flex Queries → Configure Flex Web Service
+# 5. Generate a Flex Web Service Token (valid for 1 year)
+# 6. Note down Query IDs for each query you create
+flex_query:
+  # SECURITY NOTE:
+  # Do not store secrets in this YAML. Provide the token via environment variable:
+  #   FLEX_TOKEN="..." (set in .env file)
+  token: ""
+  
+  # Define all your Flex Query reports here
+  # Each report needs: id (query ID from IBKR), name (display name), type (category for organization)
+  # Files will be saved as: data/flex_reports/{YYYY-MM-DD}/{type}/{name}_{timestamp}.csv
+  queries:
+    - id: "1369526"
+      name: "performance"
+      type: "mark-to-market"
+      description: "Daily Mark-to-Market P&L"
+    - id: "1369536"
+      name: "Historical Trades"
+      type: "trades"
+      description: "Detailed trade execution history"
+    #
+    # - id: "YOUR_QUERY_ID"
+    #   name: "Position Summary"
+    #   type: "positions"
+    #   description: "Current holdings and cost basis"
+    #
+    # - id: "YOUR_QUERY_ID"
+    #   name: "Cash Transactions"
+    #   type: "cash"
+    #   description: "Dividends, interest, fees, deposits, withdrawals"
+    #
+    # - id: "YOUR_QUERY_ID"
+    #   name: "Realized P&L"
+    #   type: "pnl"
+    #   description: "Realized gains and losses"
+
+database:
+  url: "sqlite:///./ibkr_analytics.db"  # Use PostgreSQL in production: postgresql://user:password@localhost/dbname
+  echo: false
+
+app:
+  debug: false
+  log_level: "INFO"
+  update_interval_minutes: 15

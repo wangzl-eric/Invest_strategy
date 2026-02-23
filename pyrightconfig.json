@@ -1,0 +1,26 @@
+{
+    "venvPath": "/Users/zelin/opt/anaconda3/envs",
+    "venv": "ibkr-analytics",
+    "executionEnvironments": [
+        {
+            "root": "${workspaceFolder}",
+            "pythonVersion": "3.10",
+            "pythonPlatform": "Darwin",
+            "extraPaths": [
+                "${workspaceFolder}"
+            ]
+        }
+    ],
+    "include": [
+        "backend",
+        "frontend",
+        "scripts",
+        "notebooks"
+    ],
+    "exclude": [
+        "**/__pycache__",
+        "**/node_modules",
+        "**/venv",
+        "**/.venv"
+    ]
+}

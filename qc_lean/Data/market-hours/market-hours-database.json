@@ -1,0 +1,63 @@
+{
+  "entries": {
+    "Equity-usa-*": {
+      "dataTimeZone": "America/New_York",
+      "exchangeTimeZone": "America/New_York",
+      "sunday": [
+        { "start": "00:00:00", "end": "24:00:00", "state": "Market" }
+      ],
+      "monday": [
+        { "start": "00:00:00", "end": "24:00:00", "state": "Market" }
+      ],
+      "tuesday": [
+        { "start": "00:00:00", "end": "24:00:00", "state": "Market" }
+      ],
+      "wednesday": [
+        { "start": "00:00:00", "end": "24:00:00", "state": "Market" }
+      ],
+      "thursday": [
+        { "start": "00:00:00", "end": "24:00:00", "state": "Market" }
+      ],
+      "friday": [
+        { "start": "00:00:00", "end": "24:00:00", "state": "Market" }
+      ],
+      "saturday": [
+        { "start": "00:00:00", "end": "24:00:00", "state": "Market" }
+      ],
+      "holidays": [],
+      "earlyCloses": {},
+      "lateOpens": {},
+      "bankHolidays": []
+    },
+    "Equity-usa-SPY": {
+      "dataTimeZone": "America/New_York",
+      "exchangeTimeZone": "America/New_York",
+      "sunday": [
+        { "start": "00:00:00", "end": "24:00:00", "state": "Market" }
+      ],
+      "monday": [
+        { "start": "00:00:00", "end": "24:00:00", "state": "Market" }
+      ],
+      "tuesday": [
+        { "start": "00:00:00", "end": "24:00:00", "state": "Market" }
+      ],
+      "wednesday": [
+        { "start": "00:00:00", "end": "24:00:00", "state": "Market" }
+      ],
+      "thursday": [
+        { "start": "00:00:00", "end": "24:00:00", "state": "Market" }
+      ],
+      "friday": [
+        { "start": "00:00:00", "end": "24:00:00", "state": "Market" }
+      ],
+      "saturday": [
+        { "start": "00:00:00", "end": "24:00:00", "state": "Market" }
+      ],
+      "holidays": [],
+      "earlyCloses": {},
+      "lateOpens": {},
+      "bankHolidays": []
+    }
+  }
+}
+
