@@ -116,6 +116,20 @@ class FlexQueryConfig(BaseSettings):
         return result
 
 
+class MarketDataConfig(BaseSettings):
+    """Market data configuration."""
+    fred_api_key: str = Field(default="", description="FRED API key for economic data")
+
+    class Config:
+        env_prefix = ""
+        env_mapping = {"fred_api_key": "FRED_API_KEY"}
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if not self.fred_api_key:
+            self.fred_api_key = os.getenv("FRED_API_KEY", "")
+
+
 class Settings:
     """Application settings."""
     def __init__(self):
@@ -123,6 +137,7 @@ class Settings:
         self.database = DatabaseConfig()
         self.app = AppConfig()
         self.flex_query = FlexQueryConfig()
+        self.market_data = MarketDataConfig()
     
     @classmethod
     def load_from_yaml(cls, config_path: Optional[Path] = None) -> "Settings":

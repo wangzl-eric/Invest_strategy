@@ -11,6 +11,9 @@ from backend.api.advanced_analytics_routes import router as advanced_analytics_r
 from backend.api.advanced_analytics_routes_extended import router as advanced_analytics_extended_router
 from backend.api.alert_routes import router as alert_router
 from backend.api.reporting_routes import router as reporting_router
+from backend.api.market_routes import router as market_router
+from backend.api.data_routes import router as data_router
+from backend.api.execution_routes import router as execution_router
 from backend.broker_interface import broker_manager, IBKRBrokerAdapter
 from backend.ibkr_client import IBKRClient
 try:
@@ -92,6 +95,9 @@ app.include_router(advanced_analytics_router, prefix="/api/analytics", tags=["ad
 app.include_router(advanced_analytics_extended_router, prefix="/api/analytics", tags=["advanced-analytics"])
 app.include_router(alert_router, prefix="/api", tags=["alerts"])
 app.include_router(reporting_router, prefix="/api", tags=["reporting"])
+app.include_router(market_router, prefix="/api", tags=["market-data"])
+app.include_router(data_router, prefix="/api", tags=["data-management"])
+app.include_router(execution_router, prefix="/api", tags=["execution"])
 if websocket_router:
     app.include_router(websocket_router, prefix="/api", tags=["websocket"])
 
@@ -170,6 +176,60 @@ async def health_check():
 async def api_health_check():
     """API health check endpoint."""
     return {"status": "healthy", "service": "api"}
+
+
+@app.get("/api/health/ibkr")
+async def ibkr_status_check():
+    """IBKR reachability check + data freshness report."""
+    import socket
+    from sqlalchemy import desc, func
+    from backend.database import engine
+    from backend.models import AccountSnapshot, Position, PnLHistory
+
+    host = settings.ibkr.host
+    port = settings.ibkr.port
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        result = sock.connect_ex((host, port))
+        sock.close()
+        reachable = result == 0
+    except Exception:
+        reachable = False
+
+    # Data freshness — latest timestamps per table
+    freshness = {}
+    try:
+        from sqlalchemy.orm import Session
+        with Session(engine) as db:
+            for label, model, ts_col in [
+                ("positions", Position, Position.timestamp),
+                ("account", AccountSnapshot, AccountSnapshot.timestamp),
+                ("pnl", PnLHistory, PnLHistory.date),
+            ]:
+                row = db.query(func.max(ts_col)).scalar()
+                if row:
+                    age_seconds = (datetime.utcnow() - row).total_seconds()
+                    freshness[label] = {
+                        "latest": row.isoformat(),
+                        "age_seconds": round(age_seconds, 1),
+                        "stale": age_seconds > 3600,
+                    }
+                else:
+                    freshness[label] = {"latest": None, "age_seconds": None, "stale": True}
+    except Exception as e:
+        freshness["error"] = str(e)
+
+    any_stale = any(v.get("stale", True) for v in freshness.values() if isinstance(v, dict))
+
+    return {
+        "ibkr_reachable": reachable,
+        "host": host,
+        "port": port,
+        "message": "TWS/Gateway is running" if reachable else "TWS/Gateway is NOT reachable — please start it",
+        "data_freshness": freshness,
+        "any_stale": any_stale,
+    }
 
 
 @app.get("/api/health/detailed")

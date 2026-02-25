@@ -80,6 +80,8 @@ A full-stack quantitative analytics platform for Interactive Brokers (IBKR) acco
 | **Database** | SQLAlchemy ORM, SQLite/PostgreSQL, time-series DB support (TimescaleDB, InfluxDB) |
 | **API** | FastAPI with Swagger/ReDoc, JWT + API key auth, RBAC, rate limiting, CORS |
 | **Dashboard** | Plotly Dash with dark theme, account summary, positions, PnL charts, trade history, performance metrics |
+| **Markets Tab** | Cross-asset monitor: rates (full Treasury curve, TIPS, inflation), FX (G10), equities, commodities, yield curves, forward rates, Fed QE/QT monitor, macro pulse. 30-day sparklines, 1W/1M change columns, click-to-expand historical charts |
+| **Data Manager** | Parquet data lake browser, pull data from yfinance/FRED, incremental updates, time-series viewer/chart, catalog with freshness indicators |
 | **Portfolio Optimization** | Markowitz mean-variance, risk parity, Black-Litterman, minimum variance, cvxpy convex programs |
 | **Risk Management** | Covariance estimation (sample, Ledoit-Wolf), stress testing, VaR, position/notional limits, kill switch |
 | **Backtesting** | Vectorized (fast research) and event-driven (realistic fills) engines with cost/slippage models |
@@ -222,10 +224,12 @@ Three complementary data paths connect to Interactive Brokers:
 
 | Tab | Content |
 |-----|---------|
-| **Overview** | Metric cards (NAV, daily PnL, total return, Sharpe), account value time-series chart |
-| **Positions** | Interactive table of current holdings with unrealized PnL and sector breakdown |
+| **Portfolio** | Metric cards (NAV, daily PnL, total return, Sharpe), account value time-series chart |
 | **Performance** | Cumulative return chart with S&P 500 overlay, drawdown chart, risk metrics panel |
-| **Trades** | Filterable/sortable trade history table with date range and symbol filters |
+| **Positions** | Interactive table of current holdings with unrealized PnL and sector breakdown |
+| **History** | Filterable/sortable trade history table with date range and symbol filters |
+| **Markets** | Cross-asset dashboard: rates (UST curve, TIPS, inflation), FX (G10 + DXY), equities (global indices + VIX), commodities (energy + metals). Yield curve / forward rate charts, Fed QE/QT monitor, macro pulse. All tables include 30-day sparklines, 1W/1M change columns, and click-to-expand 1Y historical charts |
+| **Data** | Data Manager: catalog of stored Parquet datasets, pull form (yfinance/FRED, ticker/date selection), data viewer with time-series chart and table preview. "Update All" for incremental backfill |
 
 **Components** (`frontend/components/`):
 
@@ -235,6 +239,8 @@ Three complementary data paths connect to Interactive Brokers:
 - `pnl_chart.py` — PnL waterfall and time-series charts
 - `positions_table.py` — positions data table
 - `trade_history.py` — trade log component
+- `market_panels.py` — Markets tab: sparklines, rate/FX/equity/commodity panels, curves, Fed QE/QT monitor
+- `data_manager.py` — Data Manager tab: catalog table, pull form, data viewer
 
 **Real-time:** `frontend/websocket_client.py` and `frontend/realtime_integration.js` connect to the backend WebSocket for live PnL/position updates.
 
@@ -487,6 +493,31 @@ The `quant_data/` package provides a vendor-agnostic research data layer:
 | Path | Description |
 |------|-------------|
 | `/api/ws/{connection_id}` | Real-time PnL and position updates |
+
+### Market Data
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/market/overview` | Combined snapshot of all market panels |
+| GET | `/api/market/rates` | UST yields, FRED rates, spreads |
+| GET | `/api/market/fx` | G10 FX spot prices |
+| GET | `/api/market/equities` | Major equity indices and VIX |
+| GET | `/api/market/commodities` | Energy and metals prices |
+| GET | `/api/market/macro` | FRED macro indicators |
+| GET | `/api/market/what-changed` | Cross-asset z-score movers |
+| GET | `/api/market/curves` | Yield curve, forward rates |
+| GET | `/api/market/fed-liquidity` | Fed balance sheet / QE-QT monitor |
+| GET | `/api/market/cb-meetings` | Central bank meeting tracker (FOMC countdown, policy rates, implied path) |
+| GET | `/api/market/sparklines` | Batch 30-day sparkline data |
+| GET | `/api/market/historical/{symbol}` | Historical daily closes (up to 1Y) |
+
+### Data Management
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/data/catalog` | Metadata for all stored Parquet datasets |
+| POST | `/api/data/pull` | Trigger a data download (yfinance or FRED) |
+| GET | `/api/data/query` | Query stored time-series data |
+| POST | `/api/data/update-all` | Incremental update of all tracked instruments |
+| GET | `/api/data/pull-status/{job_id}` | Check status of a background pull job |
 
 ### System
 | Method | Path | Description |

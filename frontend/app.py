@@ -1,6 +1,6 @@
 """IBKR Analytics Dashboard - Modern Frontend."""
 import dash
-from dash import dcc, html, Input, Output, callback, State
+from dash import dcc, html, Input, Output, callback, State, ALL, MATCH, ctx
 import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
 import plotly.express as px
@@ -271,6 +271,11 @@ CUSTOM_STYLES = """
 # Import WebSocket client
 from frontend.websocket_client import create_websocket_client_component
 
+# Import market panels
+from frontend.components.market_panels import build_markets_layout
+from frontend.components.data_manager import build_data_manager_layout
+from frontend.components.strategy_monitor import build_strategy_monitor_layout
+
 # App layout
 app.layout = html.Div([
     # Inject custom styles
@@ -288,6 +293,11 @@ app.layout = html.Div([
     dcc.Store(id='flex-data-store', data=None),  # Separate store for Flex Query data
     dcc.Store(id='performance-date-range-store', data={'start_date': None, 'end_date': None}),  # Store for performance date range (None = all data)
     dcc.Store(id='realtime-updates-store', data=None),  # Store for real-time WebSocket updates
+    dcc.Store(id='market-data-store', data=None),  # Store for cross-asset market data
+    dcc.Store(id='data-catalog-store', data=None),  # Store for data lake catalog
+    dcc.Store(id='strategy-monitor-store', data=None),  # Store for strategy monitor (orders, fills, positions)
+    dcc.Store(id='ibkr-status-store', data=None),  # Store for IBKR connection status
+    dcc.Store(id='ibkr-prev-reachable', data=False),  # Track previous IBKR state for reconnect detection
     
     # Toast notification for Flex Query
     dbc.Toast(
@@ -300,11 +310,33 @@ app.layout = html.Div([
         style={"position": "fixed", "top": 66, "right": 10, "width": 350, "zIndex": 1050},
     ),
     
-    # Auto-refresh interval
+    # Auto-refresh interval (portfolio data)
     dcc.Interval(
         id='auto-refresh-interval',
         interval=5*60*1000,  # 5 minutes
         n_intervals=0
+    ),
+    
+    # Market data refresh interval (60 seconds, disabled until Markets tab is active)
+    dcc.Interval(
+        id='market-refresh-interval',
+        interval=60*1000,  # 60 seconds
+        n_intervals=0,
+        disabled=True,
+    ),
+    
+    # IBKR status check interval (every 30 seconds)
+    dcc.Interval(
+        id='ibkr-status-interval',
+        interval=30*1000,
+        n_intervals=0,
+    ),
+    
+    # IBKR warning banner (hidden by default, shown when TWS/Gateway is not reachable)
+    html.Div(
+        id='ibkr-warning-banner',
+        children=[],
+        style={'display': 'none'},
     ),
     
     # Header
@@ -317,8 +349,8 @@ app.layout = html.Div([
                 dbc.Col([
                     html.Div([
                         html.Span(id='connection-status', children=[
-                            html.Span(className="status-indicator connected", id='status-indicator'),
-                            html.Span("Connected", id='connection-status-text', style={'fontSize': '0.85rem', 'color': '#8b949e'})
+                            html.Span(className="status-indicator disconnected", id='status-indicator'),
+                            html.Span("Checking…", id='connection-status-text', style={'fontSize': '0.85rem', 'color': '#8b949e'})
                         ]),
                         html.Span(id='last-update-text', style={
                             'fontSize': '0.75rem', 
@@ -348,6 +380,18 @@ app.layout = html.Div([
                             color="info",
                             outline=True,
                         ),
+                        html.A(
+                            dbc.Button(
+                                [html.I(className="fas fa-sign-in-alt me-2"), "IBKR Login"],
+                                size="sm",
+                                color="secondary",
+                                outline=True,
+                                className="ms-2",
+                            ),
+                            href="https://www.interactivebrokers.com/sso/Login",
+                            target="_blank",
+                            rel="noopener noreferrer",
+                        ),
                     ], style={'display': 'flex', 'alignItems': 'center', 'justifyContent': 'flex-end'})
                 ], width=6),
             ], align="center"),
@@ -368,6 +412,9 @@ app.layout = html.Div([
                 dbc.Tab(label="📈 Performance", tab_id="performance"),
                 dbc.Tab(label="💹 Positions", tab_id="positions"),
                 dbc.Tab(label="📋 History", tab_id="history"),
+                dbc.Tab(label="🌐 Markets", tab_id="markets"),
+                dbc.Tab(label="🗄 Data", tab_id="data"),
+                dbc.Tab(label="📋 Strategy", tab_id="strategy"),
             ],
             className="mb-4",
         ),
@@ -475,53 +522,220 @@ def handle_realtime_updates(data):
 
 
 @callback(
+    Output('ibkr-status-store', 'data'),
+    Input('ibkr-status-interval', 'n_intervals'),
+    prevent_initial_call=False,
+)
+def poll_ibkr_status(n):
+    """Poll the backend for IBKR TWS/Gateway reachability + data freshness."""
+    try:
+        resp = requests.get(f"{API_BASE_URL}/health/ibkr", timeout=5)
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception:
+        pass
+    return {"ibkr_reachable": False, "message": "Backend not reachable"}
+
+
+def _format_age(seconds):
+    """Human-readable age string."""
+    if seconds is None:
+        return "no data"
+    seconds = int(seconds)
+    if seconds < 60:
+        return f"{seconds}s ago"
+    if seconds < 3600:
+        return f"{seconds // 60}m ago"
+    if seconds < 86400:
+        return f"{seconds // 3600}h {(seconds % 3600) // 60}m ago"
+    return f"{seconds // 86400}d ago"
+
+
+@callback(
+    [Output('status-indicator', 'className'),
+     Output('connection-status-text', 'children'),
+     Output('ibkr-warning-banner', 'children'),
+     Output('ibkr-warning-banner', 'style')],
+    Input('ibkr-status-store', 'data'),
+)
+def update_ibkr_status_ui(status_data):
+    """Update the header indicator, warning banner, and data freshness based on IBKR status."""
+    if not status_data:
+        return (
+            "status-indicator disconnected",
+            "Checking…",
+            [],
+            {"display": "none"},
+        )
+
+    reachable = status_data.get("ibkr_reachable", False)
+    host = status_data.get("host", "127.0.0.1")
+    port = status_data.get("port", 7497)
+    freshness = status_data.get("data_freshness", {})
+    any_stale = status_data.get("any_stale", False)
+
+    # Build freshness summary chips
+    freshness_chips = []
+    for label in ["positions", "account", "pnl"]:
+        info = freshness.get(label, {})
+        age_sec = info.get("age_seconds")
+        stale = info.get("stale", True)
+        age_text = _format_age(age_sec)
+        chip_color = "#f85149" if stale else "#3fb950"
+        freshness_chips.append(
+            html.Span(
+                f"{label}: {age_text}",
+                style={
+                    "fontSize": "0.7rem",
+                    "color": chip_color,
+                    "border": f"1px solid {chip_color}",
+                    "borderRadius": "4px",
+                    "padding": "1px 6px",
+                    "marginLeft": "6px",
+                    "fontFamily": "'JetBrains Mono', monospace",
+                },
+            )
+        )
+
+    if reachable and not any_stale:
+        return (
+            "status-indicator connected",
+            html.Span([
+                "IBKR Connected",
+                *freshness_chips,
+            ]),
+            [],
+            {"display": "none"},
+        )
+    elif reachable and any_stale:
+        banner = dbc.Alert(
+            children=[
+                html.Div([
+                    html.Strong("Portfolio data is stale "),
+                    html.Span(
+                        "— IBKR is connected but some data hasn't been refreshed recently. "
+                        "Click Refresh to pull fresh data.",
+                        style={"fontWeight": "normal"},
+                    ),
+                ], style={"display": "flex", "alignItems": "center", "flexWrap": "wrap", "gap": "0.25rem"}),
+            ],
+            color="info",
+            dismissable=True,
+            is_open=True,
+            style={"margin": "0", "borderRadius": "0", "fontSize": "0.85rem"},
+        )
+        return (
+            "status-indicator connected",
+            html.Span([
+                "IBKR Connected",
+                *freshness_chips,
+            ]),
+            [banner],
+            {"display": "block"},
+        )
+    else:
+        banner = dbc.Alert(
+            children=[
+                html.Div([
+                    html.Strong("IBKR TWS/Gateway is not running "),
+                    html.Span(
+                        f"— cannot reach {host}:{port}. "
+                        "Start TWS or IB Gateway to enable live data, order execution, and real-time updates.",
+                        style={"fontWeight": "normal"},
+                    ),
+                ], style={"display": "flex", "alignItems": "center", "flexWrap": "wrap", "gap": "0.25rem"}),
+            ],
+            color="warning",
+            dismissable=True,
+            is_open=True,
+            style={"margin": "0", "borderRadius": "0", "fontSize": "0.85rem"},
+        )
+        return (
+            "status-indicator disconnected",
+            html.Span([
+                "IBKR Disconnected",
+                *freshness_chips,
+            ]),
+            [banner],
+            {"display": "block"},
+        )
+
+
+@callback(
+    Output('ibkr-prev-reachable', 'data'),
+    Input('ibkr-status-store', 'data'),
+    State('ibkr-prev-reachable', 'data'),
+    prevent_initial_call=True,
+)
+def track_ibkr_reconnection(status_data, prev_reachable):
+    """Track IBKR connection state. Returns True when currently reachable."""
+    if not status_data:
+        return False
+    return status_data.get("ibkr_reachable", False)
+
+
+@callback(
     [Output('portfolio-data-store', 'data'),
      Output('last-update-store', 'data'),
      Output('loading-output', 'children')],
     [Input('refresh-btn', 'n_clicks'),
      Input('auto-refresh-interval', 'n_intervals'),
-     Input('realtime-updates-store', 'data')],  # Also trigger on real-time updates
-    [State('flex-data-store', 'data')],
+     Input('realtime-updates-store', 'data'),
+     Input('ibkr-status-store', 'data')],
+    [State('flex-data-store', 'data'),
+     State('ibkr-prev-reachable', 'data')],
     prevent_initial_call=False
 )
-def refresh_data(n_clicks, n_intervals, realtime_update, flex_data):
-    """Refresh portfolio data. 
-    
-    Both manual refresh (button click) and auto-refresh fetch fresh data from IBKR
-    but do NOT store PnL records (for display only).
-    Real-time updates from WebSocket also trigger a refresh.
+def refresh_data(n_clicks, n_intervals, realtime_update, ibkr_status, flex_data, prev_reachable):
+    """Refresh portfolio data.
+
+    Triggers:
+    - Manual refresh button
+    - Auto-refresh interval (5 min)
+    - Real-time WebSocket updates
+    - IBKR reconnection (was unreachable, now reachable) with stale data
     """
-    # Check if this is a manual refresh (button click), auto-refresh, or real-time update
     ctx = dash.callback_context
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0] if ctx.triggered else None
-    
-    # If triggered by real-time update, we can use cached data (already fresh from WebSocket)
+
+    should_fetch_from_ibkr = False
+
     if trigger_id == 'realtime-updates-store' and realtime_update:
-        # Real-time update received - data is already fresh, just read from DB
         logger.info(f"Real-time update received: {realtime_update.get('type')}")
-    
-    # Both manual and auto-refresh fetch fresh data from IBKR (but don't store PnL)
-    if trigger_id in ['refresh-btn', 'auto-refresh-interval']:
+
+    elif trigger_id in ['refresh-btn', 'auto-refresh-interval']:
         if trigger_id == 'refresh-btn' and n_clicks:
-            logger.info("Manual refresh triggered - fetching fresh data from IBKR (no PnL storage)...")
+            logger.info("Manual refresh triggered - fetching fresh data from IBKR…")
         elif trigger_id == 'auto-refresh-interval' and n_intervals:
-            logger.info(f"Auto-refresh triggered (interval {n_intervals}) - fetching fresh data from IBKR (no PnL storage)...")
-        
+            logger.info(f"Auto-refresh triggered (interval {n_intervals})…")
+        should_fetch_from_ibkr = True
+
+    elif trigger_id == 'ibkr-status-store' and ibkr_status:
+        now_reachable = ibkr_status.get("ibkr_reachable", False)
+        any_stale = ibkr_status.get("any_stale", False)
+        was_reachable = bool(prev_reachable)
+
+        if now_reachable and not was_reachable and any_stale:
+            logger.info("IBKR reconnected with stale data — auto-refreshing portfolio data…")
+            should_fetch_from_ibkr = True
+        elif now_reachable and any_stale and n_intervals and n_intervals <= 1:
+            logger.info("IBKR reachable on startup with stale data — auto-refreshing…")
+            should_fetch_from_ibkr = True
+
+    if should_fetch_from_ibkr:
         fetch_fresh_data_from_ibkr()
-        # Small delay to allow database to update (for positions/trades)
         import time
         time.sleep(0.5)
-    
-    # Always read from database (either after fresh fetch or for auto-refresh)
+
     db_data = fetch_db_data()
-    
+
     combined_data = {
-        'flex': flex_data,  # Use existing Flex data from store
+        'flex': flex_data,
         'db': db_data,
     }
-    
+
     update_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
+
     return combined_data, update_time, ""
 
 
@@ -700,14 +914,97 @@ def update_summary_metrics(data, flex_store):
 
 
 @callback(
+    Output('market-refresh-interval', 'disabled'),
+    Input('main-tabs', 'active_tab'),
+)
+def toggle_market_refresh(active_tab):
+    """Enable market data auto-refresh only when Markets tab is active."""
+    return active_tab != "markets"
+
+
+@callback(
+    Output('market-data-store', 'data'),
+    [Input('main-tabs', 'active_tab'),
+     Input('market-refresh-interval', 'n_intervals')],
+    prevent_initial_call=False,
+)
+def fetch_market_data(active_tab, n_intervals):
+    """Fetch cross-asset market data when Markets tab is active."""
+    if active_tab != "markets":
+        return dash.no_update
+    try:
+        resp = requests.get(f"{API_BASE_URL}/market/overview", timeout=60)
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            logger.warning(f"Market overview API returned {resp.status_code}")
+    except Exception as e:
+        logger.error(f"Error fetching market data: {e}")
+    return None
+
+
+@callback(
+    Output('data-catalog-store', 'data'),
+    Input('main-tabs', 'active_tab'),
+    prevent_initial_call=True,
+)
+def fetch_data_catalog(active_tab):
+    """Fetch data catalog when Data tab is active."""
+    if active_tab != "data":
+        return dash.no_update
+    try:
+        resp = requests.get(f"{API_BASE_URL}/data/catalog", timeout=15)
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception as e:
+        logger.error(f"Error fetching data catalog: {e}")
+    return {}
+
+
+@callback(
+    Output('strategy-monitor-store', 'data'),
+    Input('main-tabs', 'active_tab'),
+    prevent_initial_call=True,
+)
+def fetch_strategy_monitor(active_tab):
+    """Fetch strategy monitor data when Strategy tab is active."""
+    if active_tab != "strategy":
+        return dash.no_update
+    try:
+        resp = requests.get(f"{API_BASE_URL}/execution/strategy-monitor", timeout=15)
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception as e:
+        logger.error(f"Error fetching strategy monitor: {e}")
+    return {}
+
+
+@callback(
     Output('tab-content', 'children'),
     [Input('main-tabs', 'active_tab'),
      Input('portfolio-data-store', 'data'),
      Input('flex-data-store', 'data'),
-     Input('performance-date-range-store', 'data')]
+     Input('performance-date-range-store', 'data'),
+     Input('market-data-store', 'data'),
+     Input('data-catalog-store', 'data'),
+     Input('strategy-monitor-store', 'data')]
 )
-def render_tab_content(active_tab, data, flex_store, date_range):
+def render_tab_content(active_tab, data, flex_store, date_range, market_data, catalog_data, strategy_data):
     """Render content based on active tab."""
+    if active_tab == "markets":
+        if market_data:
+            return build_markets_layout(market_data)
+        return html.Div([
+            dbc.Spinner(color="primary", size="lg"),
+            html.P("Loading market data...", style={'color': '#8b949e', 'marginTop': '1rem', 'textAlign': 'center'}),
+        ], style={'textAlign': 'center', 'padding': '3rem'})
+
+    if active_tab == "data":
+        return build_data_manager_layout(catalog_data or {})
+
+    if active_tab == "strategy":
+        return build_strategy_monitor_layout(strategy_data or {})
+
     # Merge flex data from dedicated store into data for tab functions
     data = data or {'flex': None, 'db': {}}
     if flex_store:
@@ -746,6 +1043,286 @@ def render_tab_content(active_tab, data, flex_store, date_range):
         return create_history_tab(data)
     
     return html.Div("Select a tab")
+
+
+# ---------------------------------------------------------------------------
+# Click-to-expand historical chart
+# ---------------------------------------------------------------------------
+
+_HIST_PERIODS = [
+    ("1M", 30), ("3M", 90), ("6M", 180), ("1Y", 365),
+]
+
+_HIST_CHART_LAYOUT = dict(
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
+    font=dict(color="#c9d1d9", family="Inter, sans-serif"),
+    xaxis=dict(gridcolor="rgba(48,54,61,0.5)", tickfont=dict(color="#8b949e")),
+    yaxis=dict(gridcolor="rgba(48,54,61,0.5)", tickfont=dict(color="#8b949e")),
+    margin=dict(t=40, b=40, l=55, r=20),
+    hovermode="x unified",
+    height=350,
+)
+
+
+@callback(
+    Output("historical-chart-container", "children"),
+    Input({"type": "instrument-name", "index": ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def expand_historical_chart(n_clicks_list):
+    """Show a full historical chart when an instrument name is clicked."""
+    if not ctx.triggered_id or not any(n_clicks_list):
+        return dash.no_update
+
+    ticker = ctx.triggered_id.get("index", "")
+    if not ticker:
+        return dash.no_update
+
+    try:
+        resp = requests.get(
+            f"{API_BASE_URL}/market/historical/{ticker}",
+            params={"days": 365},
+            timeout=30,
+        )
+        if resp.status_code != 200:
+            return html.P(
+                f"Could not load history for {ticker}",
+                style={"color": "#f85149", "textAlign": "center"},
+            )
+        payload = resp.json()
+        points = payload.get("data") or []
+        if not points:
+            return html.P(
+                f"No historical data for {ticker}",
+                style={"color": "#8b949e", "textAlign": "center"},
+            )
+
+        dates = [p["date"] for p in points]
+        closes = [p["close"] for p in points]
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=dates, y=closes,
+            mode="lines",
+            line=dict(color="#58a6ff", width=2),
+            hovertemplate="%{x}<br>%{y:,.4f}<extra></extra>",
+            name=ticker,
+        ))
+        fig.update_layout(
+            **_HIST_CHART_LAYOUT,
+            title=dict(
+                text=f"{ticker} — 1 Year History",
+                font=dict(size=14, color="#c9d1d9"),
+            ),
+        )
+
+        period_buttons = []
+        for label, days in _HIST_PERIODS:
+            subset_dates = dates[-days:] if len(dates) > days else dates
+            is_active = label == "1Y"
+            period_buttons.append(
+                html.Button(
+                    label,
+                    id={"type": "hist-period-btn", "index": f"{ticker}_{days}"},
+                    n_clicks=0,
+                    style={
+                        "background": "#58a6ff" if is_active else "#21262d",
+                        "color": "#fff" if is_active else "#8b949e",
+                        "border": "1px solid #30363d",
+                        "borderRadius": "4px",
+                        "padding": "4px 12px",
+                        "marginRight": "6px",
+                        "cursor": "pointer",
+                        "fontSize": "0.8rem",
+                    },
+                )
+            )
+
+        return html.Div([
+            html.Div([
+                html.Div(period_buttons, style={"display": "flex", "marginBottom": "0.5rem"}),
+                html.Button(
+                    "Close",
+                    id="close-hist-chart",
+                    n_clicks=0,
+                    style={
+                        "background": "transparent",
+                        "color": "#8b949e",
+                        "border": "1px solid #30363d",
+                        "borderRadius": "4px",
+                        "padding": "4px 12px",
+                        "cursor": "pointer",
+                        "fontSize": "0.8rem",
+                        "marginLeft": "auto",
+                    },
+                ),
+            ], style={"display": "flex", "alignItems": "center"}),
+            dcc.Graph(figure=fig, config={"displayModeBar": False}),
+        ], className="data-card", style={"padding": "1rem"})
+
+    except Exception as e:
+        logger.error(f"Historical chart error for {ticker}: {e}")
+        return html.P(
+            f"Error loading chart: {e}",
+            style={"color": "#f85149", "textAlign": "center"},
+        )
+
+
+# ---------------------------------------------------------------------------
+# Data Manager callbacks
+# ---------------------------------------------------------------------------
+
+@callback(
+    Output("data-pull-status", "children"),
+    Input("data-pull-btn", "n_clicks"),
+    [State("data-source-select", "value"),
+     State("data-asset-select", "value"),
+     State("data-tickers-input", "value"),
+     State("data-start-date", "date"),
+     State("data-end-date", "date")],
+    prevent_initial_call=True,
+)
+def trigger_data_pull(n_clicks, source, asset_class, tickers_str, start_date, end_date):
+    """POST to /api/data/pull and show job status."""
+    if not n_clicks or not source or not asset_class:
+        return dash.no_update
+
+    tickers = [t.strip() for t in (tickers_str or "").split(",") if t.strip()]
+    if not tickers:
+        return html.P("Enter at least one ticker", style={"color": "#f85149"})
+
+    try:
+        resp = requests.post(
+            f"{API_BASE_URL}/data/pull",
+            json={
+                "source": source,
+                "asset_class": asset_class,
+                "tickers": tickers,
+                "start_date": start_date or "2023-01-01",
+                "end_date": end_date or datetime.utcnow().strftime("%Y-%m-%d"),
+            },
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            return html.P(
+                f"Job {data.get('job_id')} started — status: {data.get('status')}",
+                style={"color": "#3fb950"},
+            )
+        return html.P(f"Error: {resp.status_code}", style={"color": "#f85149"})
+    except Exception as e:
+        return html.P(f"Request failed: {e}", style={"color": "#f85149"})
+
+
+@callback(
+    Output("data-update-all-status", "children"),
+    Input("data-update-all-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+def trigger_update_all(n_clicks):
+    """POST to /api/data/update-all."""
+    if not n_clicks:
+        return dash.no_update
+    try:
+        resp = requests.post(f"{API_BASE_URL}/data/update-all", timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            return html.P(
+                f"Update job {data.get('job_id')} started",
+                style={"color": "#3fb950"},
+            )
+        return html.P(f"Error: {resp.status_code}", style={"color": "#f85149"})
+    except Exception as e:
+        return html.P(f"Request failed: {e}", style={"color": "#f85149"})
+
+
+@callback(
+    Output("data-preview-container", "children"),
+    Input("data-preview-btn", "n_clicks"),
+    [State("data-preview-asset", "value"),
+     State("data-preview-tickers", "value"),
+     State("data-preview-start", "date"),
+     State("data-preview-end", "date")],
+    prevent_initial_call=True,
+)
+def render_data_preview(n_clicks, asset_class, tickers_str, start_date, end_date):
+    """Fetch and display stored data."""
+    if not n_clicks or not asset_class:
+        return dash.no_update
+
+    params = {"asset_class": asset_class, "limit": 500}
+    if tickers_str:
+        params["tickers"] = tickers_str
+    if start_date:
+        params["start"] = start_date
+    if end_date:
+        params["end"] = end_date
+
+    try:
+        resp = requests.get(f"{API_BASE_URL}/data/query", params=params, timeout=30)
+        if resp.status_code != 200:
+            return html.P(f"Query error: {resp.status_code}", style={"color": "#f85149"})
+
+        payload = resp.json()
+        rows = payload.get("rows", [])
+        total = payload.get("total", 0)
+
+        if not rows:
+            return html.P("No data found for this query.", style={"color": "#8b949e"})
+
+        df = pd.DataFrame(rows)
+        value_col = "close" if "close" in df.columns else "value"
+        id_col = "ticker" if "ticker" in df.columns else "series_id"
+
+        fig = go.Figure()
+        for name, grp in df.groupby(id_col):
+            fig.add_trace(go.Scatter(
+                x=grp["date"], y=grp[value_col],
+                mode="lines", name=str(name),
+                hovertemplate=f"<b>{name}</b><br>%{{x}}<br>%{{y:,.4f}}<extra></extra>",
+            ))
+        fig.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#c9d1d9"),
+            xaxis=dict(gridcolor="rgba(48,54,61,0.5)"),
+            yaxis=dict(gridcolor="rgba(48,54,61,0.5)"),
+            margin=dict(t=30, b=40, l=55, r=20),
+            hovermode="x unified",
+            height=350,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+        )
+
+        preview_cols = list(df.columns)
+        table_header = [html.Thead(html.Tr([
+            html.Th(c, style={"color": "#8b949e", "fontSize": "0.75rem", "textTransform": "uppercase"})
+            for c in preview_cols
+        ]))]
+        table_rows = []
+        for _, row in df.tail(20).iterrows():
+            table_rows.append(html.Tr([
+                html.Td(
+                    str(row[c]) if row[c] is not None else "—",
+                    style={"fontFamily": "'JetBrains Mono', monospace", "fontSize": "0.8rem", "color": "#c9d1d9"},
+                )
+                for c in preview_cols
+            ]))
+
+        return html.Div([
+            html.P(
+                f"Showing {min(len(rows), 500)} of {total} rows",
+                style={"color": "#8b949e", "fontSize": "0.8rem", "marginBottom": "0.5rem"},
+            ),
+            dcc.Graph(figure=fig, config={"displayModeBar": False}),
+            html.Div(
+                dbc.Table(table_header + [html.Tbody(table_rows)], bordered=False, dark=True, hover=True, size="sm"),
+                style={"overflowX": "auto", "maxHeight": "400px", "overflowY": "auto", "marginTop": "1rem"},
+            ),
+        ])
+
+    except Exception as e:
+        return html.P(f"Error: {e}", style={"color": "#f85149"})
 
 
 def create_portfolio_tab(data):
@@ -942,10 +1519,19 @@ def create_performance_tab(data, start_date=None, end_date=None):
         # Drop any rows where date parsing failed
         df = df.dropna(subset=['date'])
         df = df.sort_values('date')
-        # Calculate daily returns if not present
+        # Cash-flow-adjusted daily returns:
+        # Flex records (total_cash is NaN) → use total_pnl / prev_nav (excludes deposits)
+        # Live-API records → fall back to NAV pct_change
         if 'net_liquidation' in df.columns:
-            df['daily_return'] = df['net_liquidation'].pct_change()
-            df['cumulative_return'] = (1 + df['daily_return']).cumprod() - 1
+            prev_nav = df['net_liquidation'].shift(1)
+            is_flex = df['total_cash'].isna() if 'total_cash' in df.columns else pd.Series(True, index=df.index)
+            pnl_return = df['total_pnl'] / prev_nav if 'total_pnl' in df.columns else pd.Series(dtype=float)
+            nav_return = df['net_liquidation'].pct_change()
+
+            df['daily_return'] = nav_return
+            if not pnl_return.empty:
+                df.loc[is_flex, 'daily_return'] = pnl_return[is_flex]
+            df['cumulative_return'] = (1 + df['daily_return'].fillna(0)).cumprod() - 1
     
     # Extract metrics from analytics (always prefer fresh analytics over cached performance_data)
     # Analytics are recalculated based on date range, so they should always be used when available

@@ -28,6 +28,7 @@ cvxpy>=1.4.0
 
 # Market data
 yfinance>=0.2.30
+fredapi>=0.5.0
 
 # Frontend dependencies
 dash==2.14.2

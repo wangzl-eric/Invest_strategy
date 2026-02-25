@@ -1,6 +1,7 @@
 """IBKR API client wrapper with connection management and error handling."""
 import logging
 import asyncio
+import os
 from typing import Optional, Dict, Any
 from ib_insync import IB, Stock, Contract, AccountValue, Position, Trade
 from ib_insync.objects import PortfolioItem
@@ -10,10 +11,10 @@ from backend.config import settings
 
 # Import circuit breaker if available
 try:
-    from backend.circuit_breaker import ibkr_circuit_breaker
+    from backend.circuit_breaker import ibkr_circuit_breaker, CircuitState
 except ImportError:
-    # Fallback if circuit breaker not available
     ibkr_circuit_breaker = None
+    CircuitState = None
 
 logger = logging.getLogger(__name__)
 
@@ -89,16 +90,38 @@ class IBKRClient:
         
     async def connect(self) -> bool:
         """Connect to IBKR with circuit breaker protection."""
-        def _connect():
-            # This will be called by circuit breaker
-            return self._connect_impl()
-        
         try:
             if ibkr_circuit_breaker:
-                return ibkr_circuit_breaker.call(_connect)
+                # Check if circuit is open before attempting async connect
+                if ibkr_circuit_breaker.state.value == "open":
+                    from datetime import datetime as _dt
+                    if ibkr_circuit_breaker.last_failure_time:
+                        elapsed = (_dt.utcnow() - ibkr_circuit_breaker.last_failure_time).total_seconds()
+                        if elapsed < ibkr_circuit_breaker.recovery_timeout:
+                            logger.warning(f"Circuit breaker OPEN — retry in {int(ibkr_circuit_breaker.recovery_timeout - elapsed)}s")
+                            return False
+                        ibkr_circuit_breaker.state = CircuitState.HALF_OPEN
+
+                result = await self._connect_impl()
+
+                if ibkr_circuit_breaker:
+                    if result:
+                        ibkr_circuit_breaker.failure_count = 0
+                        if ibkr_circuit_breaker.state.value == "half_open":
+                            ibkr_circuit_breaker.success_count += 1
+                            if ibkr_circuit_breaker.success_count >= 2:
+                                ibkr_circuit_breaker.state = CircuitState.CLOSED
+                    else:
+                        ibkr_circuit_breaker.failure_count += 1
+                        from datetime import datetime as _dt
+                        ibkr_circuit_breaker.last_failure_time = _dt.utcnow()
+                        if ibkr_circuit_breaker.failure_count >= ibkr_circuit_breaker.failure_threshold:
+                            ibkr_circuit_breaker.state = CircuitState.OPEN
+                            logger.warning(f"Circuit breaker OPEN after {ibkr_circuit_breaker.failure_count} failures")
+
+                return result
             else:
-                # Fallback if circuit breaker not available
-                return self._connect_impl()
+                return await self._connect_impl()
         except Exception as e:
             logger.error(f"Circuit breaker prevented connection: {e}")
             return False
@@ -134,14 +157,24 @@ class IBKRClient:
                     timeout=settings.ibkr.timeout
                 )
                 
-                # Wait a moment for connection to fully establish
-                await asyncio.sleep(0.5)
+                # Wait for connection + initial account data subscription
+                await asyncio.sleep(1)
                 
                 # Verify connection is actually established
                 if self.ib.isConnected():
                     self.connected = True
                     self.connection_attempts = 0
                     logger.info("Successfully connected to IBKR")
+
+                    # Wait for account data to arrive (TWS streams it after connect)
+                    for _wait in range(10):
+                        if self.ib.accountValues():
+                            logger.info("Account data is ready")
+                            break
+                        await asyncio.sleep(0.5)
+                    else:
+                        logger.warning("Account data not received within 5 s — queries may return empty results")
+
                     return True
                 else:
                     logger.warning("Connection call succeeded but connection not established")
@@ -211,6 +244,15 @@ class IBKRClient:
             # Get account ID if not provided
             if account_id is None and account_values:
                 summary['AccountId'] = account_values[0].account
+            
+            # Fallback to configured account ID from env / config
+            if 'AccountId' not in summary and account_id:
+                summary['AccountId'] = account_id
+            if 'AccountId' not in summary:
+                env_acct = os.getenv('IBKR_ACCOUNT_ID', '') or getattr(settings.ibkr, 'account_id', '')
+                if env_acct:
+                    summary['AccountId'] = env_acct
+                    logger.info(f"Using configured IBKR_ACCOUNT_ID: {env_acct}")
             
             return summary
             

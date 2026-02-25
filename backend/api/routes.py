@@ -1,5 +1,6 @@
 """API route handlers."""
 import io
+import os
 import logging
 from datetime import datetime, timedelta
 from typing import List, Optional
@@ -342,6 +343,8 @@ async def fetch_data_now(
 ):
     """Manually trigger data fetch from IBKR. By default, fetches fresh data but doesn't store PnL records."""
     try:
+        if not account_id:
+            account_id = os.getenv('IBKR_ACCOUNT_ID', '') or getattr(settings.ibkr, 'account_id', '') or None
         logger.info(f"Manual data fetch triggered for account: {account_id} (store_pnl={store_pnl})")
         
         # Create IBKR client and data fetcher
@@ -1202,25 +1205,38 @@ async def get_performance_analytics(
                 error="Insufficient data for analytics calculation"
             )
         
-        # Build DataFrame from PnL history (use stored returns if available)
+        # Build DataFrame from PnL history
         df = pd.DataFrame([{
             'date': r.date,
             'net_liquidation': r.net_liquidation or 0,
             'total_pnl': r.total_pnl or 0,
             'realized_pnl': r.realized_pnl or 0,
             'unrealized_pnl': r.unrealized_pnl or 0,
-            'daily_return': r.daily_return,  # Use stored value
-            'cumulative_return': r.cumulative_return,  # Use stored value
+            'total_cash': r.total_cash,
         } for r in pnl_records])
         
         df['date'] = pd.to_datetime(df['date'])
-        df = df.sort_values('date').drop_duplicates(subset=['date'], keep='last')
+        df = df.sort_values('date')
+        # Deduplicate to one record per calendar date (keep last intraday entry)
+        df['cal_date'] = df['date'].dt.date
+        df = df.drop_duplicates(subset=['cal_date'], keep='last')
+        df['date'] = pd.to_datetime(df['cal_date'])
+        df = df.drop(columns=['cal_date'])
         df = df.set_index('date')
         
-        # Use stored daily_return if available, otherwise calculate from net_liquidation
-        if df['daily_return'].isna().all():
-            logger.info("No stored daily_return found, calculating from net_liquidation")
-            df['daily_return'] = df['net_liquidation'].pct_change()
+        # Cash-flow-adjusted daily return:
+        # Flex records (total_cash IS NULL): total_pnl is the day's investment
+        # P&L (realized + unrealized + dividends), excludes cash deposits.
+        # Live-API records (total_cash set): total_pnl is cumulative all-time,
+        # so fall back to NAV pct_change.
+        prev_nav = df['net_liquidation'].shift(1)
+        is_flex = df['total_cash'].isna()
+        pnl_return = df['total_pnl'] / prev_nav
+        nav_return = df['net_liquidation'].pct_change()
+
+        df['daily_return'] = nav_return
+        df.loc[is_flex, 'daily_return'] = pnl_return[is_flex]
+        logger.info("Calculated cash-flow-adjusted daily returns (PnL-based for Flex, NAV-based for live)")
         
         df = df.dropna(subset=['daily_return'])
         
@@ -1232,14 +1248,9 @@ async def get_performance_analytics(
         
         returns = df['daily_return']
         
-        # Calculate summary metrics
-        # Use stored cumulative_return for total_return if available
-        if 'cumulative_return' in df.columns and not df['cumulative_return'].isna().all():
-            # Use the last cumulative_return value as total_return
-            total_return = float(df['cumulative_return'].iloc[-1]) if len(df) > 0 else 0.0
-        else:
-            # Fallback: calculate from daily returns
-            total_return = float((1 + returns).prod() - 1)
+        # Always compute cumulative return fresh from daily returns
+        cumulative = (1 + returns).cumprod()
+        total_return = float(cumulative.iloc[-1] - 1) if len(cumulative) > 0 else 0.0
         
         days = (df.index[-1] - df.index[0]).days
         annualized_return = float((1 + total_return) ** (365 / max(days, 1)) - 1) if days > 0 else 0
@@ -1252,14 +1263,6 @@ async def get_performance_analytics(
         sortino = float(np.sqrt(252) * returns.mean() / downside_std) if downside_std > 0 else 0
         
         # Max drawdown
-        # Use stored cumulative_return if available, otherwise calculate
-        if 'cumulative_return' in df.columns and not df['cumulative_return'].isna().all():
-            # Convert cumulative_return to growth factor (1 + cumulative_return)
-            cumulative = 1 + df['cumulative_return'].fillna(0)
-        else:
-            # Fallback: calculate from daily returns
-            cumulative = (1 + returns).cumprod()
-        
         running_max = cumulative.cummax()
         drawdown = (cumulative - running_max) / running_max
         max_drawdown = float(drawdown.min())
@@ -1267,20 +1270,14 @@ async def get_performance_analytics(
         # Calmar ratio
         calmar = float(annualized_return / abs(max_drawdown)) if max_drawdown != 0 else 0
         
-        # Build returns series for frontend (use stored cumulative_return if available)
+        # Build returns series for frontend
+        cum_returns = cumulative - 1  # convert growth factor to return
         returns_series = []
         for idx, row in df.iterrows():
-            # Use stored cumulative_return if available, otherwise calculate
-            if 'cumulative_return' in row and not pd.isna(row['cumulative_return']):
-                cum_return = float(row['cumulative_return'])
-            else:
-                # Fallback: calculate from daily returns
-                cum_return = float((1 + returns.loc[:idx]).prod() - 1)
-            
             returns_series.append({
                 'date': idx.strftime('%Y-%m-%d'),
                 'daily_return': float(row['daily_return']) if not pd.isna(row['daily_return']) else 0,
-                'cumulative_return': cum_return,
+                'cumulative_return': float(cum_returns.loc[idx]),
             })
         
         # Build equity series

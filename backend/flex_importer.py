@@ -32,56 +32,67 @@ logger = logging.getLogger(__name__)
 
 def calculate_and_update_returns(account_id: str, db) -> None:
     """
-    Calculate and update daily_return and cumulative_return for all pnl_history records
-    for a given account_id, in chronological order.
-    
-    This function:
-    1. Fetches all pnl_history records for the account, sorted by date
-    2. Calculates daily_return from net_liquidation changes
-    3. Calculates cumulative_return from the series of daily returns
-    4. Updates all records in the database
+    Calculate cash-flow-adjusted daily_return and cumulative_return for all
+    pnl_history records, excluding the effect of cash deposits / withdrawals.
+
+    For Flex-imported records (total_cash IS NULL) the IBKR ``total_pnl``
+    field already represents the day's investment P&L (realized + unrealized +
+    dividends) and does *not* include cash flows, so:
+
+        daily_return = total_pnl / prev_day_net_liquidation
+
+    For live-API records (total_cash IS NOT NULL) ``total_pnl`` is a running
+    all-time cumulative figure, so we fall back to NAV percentage change.
     """
-    # Fetch all records for this account, sorted by date
     records = db.query(PnLHistory).filter(
         PnLHistory.account_id == account_id
     ).order_by(PnLHistory.date.asc()).all()
-    
+
     if len(records) < 1:
         return
-    
-    # Build DataFrame for easier calculation
+
     data = []
     for record in records:
         data.append({
             'id': record.id,
             'date': record.date,
             'net_liquidation': record.net_liquidation,
-            'total_pnl': record.total_pnl or 0.0,  # Include total_pnl for return calculation
+            'total_pnl': record.total_pnl or 0.0,
+            'total_cash': record.total_cash,
         })
-    
+
     df = pd.DataFrame(data)
     df = df.sort_values('date')
-    
-    # Calculate daily returns: daily_return = total_pnl / previous_day_net_liquidation
-    # Handle division by zero: if previous net_liquidation is 0 or None, return NaN
-    prev_net_liq = df['net_liquidation'].shift(1)
-    # Replace 0 and None with NaN to avoid division by zero
-    prev_net_liq = prev_net_liq.replace(0, float('nan')).fillna(float('nan'))
-    df['daily_return'] = df['total_pnl'] / prev_net_liq
-    
-    # Calculate cumulative returns: (1 + r1) * (1 + r2) * ... - 1
-    # For the first record, daily_return is NaN, so cumulative_return should be 0
+
+    # Deduplicate: keep one record per calendar date (last entry wins)
+    df['cal_date'] = pd.to_datetime(df['date']).dt.date
+    df = df.drop_duplicates(subset=['cal_date'], keep='last')
+
+    prev_nav = df['net_liquidation'].shift(1)
+
+    # Flex records have total_cash = NULL; their total_pnl is the daily
+    # investment P&L (excludes cash deposits/withdrawals).
+    is_flex = df['total_cash'].isna()
+
+    # PnL-based return for Flex records (cash-flow adjusted)
+    pnl_return = df['total_pnl'] / prev_nav
+
+    # NAV pct_change fallback for live-API records
+    nav_return = df['net_liquidation'].pct_change()
+
+    df['daily_return'] = pd.Series(dtype=float)
+    df.loc[is_flex, 'daily_return'] = pnl_return[is_flex]
+    df.loc[~is_flex, 'daily_return'] = nav_return[~is_flex]
+
     df['cumulative_return'] = (1 + df['daily_return'].fillna(0)).cumprod() - 1
-    # Set first record's cumulative_return to 0 (starting point)
     if len(df) > 0:
         df.loc[df.index[0], 'cumulative_return'] = 0.0
-    
-    # Update records in database
+
     for _, row in df.iterrows():
         record_id = row['id']
         daily_ret = row['daily_return'] if not pd.isna(row['daily_return']) else None
         cum_ret = row['cumulative_return'] if not pd.isna(row['cumulative_return']) else 0.0
-        
+
         record = db.query(PnLHistory).filter(PnLHistory.id == record_id).first()
         if record:
             record.daily_return = float(daily_ret) if daily_ret is not None else None
