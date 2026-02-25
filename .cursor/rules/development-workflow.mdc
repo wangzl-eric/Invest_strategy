@@ -1,0 +1,69 @@
+---
+description: Core development workflow for the IBKR Portfolio Analytics / Quant Platform project
+alwaysApply: true
+---
+
+# Development Workflow
+
+## After Every Change
+
+1. **Update documentation** — After adding or modifying features, update the relevant guide in `guides/` or `README.md`. If a new panel, API endpoint, or data source is added, document it in `guides/QUANT_PLATFORM_VISION.md` (target state table) and the appropriate guide.
+
+2. **Explain what was built** — After completing a feature, provide a clear summary to the user: what changed, which files were touched, how it works, and any caveats or limitations.
+
+3. **Log bugs and issues** — Record any bugs, gotchas, or workarounds encountered during development in `guides/KNOWN_ISSUES.md`. This prevents repeating the same mistakes. Include: what happened, root cause, and the fix applied.
+
+4. **Restart servers after changes** — The Dash frontend does NOT hot-reload from `nohup`. After code changes, always kill and restart both backend (port 8000) and frontend (port 8050). The backend uses `--reload` but still needs restart for `.env` or new package installs.
+
+## Project Architecture
+
+```
+backend/
+  market_data_service.py  — Data fetching (yfinance, FRED), caching, computations
+  market_data_store.py    — Parquet data lake (read/write, catalog, incremental updates)
+  api/market_routes.py    — FastAPI endpoints for /market/*
+  api/data_routes.py      — FastAPI endpoints for /data/* (catalog, pull, query)
+  data_providers.py       — Abstract market data provider interface
+  config.py               — Settings, .env loading (FRED_API_KEY, FLEX_TOKEN, etc.)
+frontend/
+  app.py                  — Dash app, callbacks, tab rendering
+  components/market_panels.py — Market tab UI components, sparklines, chart builders
+  components/data_manager.py  — Data Manager tab (catalog, pull form, viewer)
+data/market_data/
+  prices/                 — Parquet files: equities, fx, commodities, rates_yf
+  fred/                   — Parquet files: treasury_yields, macro_indicators, fed_liquidity
+  catalog.json            — Metadata: tickers, date ranges, last_updated per dataset
+config/app_config.yaml    — IBKR, Flex Query, DB settings
+.env                      — Secrets (FRED_API_KEY, FLEX_TOKEN, IBKR creds)
+guides/                   — User-facing documentation
+```
+
+## Adding a New Market Data Series
+
+1. Add the FRED series ID + metadata to the appropriate dict in `market_data_service.py`
+2. Add the instrument definition (tooltip text) to `DEFINITIONS` in `market_panels.py`
+3. If it needs a new category, add to `CATEGORY_ORDER` in `market_panels.py`
+4. If it needs charting, add to the relevant `build_*_panel()` function
+5. Test with `curl http://localhost:8000/api/market/overview | python3 -m json.tool`
+
+## Adding Data to the Parquet Data Lake
+
+1. Define the tickers/series in the appropriate `_ASSET_CLASS_TICKERS` or `_FRED_CATEGORY_SERIES` dict in `market_data_store.py`
+2. Map the asset class to a Parquet file path in `_YF_ASSET_FILES` or `_FRED_CATEGORY_FILES`
+3. Use the Data Manager UI ("Data" tab) or call `POST /api/data/pull` to download and store
+4. Parquet schema: prices = `(date, ticker, open, high, low, close, volume)`, FRED = `(date, series_id, value)`
+5. `catalog.json` is auto-updated after every pull — do not edit manually
+
+## Key Gotchas (Avoid These)
+
+- **FRED units vary** — WALCL/WTREGEN are in millions, RRPONTSYD/WRESBAL in millions too. Always check the FRED page for "Units" before setting a divisor.
+- **FRED series get discontinued** — DSWP (swap rates) were discontinued. Always test a series with `fred.get_series()` before adding to production config.
+- **`fredapi` must be installed** — It's in requirements.txt but may not be installed in the conda env. Verify with `python -c "import fredapi"`.
+- **Cache masks errors** — If a FRED call fails when key is missing, the empty result gets cached. After setting the key, restart the server to clear the in-memory TTL cache.
+- **yfinance `date` field** — Must be extracted from the DataFrame index, not from a column. Use `close_series.index[-1].date()`.
+
+## Conda Environment
+
+- Name: `ibkr-analytics`
+- Python: `/Users/zelin/opt/anaconda3/envs/ibkr-analytics/bin/python`
+- Always set `PYTHONPATH` to the project root before running

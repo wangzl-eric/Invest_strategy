@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Launcher for the IBKR Analytics .app bundle.
+# Opens Terminal.app and runs start.sh from the project directory.
+
+PROJECT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
+
+osascript -e "
+tell application \"Terminal\"
+    activate
+    do script \"cd '$PROJECT_DIR' && ./start.sh\"
+end tell
+"
