@@ -66,6 +66,24 @@ Tracks bugs, gotchas, and workarounds encountered during development to prevent 
 - **Impact**: The `data/market_data/` directory starts empty. Users must click "Update All" in the Data Manager tab or trigger individual pulls to populate it.
 - **Workaround**: Run `POST /api/data/update-all` once after setup to backfill 2 years of data for all tracked instruments.
 
+### 5. IBKR API requires Gateway to remain running
+- **Status**: Open (known limitation)
+- **Impact**: Historical data pulls via the IBKR pipeline require IB Gateway or TWS to be running with API access enabled.
+- **Workaround**: Keep IB Gateway running in the background. For automated pipelines, consider using a scheduled task that starts Gateway before fetching data.
+- **Prevention**: Document this requirement in the usage guide.
+
+### 6. Market data subscriptions expire after 60 days of inactivity
+- **Status**: Open (IBKR policy)
+- **Impact**: If you don't log into IBKR for 60 days, market data subscriptions become inactive and data pulls will fail.
+- **Workaround**: Log into IB Gateway at least once every 60 days to keep subscriptions active.
+- **Prevention**: Add a calendar reminder to log in regularly.
+
+### 7. Rate limiting on IBKR API
+- **Status**: Open (IBKR policy)
+- **Impact**: Bulk data fetches may be throttled if too many requests are made quickly.
+- **Workaround**: The code includes 0.2-0.3 second delays between requests. For very large fetches, use the background job endpoint which includes rate limiting.
+- **Prevention**: Don't make more than ~50 requests per second to avoid IP bans.
+
 ---
 
 ## Debugging Checklist

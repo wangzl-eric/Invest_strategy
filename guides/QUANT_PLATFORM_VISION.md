@@ -316,10 +316,11 @@ Alerts should be tiered by severity and channel:
 
 | Capability | Current State | Target State | Priority |
 |-----------|--------------|-------------|----------|
-| IBKR data ingestion | Flex Query + live TWS | ✅ Sufficient | — |
+| IBKR data ingestion | Flex Query + live TWS | ✅ Historical data via IBKR API (equities, forex, futures, options) | — |
+| **IBKR Historical Data Pipeline** | None | ✅ Delivered - pull OHLCV from IBKR API with parquet storage, incremental updates, data validation | — |
 | Cross-asset dashboard | ✅ Multi-asset: rates, FX, equities, commodities, curves, Fed QE/QT monitor, macro pulse | ✅ Delivered | — |
 | Historical sparklines | ✅ 30-day sparklines + 1W/1M change columns on all market panels, click-to-expand 1Y chart | ✅ Delivered | — |
-| Market data lake | ✅ Parquet-based storage (yfinance OHLCV + FRED series), catalog.json, incremental updates | Production DuckDB query layer | **P1** |
+| Market data lake | ✅ Parquet-based storage (yfinance + FRED + IBKR OHLCV), catalog.json, incremental updates | Production DuckDB query layer | **P1** |
 | Data Manager UI | ✅ Data tab with catalog browser, pull form, data viewer/chart | Full data lineage + scheduling | **P2** |
 | Central bank monitor | Fed QE/QT monitor + CB meeting tracker (FOMC countdown, policy rates, 2Y-FF implied path proxy) | Automated CB speech/minutes parsing + CME FedWatch probabilities | **P0** |
 | Economic data integration | FRED macro indicators (CPI, GDP, NFCI, HY OAS) | Full economic calendar with surprise tracking | **P0** |

@@ -2,9 +2,11 @@
 import logging
 import asyncio
 import os
-from typing import Optional, Dict, Any
-from ib_insync import IB, Stock, Contract, AccountValue, Position, Trade
+from typing import Optional, Dict, Any, List
+from datetime import datetime, timedelta
+from ib_insync import IB, Stock, Contract, AccountValue, Position, Trade, Forex, Future
 from ib_insync.objects import PortfolioItem
+import pandas as pd
 import time
 
 from backend.config import settings
@@ -17,6 +19,23 @@ except ImportError:
     CircuitState = None
 
 logger = logging.getLogger(__name__)
+
+
+# Valid durations for historical data requests
+HISTORICAL_DURATIONS = [
+    "1 D", "2 D", "3 D", "4 D", "5 D", "6 D", "7 D",
+    "1 W", "2 W", "3 W", "4 W",
+    "1 M", "2 M", "3 M", "4 M", "5 M", "6 M",
+    "1 Y", "2 Y", "3 Y", "5 Y"
+]
+
+# Valid intervals for historical data
+HISTORICAL_INTERVALS = [
+    "1 secs", "5 secs", "10 secs", "15 secs", "30 secs",
+    "1 min", "2 mins", "3 mins", "5 mins", "10 mins", "15 mins", "20 mins", "30 mins",
+    "1 hour", "2 hours", "3 hours", "4 hours", "8 hours",
+    "1 day", "1 week", "1 month"
+]
 
 
 class IBKRClient:
@@ -406,7 +425,433 @@ class IBKRClient:
         except Exception as e:
             logger.error(f"Error fetching trades: {e}")
             raise
-    
+
+    # --------------------------------------------------------------------------
+    # Historical Data Methods
+    # --------------------------------------------------------------------------
+
+    def _create_contract(
+        self,
+        symbol: str,
+        sec_type: str = "STK",
+        exchange: str = "SMART",
+        currency: str = "USD",
+        expiry: Optional[str] = None,
+        strike: Optional[float] = None,
+        opt_type: Optional[str] = None
+    ) -> Contract:
+        """Create an IBKR contract object."""
+        if sec_type == "STK":
+            contract = Stock(symbol, exchange, currency)
+        elif sec_type == "CASH":
+            contract = Forex(symbol, exchange, currency)
+        elif sec_type == "FUT":
+            contract = Future(symbol, exchange, currency, expiry)
+        elif sec_type in ["OPT", "FOP"]:
+            contract = Stock(symbol, exchange, currency)  # Base for options
+            # Note: Options require more complex contract specification
+            # For options, use get_options_chain() instead
+        else:
+            contract = Stock(symbol, exchange, currency)
+        
+        return contract
+
+    async def get_historical_data(
+        self,
+        symbol: str,
+        sec_type: str = "STK",
+        exchange: str = "SMART",
+        currency: str = "USD",
+        duration: str = "1 Y",
+        interval: str = "1 day",
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        outside_rth: bool = False
+    ) -> pd.DataFrame:
+        """Fetch historical OHLCV data from IBKR.
+        
+        Args:
+            symbol: Ticker symbol (e.g., "AAPL", "EUR/USD")
+            sec_type: Security type - "STK" (stock), "CASH" (forex), "FUT" (future)
+            exchange: Exchange (e.g., "SMART", "IDEALPRO" for forex, "CME" for futures)
+            currency: Currency (e.g., "USD", "EUR")
+            duration: How far back - "1 D", "1 W", "1 M", "1 Y", "2 Y", etc.
+            interval: Bar size - "1 min", "5 mins", "1 hour", "1 day", etc.
+            start_date: Start date for historical data (optional, overrides duration)
+            end_date: End date for historical data (optional, defaults to now)
+            outside_rth: Include data outside regular trading hours
+            
+        Returns:
+            DataFrame with columns: date, open, high, low, close, volume
+        """
+        if not await self.ensure_connected():
+            raise ConnectionError("Not connected to IBKR")
+        
+        # Validate duration and interval
+        if duration not in HISTORICAL_DURATIONS:
+            logger.warning(f"Invalid duration '{duration}', using '1 Y'. Valid: {HISTORICAL_DURATIONS}")
+            duration = "1 Y"
+        
+        if interval not in HISTORICAL_INTERVALS:
+            logger.warning(f"Invalid interval '{interval}', using '1 day'. Valid: {HISTORICAL_INTERVALS}")
+            interval = "1 day"
+        
+        # Create contract
+        contract = self._create_contract(symbol, sec_type, exchange, currency)
+        
+        # Add generic ticks to request
+        # For stocks: whatToShow='TRADES', 'MIDPOINT', 'BID', 'ASK', 'BID_ASK'
+        what_to_show = 'TRADES'
+        if sec_type == 'CASH':
+            what_to_show = 'MIDPOINT'  # Forex doesn't have trades in the same way
+        
+        try:
+            # Use reqHistoricalDataAsync for historical data
+            bars = await self.ib.reqHistoricalDataAsync(
+                contract=contract,
+                endDateTime=end_date.strftime('%Y%m%d %H:%M:%S') if end_date else '',
+                durationStr=duration,
+                barSizeSetting=interval,
+                whatToShow=what_to_show,
+                useRTH=not outside_rth,
+                formatDate=2  # Unix timestamp format
+            )
+            
+            if not bars:
+                logger.warning(f"No historical data returned for {symbol}")
+                return pd.DataFrame()
+            
+            # Convert to DataFrame
+            df = pd.DataFrame([{
+                'date': bar.date,
+                'open': bar.open,
+                'high': bar.high,
+                'low': bar.low,
+                'close': bar.close,
+                'volume': bar.volume,
+            } for bar in bars])
+            
+            # Filter by date range if specified
+            if start_date:
+                df = df[df['date'] >= start_date]
+            if end_date:
+                df = df[df['date'] <= end_date]
+            
+            logger.info(f"Fetched {len(df)} bars for {symbol} ({sec_type})")
+            return df
+            
+        except Exception as e:
+            logger.error(f"Error fetching historical data for {symbol}: {e}")
+            raise
+
+    async def get_realtime_bars(
+        self,
+        symbol: str,
+        sec_type: str = "STK",
+        exchange: str = "SMART",
+        currency: str = "USD",
+        duration: str = "5 D",
+        interval: str = "1 min"
+    ) -> pd.DataFrame:
+        """Fetch real-time (live) bars from IBKR.
+        
+        This is similar to historical data but uses the real-time data farm.
+        Useful for getting the most recent data quickly.
+        
+        Args:
+            symbol: Ticker symbol
+            sec_type: Security type
+            exchange: Exchange
+            currency: Currency
+            duration: How far back
+            interval: Bar size
+            
+        Returns:
+            DataFrame with OHLCV data
+        """
+        if not await self.ensure_connected():
+            raise ConnectionError("Not connected to IBKR")
+        
+        contract = self._create_contract(symbol, sec_type, exchange, currency)
+        
+        try:
+            bars = await self.ib.reqHistoricalDataAsync(
+                contract=contract,
+                endDateTime='',
+                durationStr=duration,
+                barSizeSetting=interval,
+                whatToShow='TRADES',
+                useRTH=False,
+                formatDate=2,
+                keepUpToDate=True  # Request real-time updates
+            )
+            
+            if not bars:
+                return pd.DataFrame()
+            
+            df = pd.DataFrame([{
+                'date': bar.date,
+                'open': bar.open,
+                'high': bar.high,
+                'low': bar.low,
+                'close': bar.close,
+                'volume': bar.volume,
+            } for bar in bars])
+            
+            return df
+            
+        except Exception as e:
+            logger.error(f"Error fetching realtime bars for {symbol}: {e}")
+            raise
+
+    async def get_quote(self, symbol: str, sec_type: str = "STK", exchange: str = "SMART", currency: str = "USD") -> Dict[str, Any]:
+        """Get current quote for a symbol.
+        
+        Args:
+            symbol: Ticker symbol
+            sec_type: Security type
+            exchange: Exchange
+            currency: Currency
+            
+        Returns:
+            Dict with bid, ask, last, volume, etc.
+        """
+        if not await self.ensure_connected():
+            raise ConnectionError("Not connected to IBKR")
+        
+        contract = self._create_contract(symbol, sec_type, exchange, currency)
+        
+        # Request market data
+        ticker = await self.ib.reqMktDataAsync(contract, '', False, False)
+        
+        # Wait briefly for data to arrive
+        await asyncio.sleep(0.5)
+        
+        return {
+            'symbol': symbol,
+            'bid': ticker.bid,
+            'ask': ticker.ask,
+            'last': ticker.last,
+            'bid_size': ticker.bidSize,
+            'ask_size': ticker.askSize,
+            'last_size': ticker.lastSize,
+            'volume': ticker.volume,
+            'close': ticker.close,
+            'high': ticker.high,
+            'low': ticker.low,
+            'timestamp': datetime.now().isoformat()
+        }
+
+    async def search_symbols(self, symbol: str, exchange: str = "SMART") -> List[Dict[str, Any]]:
+        """Search for symbols in IBKR database.
+        
+        Args:
+            symbol: Search pattern (can be partial)
+            exchange: Exchange to search in
+            
+        Returns:
+            List of matching contracts with details
+        """
+        if not await self.ensure_connected():
+            raise ConnectionError("Not connected to IBKR")
+        
+        try:
+            # Use IB's symbol search
+            contracts = await self.ib.reqMatchingSymbolsAsync(symbol)
+            
+            results = []
+            for contract in contracts:
+                results.append({
+                    'symbol': contract.symbol,
+                    'sec_type': contract.secType,
+                    'exchange': contract.exchange,
+                    'currency': contract.currency,
+                    'description': contract.description,
+                    'contract_id': contract.conId
+                })
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"Error searching symbols for {symbol}: {e}")
+            return []
+
+    async def get_contract_details(self, symbol: str, exchange: str = "SMART", currency: str = "USD") -> List[Dict[str, Any]]:
+        """Get detailed contract information.
+        
+        Args:
+            symbol: Ticker symbol
+            exchange: Exchange
+            currency: Currency
+            
+        Returns:
+            List of contract details (may include multiple contracts like options)
+        """
+        if not await self.ensure_connected():
+            raise ConnectionError("Not connected to IBKR")
+        
+        contract = Stock(symbol, exchange, currency)
+        
+        try:
+            details = await self.ib.reqContractDetailsAsync(contract)
+            
+            results = []
+            for detail in details:
+                results.append({
+                    'contract_id': detail.contract.conId,
+                    'symbol': detail.contract.symbol,
+                    'sec_type': detail.contract.secType,
+                    'exchange': detail.contract.exchange,
+                    'primary_exchange': detail.contract.primaryExchange,
+                    'currency': detail.contract.currency,
+                    'strike': detail.contract.strike,
+                    'expiry': detail.contract.lastTradeDateOrContractMonth,
+                    'right': detail.contract.right,
+                    'multiplier': detail.contract.multiplier,
+                    'market_name': detail.marketName,
+                    'min_tick': detail.minTick,
+                    'order_types': detail.orderTypes,
+                    'valid_exchanges': detail.validExchanges,
+                    'long_name': detail.longName,
+                    'industry': detail.industry,
+                    'category': detail.category,
+                    'subcategory': detail.subcategory
+                })
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"Error getting contract details for {symbol}: {e}")
+            return []
+
+    async def get_options_chain(
+        self,
+        underlying_symbol: str,
+        exchange: str = "SMART",
+        currency: str = "USD"
+    ) -> Dict[str, Any]:
+        """Get options chain for an underlying symbol.
+        
+        Args:
+            underlying_symbol: Stock symbol (e.g., "AAPL")
+            exchange: Exchange
+            currency: Currency
+            
+        Returns:
+            Dict with expiry dates and strikes for calls and puts
+        """
+        if not await self.ensure_connected():
+            raise ConnectionError("Not connected to IBKR")
+        
+        # Get contract details to find the contract ID
+        details = await self.get_contract_details(underlying_symbol, exchange, currency)
+        
+        if not details:
+            logger.warning(f"No contract details found for {underlying_symbol}")
+            return {}
+        
+        contract_id = details[0]['contract_id']
+        
+        # Request options chains
+        try:
+            # Request security definition options parameters
+            chains = await self.ib.reqSecDefOptParamsAsync(
+                underlyingSymbol=underlying_symbol,
+                exchange=exchange,
+                secType='STK',
+                underlyingConId=contract_id
+            )
+            
+            if not chains:
+                logger.warning(f"No options chain found for {underlying_symbol}")
+                return {}
+            
+            result = {
+                'underlying': underlying_symbol,
+                'exchanges': [],
+                'expirations': set(),
+                'strikes': set(),
+                'chains': []
+            }
+            
+            for chain in chains:
+                result['exchanges'].append(chain.exchange)
+                
+                for expiry in chain.expirations:
+                    result['expirations'].add(expiry)
+                
+                for strike in chain.strikes:
+                    result['strikes'].add(strike)
+                
+                result['chains'].append({
+                    'exchange': chain.exchange,
+                    'expirations': list(chain.expirations),
+                    'strikes': list(chain.strikes),
+                    'underlying_con_id': chain.underlyingConId,
+                    'trading_class': chain.tradingClass
+                })
+            
+            # Convert sets to sorted lists for JSON serialization
+            result['expirations'] = sorted(list(result['expirations']))
+            result['strikes'] = sorted([float(s) for s in result['strikes']])
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error getting options chain for {underlying_symbol}: {e}")
+            return {}
+
+    async def get_futures_chain(
+        self,
+        symbol: str,
+        exchange: str = "CME",
+        currency: str = "USD"
+    ) -> Dict[str, Any]:
+        """Get futures chain for a symbol (e.g., "ES" for E-mini S&P 500).
+        
+        Args:
+            symbol: Futures symbol (e.g., "ES", "CL", "GC")
+            exchange: Exchange (e.g., "CME", "NYMEX", "COMEX")
+            currency: Currency
+            
+        Returns:
+            Dict with available contract months
+        """
+        if not await self.ensure_connected():
+            raise ConnectionError("Not connected to IBKR")
+        
+        contract = Future(symbol, exchange, currency)
+        
+        try:
+            details = await self.ib.reqContractDetailsAsync(contract)
+            
+            expirations = set()
+            contracts = []
+            
+            for detail in details:
+                if detail.contract.lastTradeDateOrContractMonth:
+                    expirations.add(detail.contract.lastTradeDateOrContractMonth)
+                    contracts.append({
+                        'contract_id': detail.contract.conId,
+                        'symbol': detail.contract.symbol,
+                        'exchange': detail.contract.exchange,
+                        'expiry': detail.contract.lastTradeDateOrContractMonth,
+                        'multiplier': detail.contract.multiplier,
+                        'long_name': detail.longName
+                    })
+            
+            return {
+                'symbol': symbol,
+                'exchange': exchange,
+                'currency': currency,
+                'expirations': sorted(list(expirations)),
+                'contracts': contracts
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting futures chain for {symbol}: {e}")
+            return {}
+
     def __del__(self):
         """Cleanup on deletion."""
         if self.connected:

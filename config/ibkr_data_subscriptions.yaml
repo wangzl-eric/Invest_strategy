@@ -1,0 +1,57 @@
+# IBKR Market Data Subscriptions Configuration
+#
+# To check your subscriptions:
+# 1. Log into IB Gateway or TWS
+# 2. Go to: Account Settings > Market Data Subscriptions
+# 3. Copy your active subscriptions below
+#
+# Note: Market data subscriptions expire after 60 days of no login
+
+subscriptions:
+  # US Equities
+  us_equities:
+    nasdaq: false    # NASDAQ TotalView
+    nyse: false     # NYSE BBO
+    amex: false     # AMEX BBO
+    arca: false     # ARCA BBO
+    
+  # US Options
+  us_options:
+    nasdaq_options: false   # NASDAQ Options
+    cboe_options: false     # CBOE Options
+    phlx_options: false     # PHLX Options
+    
+  # International Equities
+  intl_equities:
+    canada: false    # Toronto (TSX)
+    europe: false   # European exchanges
+    uk: false       # LSE
+    japan: false    # Tokyo Stock Exchange
+    hong_kong: false  # HKEX
+    
+  # Forex
+  forex:
+    ideal_pro: false  # IBKR Forex (IdealPro)
+    
+  # Futures
+  futures:
+    cme: false       # CME Group
+    cbot: false      # Chicago Board of Trade
+    nyse_liffe: false # NYSEE/LIFFE
+    eurex: false     # EUREX
+    
+  # Market Data Tiers (Professional/Non-Professional)
+  tier: "PROFESSIONAL"  # or "NON_PROFESSIONAL"
+
+# Fee-waived subscriptions for IBKR Pro
+# As an IBKR Pro member, many subscriptions are included
+pro_waived_subscriptions:
+  - "US Securities (Aggregated)"
+  - "US Options Smart Routing"
+  - "US Equity and Options Aggregated"
+
+# Last verified date
+last_verified: ""
+
+# Notes
+notes: ""
