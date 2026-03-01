@@ -49,4 +49,3 @@ def parquet_partition_path(
     if venue:
         base = base / f"venue={venue}"
     return base
-

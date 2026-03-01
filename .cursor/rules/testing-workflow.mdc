@@ -1,0 +1,56 @@
+---
+description: Unit testing requirements - always achieve 80% coverage for new code
+alwaysApply: true
+---
+
+# Unit Testing Rules
+
+## Required Coverage
+
+- **Minimum coverage target**: 80% for all new code
+- Run coverage with: `python -m pytest --cov=backend --cov-report=term-missing`
+
+## Test File Location
+
+- Place unit tests in `tests/unit/` directory
+- Follow naming convention: `test_<module_name>.py`
+
+## Test Coverage Requirements
+
+1. **Always write tests for new features** — When adding new functionality, create corresponding unit tests
+2. **Achieve 80% minimum coverage** — Before marking a task complete, verify coverage meets threshold
+3. **Test edge cases** — Include tests for:
+   - Normal/happy path
+   - Error conditions
+   - Empty inputs
+   - Invalid parameters
+   - Boundary conditions
+
+## Running Tests
+
+```bash
+# Run all tests with coverage
+python -m pytest tests/unit/ -v --cov=backend --cov-report=term-missing
+
+# Run specific test file
+python -m pytest tests/unit/test_ibkr_pipeline.py -v
+
+# Check coverage only
+python -m pytest --cov=backend --cov-report=term tests/unit/
+```
+
+## Coverage Reports
+
+- Terminal: `--cov-report=term-missing`
+- HTML: `--cov-report=html` (generates `htmlcov/index.html`)
+- JSON: `--cov-report=json` (generates `coverage.json`)
+
+## CI/CD Integration
+
+If coverage drops below 80%, the build should fail. Add to your workflow:
+
+```yaml
+- name: Check coverage
+  run: |
+    python -m pytest --cov=backend --cov-fail-under=80 tests/unit/
+```

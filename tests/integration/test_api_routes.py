@@ -16,7 +16,7 @@ def client(mock_db_session):
 def sample_data(mock_db_session):
     """Create sample data in test database."""
     db = mock_db_session
-    
+
     # Create account snapshot
     snapshot = AccountSnapshot(
         account_id='TEST123',
@@ -26,7 +26,7 @@ def sample_data(mock_db_session):
         equity=150000.0,
     )
     db.add(snapshot)
-    
+
     # Create position
     position = Position(
         account_id='TEST123',
@@ -37,7 +37,7 @@ def sample_data(mock_db_session):
         market_value=15000.0,
     )
     db.add(position)
-    
+
     # Create PnL history
     pnl = PnLHistory(
         account_id='TEST123',
@@ -48,7 +48,7 @@ def sample_data(mock_db_session):
         net_liquidation=150000.0,
     )
     db.add(pnl)
-    
+
     # Create trade
     trade = Trade(
         account_id='TEST123',
@@ -61,21 +61,21 @@ def sample_data(mock_db_session):
         commission=1.0,
     )
     db.add(trade)
-    
+
     db.commit()
     return {'account_id': 'TEST123'}
 
 
 class TestHealthEndpoints:
     """Test health check endpoints."""
-    
+
     def test_basic_health_check(self, client):
         """Test basic health check endpoint."""
         response = client.get("/health")
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "healthy"
-    
+
     def test_api_health_check(self, client):
         """Test API health check endpoint."""
         response = client.get("/api/health")
@@ -83,7 +83,7 @@ class TestHealthEndpoints:
         data = response.json()
         assert data["status"] == "healthy"
         assert data["service"] == "api"
-    
+
     def test_detailed_health_check(self, client):
         """Test detailed health check endpoint."""
         response = client.get("/api/health/detailed")
@@ -97,7 +97,7 @@ class TestHealthEndpoints:
 
 class TestAccountEndpoints:
     """Test account-related endpoints."""
-    
+
     def test_get_account_summary(self, client, sample_data):
         """Test getting account summary."""
         response = client.get("/api/account/summary", params={"account_id": "TEST123"})
@@ -105,7 +105,7 @@ class TestAccountEndpoints:
         data = response.json()
         assert data["account_id"] == "TEST123"
         assert "net_liquidation" in data
-    
+
     def test_get_account_summary_no_data(self, client):
         """Test getting account summary when no data exists."""
         response = client.get("/api/account/summary")
@@ -115,7 +115,7 @@ class TestAccountEndpoints:
 
 class TestPositionEndpoints:
     """Test position-related endpoints."""
-    
+
     def test_get_positions(self, client, sample_data):
         """Test getting positions."""
         response = client.get("/api/positions", params={"account_id": "TEST123"})
@@ -128,19 +128,19 @@ class TestPositionEndpoints:
 
 class TestPnLEndpoints:
     """Test PnL-related endpoints."""
-    
+
     def test_get_pnl(self, client, sample_data):
         """Test getting PnL history."""
         response = client.get("/api/pnl", params={"account_id": "TEST123"})
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
-    
+
     def test_get_pnl_with_date_range(self, client, sample_data):
         """Test getting PnL with date filtering."""
         start_date = datetime.utcnow() - timedelta(days=7)
         end_date = datetime.utcnow()
-        
+
         response = client.get(
             "/api/pnl",
             params={
@@ -150,7 +150,7 @@ class TestPnLEndpoints:
             }
         )
         assert response.status_code == 200
-    
+
     def test_get_pnl_history(self, client, sample_data):
         """Test getting PnL history time series."""
         response = client.get(
@@ -164,14 +164,14 @@ class TestPnLEndpoints:
 
 class TestTradeEndpoints:
     """Test trade-related endpoints."""
-    
+
     def test_get_trades(self, client, sample_data):
         """Test getting trades."""
         response = client.get("/api/trades", params={"account_id": "TEST123"})
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
-    
+
     def test_get_trades_with_symbol_filter(self, client, sample_data):
         """Test getting trades filtered by symbol."""
         response = client.get(
@@ -185,7 +185,7 @@ class TestTradeEndpoints:
 
 class TestPerformanceEndpoints:
     """Test performance metrics endpoints."""
-    
+
     def test_get_performance(self, client, sample_data):
         """Test getting performance metrics."""
         response = client.get("/api/performance", params={"account_id": "TEST123"})

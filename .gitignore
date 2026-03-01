@@ -57,4 +57,3 @@ docker-compose.override.yml
 # Configuration (keep templates, ignore actual secrets)
 config/ibkr_config.yaml
 !config/ibkr_config.yaml.example
-

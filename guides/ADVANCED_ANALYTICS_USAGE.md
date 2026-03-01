@@ -511,7 +511,7 @@ print("Performance Attribution:")
 print(f"  Total: {attribution['total_attribution']:.2%}")
 if attribution['factor_attribution']:
     print("\n  By Factor:")
-    for factor, contrib in sorted(attribution['factor_attribution'].items(), 
+    for factor, contrib in sorted(attribution['factor_attribution'].items(),
                                    key=lambda x: abs(x[1]), reverse=True):
         print(f"    {factor}: {contrib:.2%}")
 ```
@@ -537,14 +537,14 @@ import requests
 def run_optimization(n_clicks, account_id):
     if n_clicks is None:
         return ""
-    
+
     try:
         response = requests.post(
             "http://localhost:8000/api/analytics/optimization/markowitz",
             params={"account_id": account_id, "risk_free_rate": 0.02}
         )
         result = response.json()
-        
+
         # Display results
         return html.Div([
             html.H4("Optimal Portfolio"),
@@ -570,13 +570,13 @@ async function runOptimization(accountId) {
       `http://localhost:8000/api/analytics/optimization/markowitz?account_id=${accountId}&risk_free_rate=0.02`,
       { method: 'POST' }
     );
-    
+
     const result = await response.json();
-    
+
     console.log('Optimal Portfolio:', result);
     console.log('Expected Return:', result.expected_return);
     console.log('Sharpe Ratio:', result.sharpe_ratio);
-    
+
     return result;
   } catch (error) {
     console.error('Optimization error:', error);
@@ -594,7 +594,7 @@ async function runOptimization(accountId) {
 ```python
 # Get current weights vs optimal weights
 current_positions = requests.get(f"{BASE_URL}/positions", params={"account_id": ACCOUNT_ID}).json()
-optimal_weights = requests.post(f"{BASE_URL}/analytics/optimization/markowitz", 
+optimal_weights = requests.post(f"{BASE_URL}/analytics/optimization/markowitz",
                                 params={"account_id": ACCOUNT_ID}).json()
 
 # Calculate rebalancing trades needed

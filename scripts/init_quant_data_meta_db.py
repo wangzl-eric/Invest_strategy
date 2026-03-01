@@ -13,4 +13,3 @@ if __name__ == "__main__":
     print("Initializing quant metadata database...")
     init_meta_db()
     print("Quant metadata database initialized successfully!")
-

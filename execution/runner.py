@@ -83,4 +83,3 @@ class ExecutionRunner:
                 oid = None  # type: ignore[assignment]
             fill_row_ids.append(record_fill(order_id=oid, fill=f))  # type: ignore[arg-type]
         return fill_row_ids
-

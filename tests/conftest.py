@@ -23,7 +23,7 @@ def test_db():
     Base.metadata.create_all(engine)
     SessionLocal = sessionmaker(bind=engine)
     session = SessionLocal()
-    
+
     try:
         yield session
     finally:
@@ -84,3 +84,73 @@ def sample_equity_series():
     returns = np.random.normal(0.001, 0.02, 100)
     equity = 100000 * (1 + returns).cumprod()
     return pd.Series(equity, index=dates)
+
+
+@pytest.fixture
+def sample_signals():
+    """Sample Signal objects for testing signal blending."""
+    from portfolio.blend import Signal
+
+    symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN']
+    np.random.seed(42)
+
+    # Create 3 sample signals with different scores
+    signal1 = Signal(
+        name='momentum_1m',
+        score=pd.Series(np.random.randn(4), index=symbols),
+        weight=1.0
+    )
+    signal2 = Signal(
+        name='mean_reversion',
+        score=pd.Series(np.random.randn(4), index=symbols),
+        weight=0.5
+    )
+    signal3 = Signal(
+        name='value_score',
+        score=pd.Series(np.random.randn(4), index=symbols),
+        weight=0.75
+    )
+
+    return [signal1, signal2, signal3]
+
+
+@pytest.fixture
+def sample_positions():
+    """Sample positions dictionary for testing."""
+    return {
+        'AAPL': {'quantity': 100, 'avg_cost': 150.0, 'market_value': 155.0},
+        'MSFT': {'quantity': 50, 'avg_cost': 300.0, 'market_value': 320.0},
+        'GOOGL': {'quantity': 25, 'avg_cost': 2800.0, 'market_value': 2900.0},
+    }
+
+
+@pytest.fixture
+def sample_trades():
+    """Sample trades list for testing."""
+    return [
+        {
+            'symbol': 'AAPL',
+            'action': 'BUY',
+            'quantity': 100,
+            'price': 150.0,
+            'commission': 1.0,
+            'date': datetime(2024, 1, 15),
+        },
+        {
+            'symbol': 'MSFT',
+            'action': 'BUY',
+            'quantity': 50,
+            'price': 300.0,
+            'commission': 1.0,
+            'date': datetime(2024, 1, 20),
+        },
+    ]
+
+
+@pytest.fixture
+def sample_returns_data():
+    """Sample returns data for optimization tests."""
+    dates = pd.date_range(start="2024-01-01", periods=100, freq="D")
+    np.random.seed(42)
+    returns = np.random.normal(0.001, 0.02, (100, 4))
+    return pd.DataFrame(returns, index=dates, columns=["AAPL", "MSFT", "GOOGL", "AMZN"])

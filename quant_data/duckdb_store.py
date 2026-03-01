@@ -38,4 +38,3 @@ def register_parquet_view(
 
 def vacuum(con: duckdb.DuckDBPyConnection) -> None:
     con.execute("VACUUM")
-

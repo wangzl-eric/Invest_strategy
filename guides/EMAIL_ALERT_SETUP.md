@@ -235,7 +235,7 @@ curl -X DELETE "http://localhost:8000/api/alerts/rules/TEST_RULE_ID"
 
 ### Step 6: Verify Automatic Alerts
 
-The alert system automatically evaluates rules **every 1 minute** when the backend is running. 
+The alert system automatically evaluates rules **every 1 minute** when the backend is running.
 
 To verify:
 1. Make sure your backend is running
@@ -346,12 +346,12 @@ try:
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.starttls()
     server.login('your-email@gmail.com', 'your-app-password')
-    
+
     msg = MIMEText('Test email')
     msg['Subject'] = 'Test'
     msg['From'] = 'your-email@gmail.com'
     msg['To'] = 'your-email@gmail.com'
-    
+
     server.send_message(msg)
     server.quit()
     print("Email sent successfully!")

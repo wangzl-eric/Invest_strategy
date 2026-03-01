@@ -90,4 +90,3 @@ class EventDrivenBacktester:
         if not self.fills:
             return pd.DataFrame()
         return pd.DataFrame([f.__dict__ for f in self.fills])
-

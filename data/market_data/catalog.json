@@ -1,0 +1,157 @@
+{
+  "equities": {
+    "source": "yfinance",
+    "filepath": "/Users/zelin/Desktop/PA Investment/Invest_strategy/data/market_data/prices/equities.parquet",
+    "start_date": "2024-02-26",
+    "end_date": "2026-02-27",
+    "tickers": [
+      "AAPL",
+      "^GSPC",
+      "^N225",
+      "^NDX",
+      "^RUT",
+      "^STOXX",
+      "^VIX"
+    ],
+    "row_count": 3505,
+    "last_updated": "2026-02-28T02:39:07.086227"
+  },
+  "fx": {
+    "source": "yfinance",
+    "filepath": "/Users/zelin/Desktop/PA Investment/Invest_strategy/data/market_data/prices/fx.parquet",
+    "start_date": "2024-02-26",
+    "end_date": "2026-02-27",
+    "tickers": [
+      "AAPL",
+      "AUDUSD=X",
+      "DX-Y.NYB",
+      "EURUSD=X",
+      "GBPUSD=X",
+      "NZDUSD=X",
+      "USDCAD=X",
+      "USDCHF=X",
+      "USDJPY=X",
+      "USDNOK=X",
+      "USDSEK=X"
+    ],
+    "row_count": 5687,
+    "last_updated": "2026-02-28T02:39:07.347703"
+  },
+  "commodities": {
+    "source": "yfinance",
+    "filepath": "/Users/zelin/Desktop/PA Investment/Invest_strategy/data/market_data/prices/commodities.parquet",
+    "start_date": "2024-02-26",
+    "end_date": "2026-02-27",
+    "tickers": [
+      "BZ=F",
+      "CL=F",
+      "GC=F",
+      "HG=F",
+      "NG=F",
+      "SI=F"
+    ],
+    "row_count": 3036,
+    "last_updated": "2026-02-28T02:39:07.498520"
+  },
+  "rates_yf": {
+    "source": "yfinance",
+    "filepath": "/Users/zelin/Desktop/PA Investment/Invest_strategy/data/market_data/prices/rates_yf.parquet",
+    "start_date": "2024-02-26",
+    "end_date": "2026-02-27",
+    "tickers": [
+      "^FVX",
+      "^IRX",
+      "^TNX",
+      "^TYX"
+    ],
+    "row_count": 2016,
+    "last_updated": "2026-02-28T02:39:07.612790"
+  },
+  "treasury_yields": {
+    "source": "fred",
+    "filepath": "/Users/zelin/Desktop/PA Investment/Invest_strategy/data/market_data/fred/treasury_yields.parquet",
+    "start_date": "2024-02-26",
+    "end_date": "2026-02-27",
+    "tickers": [
+      "DFEDTARU",
+      "DFII10",
+      "DFII30",
+      "DFII5",
+      "DGS1",
+      "DGS10",
+      "DGS1MO",
+      "DGS2",
+      "DGS20",
+      "DGS3",
+      "DGS30",
+      "DGS3MO",
+      "DGS5",
+      "DGS6MO",
+      "DGS7",
+      "SOFR",
+      "T10Y2Y",
+      "T10Y3M",
+      "T10YIE",
+      "T5YIE",
+      "T5YIFR"
+    ],
+    "row_count": 10710,
+    "last_updated": "2026-02-28T02:39:18.227747"
+  },
+  "macro_indicators": {
+    "source": "fred",
+    "filepath": "/Users/zelin/Desktop/PA Investment/Invest_strategy/data/market_data/fred/macro_indicators.parquet",
+    "start_date": "2024-01-01",
+    "end_date": "2026-02-26",
+    "tickers": [
+      "BAMLH0A0HYM2",
+      "CPIAUCSL",
+      "GDPC1",
+      "NFCI",
+      "UMCSENT",
+      "UNRATE"
+    ],
+    "row_count": 708,
+    "last_updated": "2026-02-28T02:39:24.716320"
+  },
+  "fed_liquidity": {
+    "source": "fred",
+    "filepath": "/Users/zelin/Desktop/PA Investment/Invest_strategy/data/market_data/fred/fed_liquidity.parquet",
+    "start_date": "2024-02-26",
+    "end_date": "2026-02-27",
+    "tickers": [
+      "RRPONTSYD",
+      "TREAST",
+      "WALCL",
+      "WRESBAL",
+      "WSHOMCB",
+      "WTREGEN"
+    ],
+    "row_count": 1026,
+    "last_updated": "2026-02-28T02:39:30.593903"
+  },
+  "ibkr_equities": {
+    "source": "ibkr",
+    "filepath": "/Users/zelin/Desktop/PA Investment/Invest_strategy/data/market_data/prices/ibkr_equities.parquet",
+    "start_date": "2026-02-02",
+    "end_date": "2026-02-27",
+    "tickers": [
+      "AAPL",
+      "MSFT"
+    ],
+    "row_count": 38,
+    "last_updated": "2026-02-27T17:44:41.817531"
+  },
+  "ibkr_fx": {
+    "source": "ibkr",
+    "filepath": "/Users/zelin/Desktop/PA Investment/Invest_strategy/data/market_data/prices/ibkr_fx.parquet",
+    "start_date": "2026-02-02",
+    "end_date": "2026-02-27",
+    "tickers": [
+      "EURUSD",
+      "GBPUSD"
+    ],
+    "row_count": 40,
+    "last_updated": "2026-02-27T17:45:17.368761"
+  }
+}

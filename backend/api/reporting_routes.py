@@ -31,16 +31,16 @@ async def generate_performance_report(
             latest = db.query(AccountSnapshot).order_by(desc(AccountSnapshot.timestamp)).first()
             if latest:
                 account_id = latest.account_id
-        
+
         if not account_id:
             raise HTTPException(status_code=400, detail="account_id is required")
-        
+
         pdf_buffer = report_generator.generate_performance_report(
             account_id, start_date, end_date
         )
-        
+
         filename = f"performance_report_{account_id}_{datetime.now().strftime('%Y%m%d')}.pdf"
-        
+
         return StreamingResponse(
             pdf_buffer,
             media_type="application/pdf",
@@ -69,16 +69,16 @@ async def generate_trade_report(
             latest = db.query(AccountSnapshot).order_by(desc(AccountSnapshot.timestamp)).first()
             if latest:
                 account_id = latest.account_id
-        
+
         if not account_id:
             raise HTTPException(status_code=400, detail="account_id is required")
-        
+
         pdf_buffer = report_generator.generate_trade_report(
             account_id, start_date, end_date
         )
-        
+
         filename = f"trade_report_{account_id}_{datetime.now().strftime('%Y%m%d')}.pdf"
-        
+
         return StreamingResponse(
             pdf_buffer,
             media_type="application/pdf",
@@ -104,15 +104,15 @@ async def schedule_report(
     try:
         if report_type not in ["performance", "trades", "combined"]:
             raise HTTPException(status_code=400, detail="Invalid report type")
-        
+
         if frequency not in ["daily", "weekly", "monthly"]:
             raise HTTPException(status_code=400, detail="Invalid frequency")
-        
+
         # Schedule the report
         scheduled_report_service.schedule_daily_report(
             account_id, recipient_email, report_time
         )
-        
+
         return {
             "status": "scheduled",
             "account_id": account_id,

@@ -74,4 +74,3 @@ def ingest_bars_to_lake(
         except Exception as e:
             finish_ingestion_run(db, run_id=run.id, status="failed", error=str(e))
             raise
-

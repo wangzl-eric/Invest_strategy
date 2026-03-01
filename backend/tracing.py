@@ -20,18 +20,18 @@ except ImportError:
 
 class TracingService:
     """Distributed tracing service."""
-    
+
     def __init__(self, enabled: bool = False, otlp_endpoint: Optional[str] = None):
         self.enabled = enabled
         self.otlp_endpoint = otlp_endpoint
         self.tracer = None
-        
+
         if enabled and HAS_OPENTELEMETRY:
             try:
                 # Setup tracer provider
                 provider = TracerProvider()
                 trace.set_tracer_provider(provider)
-                
+
                 # Add span processor
                 if otlp_endpoint:
                     # Export to OTLP collector
@@ -41,18 +41,18 @@ class TracingService:
                     # Console exporter for development
                     console_exporter = ConsoleSpanExporter()
                     provider.add_span_processor(BatchSpanProcessor(console_exporter))
-                
+
                 self.tracer = trace.get_tracer(__name__)
                 logger.info("OpenTelemetry tracing initialized")
             except Exception as e:
                 logger.warning(f"Failed to initialize OpenTelemetry: {e}")
         elif enabled and not HAS_OPENTELEMETRY:
             logger.warning("OpenTelemetry not installed - tracing disabled")
-    
+
     def get_tracer(self):
         """Get the tracer instance."""
         return self.tracer
-    
+
     def instrument_fastapi(self, app):
         """Instrument FastAPI app for automatic tracing."""
         if self.enabled and HAS_OPENTELEMETRY:
@@ -61,7 +61,7 @@ class TracingService:
                 logger.info("FastAPI instrumented for tracing")
             except Exception as e:
                 logger.warning(f"Failed to instrument FastAPI: {e}")
-    
+
     def instrument_sqlalchemy(self):
         """Instrument SQLAlchemy for database query tracing."""
         if self.enabled and HAS_OPENTELEMETRY:

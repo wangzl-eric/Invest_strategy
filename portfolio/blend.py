@@ -41,4 +41,3 @@ def blend_signals(signals: list[Signal], *, zscore_each: bool = True) -> pd.Seri
         x = zscore(x) if zscore_each else x.astype(float)
         alpha = alpha + (float(s.weight) * x.fillna(0.0))
     return alpha
-

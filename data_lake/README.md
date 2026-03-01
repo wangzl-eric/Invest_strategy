@@ -10,4 +10,3 @@ Layout:
 - `research.duckdb` local DuckDB file for ad-hoc queries
 
 See [`docs/QUANT_DATA_SPEC.md`](../docs/QUANT_DATA_SPEC.md) for naming + partitioning.
-

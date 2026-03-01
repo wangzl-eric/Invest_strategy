@@ -5,6 +5,7 @@ dbc.Col / dbc.Row in app.py.
 """
 
 from dash import html, dcc
+from typing import Optional
 import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
 
@@ -162,7 +163,10 @@ def _tooltip_name(name: str, fallback: str = "", ticker: str = "") -> html.Span:
 # ---------------------------------------------------------------------------
 
 def _build_sparkline(points, width=100, height=28):
-    """Tiny line chart from a list of {date, close/value} dicts."""
+    """Tiny line chart from a list of {date, close/value} dicts.
+
+    Now interactive - hover shows tooltip with date and value.
+    """
     if not points or len(points) < 2:
         return html.Span("—", style={"color": MUTED, "fontSize": "0.75rem"})
 
@@ -173,11 +177,28 @@ def _build_sparkline(points, width=100, height=28):
 
     color = GREEN if vals[-1] >= vals[0] else RED
 
+    # Convert hex to rgba for fillcolor
+    def hex_to_rgba(hex_color, alpha=0.1):
+        hex_color = hex_color.lstrip('#')
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        return f"rgba({r},{g},{b},{alpha})"
+
+    # Extract dates for hover tooltip
+    dates = [p.get("date", "") for p in points if p.get("close") or p.get("value")]
+
+    # Create hover text
+    hover_text = [f"Date: {d}<br>Value: {v:.4f}" for d, v in zip(dates[-len(vals):], vals)]
+
     fig = go.Figure(go.Scatter(
-        y=vals, mode="lines",
+        y=vals,
+        mode="lines",
         line=dict(color=color, width=1.5),
         fill="tozeroy",
-        fillcolor=f"{color}15",
+        fillcolor=hex_to_rgba(color),
+        hoverinfo="text",
+        text=hover_text,
     ))
     fig.update_layout(
         margin=dict(t=0, b=0, l=0, r=0),
@@ -188,11 +209,15 @@ def _build_sparkline(points, width=100, height=28):
         height=height,
         width=width,
         showlegend=False,
-        hovermode=False,
+        hovermode="closest",  # Enable hover
     )
     return dcc.Graph(
         figure=fig,
-        config={"displayModeBar": False, "staticPlot": True},
+        config={
+            "displayModeBar": False,
+            "staticPlot": False,  # Now interactive!
+            "scrollZoom": False,
+        },
         style={"height": f"{height}px", "width": f"{width}px", "display": "inline-block"},
     )
 
@@ -253,13 +278,45 @@ _CHG_COL = {
 # Panel builders
 # ---------------------------------------------------------------------------
 
-def build_rates_panel(data: dict, sparklines: dict | None = None) -> html.Div:
+def build_rates_panel(data: dict, sparklines: Optional[dict] = None) -> html.Div:
     """UST yields, swap rates, swap spreads, asset swap spreads — grouped by category."""
     yf_yields = data.get("yields") or []
+    ibkr_futures = data.get("ibkr_futures") or []
     fred_rates = data.get("fred") or []
     sparklines = sparklines or {}
 
-    if fred_rates:
+    # Prefer IBKR futures (most current) > yfinance > FRED
+    # IBKR futures: ZB, ZN, ZF, ZT (more current during trading hours)
+    if ibkr_futures:
+        rows = []
+        for item in ibkr_futures:
+            val = item.get("value")  # This is the yield
+            chg = item.get("change")
+            ticker = item.get("ticker", "")
+            hist = item.get("history") or []
+            w1, m1 = _period_changes(hist, is_yield=True)
+            # Get source - show "IBKR" for IBKR futures, or the actual source
+            source = item.get("source", "yfinance")
+            source_display = "IBKR" if "ibkr" in source.lower() else source.title()
+            rows.append(_table_row([
+                (_tooltip_name(item.get("name", ticker), ticker=ticker), {}),
+                (item.get("tenor", ""), {"color": MUTED, "textAlign": "center", "fontSize": "0.85rem"}),
+                (_format_price(val, 3), {"color": BLUE, "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
+                (_format_change(chg), {"color": _change_color(chg), "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
+                (_format_change(w1), {**_CHG_COL, "color": _change_color(w1)}),
+                (_format_change(m1), {**_CHG_COL, "color": _change_color(m1)}),
+                (_build_sparkline(hist), {"textAlign": "center", "padding": "2px 0"}),
+                (item.get("date", ""), {"color": MUTED, "fontSize": "0.8rem", "textAlign": "right"}),
+                (source_display, {"color": "#22c55e" if "IBKR" in source_display else MUTED, "fontSize": "0.75rem", "fontWeight": "600", "textAlign": "right"}),
+            ]))
+        
+        table_content = html.Div([
+            html.Div("Treasury Futures (Real-time)", style={"color": "#22c55e", "fontSize": "0.7rem", "fontWeight": "600", "marginBottom": "0.25rem"}),
+            _data_table(["Instrument", "Tenor", "Yield", "1D", "1W", "1M", "30d", "Date", "Source"], rows),
+        ]) if rows else html.P("No IBKR futures data available", style={"color": MUTED})
+    
+    # Show FRED data (full curve) - note: FRED has 1-day publishing delay
+    elif fred_rates:
         by_cat: dict[str, list] = {}
         for item in fred_rates:
             cat = item.get("category", "other")
@@ -290,33 +347,15 @@ def build_rates_panel(data: dict, sparklines: dict | None = None) -> html.Div:
                     (_format_change(m1), {**_CHG_COL, "color": _change_color(m1)}),
                     (_build_sparkline(hist), {"textAlign": "center", "padding": "2px 0"}),
                     (item.get("date", ""), {"color": MUTED, "fontSize": "0.8rem", "textAlign": "right"}),
+                    ("FRED", {"color": "#f59e0b", "fontSize": "0.75rem", "fontWeight": "600", "textAlign": "right"}),
                 ]))
 
             sections.append(html.Div([
                 html.Div(cat_label, style={"color": PURPLE, "fontSize": "0.75rem", "fontWeight": "600", "textTransform": "uppercase", "letterSpacing": "0.5px", "padding": "0.5rem 0 0.25rem 0", "borderBottom": f"1px solid {MUTED}33", "marginTop": "0.5rem"}),
-                _data_table(["Instrument", "Tenor", "Value", "1D", "1W", "1M", "30d", "Date"], rows),
+                _data_table(["Instrument", "Tenor", "Value", "1D", "1W", "1M", "30d", "Date", "Source"], rows),
             ]))
 
         table_content = html.Div(sections) if sections else html.P("No rates data available", style={"color": MUTED})
-    elif yf_yields:
-        rows = []
-        for item in yf_yields:
-            val = item.get("price")
-            chg = item.get("change")
-            ticker = item.get("ticker", "")
-            pts = sparklines.get(ticker, [])
-            w1, m1 = _period_changes(pts, is_yield=True)
-            rows.append(_table_row([
-                (_tooltip_name(item.get("name", ticker), ticker=ticker), {}),
-                (item.get("tenor", ""), {"color": MUTED, "textAlign": "center"}),
-                (_format_price(val, 3), {"color": BLUE, "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-                (_format_change(chg), {"color": _change_color(chg), "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-                (_format_change(w1), {**_CHG_COL, "color": _change_color(w1)}),
-                (_format_change(m1), {**_CHG_COL, "color": _change_color(m1)}),
-                (_build_sparkline(pts), {"textAlign": "center", "padding": "2px 0"}),
-                (item.get("date", ""), {"color": MUTED, "fontSize": "0.8rem", "textAlign": "right"}),
-            ]))
-        table_content = _data_table(["Instrument", "Tenor", "Yield", "1D", "1W", "1M", "30d", "Date"], rows)
     else:
         table_content = html.P("No rates data available", style={"color": MUTED})
 
@@ -326,7 +365,7 @@ def build_rates_panel(data: dict, sparklines: dict | None = None) -> html.Div:
     ], className=_CARD_STYLE)
 
 
-def build_fx_panel(data: dict, sparklines: dict | None = None) -> html.Div:
+def build_fx_panel(data: dict, sparklines: Optional[dict] = None) -> html.Div:
     """G10 FX pairs with DXY headline."""
     pairs = data.get("pairs") or []
     sparklines = sparklines or {}
@@ -372,7 +411,7 @@ def build_fx_panel(data: dict, sparklines: dict | None = None) -> html.Div:
     ], className=_CARD_STYLE)
 
 
-def build_equities_panel(data: dict, sparklines: dict | None = None) -> html.Div:
+def build_equities_panel(data: dict, sparklines: Optional[dict] = None) -> html.Div:
     """Major equity indices and VIX."""
     indices = data.get("indices") or []
     sparklines = sparklines or {}
@@ -406,7 +445,7 @@ def build_equities_panel(data: dict, sparklines: dict | None = None) -> html.Div
     ], className=_CARD_STYLE)
 
 
-def build_commodities_panel(data: dict, sparklines: dict | None = None) -> html.Div:
+def build_commodities_panel(data: dict, sparklines: Optional[dict] = None) -> html.Div:
     """Energy and metals commodities."""
     items = data.get("commodities") or []
     sparklines = sparklines or {}

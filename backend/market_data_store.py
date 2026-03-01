@@ -75,38 +75,35 @@ _ASSET_CLASS_TICKERS = {
     "rates_yf": list(RATES_TICKERS.keys()),
 }
 
-# IBKR ticker lists - commonly traded securities
-# These can be extended or loaded from config
-_IBKR_ASSET_TICKERS = {
-    "ibkr_equities": [
-        # US Large Cap
-        "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "BRK.B", "JPM", "JNJ",
-        "V", "PG", "UNH", "HD", "MA", "DIS", "PYPL", "BAC", "ADBE", "NFLX",
-        "CRM", "INTC", "VZ", "T", "PFE", "MRK", "KO", "PEP", "ABT", "TMO",
-        # More tickers can be added or loaded from config
-    ],
-    "ibkr_fx": [
-        # Major pairs
-        "EURUSD", "GBPUSD", "USDJPY", "USDCAD", "USDCHF", "AUDUSD", "NZDUSD",
-        # Minor pairs
-        "EURGBP", "EURJPY", "GBPJPY", "EURCHF", "AUDJPY", "CADJPY",
-    ],
-    "ibkr_futures": [
-        # Equity Index Futures
-        "ES", "NQ", "YM", "RTY",  # S&P 500, Nasdaq, Dow, Russell
-        # Energy
-        "CL", "BZ", "NG",  # Crude, Brent, Natural Gas
-        # Metals
-        "GC", "SI", "HG",  # Gold, Silver, Copper
-        # Bonds
-        "ZB", "ZN", "ZF", "ZT",  # 30Y, 10Y, 5Y, 2Y Treasury
-        # Agriculture
-        "ZC", "ZS", "ZL", "ZM", "HE", "LE",  # Corn, Soybeans, Oil, Meal, Hogs, Cattle
-    ],
-    "ibkr_options": [
-        # Options underlyings - same as ibkr_equities
-    ],
-}
+# IBKR ticker lists - loaded from config ticker_universe
+try:
+    from config.ticker_universe import (
+        US_LARGE_CAP,
+        US_ETFS,
+        FOREX_MAJOR,
+        FOREX_MINOR,
+    )
+    _IBKR_ASSET_TICKERS = {
+        "ibkr_equities": US_LARGE_CAP + US_ETFS,
+        "ibkr_fx": FOREX_MAJOR + FOREX_MINOR,
+        "ibkr_futures": [],  # Requires CME subscription
+        "ibkr_options": [],  # Requires options subscription
+    }
+except ImportError:
+    # Fallback to hardcoded lists if config not available
+    _IBKR_ASSET_TICKERS = {
+        "ibkr_equities": [
+            "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "BRK.B", "JPM", "JNJ",
+            "V", "PG", "UNH", "HD", "MA", "DIS", "PYPL", "BAC", "ADBE", "NFLX",
+            "CRM", "INTC", "VZ", "T", "PFE", "MRK", "KO", "PEP", "ABT", "TMO",
+        ],
+        "ibkr_fx": [
+            "EURUSD", "GBPUSD", "USDJPY", "USDCAD", "USDCHF", "AUDUSD", "NZDUSD",
+            "EURGBP", "EURJPY", "GBPJPY", "EURCHF", "AUDJPY", "CADJPY",
+        ],
+        "ibkr_futures": [],
+        "ibkr_options": [],
+    }
 
 _FRED_CATEGORY_SERIES = {
     "treasury_yields": list(RATES_FRED_SERIES.keys()),
@@ -340,10 +337,10 @@ class MarketDataStore:
         exchange: str = "SMART"
     ) -> int:
         """Download OHLCV from IBKR and append to Parquet.
-        
+
         This method connects to IB Gateway/TWS to fetch historical data.
         Requires IB Gateway to be running with API access enabled.
-        
+
         Args:
             tickers: List of ticker symbols
             start_date: Start date (YYYY-MM-DD)
@@ -352,22 +349,22 @@ class MarketDataStore:
             interval: Bar interval (e.g., "1 day", "1 min", "5 mins")
             sec_type: Security type ("STK", "CASH", "FUT")
             exchange: Exchange (e.g., "SMART", "IDEALPRO", "CME")
-            
+
         Returns:
             Number of rows written
         """
         import asyncio
         from datetime import datetime as dt
-        
+
         filepath = _IBKR_ASSET_FILES.get(asset_class)
         if filepath is None:
             logger.error(f"Unknown IBKR asset class: {asset_class}")
             return 0
-        
+
         # Parse dates
         start = dt.strptime(start_date, "%Y-%m-%d")
         end = dt.strptime(end_date, "%Y-%m-%d")
-        
+
         # Calculate duration for IBKR request
         days_diff = (end - start).days
         if days_diff <= 7:
@@ -380,57 +377,63 @@ class MarketDataStore:
             duration = "1 Y"
         else:
             duration = "2 Y"
-        
+
         # Get IBKR client
         try:
             from backend.ibkr_client import IBKRClient
         except ImportError:
             logger.error("IBKR client not available")
             return 0
-        
+
         async def fetch_all():
             client = IBKRClient()
             if not await client.connect():
                 logger.error("Could not connect to IBKR")
                 return []
-            
+
             records = []
             for ticker in tickers:
                 try:
                     # Determine security type and exchange for this ticker
                     ticker_sec_type = sec_type
                     ticker_exchange = exchange
-                    
+
                     # Auto-detect forex
+                    ticker_is_fx = False
                     if asset_class == "ibkr_fx" or "/" in ticker or ticker in ["EURUSD", "GBPUSD", "USDJPY", "USDCAD", "USDCHF", "AUDUSD", "NZDUSD"]:
                         ticker_sec_type = "CASH"
                         ticker_exchange = "IDEALPRO"
+                        ticker_is_fx = True
                     # Auto-detect futures
                     elif asset_class == "ibkr_futures":
                         ticker_sec_type = "FUT"
                         ticker_exchange = "CME"
-                    
+
+                    # For forex, use full pair name (EURUSD), for others use ticker directly
+                    ticker_symbol = ticker
+
                     df = await client.get_historical_data(
-                        symbol=ticker,
+                        symbol=ticker_symbol,
                         sec_type=ticker_sec_type,
                         exchange=ticker_exchange,
+                        currency=None if ticker_is_fx else "USD",  # Forex contract handles its own currency
                         duration=duration,
                         interval=interval,
                         start_date=start,
                         end_date=end
                     )
-                    
+
                     if df.empty:
                         logger.debug(f"No data returned for {ticker}")
                         continue
-                    
+
                     for _, row in df.iterrows():
                         date_val = row['date']
                         if hasattr(date_val, 'date'):
                             date_str = date_val.date().isoformat()
                         else:
                             date_str = str(date_val)[:10]
-                        
+
                         records.append({
                             "date": date_str,
                             "ticker": ticker,
@@ -440,32 +443,42 @@ class MarketDataStore:
                             "close": float(row['close']) if pd.notna(row.get('close')) else None,
                             "volume": int(row['volume']) if pd.notna(row.get('volume')) else None,
                         })
-                    
+
                     logger.info(f"Fetched {len(df)} bars for {ticker}")
-                    
+
                     # Rate limiting - be nice to IBKR API
                     await asyncio.sleep(0.2)
-                    
+
                 except Exception as e:
                     logger.error(f"Error fetching {ticker}: {e}")
-            
+
             await client.disconnect()
             return records
-        
+
         # Run async fetch
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                logger.error("Cannot run IBKR fetch in async context - use separate thread")
+            # Create a new event loop for this thread
+            import nest_asyncio
+            nest_asyncio.apply()
+
+            records = asyncio.run(fetch_all())
+        except RuntimeError as e:
+            # Fallback: create new event loop
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                records = loop.run_until_complete(fetch_all())
+                loop.close()
+            except Exception as e2:
+                logger.error(f"IBKR fetch error (fallback): {e2}")
                 return 0
-            records = loop.run_until_complete(fetch_all())
         except Exception as e:
             logger.error(f"IBKR fetch error: {e}")
             return 0
-        
+
         if not records:
             return 0
-        
+
         new_df = pd.DataFrame(records)
         _append_parquet(filepath, new_df)
         self._update_catalog_entry(asset_class, "ibkr", filepath, new_df)

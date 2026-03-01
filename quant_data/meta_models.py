@@ -78,4 +78,3 @@ class IngestionRun(QuantMetaBase):
     error = Column(Text, default="")
 
     dataset_version = relationship("DatasetVersion", back_populates="runs")
-

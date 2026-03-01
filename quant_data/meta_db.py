@@ -41,4 +41,3 @@ def get_meta_db_context(settings: QuantDataSettings | None = None) -> Generator[
         raise
     finally:
         db.close()
-

@@ -6,7 +6,7 @@ Import trade history from Flex Query responses.
 Usage:
     from backend.flex_importer import import_portfolio_analyst_csv, import_trades_from_flex
     rows = import_portfolio_analyst_csv("report.csv", "U1234567")
-    
+
     # Import from Flex Query
     from backend.flex_query_client import FlexQueryClient
     client = FlexQueryClient(token="your_token")
@@ -231,7 +231,7 @@ def import_mark_to_market_performance_csv(
             dates.append(to_dt)
             account_ids_updated.add(acct)
             i += 2
-        
+
         # After importing all records, calculate and update returns for all affected accounts
         for acct in account_ids_updated:
             try:
@@ -239,7 +239,7 @@ def import_mark_to_market_performance_csv(
                 logger.info(f"Calculated returns for account {acct}")
             except Exception as e:
                 logger.warning(f"Error calculating returns for account {acct}: {e}")
-        
+
         db.commit()
 
     dates_sorted = sorted(set(dates))
@@ -266,7 +266,7 @@ def import_pnl_csv(
 ) -> int:
     """
     Import Flex-exported PnL CSV into database.
-    
+
     Returns number of records imported/updated.
     """
     path = Path(csv_path)
@@ -287,7 +287,7 @@ def import_pnl_csv(
         for _, row in df.iterrows():
             # Safely convert date (iterrows() returns scalar values)
             date_val = row["_date"]
-            
+
             # Skip NA values
             try:
                 if pd.isna(date_val):  # type: ignore
@@ -296,7 +296,7 @@ def import_pnl_csv(
                 # If pd.isna fails, try direct check
                 if date_val is None:
                     continue
-            
+
             # Convert to datetime
             try:
                 if isinstance(date_val, pd.Timestamp):
@@ -313,13 +313,13 @@ def import_pnl_csv(
             except (ValueError, TypeError, AttributeError) as e:
                 logger.warning(f"Skipping row with invalid date: {date_val}, error: {e}")
                 continue
-            
+
             # Extract values with proper None handling
             net_liq = _safe_float(row, net_liq_column)
             total_cash = _safe_float(row, total_cash_column) if total_cash_column else None
             realized = _safe_float(row, realized_column) if realized_column else 0.0
             unrealized = _safe_float(row, unrealized_column) if unrealized_column else 0.0
-            
+
             # Handle None values in arithmetic
             if realized is None:
                 realized = 0.0
@@ -329,7 +329,7 @@ def import_pnl_csv(
 
             # Upsert
             existing = db.query(PnLHistory).filter_by(account_id=account_id, date=dt).first()
-            
+
             if existing:
                 existing.realized_pnl = float(realized)  # type: ignore
                 existing.unrealized_pnl = float(unrealized)  # type: ignore
@@ -342,8 +342,8 @@ def import_pnl_csv(
                 db.add(PnLHistory(
                     account_id=account_id, date=dt,
                     realized_pnl=float(realized), unrealized_pnl=float(unrealized),
-                    total_pnl=float(total_pnl), 
-                    net_liquidation=float(net_liq) if net_liq is not None else None, 
+                    total_pnl=float(total_pnl),
+                    net_liquidation=float(net_liq) if net_liq is not None else None,
                     total_cash=float(total_cash) if total_cash is not None else None,
                 ))
             count += 1
@@ -363,10 +363,10 @@ def import_portfolio_analyst_csv(
 ) -> int:
     """
     Import Portfolio Analyst Custom Report CSV.
-    
+
     Handles common PA report formats with equity/return columns.
     Calculates PnL from equity changes if return_column not provided.
-    
+
     Returns number of records imported/updated.
     """
     path = Path(csv_path)
@@ -376,7 +376,7 @@ def import_portfolio_analyst_csv(
     logger.info(f"Importing PA CSV: {path} → account {account_id}")
 
     df = pd.read_csv(path)
-    
+
     # Validate columns
     net_liq_col = net_liq_column or equity_column
     for col, name in [(date_column, "date"), (net_liq_col, "equity")]:
@@ -386,7 +386,7 @@ def import_portfolio_analyst_csv(
     # Parse and sort by date
     df["_date"] = pd.to_datetime(df[date_column], format=date_format) if date_format else pd.to_datetime(df[date_column])
     df = df.sort_values("_date").reset_index(drop=True)
-    
+
     # Calculate returns
     df["_equity"] = pd.to_numeric(df[net_liq_col], errors="coerce")
     if return_column and return_column in df.columns:
@@ -399,7 +399,7 @@ def import_portfolio_analyst_csv(
         for idx, row in df.iterrows():
             # Safely convert date (iterrows() returns scalar values)
             date_val = row["_date"]
-            
+
             # Skip NA values
             try:
                 if pd.isna(date_val):  # type: ignore
@@ -408,7 +408,7 @@ def import_portfolio_analyst_csv(
                 # If pd.isna fails, try direct check
                 if date_val is None:
                     continue
-            
+
             # Convert to datetime
             try:
                 if isinstance(date_val, pd.Timestamp):
@@ -425,9 +425,9 @@ def import_portfolio_analyst_csv(
             except (ValueError, TypeError, AttributeError) as e:
                 logger.warning(f"Skipping row with invalid date: {date_val}, error: {e}")
                 continue
-            
+
             net_liq = _safe_float(row, "_equity")
-            
+
             # Calculate PnL from return
             unrealized_pnl = 0.0
             try:
@@ -437,12 +437,12 @@ def import_portfolio_analyst_csv(
                     if prev_idx >= 0 and prev_idx < len(df):
                         prev_equity_val = df.loc[prev_idx, "_equity"]
                         return_pct_val = row.get("_return_pct", 0.0)
-                        
+
                         # Check if values are valid (iterrows() returns scalars, but be safe)
                         try:
                             prev_equity_scalar = float(prev_equity_val) if not pd.isna(prev_equity_val) else None  # type: ignore
                             return_pct_scalar = float(return_pct_val) if not pd.isna(return_pct_val) else None  # type: ignore
-                            
+
                             if prev_equity_scalar is not None and return_pct_scalar is not None:
                                 unrealized_pnl = (return_pct_scalar / 100.0) * prev_equity_scalar
                         except (ValueError, TypeError, OverflowError):
@@ -455,7 +455,7 @@ def import_portfolio_analyst_csv(
 
             # Upsert
             existing = db.query(PnLHistory).filter_by(account_id=account_id, date=dt).first()
-            
+
             if existing:
                 if net_liq is not None:
                     existing.net_liquidation = float(net_liq)  # type: ignore[assignment]
@@ -465,7 +465,7 @@ def import_portfolio_analyst_csv(
                 db.add(PnLHistory(
                     account_id=account_id, date=dt,
                     realized_pnl=0.0, unrealized_pnl=unrealized_pnl,
-                    total_pnl=unrealized_pnl, 
+                    total_pnl=unrealized_pnl,
                     net_liquidation=float(net_liq) if net_liq is not None else None,  # type: ignore[arg-type]
                     total_cash=None,
                 ))
@@ -494,17 +494,17 @@ def _safe_float(row, col: str) -> Optional[float]:
 
 def import_trades_from_flex(trades: List["FlexTrade"]) -> int:
     """Import trades from Flex Query response into database.
-    
+
     Args:
         trades: List of FlexTrade objects from FlexQueryClient
-        
+
     Returns:
         Number of trades imported (excludes duplicates)
     """
     if not trades:
         logger.info("No trades to import")
         return 0
-    
+
     count = 0
     with get_db_context() as db:
         for flex_trade in trades:
@@ -513,26 +513,26 @@ def import_trades_from_flex(trades: List["FlexTrade"]) -> int:
             if not exec_id or exec_id.strip() == '' or exec_id == 'nan':
                 # Generate exec_id from trade details
                 exec_id = f"{flex_trade.symbol}_{flex_trade.trade_date.strftime('%Y%m%d%H%M%S')}_{flex_trade.side}_{abs(flex_trade.quantity)}"
-            
+
             # Skip trades with no meaningful data
             if not flex_trade.symbol or flex_trade.symbol == 'nan':
                 logger.debug(f"Skipping trade with no symbol")
                 continue
-            
+
             # Skip trades with zero quantity and zero price (summary rows)
             if flex_trade.quantity == 0 and flex_trade.price == 0:
                 logger.debug(f"Skipping summary row for {flex_trade.symbol}")
                 continue
-            
+
             # Check if trade already exists by exec_id
             existing = db.query(Trade).filter(
                 Trade.exec_id == exec_id
             ).first()
-            
+
             if existing:
                 logger.debug(f"Trade {exec_id} already exists, skipping")
                 continue
-            
+
             # Create new trade record
             trade = Trade(
                 account_id=flex_trade.account_id,
@@ -548,29 +548,29 @@ def import_trades_from_flex(trades: List["FlexTrade"]) -> int:
                 cum_qty=abs(flex_trade.quantity),
                 commission=abs(flex_trade.commission),
             )
-            
+
             db.add(trade)
             count += 1
-        
+
         db.flush()
-    
+
     logger.info(f"Imported {count} new trades from Flex Query")
     return count
 
 
 def import_positions_from_flex(positions: List["FlexPosition"]) -> int:
     """Import positions from Flex Query response into database.
-    
+
     Args:
         positions: List of FlexPosition objects from FlexQueryClient
-        
+
     Returns:
         Number of positions imported/updated
     """
     if not positions:
         logger.info("No positions to import")
         return 0
-    
+
     count = 0
     with get_db_context() as db:
         for flex_pos in positions:
@@ -588,28 +588,28 @@ def import_positions_from_flex(positions: List["FlexPosition"]) -> int:
                 market_value=flex_pos.market_value,
                 unrealized_pnl=flex_pos.unrealized_pnl,
             )
-            
+
             db.add(position)
             count += 1
-        
+
         db.flush()
-    
+
     logger.info(f"Imported {count} positions from Flex Query")
     return count
 
 
 def import_flex_query_result(result: "FlexQueryResult") -> dict:
     """Import all data from a Flex Query result.
-    
+
     Args:
         result: FlexQueryResult from FlexQueryClient
-        
+
     Returns:
         Dictionary with counts of imported items
     """
     trades_count = import_trades_from_flex(result.trades)
     positions_count = import_positions_from_flex(result.positions)
-    
+
     # Also update PnL history if we have account info
     pnl_count = 0
     if result.net_liquidation is not None:
@@ -620,7 +620,7 @@ def import_flex_query_result(result: "FlexQueryResult") -> dict:
                 PnLHistory.date >= result.to_date.replace(hour=0, minute=0, second=0),
                 PnLHistory.date <= result.to_date.replace(hour=23, minute=59, second=59),
             ).first()
-            
+
             if not existing:
                 pnl_record = PnLHistory(
                     account_id=result.account_id,
@@ -634,7 +634,7 @@ def import_flex_query_result(result: "FlexQueryResult") -> dict:
                 db.add(pnl_record)
                 db.flush()
                 pnl_count = 1
-    
+
     return {
         'trades_imported': trades_count,
         'positions_imported': positions_count,

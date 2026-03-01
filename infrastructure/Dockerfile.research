@@ -18,4 +18,3 @@ ENV PYTHONPATH=/app
 
 # Default: show help for example experiment
 CMD ["python", "research/experiments/run_example_momentum.py", "--help"]
-

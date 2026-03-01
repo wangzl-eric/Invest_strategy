@@ -191,7 +191,7 @@ class PerformanceAnalyticsResponse(BaseModel):
     period_start: Optional[str] = None
     period_end: Optional[str] = None
     data_points: int = 0
-    
+
     # Summary metrics
     total_return: Optional[float] = Field(None, description="Total cumulative return")
     annualized_return: Optional[float] = Field(None, description="Annualized return")
@@ -200,23 +200,23 @@ class PerformanceAnalyticsResponse(BaseModel):
     sortino_ratio: Optional[float] = None
     max_drawdown: Optional[float] = None
     calmar_ratio: Optional[float] = Field(None, description="Return / Max Drawdown")
-    
+
     # Time series data
     returns_series: List[Dict[str, Any]] = Field(
-        default_factory=list, 
+        default_factory=list,
         description="Daily returns time series"
     )
     equity_series: List[Dict[str, Any]] = Field(
         default_factory=list,
         description="Equity/NAV time series"
     )
-    
+
     # Distribution
     distribution: Optional[ReturnsDistributionResponse] = None
-    
+
     # Rolling metrics
     rolling_metrics: Optional[RollingMetricsResponse] = None
-    
+
     # Benchmark comparison
     benchmark_comparison: Optional[BenchmarkComparisonResponse] = None
 
@@ -404,4 +404,3 @@ class AlertChannelResponse(BaseModel):
     enabled: bool
     created_at: datetime
     updated_at: datetime
-

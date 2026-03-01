@@ -43,7 +43,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -78,28 +78,28 @@ async def get_current_user(
     """Get the current authenticated user from JWT token."""
     token = credentials.credentials
     payload = verify_token(token)
-    
+
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     user_id: int = payload.get("sub")
     if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
         )
-    
+
     user = db.query(User).filter(User.id == user_id).first()
     if user is None or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found or inactive",
         )
-    
+
     return user
 
 
@@ -110,7 +110,7 @@ async def get_current_user_optional(
     """Get the current user if authenticated, otherwise None."""
     if credentials is None:
         return None
-    
+
     try:
         return await get_current_user(credentials, db)
     except HTTPException:
@@ -124,28 +124,28 @@ async def get_user_from_api_key(
     """Get user from API key."""
     if api_key is None:
         return None
-    
+
     api_key_hash = hash_api_key(api_key)
     api_key_obj = db.query(APIKey).filter(
         APIKey.key_hash == api_key_hash,
         APIKey.is_active == True
     ).first()
-    
+
     if api_key_obj is None:
         return None
-    
+
     # Check expiration
     if api_key_obj.expires_at and api_key_obj.expires_at < datetime.utcnow():
         return None
-    
+
     # Update last used
     api_key_obj.last_used_at = datetime.utcnow()
     db.commit()
-    
+
     user = db.query(User).filter(User.id == api_key_obj.user_id).first()
     if user is None or not user.is_active:
         return None
-    
+
     return user
 
 
@@ -167,22 +167,22 @@ def require_role(required_roles: List[str]):
         # Superusers have all permissions
         if current_user.is_superuser:
             return current_user
-        
+
         # Get user roles
         user_roles = db.query(Role.name).join(UserRole).filter(
             UserRole.user_id == current_user.id
         ).all()
         user_role_names = [role[0] for role in user_roles]
-        
+
         # Check if user has any required role
         if not any(role in user_role_names for role in required_roles):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Requires one of these roles: {', '.join(required_roles)}"
             )
-        
+
         return current_user
-    
+
     return role_checker
 
 
@@ -195,12 +195,12 @@ def require_permission(permission: str):
         # Superusers have all permissions
         if current_user.is_superuser:
             return current_user
-        
+
         # Get user roles with permissions
         roles = db.query(Role).join(UserRole).filter(
             UserRole.user_id == current_user.id
         ).all()
-        
+
         # Check if any role has the permission
         has_permission = False
         for role in roles:
@@ -210,15 +210,15 @@ def require_permission(permission: str):
             if permission in permissions or '*' in permissions:
                 has_permission = True
                 break
-        
+
         if not has_permission:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Requires permission: {permission}"
             )
-        
+
         return current_user
-    
+
     return permission_checker
 
 

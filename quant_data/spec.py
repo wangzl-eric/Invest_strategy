@@ -118,4 +118,3 @@ def normalize_column_map(column_map: Mapping[str, str]) -> dict[str, str]:
     """Normalize a vendor->canonical column rename mapping."""
 
     return {str(k).strip(): str(v).strip() for k, v in column_map.items()}
-

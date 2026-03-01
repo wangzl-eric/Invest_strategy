@@ -7,6 +7,7 @@ Renders the Data tab in the main dashboard with three sections:
 """
 
 from datetime import datetime, timedelta
+from typing import Optional
 
 from dash import dcc, html
 import dash_bootstrap_components as dbc
@@ -37,8 +38,16 @@ _FRED_CATEGORY_OPTIONS = [
     {"label": "Fed Liquidity", "value": "fed_liquidity"},
 ]
 
+# Data source options for pull form
+_DATA_SOURCE_OPTIONS = [
+    {"label": "Yahoo Finance", "value": "yfinance"},
+    {"label": "FRED", "value": "fred"},
+    {"label": "IBKR (via API)", "value": "ibkr"},
+    {"label": "Auto (Best Available)", "value": "auto"},
+]
 
-def _freshness_badge(last_updated: str | None):
+
+def _freshness_badge(last_updated: Optional[str]):
     """Return a coloured badge indicating data freshness."""
     if not last_updated:
         return html.Span("No data", style={"color": MUTED, "fontSize": "0.75rem"})
@@ -68,6 +77,47 @@ def _freshness_badge(last_updated: str | None):
             "border": f"1px solid {color}44",
         },
     )
+
+
+def _source_status_badge(status: str) -> html.Span:
+    """Return a coloured badge indicating source status."""
+    colors = {
+        "healthy": GREEN,
+        "degraded": YELLOW,
+        "unavailable": RED,
+        "unknown": MUTED,
+    }
+    color = colors.get(status, MUTED)
+    return html.Span(
+        status.upper(),
+        style={
+            "color": color,
+            "fontSize": "0.7rem",
+            "fontWeight": "600",
+            "padding": "2px 6px",
+            "borderRadius": "4px",
+            "border": f"1px solid {color}44",
+        },
+    )
+
+
+def _build_source_status_panel(source_info: dict) -> html.Div:
+    """Render a panel showing data source status."""
+    if not source_info:
+        return html.Div()
+
+    badges = []
+    for source, info in source_info.items():
+        status = info.get("status", "unknown")
+        badges.append(html.Div([
+            html.Span(source.upper(), style={"color": TEXT_PRIMARY, "fontSize": "0.8rem", "fontWeight": "600", "marginRight": "8px"}),
+            _source_status_badge(status),
+        ], style={"display": "inline-block", "marginRight": "16px"}))
+
+    return html.Div([
+        html.Span("Sources: ", style={"color": MUTED, "fontSize": "0.8rem"}),
+        *badges,
+    ], style={"marginBottom": "1rem", "padding": "0.5rem", "backgroundColor": "#161b22", "borderRadius": "6px"})
 
 
 def _build_catalog_table(catalog: dict) -> html.Div:
@@ -130,11 +180,8 @@ def _build_pull_form() -> html.Div:
                 html.Label("Source", style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "4px"}),
                 dcc.Dropdown(
                     id="data-source-select",
-                    options=[
-                        {"label": "Yahoo Finance", "value": "yfinance"},
-                        {"label": "FRED", "value": "fred"},
-                    ],
-                    value="yfinance",
+                    options=_DATA_SOURCE_OPTIONS,
+                    value="auto",
                     clearable=False,
                     style={"backgroundColor": "#21262d", "color": TEXT_PRIMARY},
                 ),
@@ -233,8 +280,13 @@ def _build_preview_form() -> html.Div:
 # Main layout builder
 # ---------------------------------------------------------------------------
 
-def build_data_manager_layout(catalog: dict) -> html.Div:
-    """Assemble the full Data Manager tab."""
+def build_data_manager_layout(catalog: dict, source_info: dict = None) -> html.Div:
+    """Assemble the full Data Manager tab.
+
+    Args:
+        catalog: The data catalog dictionary
+        source_info: Optional source status information
+    """
     return html.Div([
         # Header
         html.Div([
@@ -243,7 +295,10 @@ def build_data_manager_layout(catalog: dict) -> html.Div:
                 "Browse stored market data, trigger new pulls, and preview time series.",
                 style={"color": MUTED, "fontSize": "0.85rem", "marginBottom": "0"},
             ),
-        ], style={"marginBottom": "1.5rem"}),
+        ], style={"marginBottom": "0.5rem"}),
+
+        # Source Status Panel
+        _build_source_status_panel(source_info or {}),
 
         # Section 1: Catalog
         html.Div([
@@ -266,7 +321,7 @@ def build_data_manager_layout(catalog: dict) -> html.Div:
         html.Div([
             html.H5("Pull Data", className=_SECTION_TITLE),
             html.P(
-                "Download historical data from yfinance or FRED and store in the Parquet data lake.",
+                "Download historical data from yfinance, FRED, or IBKR and store in the Parquet data lake.",
                 style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "0.75rem"},
             ),
             _build_pull_form(),

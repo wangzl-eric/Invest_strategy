@@ -20,30 +20,30 @@ def export_trades_excel(
     end_date: Optional[datetime] = None
 ) -> bytes:
     """Export trades to Excel format.
-    
+
     Args:
         account_id: Optional account ID filter
         start_date: Optional start date filter
         end_date: Optional end date filter
-    
+
     Returns:
         Excel file as bytes
     """
     with get_db_context() as db:
         query = db.query(Trade).order_by(Trade.exec_time.desc())
-        
+
         if account_id:
             query = query.filter(Trade.account_id == account_id)
         if start_date:
             query = query.filter(Trade.exec_time >= start_date)
         if end_date:
             query = query.filter(Trade.exec_time <= end_date)
-        
+
         trades = query.all()
-    
+
     if not trades:
         raise HTTPException(status_code=404, detail="No trades found")
-    
+
     # Convert to DataFrame
     data = []
     for trade in trades:
@@ -62,14 +62,14 @@ def export_trades_excel(
             "Currency": trade.currency,
             "Exchange": trade.exchange,
         })
-    
+
     df = pd.DataFrame(data)
-    
+
     # Create Excel file in memory
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name='Trades', index=False)
-    
+
     output.seek(0)
     return output.getvalue()
 
@@ -80,30 +80,30 @@ def export_performance_excel(
     end_date: Optional[datetime] = None
 ) -> bytes:
     """Export performance metrics to Excel format.
-    
+
     Args:
         account_id: Optional account ID filter
         start_date: Optional start date filter
         end_date: Optional end date filter
-    
+
     Returns:
         Excel file as bytes
     """
     with get_db_context() as db:
         query = db.query(PerformanceMetric).order_by(PerformanceMetric.date.desc())
-        
+
         if account_id:
             query = query.filter(PerformanceMetric.account_id == account_id)
         if start_date:
             query = query.filter(PerformanceMetric.date >= start_date)
         if end_date:
             query = query.filter(PerformanceMetric.date <= end_date)
-        
+
         metrics = query.all()
-    
+
     if not metrics:
         raise HTTPException(status_code=404, detail="No performance metrics found")
-    
+
     # Convert to DataFrame
     data = []
     for metric in metrics:
@@ -122,14 +122,14 @@ def export_performance_excel(
             "Avg Loss": metric.avg_loss,
             "Profit Factor": metric.profit_factor,
         })
-    
+
     df = pd.DataFrame(data)
-    
+
     # Create Excel file in memory
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name='Performance', index=False)
-    
+
     output.seek(0)
     return output.getvalue()
 
@@ -140,26 +140,26 @@ def export_pnl_excel(
     end_date: Optional[datetime] = None
 ) -> bytes:
     """Export PnL history to Excel format.
-    
+
     Args:
         account_id: Optional account ID filter
         start_date: Optional start date filter
         end_date: Optional end date filter
-    
+
     Returns:
         Excel file as bytes
     """
     processor = DataProcessor()
     df = processor.get_pnl_history(account_id, start_date, end_date)
-    
+
     if df.empty:
         raise HTTPException(status_code=404, detail="No PnL history found")
-    
+
     # Create Excel file in memory
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name='PnL History', index=False)
-    
+
     output.seek(0)
     return output.getvalue()
 
@@ -170,17 +170,17 @@ def export_combined_report(
     end_date: Optional[datetime] = None
 ) -> bytes:
     """Export combined report with multiple sheets (trades, performance, PnL).
-    
+
     Args:
         account_id: Optional account ID filter
         start_date: Optional start date filter
         end_date: Optional end date filter
-    
+
     Returns:
         Excel file as bytes with multiple sheets
     """
     output = io.BytesIO()
-    
+
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         # Trades sheet
         try:
@@ -192,7 +192,7 @@ def export_combined_report(
                 raise
             # Create empty sheet if no trades
             pd.DataFrame().to_excel(writer, sheet_name='Trades', index=False)
-        
+
         # Performance sheet
         try:
             perf_data = export_performance_excel(account_id, start_date, end_date)
@@ -202,7 +202,7 @@ def export_combined_report(
             if e.status_code != 404:
                 raise
             pd.DataFrame().to_excel(writer, sheet_name='Performance', index=False)
-        
+
         # PnL History sheet
         try:
             pnl_data = export_pnl_excel(account_id, start_date, end_date)
@@ -212,18 +212,18 @@ def export_combined_report(
             if e.status_code != 404:
                 raise
             pd.DataFrame().to_excel(writer, sheet_name='PnL History', index=False)
-    
+
     output.seek(0)
     return output.getvalue()
 
 
 def get_export_filename(export_type: str, account_id: Optional[str] = None) -> str:
     """Generate filename for export.
-    
+
     Args:
         export_type: Type of export (trades, performance, pnl, report)
         account_id: Optional account ID
-    
+
     Returns:
         Filename string
     """

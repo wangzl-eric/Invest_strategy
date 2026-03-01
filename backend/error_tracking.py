@@ -18,12 +18,12 @@ except ImportError:
 
 class ErrorTracker:
     """Error tracking service (Sentry integration)."""
-    
+
     def __init__(self, dsn: Optional[str] = None, environment: str = "development"):
         self.dsn = dsn
         self.environment = environment
         self.initialized = False
-        
+
         if HAS_SENTRY and dsn:
             try:
                 sentry_sdk.init(
@@ -44,7 +44,7 @@ class ErrorTracker:
                 logger.warning("Sentry SDK not installed - error tracking disabled")
             elif not dsn:
                 logger.info("Sentry DSN not configured - error tracking disabled")
-    
+
     def capture_exception(self, exception: Exception, context: Optional[Dict[str, Any]] = None):
         """Capture an exception."""
         if self.initialized and HAS_SENTRY:
@@ -56,7 +56,7 @@ class ErrorTracker:
         else:
             # Fallback to logging
             logger.error(f"Exception: {exception}", exc_info=True, extra=context)
-    
+
     def capture_message(self, message: str, level: str = "info", context: Optional[Dict[str, Any]] = None):
         """Capture a message."""
         if self.initialized and HAS_SENTRY:
@@ -68,7 +68,7 @@ class ErrorTracker:
         else:
             # Fallback to logging
             getattr(logger, level.lower())(message, extra=context)
-    
+
     def set_user(self, user_id: Optional[str] = None, email: Optional[str] = None):
         """Set user context for error tracking."""
         if self.initialized and HAS_SENTRY:

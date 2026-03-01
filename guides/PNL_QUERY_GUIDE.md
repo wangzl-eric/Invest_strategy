@@ -272,15 +272,15 @@ For maximum flexibility, query the database directly with SQL.
 ```python
 # Run any SQL query
 df = query_trades("""
-    SELECT 
+    SELECT
         symbol,
         COUNT(*) as trade_count,
         SUM(realized_pnl) as total_pnl,
         AVG(realized_pnl) as avg_pnl,
         MIN(realized_pnl) as worst_trade,
         MAX(realized_pnl) as best_trade
-    FROM trades 
-    GROUP BY symbol 
+    FROM trades
+    GROUP BY symbol
     ORDER BY total_pnl DESC
     LIMIT 10
 """)
@@ -301,9 +301,9 @@ sqlite3 ibkr_analytics.db
 .schema trades
 
 # Query data
-SELECT symbol, SUM(realized_pnl) as pnl 
-FROM trades 
-GROUP BY symbol 
+SELECT symbol, SUM(realized_pnl) as pnl
+FROM trades
+GROUP BY symbol
 ORDER BY pnl DESC;
 
 # Exit
@@ -315,22 +315,22 @@ ORDER BY pnl DESC;
 #### Monthly P&L Summary
 
 ```sql
-SELECT 
+SELECT
     strftime('%Y-%m', exec_time) as month,
     COUNT(*) as trades,
     SUM(realized_pnl) as pnl_usd,
     SUM(realized_pnl_base) as pnl_hkd,
     SUM(commission) as commissions
-FROM trades 
-GROUP BY month 
+FROM trades
+GROUP BY month
 ORDER BY month;
 ```
 
 #### Win/Loss Statistics
 
 ```sql
-SELECT 
-    CASE 
+SELECT
+    CASE
         WHEN realized_pnl > 0 THEN 'Win'
         WHEN realized_pnl < 0 THEN 'Loss'
         ELSE 'Breakeven'
@@ -338,7 +338,7 @@ SELECT
     COUNT(*) as count,
     SUM(realized_pnl) as total_pnl,
     AVG(realized_pnl) as avg_pnl
-FROM trades 
+FROM trades
 WHERE realized_pnl != 0
 GROUP BY outcome;
 ```
@@ -346,7 +346,7 @@ GROUP BY outcome;
 #### Top 10 Best Trades
 
 ```sql
-SELECT 
+SELECT
     exec_time,
     symbol,
     side,
@@ -354,7 +354,7 @@ SELECT
     price,
     realized_pnl,
     currency
-FROM trades 
+FROM trades
 WHERE realized_pnl > 0
 ORDER BY realized_pnl DESC
 LIMIT 10;
@@ -363,7 +363,7 @@ LIMIT 10;
 #### Worst 10 Trades
 
 ```sql
-SELECT 
+SELECT
     exec_time,
     symbol,
     side,
@@ -371,7 +371,7 @@ SELECT
     price,
     realized_pnl,
     currency
-FROM trades 
+FROM trades
 WHERE realized_pnl < 0
 ORDER BY realized_pnl ASC
 LIMIT 10;
@@ -380,12 +380,12 @@ LIMIT 10;
 #### P&L by Security Type
 
 ```sql
-SELECT 
+SELECT
     sec_type,
     COUNT(*) as trades,
     SUM(realized_pnl) as pnl_usd,
     SUM(commission) as commissions
-FROM trades 
+FROM trades
 GROUP BY sec_type
 ORDER BY pnl_usd DESC;
 ```
@@ -393,12 +393,12 @@ ORDER BY pnl_usd DESC;
 #### Daily P&L (Manual Calculation)
 
 ```sql
-SELECT 
+SELECT
     DATE(exec_time) as date,
     COUNT(*) as trades,
     SUM(realized_pnl) as daily_pnl,
     SUM(realized_pnl_base) as daily_pnl_hkd
-FROM trades 
+FROM trades
 GROUP BY DATE(exec_time)
 ORDER BY date DESC;
 ```
@@ -538,7 +538,7 @@ daily['date'] = pd.to_datetime(daily['date'])
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
 
 # Daily P&L bars
-ax1.bar(daily['date'], daily['realized_pnl'], 
+ax1.bar(daily['date'], daily['realized_pnl'],
         color=['green' if x > 0 else 'red' for x in daily['realized_pnl']])
 ax1.set_title('Daily P&L')
 ax1.set_ylabel('P&L (USD)')
@@ -573,14 +573,14 @@ fig = make_subplots(
 # Daily P&L bars
 colors = ['green' if x > 0 else 'red' for x in daily['realized_pnl']]
 fig.add_trace(
-    go.Bar(x=daily['date'], y=daily['realized_pnl'], 
+    go.Bar(x=daily['date'], y=daily['realized_pnl'],
            marker_color=colors, name='Daily P&L'),
     row=1, col=1
 )
 
 # Cumulative line
 fig.add_trace(
-    go.Scatter(x=daily['date'], y=daily['cumulative_pnl_usd'], 
+    go.Scatter(x=daily['date'], y=daily['cumulative_pnl_usd'],
                mode='lines', name='Cumulative', line=dict(width=2)),
     row=2, col=1
 )

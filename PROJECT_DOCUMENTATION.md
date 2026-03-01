@@ -31,7 +31,7 @@ This is a **full-stack quantitative analytics platform** for Interactive Brokers
 - **Performance Analytics**: Calculate returns, Sharpe ratio, Sortino ratio, maximum drawdown, and trade statistics
 - **Interactive Dashboard**: Web-based visualization with real-time updates
 - **Scheduled Updates**: Automatic intraday data refresh at configurable intervals
-- **Backtesting**: Both vectorized (fast) and event-driven (production) backtesting
+- **Backtesting**: Both Backtrader (event-driven) and research backtesting
 - **QuantConnect Lean**: Professional-grade backtesting engine integration
 - **Portfolio Optimization**: Mean-variance optimization with CVXPY
 - **Execution Framework**: Paper/live trading with risk controls
@@ -172,41 +172,47 @@ Two backtesting approaches are available:
 
 | Approach | File | Use Case |
 |----------|------|----------|
-| **Vectorized** | `backtests/vectorized.py` | Fast alpha research iteration |
-| **Event-Driven** | `backtests/event_driven/` | Production strategy simulation |
+| **Backtrader** | `backend/backtest_engine.py` | Event-driven with realistic simulation |
+| **Research** | `backend/research/backtest.py` | Quick strategy testing |
 
-#### Vectorized Backtest
+#### Using BacktestEngine (Backtrader)
 
-Fast numpy/pandas-based backtesting for rapid alpha research:
+For event-driven backtesting with realistic order execution:
 
 ```python
-from backtests.vectorized import run_vectorized_backtest, VectorizedBacktestConfig
-from backtests.core import CostModel, SlippageModel
+from backend.backtest_engine import BacktestEngine, IBKRDataFeed
+import backtrader as bt
 
-class MyStrategy:
-    name = "momentum_20d"
+# Define a strategy
+class MyStrategy(bt.Strategy):
+    params = (('period', 20),)
     
-    def generate_positions(self, bars):
-        # Return position series: 0=flat, 1=long, -1=short
-        return (bars['close'].pct_change(20) > 0).astype(float)
+    def __init__(self):
+        self.sma = bt.indicators.SimpleMovingAverage(
+            self.data.close, period=self.params.period
+        )
+        
+    def next(self):
+        if self.data.close[0] > self.sma[0]:
+            self.buy()
+        else:
+            self.sell()
 
-cfg = VectorizedBacktestConfig(
-    shift_positions_by=1,  # Trade on next bar
-    periods_per_year=252,
-    cost_model=CostModel(cost_tps=0.001),  # 10bps roundtrip
-    slippage_model=SlippageModel(slippage_bps=5.0),
-)
+# Run backtest
+engine = BacktestEngine(cash=100000, commission=0.001)
+engine.add_data(IBKRDataFeed(dataname=df), name='ASSET')
+engine.add_strategy(MyStrategy)
+result = engine.run_backtest()
 
-result = run_vectorized_backtest(bars=df, strategy=MyStrategy(), cfg=cfg)
-print(result.stats)
-# {'total_return': 0.45, 'sharpe': 1.23, 'max_drawdown': -0.12, ...}
+print(f"Return: {result['total_return']*100:.2f}%")
+print(f"Sharpe: {result['sharpe_ratio']:.2f}")
 ```
 
 **Features**:
-- Transaction cost model (turnover-based)
-- Slippage model (bps per turnover)
-- Automatic turnover calculation
-- Stats: total return, Sharpe, max drawdown, daily vol
+- Realistic order execution simulation
+- Multiple data feeds support
+- Position tracking and analytics
+- Full Backtrader feature set
 
 #### Core Types (`backtests/core.py`)
 
@@ -246,7 +252,7 @@ class MomentumDemoAlgorithm(QCAlgorithm):
         self.SetStartDate(2018, 1, 1)
         self.SetEndDate(2024, 12, 31)
         self.SetCash(100000)
-        
+
         self.symbol = self.AddEquity("SPY", Resolution.Daily).Symbol
         self.roc = self.ROC(self.symbol, 63, Resolution.Daily)  # 3-month momentum
         self.SetWarmUp(63, Resolution.Daily)
@@ -254,7 +260,7 @@ class MomentumDemoAlgorithm(QCAlgorithm):
     def OnData(self, data):
         if self.IsWarmingUp or not self.roc.IsReady:
             return
-        
+
         target = 1.0 if self.roc.Current.Value > 0 else 0.0
         self.SetHoldings(self.symbol, target)
 ```
@@ -420,9 +426,9 @@ register_parquet_view(
 )
 
 df = con.execute("""
-    SELECT timestamp, symbol, close 
-    FROM bars 
-    WHERE symbol = 'AAPL' 
+    SELECT timestamp, symbol, close
+    FROM bars
+    WHERE symbol = 'AAPL'
     ORDER BY timestamp
 """).df()
 ```
@@ -452,27 +458,27 @@ CREATE TABLE trades (
     account_id TEXT NOT NULL,
     exec_id TEXT UNIQUE NOT NULL,
     exec_time DATETIME NOT NULL,
-    
+
     -- Contract
     symbol TEXT NOT NULL,
     sec_type TEXT,           -- STK, OPT, FUT
     currency TEXT,
     exchange TEXT,
-    
+
     -- Execution
     side TEXT,               -- BUY, SELL
     shares FLOAT NOT NULL,
     price FLOAT NOT NULL,
-    
+
     -- Costs
     commission FLOAT DEFAULT 0.0,
     taxes FLOAT DEFAULT 0.0,
-    
+
     -- P&L
     realized_pnl FLOAT DEFAULT 0.0,
     realized_pnl_base FLOAT DEFAULT 0.0,  -- In base currency (HKD)
     fx_rate_to_base FLOAT DEFAULT 1.0,
-    
+
     -- Options
     underlying TEXT,
     strike FLOAT,
@@ -582,14 +588,14 @@ ibkr:
 flex_query:
   # Token via FLEX_TOKEN env var (don't store in file)
   token: ""
-  
+
   # Define all your Flex Query reports
   queries:
     - id: "1369526"
       name: "performance"
       type: "mark-to-market"
       description: "Daily Mark-to-Market P&L"
-    
+
     - id: "1369536"
       name: "Historical Trades"
       type: "trades"
@@ -691,31 +697,36 @@ import sys
 sys.path.insert(0, "/Users/zelin/Desktop/PA Investment/Invest_strategy")
 
 from quant_data.duckdb_store import connect, register_parquet_view
-from backtests.vectorized import run_vectorized_backtest
+from backend.backtest_engine import BacktestEngine, IBKRDataFeed
 
 # Load market data from Parquet
 con = connect()
 register_parquet_view(
-    con, 
-    view_name="bars", 
+    con,
+    view_name="bars",
     parquet_glob="data_lake/clean/stooq/bars/us_equities/1d/**/*.parquet"
 )
 
 df = con.execute("SELECT * FROM bars WHERE symbol='AAPL' ORDER BY timestamp").df()
 
 # Define strategy
-class MomentumStrategy:
-    name = "momentum_20d"
-    
-    def generate_positions(self, bars):
-        # Long when 20-day return is positive
-        return (bars['close'].pct_change(20) > 0).astype(float)
+import backtrader as bt
+
+class MomentumStrategy(bt.Strategy):
+    def next(self):
+        if self.data.close[0] > self.data.close[-1] * 1.01:  # 1% gain
+            self.buy()
+        elif self.data.close[0] < self.data.close[-1] * 0.99:  # 1% loss
+            self.sell()
 
 # Run backtest
-result = run_vectorized_backtest(bars=df, strategy=MomentumStrategy())
+engine = BacktestEngine(cash=100000, commission=0.001)
+engine.add_data(IBKRDataFeed(dataname=df), name='AAPL')
+engine.add_strategy(MomentumStrategy)
+result = engine.run_backtest()
 
-print(f"Total Return: {result.stats['total_return']:.2%}")
-print(f"Sharpe Ratio: {result.stats['sharpe']:.2f}")
+print(f"Total Return: {result['total_return']:.2%}")
+print(f"Sharpe Ratio: {result['sharpe_ratio']:.2f}")
 print(f"Max Drawdown: {result.stats['max_drawdown']:.2%}")
 
 # Plot equity curve
@@ -776,12 +787,12 @@ totals = get_account_pnl_totals()
 
 # Raw SQL
 df = query_trades("""
-    SELECT 
+    SELECT
         symbol,
         COUNT(*) as trades,
         SUM(realized_pnl) as total_pnl
-    FROM trades 
-    GROUP BY symbol 
+    FROM trades
+    GROUP BY symbol
     ORDER BY total_pnl DESC
 """)
 ```
@@ -925,9 +936,7 @@ Invest_strategy/
 │
 ├── backtests/                # Backtesting framework
 │   ├── core.py               # Core types
-│   ├── vectorized.py         # Fast vectorized backtest
-│   ├── metrics.py            # Performance metrics
-│   └── event_driven/         # Event-driven engine
+│   └── metrics.py            # Performance metrics
 │
 ├── portfolio/                # Portfolio management
 │   ├── optimizer.py          # Mean-variance optimization

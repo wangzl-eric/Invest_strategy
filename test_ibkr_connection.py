@@ -24,14 +24,14 @@ async def test_connection():
     print("IBKR Connection Test")
     print("=" * 70)
     print()
-    
+
     print(f"Configuration:")
     print(f"  Host: {settings.ibkr.host}")
     print(f"  Port: {settings.ibkr.port}")
     print(f"  Client ID: {settings.ibkr.client_id}")
     print(f"  Timeout: {settings.ibkr.timeout}s")
     print()
-    
+
     # Check if port is accessible
     import socket
     print("Checking if port is accessible...")
@@ -39,7 +39,7 @@ async def test_connection():
     sock.settimeout(2)
     result = sock.connect_ex((settings.ibkr.host, settings.ibkr.port))
     sock.close()
-    
+
     if result == 0:
         print(f"✅ Port {settings.ibkr.port} is open and accessible")
     else:
@@ -55,19 +55,19 @@ async def test_connection():
         print("  3. Restart TWS/Gateway after changing settings")
         print("  4. Check firewall settings")
         return False
-    
+
     print()
     print("Attempting to connect to IBKR...")
-    
+
     client = IBKRClient()
-    
+
     try:
         connected = await client.connect()
-        
+
         if connected:
             print("✅ Successfully connected to IBKR!")
             print()
-            
+
             # Try to get account summary
             print("Testing data retrieval...")
             try:
@@ -80,7 +80,7 @@ async def test_connection():
                         print(f"  {key}: ${value:,.2f}")
                     else:
                         print(f"  {key}: {value}")
-                
+
                 account_id = account_summary.get('AccountId')
                 if account_id:
                     print()
@@ -88,11 +88,11 @@ async def test_connection():
                     print()
                     print("You can use this account ID when fetching data:")
                     print(f"  curl -X POST 'http://localhost:8000/api/fetch-data?account_id={account_id}'")
-                
+
             except Exception as e:
                 print(f"⚠️  Connected but error retrieving data: {e}")
                 print("This might be normal if you don't have positions yet.")
-            
+
             await client.disconnect()
             print()
             print("=" * 70)
@@ -109,7 +109,7 @@ async def test_connection():
             print("  4. '127.0.0.1' is not in Trusted IPs")
             print("  5. TWS/Gateway needs to be restarted after enabling API")
             return False
-            
+
     except Exception as e:
         print(f"❌ Connection error: {e}")
         print()
@@ -128,4 +128,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n\nInterrupted by user")
         sys.exit(1)
-

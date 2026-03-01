@@ -3922,7 +3922,7 @@
             <summary>
             A pool of <see cref="T:System.Collections.Immutable.ImmutableArray`1.Builder"/> instances.
             </summary>
-            
+
             <remarks>
             Instances originating from this pool are intended to be short-lived and are suitable
             for temporary work. Do not return them as the results of methods or store them in fields.
@@ -3932,7 +3932,7 @@
             <summary>
             A pool of <see cref="T:System.Collections.Immutable.ImmutableDictionary`2.Builder"/> instances.
             </summary>
-            
+
             <remarks>
             Instances originating from this pool are intended to be short-lived and are suitable
             for temporary work. Do not return them as the results of methods or store them in fields.
@@ -3942,7 +3942,7 @@
             <summary>
             A pool of <see cref="T:System.Collections.Generic.Dictionary`2"/> instances.
             </summary>
-            
+
             <remarks>
             Instances originating from this pool are intended to be short-lived and are suitable
             for temporary work. Do not return them as the results of methods or store them in fields.
@@ -3952,7 +3952,7 @@
             <summary>
             A pool of <see cref="T:System.Collections.Generic.HashSet`1"/> instances that compares items using default equality.
             </summary>
-            
+
             <remarks>
             Instances originating from this pool are intended to be short-lived and are suitable
             for temporary work. Do not return them as the results of methods or store them in fields.
@@ -3962,7 +3962,7 @@
             <summary>
             A pool of <see cref="T:System.Collections.Generic.List`1"/> instances.
             </summary>
-            
+
             <remarks>
             Instances originating from this pool are intended to be short-lived and are suitable
             for temporary work. Do not return them as the results of methods or store them in fields.
@@ -3976,17 +3976,17 @@
              <para>This supporting method allows <see cref="T:Microsoft.AspNetCore.Razor.PooledObjects.PooledArrayBuilder`1"/>, a non-copyable <see langword="struct"/>
              implementing <see cref="T:System.IDisposable"/>, to be used with <c>using</c> statements while still allowing them to
              be passed by reference in calls. The following two calls are equivalent:</para>
-            
+
              <code>
              using var array = PooledArrayBuilder&lt;T&gt;.Empty;
-            
+
              // Using the 'Unsafe.AsRef' method
              Method(ref Unsafe.AsRef(in builder));
-            
+
              // Using this helper method
              Method(ref builder.AsRef());
              </code>
-            
+
              <para>⚠ Do not move or rename this method without updating the corresponding
              Razor.Diagnostics.Analyzers\PooledArrayBuilderAsRefAnalyzer.cs.</para>
              </remarks>
@@ -3999,7 +3999,7 @@
               Wraps a pooled <see cref="T:System.Collections.Immutable.ImmutableArray`1.Builder"/> but doesn't allocate it until
               it's needed. Note: Dispose this to ensure that the pooled array builder is returned
               to the pool.
-            
+
               There is significant effort to avoid retrieving the <see cref="T:System.Collections.Immutable.ImmutableArray`1.Builder"/>.
               For very small arrays of length 4 or less, the elements will be stored on the stack. If the array
               grows larger than 4 elements, a builder will be employed. Afterward, the build will
@@ -4659,7 +4659,7 @@
             <summary>
             A pool of <see cref="T:System.Collections.Generic.HashSet`1"/> instances that compares items using reference equality.
             </summary>
-            
+
             <remarks>
             Instances originating from this pool are intended to be short-lived and are suitable
             for temporary work. Do not return them as the results of methods or store them in fields.
@@ -4669,7 +4669,7 @@
             <summary>
             A pool of <see cref="T:System.Collections.Generic.Stack`1"/> instances.
             </summary>
-            
+
             <remarks>
             Instances originating from this pool are intended to be short-lived and are suitable
             for temporary work. Do not return them as the results of methods or store them in fields.
@@ -4679,7 +4679,7 @@
             <summary>
             A pool of <see cref="T:System.Diagnostics.Stopwatch"/> instances.
             </summary>
-            
+
             <remarks>
             Instances originating from this pool are intended to be short-lived and are suitable
             for temporary work. Do not return them as the results of methods or store them in fields.
@@ -4689,7 +4689,7 @@
             <summary>
             A pool of <see cref="T:System.Text.StringBuilder"/> instances.
             </summary>
-            
+
             <remarks>
             Instances originating from this pool are intended to be short-lived and are suitable
             for temporary work. Do not return them as the results of methods or store them in fields.
@@ -4699,7 +4699,7 @@
             <summary>
             Pooled <see cref="T:System.Collections.Generic.Dictionary`2"/> instances when the key is of type <see cref="T:System.String"/>.
             </summary>
-            
+
             <remarks>
             Instances originating from this pool are intended to be short-lived and are suitable
             for temporary work. Do not return them as the results of methods or store them in fields.
@@ -4709,7 +4709,7 @@
             <summary>
             A pool of <see cref="T:System.Collections.Generic.HashSet`1"/> instances that compares strings.
             </summary>
-            
+
             <remarks>
             Instances originating from this pool are intended to be short-lived and are suitable
             for temporary work. Do not return them as the results of methods or store them in fields.
@@ -4722,7 +4722,7 @@
             can request the value. As long as there are outstanding clients the underlying computation will
             proceed.  If all outstanding clients cancel their request then the underlying value computation
             will be cancelled as well.
-            
+
             Creators of an <see cref="T:Microsoft.AspNetCore.Razor.Threading.AsyncLazy`1" /> can specify whether the result of the computation is
             cached for future requests or not. Choosing to not cache means the computation function is kept
             alive, whereas caching means the value (but not function) is kept alive once complete.

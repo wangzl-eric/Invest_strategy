@@ -72,7 +72,7 @@ from datetime import datetime
 # Get all records
 with get_db_context() as db:
     records = db.query(PnLHistory).order_by(PnLHistory.date).all()
-    
+
     for record in records:
         print(f"{record.date}: {record.net_liquidation}")
 
@@ -110,7 +110,7 @@ with get_db_context() as db:
     records = db.query(PnLHistory).filter(
         PnLHistory.account_id == 'U13798787'
     ).order_by(PnLHistory.date).all()
-    
+
     # Convert to DataFrame
     data = []
     for r in records:
@@ -121,10 +121,10 @@ with get_db_context() as db:
             'realized_pnl': r.realized_pnl,
             'unrealized_pnl': r.unrealized_pnl,
         })
-    
+
     df = pd.DataFrame(data)
     df['date'] = pd.to_datetime(df['date'])
-    
+
     # Now you can use pandas operations
     print(df.head())
     print(df.describe())
@@ -156,12 +156,12 @@ df = pd.read_sql_query(
 
 # Complex query
 df = pd.read_sql_query(
-    """SELECT 
+    """SELECT
            date,
            net_liquidation,
            total_pnl,
            LAG(net_liquidation) OVER (ORDER BY date) as prev_value,
-           (net_liquidation - LAG(net_liquidation) OVER (ORDER BY date)) / 
+           (net_liquidation - LAG(net_liquidation) OVER (ORDER BY date)) /
            LAG(net_liquidation) OVER (ORDER BY date) as daily_return
        FROM pnl_history
        WHERE account_id = 'U13798787'
@@ -186,7 +186,7 @@ with get_db_context() as db:
     latest = db.query(PnLHistory).filter(
         PnLHistory.account_id == 'U13798787'
     ).order_by(desc(PnLHistory.date)).first()
-    
+
     print(f"Latest value: {latest.net_liquidation} on {latest.date}")
 ```
 
@@ -200,21 +200,21 @@ with get_db_context() as db:
     records = db.query(PnLHistory).filter(
         PnLHistory.account_id == 'U13798787'
     ).order_by(PnLHistory.date).all()
-    
+
     df = pd.DataFrame([{
         'date': r.date,
         'net_liquidation': r.net_liquidation,
         'total_pnl': r.total_pnl
     } for r in records])
-    
+
     df['date'] = pd.to_datetime(df['date'])
     df['year_month'] = df['date'].dt.to_period('M')
-    
+
     monthly = df.groupby('year_month').agg({
         'net_liquidation': 'last',  # End of month value
         'total_pnl': 'sum'
     })
-    
+
     print(monthly)
 ```
 
@@ -227,7 +227,7 @@ returns = get_daily_returns(use_pnl_history=True)
 
 if not returns.empty:
     daily_returns = returns['daily_return']
-    
+
     print(f"Mean daily return: {daily_returns.mean():.4%}")
     print(f"Std dev: {daily_returns.std():.4%}")
     print(f"Sharpe ratio (annualized): {(daily_returns.mean() / daily_returns.std()) * np.sqrt(252):.2f}")

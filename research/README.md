@@ -11,6 +11,5 @@ Recommended workflow:
 Key modules:
 
 - `quant_data/`: dataset spec, connectors, ingestion pipelines, DuckDB helper
-- `backtests/`: strategy evaluation (vectorized/event-driven)
+- `backtests/`: strategy evaluation using Backtrader
 - `portfolio/`: portfolio optimization + constraints
-

@@ -66,4 +66,3 @@ def write_bars_partitioned(
             files += 1
 
     return ParquetWriteResult(files_written=files)
-

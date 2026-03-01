@@ -8,8 +8,8 @@ import pandas as pd
 import numpy as np
 
 from backend.market_data_store import market_data_store
-from backtests.vectorized import run_vectorized_backtest, VectorizedBacktestConfig
-from backtests.core import BacktestResult, CostModel, SlippageModel, VectorStrategy
+from backend.backtest_engine import BacktestEngine, IBKRDataFeed
+from backtests.core import BacktestResult
 
 
 def load_prices(
@@ -84,27 +84,13 @@ def load_fred(
     return pivoted.sort_index()
 
 
-class _SignalStrategy(VectorStrategy):
-    """Adapter to run vectorized backtest from pre-computed position series."""
-
-    def __init__(self, positions: pd.Series, name: str = "signal"):
-        self._positions = positions
-        self.name = name
-
-    def generate_positions(self, bars: pd.DataFrame) -> pd.Series:
-        common = self._positions.index.intersection(bars.index)
-        out = pd.Series(0.0, index=bars.index)
-        out.loc[common] = self._positions.loc[common].values
-        return out.reindex(bars.index).fillna(0.0)
-
-
 def evaluate_signal(
     signal_series: pd.Series,
     price_series: pd.Series,
     cost_bps: float = 10.0,
     slippage_bps: float = 0.0,
 ) -> BacktestResult:
-    """Run vectorized backtest on a pre-computed signal (position series).
+    """Run backtest on a pre-computed signal (position series) using BacktestEngine.
 
     Args:
         signal_series: Target position series (e.g. -1..1 or 0/1), indexed by date
@@ -115,6 +101,8 @@ def evaluate_signal(
     Returns:
         BacktestResult with equity, returns, positions, turnover, stats
     """
+    import backtrader as bt
+
     # Align indices
     common_idx = signal_series.index.intersection(price_series.index)
     if len(common_idx) < 2:
@@ -130,23 +118,54 @@ def evaluate_signal(
     signal_aligned = signal_series.reindex(common_idx).fillna(0.0).sort_index()
     price_aligned = price_series.reindex(common_idx).ffill().bfill().sort_index()
 
-    bars = pd.DataFrame({"close": price_aligned}, index=price_aligned.index)
-    bars.index.name = "timestamp"
+    # Prepare data for Backtrader
+    bt_data = pd.DataFrame({
+        'open': price_aligned,
+        'high': price_aligned,
+        'low': price_aligned,
+        'close': price_aligned,
+        'volume': 1000000,  # Dummy volume
+    }, index=price_aligned.index)
+    bt_data = bt_data.reset_index()
+    bt_data.columns = ['date', 'open', 'high', 'low', 'close', 'volume']
 
-    cost_tps = cost_bps / 10000.0
-    cfg = VectorizedBacktestConfig(
-        cost_model=CostModel(cost_tps=cost_tps),
-        slippage_model=SlippageModel(slippage_bps=slippage_bps),
+    # Create a simple signal-based strategy
+    class SignalStrategy(bt.Strategy):
+        params = (('signal', None),)
+        
+        def __init__(self):
+            self.signal = self.params.signal
+        
+        def next(self):
+            dt = bt.num2date(self.data.datetime[0])
+            if dt in self.signal.index:
+                pos = self.signal.loc[dt]
+                if pos > 0 and not self.position:
+                    self.buy()
+                elif pos < 0 and not self.position:
+                    self.sell()
+                elif pos == 0 and self.position:
+                    if self.position.size > 0:
+                        self.sell()
+                    else:
+                        self.buy()
+
+    # Run backtest
+    engine = BacktestEngine(
+        cash=100000,
+        commission=cost_bps / 10000.0
     )
-    strategy = _SignalStrategy(signal_aligned, name="signal")
-    return run_vectorized_backtest(bars=bars, strategy=strategy, cfg=cfg)
+    engine.add_data(IBKRDataFeed(dataname=bt_data), name='asset')
+    engine.add_strategy(SignalStrategy, signal=signal_aligned)
+    
+    return engine.run_backtest()
 
 
 def plot_backtest(result: BacktestResult) -> "plotly.graph_objects.Figure":
     """Create a standardized Plotly chart: equity, drawdown, rolling Sharpe.
 
     Args:
-        result: BacktestResult from evaluate_signal or run_vectorized_backtest
+        result: BacktestResult from evaluate_signal or engine.run_backtest()
 
     Returns:
         Plotly Figure with 3 subplots

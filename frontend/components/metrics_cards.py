@@ -6,7 +6,7 @@ import dash_bootstrap_components as dbc
 def create_metrics_row(metrics: list, cols_per_row: int = 4):
     """
     Create a responsive row of metric cards.
-    
+
     Args:
         metrics: List of dicts with keys: label, value, value_class, prefix, suffix
         cols_per_row: Number of columns per row (default 4)
@@ -15,7 +15,7 @@ def create_metrics_row(metrics: list, cols_per_row: int = 4):
     for i in range(0, len(metrics), cols_per_row):
         row_metrics = metrics[i:i + cols_per_row]
         cols = []
-        
+
         for metric in row_metrics:
             col_width = 12 // cols_per_row
             cols.append(
@@ -29,9 +29,9 @@ def create_metrics_row(metrics: list, cols_per_row: int = 4):
                     )
                 ], xs=12, sm=6, md=col_width)
             )
-        
+
         rows.append(dbc.Row(cols, className="mb-3"))
-    
+
     return html.Div(rows)
 
 

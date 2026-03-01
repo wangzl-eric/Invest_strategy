@@ -1,6 +1,6 @@
 # Quant Data Specification (Canonical Research Datasets)
 
-This repository started as **IBKR portfolio analytics** (account snapshots, PnL, trades).  
+This repository started as **IBKR portfolio analytics** (account snapshots, PnL, trades).
 This document defines a **canonical data layer** so you can research multi-asset alpha signals with consistent schemas.
 
 ## Existing data sources in this repo
@@ -95,5 +95,3 @@ Optional:
 
 - Dataset spec + enums: [`quant_data/spec.py`](../quant_data/spec.py)
 - Path/partition helpers: [`quant_data/paths.py`](../quant_data/paths.py)
-
-

@@ -24,4 +24,3 @@ EXPOSE 8050
 
 # Run application
 CMD ["python", "frontend/app.py"]
-

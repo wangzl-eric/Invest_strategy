@@ -7,4 +7,3 @@ dependencies:
   # Prefer conda-forge for compiled deps, but keep pip for the repo pins.
   - pip:
       - -r requirements.txt
-

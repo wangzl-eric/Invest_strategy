@@ -62,6 +62,38 @@ guides/                   — User-facing documentation
 - **Cache masks errors** — If a FRED call fails when key is missing, the empty result gets cached. After setting the key, restart the server to clear the in-memory TTL cache.
 - **yfinance `date` field** — Must be extracted from the DataFrame index, not from a column. Use `close_series.index[-1].date()`.
 
+## Look-Ahead Bias Prevention (Backtesting)
+
+**ALWAYS** check for look-ahead bias when adding or modifying signals in any backtesting code:
+
+### The Golden Rule
+
+| Trading Type | Use This Index | Example |
+|--------------|----------------|---------|
+| End-of-Day (trade after close) | `[0]` | `self.data.close[0]` ✅ |
+| Intraday / Start of Day | `[-1]` | `self.data.close[-1]` ✅ |
+
+### Why It Matters
+
+- `[0]` = current bar (only use if the bar is COMPLETE / decision made at end of day)
+- `[-1]` = previous bar (safe for intraday - no look-ahead bias)
+- `[-2]` or later = further back in history
+
+### Verification Steps
+
+When adding new signals in `backtest_engine.py` or any strategy:
+
+1. **Identify when the signal is used** — Is it end-of-day or intraday?
+2. **Check all data accesses** — Every `self.data.X[0]` should have a comment explaining why `[0]` is valid
+3. **Print dates for debugging** — Add logging to verify:
+   ```python
+   def next(self):
+       current_date = self.data.datetime.date(0)
+       prev_date = self.data.datetime.date(-1)
+       print(f"Signal: {current_date}, Using close[-1]={self.data.close[-1]}")
+   ```
+4. **Use indicators correctly** — `self.sma[0]` uses current bar, `self.sma[-1]` uses previous bar
+
 ## Conda Environment
 
 - Name: `ibkr-analytics`

@@ -27,8 +27,8 @@
          Results:              QuantConnect.Lean.Engine.Results.BacktestingResultHandler
          Transactions:         QuantConnect.Lean.Engine.TransactionHandlers.BacktestingTransactionHandler
          Object Store:         QuantConnect.Lean.Engine.Storage.LocalObjectStore
-         History Provider:     
-         Brokerage:            
+         History Provider:
+         Brokerage:
          Data Provider:        QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider
 
 2026-01-12T00:36:36.5968410Z TRACE:: BacktestingResultHandler.Exit(): starting...
@@ -39,7 +39,7 @@
 2026-01-12T00:36:36.6012230Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T00:36:36.6012330Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
 2026-01-12T00:36:36.6056520Z TRACE:: BacktestingResultHandler.CreateResultSummary(): 'Strategy Equity' chart not found
-2026-01-12T00:36:36.6518730Z TRACE:: 
+2026-01-12T00:36:36.6518730Z TRACE::
 STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
 2026-01-12T00:36:36.6519060Z TRACE:: BacktestingResultHandler.SendAnalysisResult(): Processed final packet
 2026-01-12T00:36:36.6522030Z TRACE:: Engine.Run(): Disposing of setup handler...
@@ -85,8 +85,8 @@ STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
          Results:              QuantConnect.Lean.Engine.Results.BacktestingResultHandler
          Transactions:         QuantConnect.Lean.Engine.TransactionHandlers.BacktestingTransactionHandler
          Object Store:         QuantConnect.Lean.Engine.Storage.LocalObjectStore
-         History Provider:     
-         Brokerage:            
+         History Provider:
+         Brokerage:
          Data Provider:        QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider
 
 2026-01-12T00:36:57.2893280Z TRACE:: BacktestingResultHandler.Exit(): starting...
@@ -97,7 +97,7 @@ STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
 2026-01-12T00:36:57.2929870Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T00:36:57.2929970Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
 2026-01-12T00:36:57.2967540Z TRACE:: BacktestingResultHandler.CreateResultSummary(): 'Strategy Equity' chart not found
-2026-01-12T00:36:57.3797750Z TRACE:: 
+2026-01-12T00:36:57.3797750Z TRACE::
 STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
 2026-01-12T00:36:57.3798140Z TRACE:: BacktestingResultHandler.SendAnalysisResult(): Processed final packet
 2026-01-12T00:36:57.3800730Z TRACE:: Engine.Run(): Disposing of setup handler...
@@ -138,8 +138,8 @@ STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
          Results:              QuantConnect.Lean.Engine.Results.BacktestingResultHandler
          Transactions:         QuantConnect.Lean.Engine.TransactionHandlers.BacktestingTransactionHandler
          Object Store:         QuantConnect.Lean.Engine.Storage.LocalObjectStore
-         History Provider:     
-         Brokerage:            
+         History Provider:
+         Brokerage:
          Data Provider:        QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider
 
 2026-01-12T00:39:21.1243180Z TRACE:: BacktestingResultHandler.Exit(): starting...
@@ -150,7 +150,7 @@ STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
 2026-01-12T00:39:21.1258580Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T00:39:21.1258740Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
 2026-01-12T00:39:21.1285820Z TRACE:: BacktestingResultHandler.CreateResultSummary(): 'Strategy Equity' chart not found
-2026-01-12T00:39:21.1654500Z TRACE:: 
+2026-01-12T00:39:21.1654500Z TRACE::
 STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
 2026-01-12T00:39:21.1655510Z TRACE:: BacktestingResultHandler.SendAnalysisResult(): Processed final packet
 2026-01-12T00:39:21.1661030Z TRACE:: Engine.Run(): Disposing of setup handler...
@@ -195,8 +195,8 @@ STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
          Results:              QuantConnect.Lean.Engine.Results.BacktestingResultHandler
          Transactions:         QuantConnect.Lean.Engine.TransactionHandlers.BacktestingTransactionHandler
          Object Store:         QuantConnect.Lean.Engine.Storage.LocalObjectStore
-         History Provider:     
-         Brokerage:            
+         History Provider:
+         Brokerage:
          Data Provider:        QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider
 
 2026-01-12T00:39:42.9130690Z TRACE:: BacktestingResultHandler.Exit(): starting...
@@ -207,7 +207,7 @@ STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
 2026-01-12T00:39:42.9144040Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T00:39:42.9145380Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
 2026-01-12T00:39:42.9172900Z TRACE:: BacktestingResultHandler.CreateResultSummary(): 'Strategy Equity' chart not found
-2026-01-12T00:39:42.9537320Z TRACE:: 
+2026-01-12T00:39:42.9537320Z TRACE::
 STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
 2026-01-12T00:39:42.9537500Z TRACE:: BacktestingResultHandler.SendAnalysisResult(): Processed final packet
 2026-01-12T00:39:42.9538980Z TRACE:: Engine.Run(): Disposing of setup handler...
@@ -243,8 +243,8 @@ STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
          Results:              QuantConnect.Lean.Engine.Results.BacktestingResultHandler
          Transactions:         QuantConnect.Lean.Engine.TransactionHandlers.BacktestingTransactionHandler
          Object Store:         QuantConnect.Lean.Engine.Storage.LocalObjectStore
-         History Provider:     
-         Brokerage:            
+         History Provider:
+         Brokerage:
          Data Provider:        QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider
 
 2026-01-12T00:47:31.7579170Z TRACE:: BacktestingResultHandler.Exit(): starting...
@@ -255,7 +255,7 @@ STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
 2026-01-12T00:47:31.7596190Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T00:47:31.7596670Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
 2026-01-12T00:47:31.7623980Z TRACE:: BacktestingResultHandler.CreateResultSummary(): 'Strategy Equity' chart not found
-2026-01-12T00:47:31.7881820Z TRACE:: 
+2026-01-12T00:47:31.7881820Z TRACE::
 STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
 2026-01-12T00:47:31.7882000Z TRACE:: BacktestingResultHandler.SendAnalysisResult(): Processed final packet
 2026-01-12T00:47:31.7884970Z TRACE:: Engine.Run(): Disposing of setup handler...
@@ -323,7 +323,7 @@ CashBook Total Value:                $100000
 2026-01-12T00:48:24.7755030Z TRACE:: StopSafely(): Waiting for 'Result Thread' thread to stop...
 2026-01-12T00:48:24.7755080Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T00:48:24.7755960Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
-2026-01-12T00:48:24.7969290Z TRACE:: 
+2026-01-12T00:48:24.7969290Z TRACE::
 STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
 2026-01-12T00:48:24.7969510Z TRACE:: BacktestingResultHandler.SendAnalysisResult(): Processed final packet
 2026-01-12T00:48:24.7970770Z TRACE:: Engine.Run(): Disconnecting from brokerage...
@@ -403,7 +403,7 @@ CashBook Total Value:                $100000
 2026-01-12T00:50:16.6880890Z TRACE:: Debug: Algorithm Id:(MomentumDemoAlgorithm) completed in 0.06 seconds at 0k data points per second. Processing total of 1 data points.
 2026-01-12T00:50:16.6881050Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T00:50:16.6881090Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
-2026-01-12T00:50:16.7360670Z TRACE:: 
+2026-01-12T00:50:16.7360670Z TRACE::
 STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
 2026-01-12T00:50:16.7360920Z TRACE:: BacktestingResultHandler.SendAnalysisResult(): Processed final packet
 2026-01-12T00:50:16.7362380Z TRACE:: Engine.Run(): Disconnecting from brokerage...
@@ -483,7 +483,7 @@ CashBook Total Value:                $100000
 2026-01-12T00:53:39.3808980Z TRACE:: Debug: Algorithm Id:(MomentumDemoAlgorithm) completed in 0.06 seconds at 0k data points per second. Processing total of 1 data points.
 2026-01-12T00:53:39.3809100Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T00:53:39.3809160Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
-2026-01-12T00:53:39.4260890Z TRACE:: 
+2026-01-12T00:53:39.4260890Z TRACE::
 STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
 2026-01-12T00:53:39.4261110Z TRACE:: BacktestingResultHandler.SendAnalysisResult(): Processed final packet
 2026-01-12T00:53:39.4262520Z TRACE:: Engine.Run(): Disconnecting from brokerage...
@@ -563,7 +563,7 @@ CashBook Total Value:                $100000
 2026-01-12T00:55:08.2043650Z TRACE:: Debug: Algorithm Id:(MomentumDemoAlgorithm) completed in 0.05 seconds at 0k data points per second. Processing total of 1 data points.
 2026-01-12T00:55:08.2043730Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T00:55:08.2043770Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
-2026-01-12T00:55:08.2476300Z TRACE:: 
+2026-01-12T00:55:08.2476300Z TRACE::
 STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
 2026-01-12T00:55:08.2476570Z TRACE:: BacktestingResultHandler.SendAnalysisResult(): Processed final packet
 2026-01-12T00:55:08.2478180Z TRACE:: Engine.Run(): Disconnecting from brokerage...
@@ -641,7 +641,7 @@ CashBook Total Value:                $100000
 2026-01-12T00:55:40.0513320Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T00:55:40.0513410Z TRACE:: StopSafely(): Waiting for 'Result Thread' thread to stop...
 2026-01-12T00:55:40.0513450Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
-2026-01-12T00:55:40.1156310Z TRACE:: 
+2026-01-12T00:55:40.1156310Z TRACE::
 STATISTICS:: Total Orders 0
 STATISTICS:: Average Win 0%
 STATISTICS:: Average Loss 0%
@@ -666,7 +666,7 @@ STATISTICS:: Tracking Error 0
 STATISTICS:: Treynor Ratio 0
 STATISTICS:: Total Fees $0.00
 STATISTICS:: Estimated Strategy Capacity $0
-STATISTICS:: Lowest Capacity Asset 
+STATISTICS:: Lowest Capacity Asset
 STATISTICS:: Portfolio Turnover 0%
 STATISTICS:: Drawdown Recovery 0
 STATISTICS:: OrderListHash d41d8cd98f00b204e9800998ecf8427e
@@ -874,7 +874,7 @@ CashBook Total Value:                $100000
 2026-01-12T00:59:41.9585840Z TRACE:: Debug: Algorithm Id:(MomentumDemoAlgorithm) completed in 1.02 seconds at 4k data points per second. Processing total of 3,943 data points.
 2026-01-12T00:59:41.9585920Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T00:59:41.9586040Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
-2026-01-12T00:59:42.0629840Z TRACE:: 
+2026-01-12T00:59:42.0629840Z TRACE::
 STATISTICS:: Total Orders 127
 STATISTICS:: Average Win 0.15%
 STATISTICS:: Average Loss -0.05%
@@ -1107,7 +1107,7 @@ CashBook Total Value:                $100000
 2026-01-12T14:07:52.4432680Z TRACE:: Debug: Algorithm Id:(MomentumDemoAlgorithm) completed in 0.40 seconds at 10k data points per second. Processing total of 3,943 data points.
 2026-01-12T14:07:52.4432730Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T14:07:52.4432790Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
-2026-01-12T14:07:52.5526210Z TRACE:: 
+2026-01-12T14:07:52.5526210Z TRACE::
 STATISTICS:: Total Orders 127
 STATISTICS:: Average Win 0.15%
 STATISTICS:: Average Loss -0.05%
@@ -1340,7 +1340,7 @@ CashBook Total Value:                $100000
 2026-01-12T14:09:09.7811710Z TRACE:: Debug: Algorithm Id:(MomentumDemoAlgorithm) completed in 0.41 seconds at 10k data points per second. Processing total of 3,943 data points.
 2026-01-12T14:09:09.7812220Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T14:09:09.7812300Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
-2026-01-12T14:09:09.8791450Z TRACE:: 
+2026-01-12T14:09:09.8791450Z TRACE::
 STATISTICS:: Total Orders 127
 STATISTICS:: Average Win 0.15%
 STATISTICS:: Average Loss -0.05%
@@ -1566,7 +1566,7 @@ CashBook Total Value:                $100000
 2026-01-12T14:32:29.6086210Z TRACE:: Debug: Algorithm Id:(MomentumDemoAlgorithm) completed in 0.53 seconds at 7k data points per second. Processing total of 3,943 data points.
 2026-01-12T14:32:29.6086250Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T14:32:29.6086300Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
-2026-01-12T14:32:29.7689350Z TRACE:: 
+2026-01-12T14:32:29.7689350Z TRACE::
 STATISTICS:: Total Orders 127
 STATISTICS:: Average Win 0.15%
 STATISTICS:: Average Loss -0.05%
@@ -1792,7 +1792,7 @@ CashBook Total Value:                $100000
 2026-01-12T14:59:26.5354860Z TRACE:: Debug: Algorithm Id:(MomentumDemoAlgorithm) completed in 0.69 seconds at 6k data points per second. Processing total of 3,943 data points.
 2026-01-12T14:59:26.5354930Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T14:59:26.5354980Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
-2026-01-12T14:59:26.7182420Z TRACE:: 
+2026-01-12T14:59:26.7182420Z TRACE::
 STATISTICS:: Total Orders 127
 STATISTICS:: Average Win 0.15%
 STATISTICS:: Average Loss -0.05%
@@ -2018,7 +2018,7 @@ CashBook Total Value:                $100000
 2026-01-12T16:07:18.3719120Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T16:07:18.3719210Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
 2026-01-12T16:07:18.3719390Z TRACE:: StopSafely(): Waiting for 'Result Thread' thread to stop...
-2026-01-12T16:07:18.4954440Z TRACE:: 
+2026-01-12T16:07:18.4954440Z TRACE::
 STATISTICS:: Total Orders 127
 STATISTICS:: Average Win 0.15%
 STATISTICS:: Average Loss -0.05%
@@ -2245,7 +2245,7 @@ CashBook Total Value:                $100000
 2026-01-12T16:09:41.3350080Z TRACE:: Debug: Algorithm Id:(MomentumDemoAlgorithm) completed in 1.04 seconds at 4k data points per second. Processing total of 3,943 data points.
 2026-01-12T16:09:41.3350140Z TRACE:: Debug: Your log was successfully created and can be retrieved from: /Users/zelin/Desktop/PA Investment/Invest_strategy/qc_lean/Results/MomentumDemoAlgorithm-log.txt
 2026-01-12T16:09:41.3350260Z TRACE:: BacktestingResultHandler.Run(): Ending Thread...
-2026-01-12T16:09:41.5117860Z TRACE:: 
+2026-01-12T16:09:41.5117860Z TRACE::
 STATISTICS:: Total Orders 127
 STATISTICS:: Average Win 0.15%
 STATISTICS:: Average Loss -0.05%

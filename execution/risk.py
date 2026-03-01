@@ -78,4 +78,3 @@ class RiskEngine:
             )
 
         return RiskDecision(allowed=True, context={"notional": notional, "symbol_notional_after": sym_notional, "gross_after": gross_after})
-

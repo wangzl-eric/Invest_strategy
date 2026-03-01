@@ -16,7 +16,7 @@ class CircuitState(Enum):
 
 class CircuitBreaker:
     """Circuit breaker for protecting against cascading failures."""
-    
+
     def __init__(
         self,
         failure_threshold: int = 5,
@@ -26,12 +26,12 @@ class CircuitBreaker:
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
         self.expected_exception = expected_exception
-        
+
         self.state = CircuitState.CLOSED
         self.failure_count = 0
         self.last_failure_time: Optional[datetime] = None
         self.success_count = 0
-    
+
     def call(self, func: Callable, *args, **kwargs) -> Any:
         """Execute a function with circuit breaker protection."""
         # Check if circuit is open
@@ -47,11 +47,11 @@ class CircuitBreaker:
                     raise Exception(f"Circuit breaker is OPEN. Retry after {self.recovery_timeout - int(time_since_failure)} seconds")
             else:
                 raise Exception("Circuit breaker is OPEN")
-        
+
         # Execute function
         try:
             result = func(*args, **kwargs)
-            
+
             # Success
             if self.state == CircuitState.HALF_OPEN:
                 self.success_count += 1
@@ -61,14 +61,14 @@ class CircuitBreaker:
                     logger.info("Circuit breaker CLOSED - service recovered")
             elif self.state == CircuitState.CLOSED:
                 self.failure_count = 0  # Reset on success
-            
+
             return result
-        
+
         except self.expected_exception as e:
             # Failure
             self.failure_count += 1
             self.last_failure_time = datetime.utcnow()
-            
+
             if self.state == CircuitState.HALF_OPEN:
                 # Failed again in half-open, go back to open
                 self.state = CircuitState.OPEN
@@ -77,9 +77,9 @@ class CircuitBreaker:
                 # Too many failures, open circuit
                 self.state = CircuitState.OPEN
                 logger.warning(f"Circuit breaker OPEN after {self.failure_count} failures")
-            
+
             raise
-    
+
     def reset(self):
         """Manually reset the circuit breaker."""
         self.state = CircuitState.CLOSED

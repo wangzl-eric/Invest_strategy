@@ -69,4 +69,3 @@ def record_risk_event(*, severity: str, event_type: str, message: str, context: 
         db.add(row)
         db.flush()
         return int(row.id)
-

@@ -7,4 +7,3 @@ ibkr:
   port: 7497  # 7497 for paper trading, 7496 for live trading
   client_id: 1
   timeout: 30
-

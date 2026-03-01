@@ -5,8 +5,7 @@ from fastapi import APIRouter, HTTPException, Query, Body
 from pydantic import BaseModel
 import pandas as pd
 
-from backtests.vectorized import run_vectorized_backtest, VectorizedBacktestConfig
-from backtests.core import CostModel, SlippageModel
+# Note: Vectorized backtest has been deprecated. Use BacktestEngine with Backtrader.
 from portfolio.blend import Signal, blend_signals
 
 logger = logging.getLogger(__name__)
@@ -26,10 +25,10 @@ class BacktestRequest(BaseModel):
 class SimpleMomentumStrategy:
     """Simple momentum strategy for testing."""
     name = "simple_momentum"
-    
+
     def __init__(self, lookback: int = 60):
         self.lookback = lookback
-    
+
     def generate_positions(self, bars: pd.DataFrame) -> pd.Series:
         """Generate positions based on momentum signal."""
         close = bars["close"].astype(float)
@@ -39,8 +38,8 @@ class SimpleMomentumStrategy:
 
 @router.post("/backtest/run")
 async def run_backtest(request: BacktestRequest = Body(...)):
-    """Run a vectorized backtest.
-    
+    """Run a backtest using BacktestEngine.
+
     Note: This is a simplified endpoint. In production, you would:
     - Load historical data from data lake
     - Support multiple strategy types
@@ -54,7 +53,7 @@ async def run_backtest(request: BacktestRequest = Body(...)):
         # 2. Initialize strategy with parameters
         # 3. Run backtest
         # 4. Return results
-        
+
         return {
             "status": "success",
             "message": "Backtest endpoint created. Full implementation requires data lake integration.",
@@ -63,7 +62,7 @@ async def run_backtest(request: BacktestRequest = Body(...)):
             "note": "This endpoint requires historical data from the data lake. "
                     "Use research/experiments/run_example_momentum.py for full backtesting."
         }
-    
+
     except Exception as e:
         logger.error(f"Error running backtest: {e}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")

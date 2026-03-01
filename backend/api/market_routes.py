@@ -4,6 +4,7 @@ import logging
 from typing import Optional
 
 from fastapi import APIRouter, Query
+from pydantic import BaseModel
 
 from backend.market_data_service import market_data_service
 
@@ -89,3 +90,74 @@ async def get_historical(
 ):
     """Historical daily close prices for sparkline charts."""
     return {"symbol": symbol, "data": market_data_service.get_historical(symbol, days)}
+
+
+# ---------------------------------------------------------------------------
+# Data source fallback endpoints
+# ---------------------------------------------------------------------------
+
+
+class DataWithFallbackRequest(BaseModel):
+    """Request model for data with fallback."""
+    symbol: str
+    asset_class: str
+    days: int = 30
+    preferred_source: Optional[str] = None
+
+
+@router.get("/market/data-with-fallback")
+async def get_data_with_fallback(
+    symbol: str = Query(..., description="Ticker symbol or FRED series ID"),
+    asset_class: str = Query(..., description="Asset class (equity, fx, rates, macro, commodities)"),
+    days: int = Query(default=30, ge=1, le=365, description="Number of days of history"),
+    preferred_source: Optional[str] = Query(None, description="Preferred data source (yfinance, ibkr, fred, parquet)"),
+):
+    """Fetch data with automatic fallback through available sources.
+
+    This endpoint tries multiple data sources in priority order:
+    1. Preferred source (if specified and available)
+    2. IBKR (for equities, FX, commodities)
+    3. Parquet store (if data already cached)
+    4. yfinance (always available as final fallback)
+
+    Returns metadata indicating which source was used.
+    """
+    result = market_data_service.get_data_with_fallback(
+        symbol=symbol,
+        asset_class=asset_class,
+        days=days
+    )
+
+    # Add request metadata
+    result["requested_symbol"] = symbol
+    result["requested_asset_class"] = asset_class
+    result["requested_days"] = days
+
+    return result
+
+
+@router.get("/market/source-status")
+async def get_source_status():
+    """Get status of all available data sources.
+
+    Returns health status and supported asset classes for each source.
+    """
+    return market_data_service.get_source_status()
+
+
+@router.get("/market/data-source-info")
+async def get_data_source_info():
+    """Get information about data source priorities and capabilities."""
+    from backend.data_source_manager import data_source_manager, DEFAULT_PRIORITY_ORDER, SOURCE_CAPABILITIES
+
+    return {
+        "priority_order": {
+            asset_class: [s.value for s in sources]
+            for asset_class, sources in DEFAULT_PRIORITY_ORDER.items()
+        },
+        "capabilities": {
+            source.value: classes
+            for source, classes in SOURCE_CAPABILITIES.items()
+        },
+        "source_health": data_source_manager.get_source_info()
+    }

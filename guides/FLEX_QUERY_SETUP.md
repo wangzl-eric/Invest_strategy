@@ -25,13 +25,13 @@ The TWS API (`ib_insync`) only returns trades from the **current session**. For 
    - Click **"Create"** or **"+"**
    - Give it a name: e.g., `TradeHistory`
    - Set date period: Last 365 days (or custom)
-   
+
 4. **Configure Query Sections**
    Enable these sections:
    - ✅ **Trades** (required for trade history)
    - ✅ **Open Positions** (optional)
    - ✅ **Cash Transactions** (optional, for dividends/deposits)
-   
+
 5. **Save and Note the Query ID**
    - After saving, you'll see a **Query ID** (e.g., `123456`)
    - Note this down
@@ -86,11 +86,11 @@ from backend.flex_importer import import_flex_query_result
 async def fetch_trades():
     client = FlexQueryClient(token="your_token")
     result = await client.fetch_statement(query_id="123456")
-    
+
     # Import to database
     import_result = import_flex_query_result(result)
     print(f"Imported {import_result['trades_imported']} trades")
-    
+
     # Or access directly
     for trade in result.trades:
         print(f"{trade.trade_date}: {trade.side} {trade.quantity} {trade.symbol} @ {trade.price}")
@@ -204,10 +204,10 @@ async def daily_import():
     if not settings.flex_query.is_configured:
         logger.error("Flex Query not configured")
         return
-    
+
     client = FlexQueryClient(token=settings.flex_query.token)
     query_id = settings.flex_query.trade_query_id or settings.flex_query.activity_query_id
-    
+
     try:
         result = await client.fetch_statement(query_id)
         import_result = import_flex_query_result(result)

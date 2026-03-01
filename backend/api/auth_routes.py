@@ -53,7 +53,7 @@ class UserResponse(BaseModel):
     is_active: bool
     is_superuser: bool
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -70,7 +70,7 @@ class UserAccountResponse(BaseModel):
     account_name: Optional[str]
     is_primary: bool
     is_active: bool
-    
+
     class Config:
         from_attributes = True
 
@@ -89,7 +89,7 @@ class APIKeyResponse(BaseModel):
     created_at: datetime
     # Only include the full key on creation
     key: Optional[str] = None
-    
+
     class Config:
         from_attributes = True
 
@@ -101,13 +101,13 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(
         (User.email == user_data.email) | (User.username == user_data.username)
     ).first()
-    
+
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email or username already registered"
         )
-    
+
     # Create user
     user = User(
         email=user_data.email,
@@ -117,14 +117,14 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     )
     db.add(user)
     db.flush()
-    
+
     # Create default preferences
     preferences = UserPreferences(user_id=user.id)
     db.add(preferences)
-    
+
     db.commit()
     db.refresh(user)
-    
+
     logger.info(f"New user registered: {user.username} ({user.email})")
     return user
 
@@ -133,23 +133,23 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
 async def login(credentials: UserLogin, db: Session = Depends(get_db)):
     """Login and get access token."""
     user = db.query(User).filter(User.username == credentials.username).first()
-    
+
     if not user or not verify_password(credentials.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is inactive"
         )
-    
+
     # Create access token
     access_token = create_access_token(data={"sub": user.id})
-    
+
     logger.info(f"User logged in: {user.username}")
     return {
         "access_token": access_token,
@@ -186,20 +186,20 @@ async def add_account(
         UserAccount.user_id == current_user.id,
         UserAccount.account_id == account_data.account_id
     ).first()
-    
+
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Account already added"
         )
-    
+
     # If this is set as primary, unset other primary accounts
     if account_data.is_primary:
         db.query(UserAccount).filter(
             UserAccount.user_id == current_user.id,
             UserAccount.is_primary == True
         ).update({"is_primary": False})
-    
+
     # Create account
     account = UserAccount(
         user_id=current_user.id,
@@ -210,7 +210,7 @@ async def add_account(
     db.add(account)
     db.commit()
     db.refresh(account)
-    
+
     logger.info(f"User {current_user.username} added account: {account_data.account_id}")
     return account
 
@@ -223,11 +223,11 @@ async def create_api_key(
 ):
     """Create a new API key for the current user."""
     key, key_hash, key_prefix = generate_api_key()
-    
+
     expires_at = None
     if key_data.expires_in_days:
         expires_at = datetime.utcnow() + timedelta(days=key_data.expires_in_days)
-    
+
     api_key = APIKey(
         user_id=current_user.id,
         key_name=key_data.key_name,
@@ -238,7 +238,7 @@ async def create_api_key(
     db.add(api_key)
     db.commit()
     db.refresh(api_key)
-    
+
     # Return the full key only on creation
     response = APIKeyResponse(
         id=api_key.id,
@@ -249,7 +249,7 @@ async def create_api_key(
         created_at=api_key.created_at,
         key=key,  # Only time the full key is returned
     )
-    
+
     logger.info(f"User {current_user.username} created API key: {key_data.key_name}")
     return response
 
@@ -275,14 +275,14 @@ async def delete_api_key(
         APIKey.id == key_id,
         APIKey.user_id == current_user.id
     ).first()
-    
+
     if not api_key:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="API key not found"
         )
-    
+
     db.delete(api_key)
     db.commit()
-    
+
     logger.info(f"User {current_user.username} deleted API key: {api_key.key_name}")

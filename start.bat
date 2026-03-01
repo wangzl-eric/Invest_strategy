@@ -135,4 +135,3 @@ echo Services are running in separate windows.
 echo Close those windows to stop the services.
 echo.
 pause
-

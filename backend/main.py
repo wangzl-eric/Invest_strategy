@@ -14,6 +14,7 @@ from backend.api.reporting_routes import router as reporting_router
 from backend.api.market_routes import router as market_router
 from backend.api.data_routes import router as data_router
 from backend.api.execution_routes import router as execution_router
+from backend.api.research_routes import router as research_router
 from backend.broker_interface import broker_manager, IBKRBrokerAdapter
 from backend.ibkr_client import IBKRClient
 try:
@@ -98,6 +99,7 @@ app.include_router(reporting_router, prefix="/api", tags=["reporting"])
 app.include_router(market_router, prefix="/api", tags=["market-data"])
 app.include_router(data_router, prefix="/api", tags=["data-management"])
 app.include_router(execution_router, prefix="/api", tags=["execution"])
+app.include_router(research_router, prefix="/api", tags=["research"])
 if websocket_router:
     app.include_router(websocket_router, prefix="/api", tags=["websocket"])
 
@@ -109,16 +111,30 @@ async def metrics():
     from fastapi import Response
     return Response(content=get_metrics(), media_type=get_metrics_content_type())
 
-# NOTE: PnL scheduler disabled.
-# The user explicitly does not want ongoing PnL recording anymore.
-# We keep the class import available for optional/legacy usage, but do not start it automatically.
+# PnL Scheduler - enables automatic Net Liquidation updates
+# Set update_interval_minutes in app_config.yaml (default: 15 minutes)
 pnl_scheduler = None
+
+
+def get_pnl_scheduler():
+    """Get or create the PnL scheduler instance."""
+    global pnl_scheduler
+    if pnl_scheduler is None:
+        from backend.scheduler import PnLScheduler
+        pnl_scheduler = PnLScheduler()
+    return pnl_scheduler
 
 
 @app.on_event("startup")
 async def startup_event():
     """Application startup hook."""
-    logger.info("PnL scheduler disabled (no automatic PnL recording)")
+    # Start PnL scheduler for automatic Net Liquidation updates
+    try:
+        scheduler = get_pnl_scheduler()
+        scheduler.start()
+        logger.info(f"PnL scheduler started (interval: {settings.app.update_interval_minutes} minutes)")
+    except Exception as e:
+        logger.warning(f"Failed to start PnL scheduler: {e}")
     # Start real-time broadcaster
     await broadcaster.start()
     logger.info("Real-time broadcaster started")
@@ -142,8 +158,15 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Application shutdown hook."""
-    # No-op: scheduler disabled
-    logger.info("PnL scheduler disabled (nothing to stop)")
+    # Stop PnL scheduler
+    try:
+        scheduler = get_pnl_scheduler()
+        if scheduler:
+            import asyncio
+            asyncio.create_task(scheduler.stop())
+            logger.info("PnL scheduler stopped")
+    except Exception as e:
+        logger.warning(f"Error stopping PnL scheduler: {e}")
     # Stop real-time broadcaster
     await broadcaster.stop()
     logger.info("Real-time broadcaster stopped")
@@ -240,13 +263,13 @@ async def detailed_health_check():
     from backend.ibkr_client import IBKRClient
     from backend.scheduler import PnLScheduler
     import socket
-    
+
     health_status = {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
         "components": {}
     }
-    
+
     # Database health
     try:
         from sqlalchemy import text
@@ -262,20 +285,20 @@ async def detailed_health_check():
             "error": str(e)
         }
         health_status["status"] = "degraded"
-    
+
     # IBKR connection health
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(2)
         result = sock.connect_ex((settings.ibkr.host, settings.ibkr.port))
         sock.close()
-        
+
         if result == 0:
             # Port is open, try actual connection
             ibkr_client = IBKRClient()
             connected = await ibkr_client.connect()
             await ibkr_client.disconnect()
-            
+
             health_status["components"]["ibkr"] = {
                 "status": "healthy" if connected else "unhealthy",
                 "host": settings.ibkr.host,
@@ -298,14 +321,20 @@ async def detailed_health_check():
             "error": str(e)
         }
         health_status["status"] = "degraded"
-    
+
     # Scheduler health
-    # The periodic PnL recording scheduler is intentionally disabled.
-    health_status["components"]["scheduler"] = {
-        "status": "disabled",
-        "reason": "Automatic PnL recording disabled by user request"
-    }
-    
+    try:
+        scheduler = get_pnl_scheduler()
+        health_status["components"]["scheduler"] = {
+            "status": "healthy" if scheduler and scheduler._task and not scheduler._task.done() else "stopped",
+            "update_interval_minutes": settings.app.update_interval_minutes,
+        }
+    except Exception as e:
+        health_status["components"]["scheduler"] = {
+            "status": "error",
+            "error": str(e)
+        }
+
     # Cache health
     try:
         from backend.cache import cache_manager
@@ -318,7 +347,7 @@ async def detailed_health_check():
             "status": "unhealthy",
             "error": str(e)
         }
-    
+
     # Alert system health
     try:
         from backend.alert_scheduler import scheduler as alert_scheduler
@@ -331,7 +360,7 @@ async def detailed_health_check():
             "status": "unhealthy",
             "error": str(e)
         }
-    
+
     return health_status
 
 
@@ -343,4 +372,3 @@ if __name__ == "__main__":
         port=8000,
         reload=settings.app.debug,
     )
-

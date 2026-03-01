@@ -112,7 +112,7 @@ After updating the Flex Query configuration:
 3. **Check for gaps**:
    ```sql
    -- Should show mostly 1-day gaps (daily data)
-   SELECT 
+   SELECT
        date,
        LAG(date) OVER (ORDER BY date) as prev_date,
        julianday(date) - julianday(LAG(date) OVER (ORDER BY date)) as days_diff

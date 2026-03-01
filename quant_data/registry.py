@@ -110,4 +110,3 @@ def finish_ingestion_run(db: Session, *, run_id: int, status: str, error: str = 
     run.error = error
     run.finished_at = datetime.utcnow()
     db.add(run)
-

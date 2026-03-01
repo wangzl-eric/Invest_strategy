@@ -39,4 +39,3 @@ class FxConnector(Protocol):
         """Return canonical FX rates table with at least:
         timestamp, base_ccy, quote_ccy, rate
         """
-

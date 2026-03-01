@@ -50,4 +50,3 @@ class EcbFxConnector:
 
         df["venue"] = self.cfg.venue
         return df[["timestamp", "base_ccy", "quote_ccy", "rate", "venue"]].reset_index(drop=True)
-

@@ -50,7 +50,7 @@ async def create_alert_rule(
         # Convert channel_ids list to comma-separated string
         channel_ids_str = ",".join(str(cid) for cid in rule_data.channel_ids)
         escalation_channel_ids_str = ",".join(str(cid) for cid in rule_data.escalation_channel_ids)
-        
+
         rule = AlertRule(
             account_id=rule_data.account_id,
             name=rule_data.name,
@@ -68,7 +68,7 @@ async def create_alert_rule(
         db.add(rule)
         db.commit()
         db.refresh(rule)
-        
+
         # Convert response
         rule_dict = model_to_dict(rule)
         rule_dict['rule_config'] = json.loads(rule.rule_config)
@@ -88,20 +88,20 @@ async def list_alert_rules(
     """List all alert rules."""
     try:
         query = db.query(AlertRule)
-        
+
         if account_id:
             query = query.filter(AlertRule.account_id == account_id)
         if enabled is not None:
             query = query.filter(AlertRule.enabled == enabled)
-        
+
         rules = query.order_by(desc(AlertRule.created_at)).all()
-        
+
         result = []
         for rule in rules:
             rule_dict = model_to_dict(rule)
             rule_dict['rule_config'] = json.loads(rule.rule_config)
             result.append(AlertRuleResponse(**rule_dict))
-        
+
         return result
     except Exception as e:
         logger.error(f"Error listing alert rules: {e}", exc_info=True)
@@ -118,7 +118,7 @@ async def get_alert_rule(
         rule = db.query(AlertRule).filter(AlertRule.id == rule_id).first()
         if not rule:
             raise HTTPException(status_code=404, detail="Alert rule not found")
-        
+
         rule_dict = model_to_dict(rule)
         rule_dict['rule_config'] = json.loads(rule.rule_config)
         return AlertRuleResponse(**rule_dict)
@@ -140,7 +140,7 @@ async def update_alert_rule(
         rule = db.query(AlertRule).filter(AlertRule.id == rule_id).first()
         if not rule:
             raise HTTPException(status_code=404, detail="Alert rule not found")
-        
+
         if rule_data.name is not None:
             rule.name = rule_data.name
         if rule_data.description is not None:
@@ -161,11 +161,11 @@ async def update_alert_rule(
             rule.escalation_after_minutes = rule_data.escalation_after_minutes
         if rule_data.escalation_channel_ids is not None:
             rule.escalation_channel_ids = ",".join(str(cid) for cid in rule_data.escalation_channel_ids)
-        
+
         rule.updated_at = datetime.utcnow()
         db.commit()
         db.refresh(rule)
-        
+
         rule_dict = model_to_dict(rule)
         rule_dict['rule_config'] = json.loads(rule.rule_config)
         return AlertRuleResponse(**rule_dict)
@@ -187,7 +187,7 @@ async def delete_alert_rule(
         rule = db.query(AlertRule).filter(AlertRule.id == rule_id).first()
         if not rule:
             raise HTTPException(status_code=404, detail="Alert rule not found")
-        
+
         db.delete(rule)
         db.commit()
     except HTTPException:
@@ -213,22 +213,22 @@ async def list_alerts(
     """List all alerts."""
     try:
         query = db.query(Alert)
-        
+
         if account_id:
             query = query.filter(Alert.account_id == account_id)
         if status:
             query = query.filter(Alert.status == status)
         if severity:
             query = query.filter(Alert.severity == severity)
-        
+
         alerts = query.order_by(desc(Alert.created_at)).limit(limit).all()
-        
+
         result = []
         for alert in alerts:
             alert_dict = model_to_dict(alert)
             alert_dict['context'] = json.loads(alert.context_json)
             result.append(AlertResponse(**alert_dict))
-        
+
         return result
     except Exception as e:
         logger.error(f"Error listing alerts: {e}", exc_info=True)
@@ -245,7 +245,7 @@ async def get_alert(
         alert = db.query(Alert).filter(Alert.id == alert_id).first()
         if not alert:
             raise HTTPException(status_code=404, detail="Alert not found")
-        
+
         alert_dict = model_to_dict(alert)
         alert_dict['context'] = json.loads(alert.context_json)
         return AlertResponse(**alert_dict)
@@ -267,7 +267,7 @@ async def acknowledge_alert(
         success = alert_engine.acknowledge_alert(alert_id, acknowledged_by)
         if not success:
             raise HTTPException(status_code=404, detail="Alert not found")
-        
+
         alert = db.query(Alert).filter(Alert.id == alert_id).first()
         alert_dict = model_to_dict(alert)
         alert_dict['context'] = json.loads(alert.context_json)
@@ -289,7 +289,7 @@ async def resolve_alert(
         success = alert_engine.resolve_alert(alert_id)
         if not success:
             raise HTTPException(status_code=404, detail="Alert not found")
-        
+
         alert = db.query(Alert).filter(Alert.id == alert_id).first()
         alert_dict = model_to_dict(alert)
         alert_dict['context'] = json.loads(alert.context_json)
@@ -309,14 +309,14 @@ async def evaluate_rules(
     """Manually trigger evaluation of all alert rules."""
     try:
         alerts = alert_engine.evaluate_all_rules(account_id)
-        
+
         # Send notifications for triggered alerts
         for alert in alerts:
             try:
                 await notification_service.send_alert_notifications(alert)
             except Exception as e:
                 logger.error(f"Error sending notifications for alert {alert.id}: {e}", exc_info=True)
-        
+
         return {
             "evaluated": True,
             "alerts_triggered": len(alerts),
@@ -337,13 +337,13 @@ async def get_alert_history(
         history = db.query(AlertHistory).filter(
             AlertHistory.alert_id == alert_id
         ).order_by(AlertHistory.created_at).all()
-        
+
         result = []
         for h in history:
             h_dict = model_to_dict(h)
             h_dict['context'] = json.loads(h.context_json) if h.context_json else {}
             result.append(AlertHistoryResponse(**h_dict))
-        
+
         return result
     except Exception as e:
         logger.error(f"Error getting alert history: {e}", exc_info=True)
@@ -371,7 +371,7 @@ async def create_alert_channel(
         db.add(channel)
         db.commit()
         db.refresh(channel)
-        
+
         channel_dict = model_to_dict(channel)
         channel_dict['config'] = json.loads(channel.config_json)
         del channel_dict['config_json']
@@ -391,21 +391,21 @@ async def list_alert_channels(
     """List all alert channels."""
     try:
         query = db.query(AlertChannel)
-        
+
         if account_id:
             query = query.filter(AlertChannel.account_id == account_id)
         if enabled is not None:
             query = query.filter(AlertChannel.enabled == enabled)
-        
+
         channels = query.order_by(desc(AlertChannel.created_at)).all()
-        
+
         result = []
         for channel in channels:
             channel_dict = model_to_dict(channel)
             channel_dict['config'] = json.loads(channel.config_json)
             del channel_dict['config_json']
             result.append(AlertChannelResponse(**channel_dict))
-        
+
         return result
     except Exception as e:
         logger.error(f"Error listing alert channels: {e}", exc_info=True)
@@ -422,7 +422,7 @@ async def get_alert_channel(
         channel = db.query(AlertChannel).filter(AlertChannel.id == channel_id).first()
         if not channel:
             raise HTTPException(status_code=404, detail="Alert channel not found")
-        
+
         channel_dict = model_to_dict(channel)
         channel_dict['config'] = json.loads(channel.config_json)
         del channel_dict['config_json']
@@ -445,18 +445,18 @@ async def update_alert_channel(
         channel = db.query(AlertChannel).filter(AlertChannel.id == channel_id).first()
         if not channel:
             raise HTTPException(status_code=404, detail="Alert channel not found")
-        
+
         if channel_data.name is not None:
             channel.name = channel_data.name
         if channel_data.config is not None:
             channel.config_json = json.dumps(channel_data.config)
         if channel_data.enabled is not None:
             channel.enabled = channel_data.enabled
-        
+
         channel.updated_at = datetime.utcnow()
         db.commit()
         db.refresh(channel)
-        
+
         channel_dict = model_to_dict(channel)
         channel_dict['config'] = json.loads(channel.config_json)
         del channel_dict['config_json']
@@ -479,7 +479,7 @@ async def delete_alert_channel(
         channel = db.query(AlertChannel).filter(AlertChannel.id == channel_id).first()
         if not channel:
             raise HTTPException(status_code=404, detail="Alert channel not found")
-        
+
         db.delete(channel)
         db.commit()
     except HTTPException:

@@ -190,13 +190,13 @@ df = query_trades("SELECT * FROM trades WHERE realized_pnl > 0")
 
 # Aggregation
 df = query_trades("""
-    SELECT 
+    SELECT
         symbol,
         COUNT(*) as trades,
         SUM(realized_pnl) as total_pnl,
         AVG(realized_pnl) as avg_pnl
-    FROM trades 
-    GROUP BY symbol 
+    FROM trades
+    GROUP BY symbol
     ORDER BY total_pnl DESC
 """)
 print(df)
@@ -211,7 +211,7 @@ print(df)
 ```python
 df = query_trades("""
     SELECT exec_time, symbol, side, shares, price, realized_pnl, currency
-    FROM trades 
+    FROM trades
     WHERE realized_pnl > 0
     ORDER BY realized_pnl DESC
     LIMIT 10
@@ -223,7 +223,7 @@ df = query_trades("""
 ```python
 df = query_trades("""
     SELECT exec_time, symbol, side, shares, price, realized_pnl, currency
-    FROM trades 
+    FROM trades
     WHERE realized_pnl < 0
     ORDER BY realized_pnl ASC
     LIMIT 10
@@ -234,13 +234,13 @@ df = query_trades("""
 
 ```python
 df = query_trades("""
-    SELECT 
+    SELECT
         strftime('%Y-%m', exec_time) as month,
         COUNT(*) as trades,
         SUM(realized_pnl) as pnl_usd,
         SUM(realized_pnl_base) as pnl_hkd,
         SUM(commission) as commissions
-    FROM trades 
+    FROM trades
     GROUP BY strftime('%Y-%m', exec_time)
     ORDER BY month
 """)
@@ -250,12 +250,12 @@ df = query_trades("""
 
 ```python
 df = query_trades("""
-    SELECT 
+    SELECT
         sec_type,
         COUNT(*) as trades,
         SUM(realized_pnl) as pnl_usd,
         SUM(commission) as commissions
-    FROM trades 
+    FROM trades
     GROUP BY sec_type
     ORDER BY pnl_usd DESC
 """)
@@ -265,14 +265,14 @@ df = query_trades("""
 
 ```python
 df = query_trades("""
-    SELECT 
-        CASE WHEN realized_pnl > 0 THEN 'Win' 
-             WHEN realized_pnl < 0 THEN 'Loss' 
+    SELECT
+        CASE WHEN realized_pnl > 0 THEN 'Win'
+             WHEN realized_pnl < 0 THEN 'Loss'
              ELSE 'Breakeven' END as outcome,
         COUNT(*) as count,
         SUM(realized_pnl) as total_pnl,
         AVG(realized_pnl) as avg_pnl
-    FROM trades 
+    FROM trades
     WHERE realized_pnl != 0
     GROUP BY outcome
 """)
@@ -282,13 +282,13 @@ df = query_trades("""
 
 ```python
 df = query_trades("""
-    SELECT 
+    SELECT
         CASE WHEN sec_type = 'OPT' THEN 'Options' ELSE 'Stocks' END as type,
         COUNT(*) as trades,
         SUM(realized_pnl) as pnl_usd,
         SUM(commission) as commissions,
         SUM(realized_pnl) - ABS(SUM(commission)) as net_pnl
-    FROM trades 
+    FROM trades
     GROUP BY type
 """)
 ```
@@ -297,14 +297,14 @@ df = query_trades("""
 
 ```python
 df = query_trades("""
-    SELECT 
+    SELECT
         symbol,
         put_call,
         expiry,
         strike,
         SUM(shares) as total_contracts,
         SUM(realized_pnl) as pnl
-    FROM trades 
+    FROM trades
     WHERE symbol LIKE 'VIX%'
     GROUP BY symbol
     ORDER BY pnl DESC

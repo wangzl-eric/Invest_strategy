@@ -1,2 +1,1 @@
-"""Backtesting framework (vectorized + event-driven)."""
-
+"""Backtesting framework using Backtrader."""

@@ -35,7 +35,7 @@ def run_job():
     logger.info("=" * 50)
     logger.info(f"Scheduled PA automation starting: {datetime.now():%Y-%m-%d %H:%M}")
     logger.info("=" * 50)
-    
+
     try:
         result = automate_pa_daily()
         status = "✓ Success" if result["success"] else f"✗ Failed: {result['error']}"
@@ -46,23 +46,23 @@ def run_job():
 
 def main():
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="PA automation scheduler")
     parser.add_argument("--run-now", action="store_true", help="Run immediately and exit")
     parser.add_argument("--daemon", action="store_true", help="Run as daemon")
     parser.add_argument("--time", default="09:00", help="Daily run time (HH:MM)")
-    
+
     args = parser.parse_args()
-    
+
     if args.run_now:
         run_job()
         return 0
-    
+
     if args.daemon:
         schedule.every().day.at(args.time).do(run_job)
         logger.info(f"Scheduler started: daily at {args.time}")
         logger.info("Press Ctrl+C to stop")
-        
+
         try:
             while True:
                 schedule.run_pending()
@@ -70,7 +70,7 @@ def main():
         except KeyboardInterrupt:
             logger.info("Stopped")
             return 0
-    
+
     parser.print_help()
     return 0
 

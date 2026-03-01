@@ -6,16 +6,16 @@ and storing it in the parquet data lake.
 Usage:
     # Fetch equities
     from backend.ibkr_data_fetcher import fetch_equities, fetch_forex, fetch_futures
-    
+
     # Pull data for a few symbols
     result = await fetch_equities(["AAPL", "MSFT", "GOOGL"], "1 Y")
-    
+
     # Pull forex data
     result = await fetch_forex(["EURUSD", "GBPUSD"], "1 Y")
-    
+
     # Bulk fetch
     result = await batch_fetch("ibkr_equities", ["AAPL", "MSFT"], "1 Y")
-    
+
     # Validate data quality
     from backend.ibkr_data_fetcher import validate_data, DataQualityReport
     report = validate_data(df)
@@ -77,16 +77,16 @@ DEFAULT_FUTURES = [
 
 class IBKRDataFetcher:
     """Wrapper for fetching data from IBKR."""
-    
+
     def __init__(self):
         self._client = None
-    
+
     async def _get_client(self):
         if self._client is None:
             from backend.ibkr_client import IBKRClient
             self._client = IBKRClient()
         return self._client
-    
+
     async def fetch_equities(
         self,
         symbols: List[str],
@@ -95,23 +95,23 @@ class IBKRDataFetcher:
         exchange: str = "SMART"
     ) -> Dict[str, pd.DataFrame]:
         """Fetch equity data.
-        
+
         Args:
             symbols: List of stock symbols
             duration: How far back (e.g., "1 Y", "6 M", "30 D")
             interval: Bar interval (e.g., "1 day", "1 min", "5 mins")
             exchange: Exchange (default: SMART)
-            
+
         Returns:
             Dict mapping symbol to DataFrame with OHLCV data
         """
         client = await self._get_client()
-        
+
         if not await client.ensure_connected():
             raise ConnectionError("Could not connect to IBKR")
-        
+
         results = {}
-        
+
         for symbol in symbols:
             try:
                 df = await client.get_historical_data(
@@ -121,21 +121,21 @@ class IBKRDataFetcher:
                     duration=duration,
                     interval=interval
                 )
-                
+
                 if not df.empty:
                     results[symbol] = df
                     logger.info(f"Fetched {len(df)} bars for {symbol}")
                 else:
                     logger.warning(f"No data returned for {symbol}")
-                
+
                 # Rate limiting
                 await asyncio.sleep(0.2)
-                
+
             except Exception as e:
                 logger.error(f"Error fetching {symbol}: {e}")
-        
+
         return results
-    
+
     async def fetch_forex(
         self,
         pairs: List[str],
@@ -143,22 +143,22 @@ class IBKRDataFetcher:
         interval: str = "1 day"
     ) -> Dict[str, pd.DataFrame]:
         """Fetch forex data.
-        
+
         Args:
             pairs: List of forex pairs (e.g., "EURUSD", "GBPUSD")
             duration: How far back
             interval: Bar interval
-            
+
         Returns:
             Dict mapping pair to DataFrame
         """
         client = await self._get_client()
-        
+
         if not await client.ensure_connected():
             raise ConnectionError("Could not connect to IBKR")
-        
+
         results = {}
-        
+
         for pair in pairs:
             try:
                 df = await client.get_historical_data(
@@ -168,18 +168,18 @@ class IBKRDataFetcher:
                     duration=duration,
                     interval=interval
                 )
-                
+
                 if not df.empty:
                     results[pair] = df
                     logger.info(f"Fetched {len(df)} bars for {pair}")
-                
+
                 await asyncio.sleep(0.2)
-                
+
             except Exception as e:
                 logger.error(f"Error fetching {pair}: {e}")
-        
+
         return results
-    
+
     async def fetch_futures(
         self,
         symbols: List[str],
@@ -188,23 +188,23 @@ class IBKRDataFetcher:
         exchange: str = "CME"
     ) -> Dict[str, pd.DataFrame]:
         """Fetch futures data.
-        
+
         Args:
             symbols: List of futures symbols (e.g., "ES", "CL", "GC")
             duration: How far back
             interval: Bar interval
             exchange: Exchange (default: CME)
-            
+
         Returns:
             Dict mapping symbol to DataFrame
         """
         client = await self._get_client()
-        
+
         if not await client.ensure_connected():
             raise ConnectionError("Could not connect to IBKR")
-        
+
         results = {}
-        
+
         for symbol in symbols:
             try:
                 df = await client.get_historical_data(
@@ -214,39 +214,39 @@ class IBKRDataFetcher:
                     duration=duration,
                     interval=interval
                 )
-                
+
                 if not df.empty:
                     results[symbol] = df
                     logger.info(f"Fetched {len(df)} bars for {symbol}")
-                
+
                 await asyncio.sleep(0.3)  # Futures need more delay
-                
+
             except Exception as e:
                 logger.error(f"Error fetching {symbol}: {e}")
-        
+
         return results
-    
+
     async def fetch_options_chain(
         self,
         underlying: str,
         exchange: str = "SMART"
     ) -> Dict:
         """Fetch options chain for an underlying.
-        
+
         Args:
             underlying: Stock symbol
             exchange: Exchange
-            
+
         Returns:
             Dict with expirations and strikes
         """
         client = await self._get_client()
-        
+
         if not await client.ensure_connected():
             raise ConnectionError("Could not connect to IBKR")
-        
+
         return await client.get_options_chain(underlying, exchange)
-    
+
     async def disconnect(self):
         """Disconnect from IBKR."""
         if self._client:
@@ -265,7 +265,7 @@ async def fetch_equities(
     exchange: str = "SMART"
 ) -> Dict[str, pd.DataFrame]:
     """Fetch equity data from IBKR.
-    
+
     Wrapper function for quick access.
     """
     fetcher = IBKRDataFetcher()
@@ -281,7 +281,7 @@ async def fetch_forex(
     interval: str = "1 day"
 ) -> Dict[str, pd.DataFrame]:
     """Fetch forex data from IBKR.
-    
+
     Wrapper function for quick access.
     """
     fetcher = IBKRDataFetcher()
@@ -298,7 +298,7 @@ async def fetch_futures(
     exchange: str = "CME"
 ) -> Dict[str, pd.DataFrame]:
     """Fetch futures data from IBKR.
-    
+
     Wrapper function for quick access.
     """
     fetcher = IBKRDataFetcher()
@@ -327,13 +327,13 @@ async def batch_fetch(
     interval: str = "1 day"
 ) -> Dict[str, pd.DataFrame]:
     """Batch fetch data for an asset class.
-    
+
     Args:
         asset_class: "ibkr_equities", "ibkr_fx", "ibkr_futures"
         symbols: Optional list of symbols (uses defaults if not provided)
         duration: How far back
         interval: Bar interval
-        
+
     Returns:
         Dict mapping symbol to DataFrame
     """
@@ -347,7 +347,7 @@ async def batch_fetch(
             symbols = DEFAULT_FUTURES
         else:
             raise ValueError(f"Unknown asset class: {asset_class}")
-    
+
     if asset_class == "ibkr_equities":
         return await fetch_equities(symbols, duration, interval)
     elif asset_class == "ibkr_fx":
@@ -364,21 +364,21 @@ async def batch_fetch(
 
 class DataQualityReport:
     """Data quality report for a DataFrame."""
-    
+
     def __init__(self, df: pd.DataFrame):
         self.df = df
         self.issues: List[str] = []
         self.warnings: List[str] = []
         self.stats: Dict = {}
-        
+
         self._analyze()
-    
+
     def _analyze(self):
         """Run all validation checks."""
         if self.df.empty:
             self.issues.append("DataFrame is empty")
             return
-        
+
         # Basic stats
         self.stats = {
             "rows": len(self.df),
@@ -388,16 +388,16 @@ class DataQualityReport:
                 "end": str(self.df['date'].max()) if 'date' in self.df.columns else None,
             }
         }
-        
+
         # Check for required columns
         required = ['date', 'open', 'high', 'low', 'close']
         for col in required:
             if col not in self.df.columns:
                 self.issues.append(f"Missing required column: {col}")
-        
+
         if 'date' not in self.df.columns:
             return
-        
+
         # Check for missing values
         for col in ['open', 'high', 'low', 'close', 'volume']:
             if col in self.df.columns:
@@ -408,34 +408,34 @@ class DataQualityReport:
                         self.issues.append(f"Column '{col}' has {missing} missing values ({pct:.1f}%)")
                     else:
                         self.warnings.append(f"Column '{col}' has {missing} missing values ({pct:.1f}%)")
-        
+
         # Check for negative prices
         for col in ['open', 'high', 'low', 'close']:
             if col in self.df.columns:
                 neg_count = (self.df[col] < 0).sum()
                 if neg_count > 0:
                     self.issues.append(f"Column '{col}' has {neg_count} negative values")
-        
+
         # Check for negative volume
         if 'volume' in self.df.columns:
             neg_vol = (self.df['volume'] < 0).sum()
             if neg_vol > 0:
                 self.issues.append(f"Column 'volume' has {neg_vol} negative values")
-        
+
         # Check for high/low sanity
         if all(col in self.df.columns for col in ['high', 'low', 'open', 'close']):
             invalid_hl = ((self.df['high'] < self.df['low'])).sum()
             if invalid_hl > 0:
                 self.issues.append(f"High < Low in {invalid_hl} rows")
-            
+
             invalid_h = ((self.df['high'] < self.df['open']) | (self.df['high'] < self.df['close'])).sum()
             if invalid_h > 0:
                 self.warnings.append(f"High < Open or Close in {invalid_h} rows")
-            
+
             invalid_l = ((self.df['low'] > self.df['open']) | (self.df['low'] > self.df['close'])).sum()
             if invalid_l > 0:
                 self.warnings.append(f"Low > Open or Close in {invalid_l} rows")
-        
+
         # Check for gaps in data
         if 'date' in self.df.columns:
             dates = pd.to_datetime(self.df['date'])
@@ -444,17 +444,17 @@ class DataQualityReport:
                 max_gap = date_diff.days
                 if max_gap > 7:
                     self.warnings.append(f"Maximum gap in data: {max_gap} days")
-        
+
         # Check for duplicates
         if 'date' in self.df.columns and 'ticker' in self.df.columns:
             dups = self.df.duplicated(subset=['date', 'ticker']).sum()
             if dups > 0:
                 self.warnings.append(f"Found {dups} duplicate date/ticker combinations")
-    
+
     def is_valid(self) -> bool:
         """Return True if no critical issues found."""
         return len(self.issues) == 0
-    
+
     def to_dict(self) -> dict:
         """Convert report to dict."""
         return {
@@ -467,10 +467,10 @@ class DataQualityReport:
 
 def validate_data(df: pd.DataFrame) -> DataQualityReport:
     """Validate data quality and return a report.
-    
+
     Args:
         df: DataFrame with OHLCV data
-        
+
     Returns:
         DataQualityReport with validation results
     """
@@ -479,33 +479,33 @@ def validate_data(df: pd.DataFrame) -> DataQualityReport:
 
 def validate_and_clean(df: pd.DataFrame) -> pd.DataFrame:
     """Validate and clean data, fixing common issues.
-    
+
     Args:
         df: DataFrame with OHLCV data
-        
+
     Returns:
         Cleaned DataFrame
     """
     report = validate_data(df)
-    
+
     if not report.is_valid():
         logger.warning(f"Data quality issues found: {report.issues}")
-    
+
     # Make a copy
     cleaned = df.copy()
-    
+
     # Remove rows with all NaN OHLC
     if all(col in cleaned.columns for col in ['open', 'high', 'low', 'close']):
         cleaned = cleaned.dropna(subset=['open', 'high', 'low', 'close'], how='all')
-    
+
     # Remove duplicates
     if 'date' in cleaned.columns and 'ticker' in cleaned.columns:
         cleaned = cleaned.drop_duplicates(subset=['date', 'ticker'], keep='last')
-    
+
     # Sort by date
     if 'date' in cleaned.columns:
         cleaned = cleaned.sort_values('date').reset_index(drop=True)
-    
+
     return cleaned
 
 
@@ -518,17 +518,17 @@ def get_last_date_for_ticker(
     ticker: str
 ) -> Optional[datetime]:
     """Get the last date for a specific ticker in a parquet file.
-    
+
     Args:
         parquet_path: Path to parquet file
         ticker: Ticker symbol
-        
+
     Returns:
         Last date as datetime, or None if not found
     """
     if not parquet_path.exists():
         return None
-    
+
     try:
         df = pd.read_parquet(parquet_path)
         if 'ticker' in df.columns and 'date' in df.columns:
@@ -538,7 +538,7 @@ def get_last_date_for_ticker(
                 return pd.to_datetime(last_date)
     except Exception as e:
         logger.error(f"Error reading parquet: {e}")
-    
+
     return None
 
 
@@ -555,15 +555,15 @@ async def incremental_update(
     force_refresh: bool = False
 ) -> Dict[str, int]:
     """Incrementally update data for an asset class.
-    
+
     Only fetches data newer than the last stored date for each ticker.
-    
+
     Args:
         asset_class: "ibkr_equities", "ibkr_fx", "ibkr_futures"
         symbols: Optional list of symbols (uses defaults if not provided)
         interval: Bar interval
         force_refresh: If True, ignore existing data and fetch all
-        
+
     Returns:
         Dict mapping symbol to number of new rows fetched
     """
@@ -571,7 +571,7 @@ async def incremental_update(
     parquet_path = get_ibkr_data_path(asset_class)
     if not parquet_path:
         raise ValueError(f"Unknown asset class: {asset_class}")
-    
+
     # Use default tickers if not provided
     if symbols is None:
         if asset_class == "ibkr_equities":
@@ -580,7 +580,7 @@ async def incremental_update(
             symbols = DEFAULT_FOREX_PAIRS
         elif asset_class == "ibkr_futures":
             symbols = DEFAULT_FUTURES
-    
+
     # Determine start date
     if force_refresh:
         start_date = (datetime.now() - timedelta(days=730)).strftime("%Y-%m-%d")
@@ -592,17 +592,17 @@ async def incremental_update(
             if last_date:
                 if start_date is None or last_date < pd.to_datetime(start_date):
                     start_date = (last_date + timedelta(days=1)).strftime("%Y-%m-%d")
-        
+
         if not start_date:
             start_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
-    
+
     end_date = datetime.now().strftime("%Y-%m-%d")
-    
+
     # Calculate appropriate duration
     start_dt = datetime.strptime(start_date, "%Y-%m-%d")
     end_dt = datetime.strptime(end_date, "%Y-%m-%d")
     days = (end_dt - start_dt).days
-    
+
     if days <= 7:
         duration = f"{days + 1} D"
     elif days <= 30:
@@ -613,7 +613,7 @@ async def incremental_update(
         duration = "1 Y"
     else:
         duration = "2 Y"
-    
+
     # Fetch the data
     if asset_class == "ibkr_equities":
         results = await fetch_equities(symbols, duration, interval)
@@ -623,21 +623,21 @@ async def incremental_update(
         results = await fetch_futures(symbols, duration, interval)
     else:
         raise ValueError(f"Unknown asset class: {asset_class}")
-    
+
     # Count new rows
     new_rows = {}
     for symbol, df in results.items():
         if df.empty:
             new_rows[symbol] = 0
             continue
-        
+
         if not force_refresh:
             last_date = get_last_date_for_ticker(parquet_path, symbol)
             if last_date:
                 df = df[pd.to_datetime(df['date']) > last_date]
-        
+
         new_rows[symbol] = len(df)
-        
+
         # Append to parquet if there are new rows
         if len(df) > 0:
             parquet_path.parent.mkdir(parents=True, exist_ok=True)
@@ -649,7 +649,7 @@ async def incremental_update(
                 combined.to_parquet(parquet_path, index=False)
             else:
                 df.to_parquet(parquet_path, index=False)
-    
+
     return new_rows
 
 
@@ -694,18 +694,18 @@ def fetch_forex_sync(
 
 if __name__ == "__main__":
     import sys
-    
+
     logging.basicConfig(level=logging.INFO)
-    
+
     async def main():
         if len(sys.argv) < 3:
             print("Usage: python -m backend.ibkr_data_fetcher <equities|forex|futures> <duration>")
             print("Example: python -m backend.ibkr_data_fetcher equities '1 Y'")
             sys.exit(1)
-        
+
         asset_type = sys.argv[1]
         duration = sys.argv[2] if len(sys.argv) > 2 else "1 Y"
-        
+
         if asset_type == "equities":
             results = await fetch_equities(DEFAULT_US_EQUITIES[:5], duration)
         elif asset_type == "forex":
@@ -715,8 +715,8 @@ if __name__ == "__main__":
         else:
             print(f"Unknown asset type: {asset_type}")
             sys.exit(1)
-        
+
         for symbol, df in results.items():
             print(f"{symbol}: {len(df)} rows")
-    
+
     asyncio.run(main())

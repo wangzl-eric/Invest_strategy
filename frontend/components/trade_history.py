@@ -12,10 +12,10 @@ def create_trade_history(trades_data):
             style_cell={'textAlign': 'left'},
             style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'},
         )
-    
+
     # Convert to DataFrame
     df = pd.DataFrame(trades_data)
-    
+
     # Format columns
     columns = [
         {'name': 'Time', 'id': 'exec_time'},
@@ -26,7 +26,7 @@ def create_trade_history(trades_data):
         {'name': 'Avg Price', 'id': 'avg_price', 'type': 'numeric', 'format': {'specifier': '.2f'}},
         {'name': 'Commission', 'id': 'commission', 'type': 'numeric', 'format': {'specifier': '.2f'}},
     ]
-    
+
     return dash_table.DataTable(
         data=df.to_dict('records'),
         columns=columns,
@@ -53,4 +53,3 @@ def create_trade_history(trades_data):
         page_action='native',
         page_size=20,
     )
-

@@ -15,4 +15,3 @@ class Broker(Protocol):
 
     def poll_fills(self) -> list[Fill]:
         """Return any new fills since last poll."""
-

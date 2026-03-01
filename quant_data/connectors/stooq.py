@@ -75,4 +75,3 @@ class StooqBarsConnector:
     @staticmethod
     def dataset_id(*, universe: str = "us_equities") -> DatasetId:
         return DatasetId(provider="stooq", kind=MarketDataKind.BARS, universe=universe, frequency=DatasetFrequency.DAY)
-

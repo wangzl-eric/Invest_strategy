@@ -9,10 +9,10 @@ def create_performance_metrics(performance_data):
     """Create performance metrics display."""
     if not performance_data:
         return dbc.Alert("No performance data available", color="warning")
-    
+
     # Get latest metrics
     latest = performance_data[0] if performance_data else {}
-    
+
     # Metrics cards
     metrics_cards = dbc.Row([
         dbc.Col([
@@ -48,14 +48,14 @@ def create_performance_metrics(performance_data):
             ])
         ], width=3),
     ], className="mb-4")
-    
+
     # Returns chart
     dates = [datetime.fromisoformat(record['date'].replace('Z', '+00:00')) for record in performance_data]
     dates.reverse()
-    
+
     cumulative_returns = [record.get('cumulative_return', 0) * 100 for record in reversed(performance_data)]
     daily_returns = [record.get('daily_return', 0) * 100 for record in reversed(performance_data)]
-    
+
     returns_chart = dcc.Graph(
         figure={
             'data': [
@@ -75,7 +75,7 @@ def create_performance_metrics(performance_data):
             )
         }
     )
-    
+
     return html.Div([
         metrics_cards,
         dbc.Row([
@@ -88,4 +88,3 @@ def create_performance_metrics(performance_data):
             ])
         ])
     ])
-

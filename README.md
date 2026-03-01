@@ -278,17 +278,13 @@ The `portfolio/` package implements a research-to-execution pipeline:
 
 ### 6. Backtesting Engine
 
-Two backtesting modes in the `backtests/` package:
+The platform uses Backtrader for event-driven backtesting:
 
-**a) Vectorized** (`backtests/vectorized.py`) — for fast alpha research:
-- `VectorStrategy` protocol: implement `generate_positions(bars) -> Series`.
-- `run_vectorized_backtest()` applies position shift (execution delay), turnover-based cost model, slippage model.
-- Returns `BacktestResult` with equity curve, net returns, positions, turnover, and summary stats (Sharpe, max drawdown, total return).
-
-**b) Event-driven** (`backtests/event_driven/engine.py`) — for realistic simulation:
-- Queue-based engine processing `MarketEvent` → `SignalEvent` → `OrderEvent` → `FillEvent`.
-- `PortfolioState` tracks cash and positions.
-- Extensible: override `on_market()` and `on_signal()` to implement custom strategies.
+**BacktestEngine** (`backend/backtest_engine.py`) — for realistic simulation:
+- Implements full backtesting workflow with order execution
+- Supports multiple data feeds for multi-asset strategies
+- Custom strategies extend `bt.Strader.Strategy`
+- Returns comprehensive metrics including Sharpe, max drawdown, total return
 
 **Metrics** (`backtests/metrics.py`): `annualized_sharpe`, `max_drawdown`, `total_return`.
 
@@ -404,7 +400,7 @@ The `quant_data/` package provides a vendor-agnostic research data layer:
 | `notebooks/test_connection.py` | Quick IBKR connection smoke test |
 
 **Research experiments** (`research/experiments/`):
-- `run_example_momentum.py` — end-to-end momentum strategy using the vectorized backtest engine.
+- `run_example_momentum.py` — end-to-end momentum strategy using BacktestEngine.
 - `run_example_portfolio_opt.py` — portfolio optimization example using the portfolio package.
 
 ### 13. Automation Scripts
@@ -657,7 +653,6 @@ pytest tests/integration/
 
 | File | Coverage |
 |------|----------|
-| `tests/unit/test_vectorized_backtest.py` | Vectorized backtest engine |
 | `tests/unit/test_optimizer.py` | Portfolio optimizer (cvxpy) |
 | `tests/unit/test_portfolio_blend.py` | Signal blending |
 | `tests/unit/test_risk.py` | Risk model (covariance, stress) |
@@ -742,8 +737,7 @@ Invest_strategy/
 │
 ├── backtests/                  # Backtesting engines
 │   ├── core.py                 # Core types (CostModel, BacktestResult)
-│   ├── vectorized.py           # Fast vectorized backtester
-│   ├── metrics.py              # Sharpe, drawdown, total return
+│   └── metrics.py              # Sharpe, drawdown, total return
 │   └── event_driven/           # Event-driven backtester
 │       ├── engine.py           # Queue-based engine
 │       └── events.py           # Event type definitions

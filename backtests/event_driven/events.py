@@ -49,4 +49,3 @@ class FillEvent(Event):
     quantity: float
     fill_price: float
     commission: float = 0.0
-

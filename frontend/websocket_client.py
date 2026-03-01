@@ -21,21 +21,21 @@ WEBSOCKET_CLIENT_JS = """
             this.listeners = {};
             this.connected = false;
         }
-        
+
         connect() {
             try {
-                const wsUrl = this.accountId 
+                const wsUrl = this.accountId
                     ? `${this.url}/ws/${this.accountId}`
                     : `${this.url}/ws`;
-                
+
                 this.ws = new WebSocket(wsUrl.replace('http://', 'ws://').replace('https://', 'wss://'));
-                
+
                 this.ws.onopen = () => {
                     console.log('WebSocket connected');
                     this.connected = true;
                     this.reconnectAttempts = 0;
                     this.emit('connected', {});
-                    
+
                     // Send ping periodically to keep connection alive
                     this.pingInterval = setInterval(() => {
                         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
@@ -43,7 +43,7 @@ WEBSOCKET_CLIENT_JS = """
                         }
                     }, 30000); // Every 30 seconds
                 };
-                
+
                 this.ws.onmessage = (event) => {
                     try {
                         const data = JSON.parse(event.data);
@@ -52,21 +52,21 @@ WEBSOCKET_CLIENT_JS = """
                         console.error('Error parsing WebSocket message:', e);
                     }
                 };
-                
+
                 this.ws.onerror = (error) => {
                     console.error('WebSocket error:', error);
                     this.emit('error', { error: error });
                 };
-                
+
                 this.ws.onclose = () => {
                     console.log('WebSocket disconnected');
                     this.connected = false;
                     this.emit('disconnected', {});
-                    
+
                     if (this.pingInterval) {
                         clearInterval(this.pingInterval);
                     }
-                    
+
                     // Attempt to reconnect
                     if (this.reconnectAttempts < this.maxReconnectAttempts) {
                         this.reconnectAttempts++;
@@ -81,10 +81,10 @@ WEBSOCKET_CLIENT_JS = """
                 this.emit('error', { error: e });
             }
         }
-        
+
         handleMessage(data) {
             const type = data.type;
-            
+
             // Emit specific event types
             if (type === 'positions_update') {
                 this.emit('positions', data);
@@ -98,24 +98,24 @@ WEBSOCKET_CLIENT_JS = """
                 // Emit generic message
                 this.emit('message', data);
             }
-            
+
             // Also emit by type
             this.emit(type, data);
         }
-        
+
         on(event, callback) {
             if (!this.listeners[event]) {
                 this.listeners[event] = [];
             }
             this.listeners[event].push(callback);
         }
-        
+
         off(event, callback) {
             if (this.listeners[event]) {
                 this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
             }
         }
-        
+
         emit(event, data) {
             if (this.listeners[event]) {
                 this.listeners[event].forEach(callback => {
@@ -127,7 +127,7 @@ WEBSOCKET_CLIENT_JS = """
                 });
             }
         }
-        
+
         subscribe(channel) {
             if (this.ws && this.ws.readyState === WebSocket.OPEN) {
                 this.ws.send(JSON.stringify({
@@ -136,7 +136,7 @@ WEBSOCKET_CLIENT_JS = """
                 }));
             }
         }
-        
+
         unsubscribe(channel) {
             if (this.ws && this.ws.readyState === WebSocket.OPEN) {
                 this.ws.send(JSON.stringify({
@@ -145,7 +145,7 @@ WEBSOCKET_CLIENT_JS = """
                 }));
             }
         }
-        
+
         requestUpdate() {
             if (this.ws && this.ws.readyState === WebSocket.OPEN) {
                 this.ws.send(JSON.stringify({
@@ -153,7 +153,7 @@ WEBSOCKET_CLIENT_JS = """
                 }));
             }
         }
-        
+
         disconnect() {
             if (this.pingInterval) {
                 clearInterval(this.pingInterval);
@@ -163,24 +163,24 @@ WEBSOCKET_CLIENT_JS = """
             }
         }
     }
-    
+
     // Initialize WebSocket client
     window.realtimeClient = null;
-    
+
     function initWebSocket(apiBaseUrl, accountId) {
         if (window.realtimeClient) {
             window.realtimeClient.disconnect();
         }
-        
+
         window.realtimeClient = new RealtimeWebSocketClient(apiBaseUrl, accountId);
         window.realtimeClient.connect();
-        
+
         return window.realtimeClient;
     }
-    
+
     // Make it available globally
     window.initRealtimeWebSocket = initWebSocket;
-    
+
     // Auto-initialize if API_BASE_URL is available
     if (typeof window.API_BASE_URL !== 'undefined') {
         const accountId = window.ACCOUNT_ID || null;
@@ -200,7 +200,7 @@ def create_websocket_client_component(api_base_url: str = "http://localhost:8000
     if os.path.exists(integration_script_path):
         with open(integration_script_path, 'r') as f:
             integration_script = f.read()
-    
+
     return html.Div([
         html.Script(
             children=f"""

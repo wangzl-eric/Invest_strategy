@@ -87,4 +87,3 @@ class BinancePublicKlinesConnector:
     @staticmethod
     def dataset_id(*, universe: str = "crypto_core") -> DatasetId:
         return DatasetId(provider="binance_public", kind=MarketDataKind.BARS, universe=universe, frequency=DatasetFrequency.DAY)
-

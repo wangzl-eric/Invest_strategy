@@ -34,12 +34,12 @@ def get_sp500_data(
     use_cache: bool = True
 ) -> pd.DataFrame:
     """Fetch S&P 500 historical data.
-    
+
     Args:
         start_date: Start date for data (defaults to 1 year ago)
         end_date: End date for data (defaults to today)
         use_cache: Whether to use cached data if available
-        
+
     Returns:
         DataFrame with columns: date, close, daily_return, cumulative_return
     """
@@ -48,32 +48,32 @@ def get_sp500_data(
     except ImportError:
         logger.error("yfinance not installed. Run: pip install yfinance")
         return pd.DataFrame()
-    
+
     # Default date range
     if end_date is None:
         end_date = datetime.now()
     if start_date is None:
         start_date = end_date - timedelta(days=365)
-    
+
     # Create cache key
     cache_key = f"sp500_{start_date.strftime('%Y%m%d')}_{end_date.strftime('%Y%m%d')}"
-    
+
     # Check cache
     if use_cache and cache_key in _benchmark_cache and _is_cache_valid(cache_key):
         logger.debug(f"Using cached S&P 500 data for {cache_key}")
         return _benchmark_cache[cache_key]
-    
+
     logger.info(f"Fetching S&P 500 data from {start_date.date()} to {end_date.date()}")
-    
+
     try:
         # Fetch data from yfinance
         ticker = yf.Ticker("^GSPC")
         hist = ticker.history(start=start_date, end=end_date)
-        
+
         if hist.empty:
             logger.warning("No S&P 500 data returned from yfinance")
             return pd.DataFrame()
-        
+
         # Process data
         df = pd.DataFrame({
             'date': hist.index,
@@ -81,18 +81,18 @@ def get_sp500_data(
         })
         df['date'] = pd.to_datetime(df['date']).dt.tz_localize(None)
         df = df.sort_values('date').reset_index(drop=True)
-        
+
         # Calculate returns
         df['daily_return'] = df['close'].pct_change()
         df['cumulative_return'] = (1 + df['daily_return']).cumprod() - 1
-        
+
         # Cache the result
         _benchmark_cache[cache_key] = df
         _cache_timestamp[cache_key] = datetime.now()
-        
+
         logger.info(f"Fetched {len(df)} days of S&P 500 data")
         return df
-        
+
     except Exception as e:
         logger.error(f"Error fetching S&P 500 data: {e}")
         return pd.DataFrame()
@@ -104,18 +104,18 @@ def get_benchmark_comparison(
     end_date: Optional[datetime] = None
 ) -> Dict[str, Any]:
     """Compare portfolio returns against S&P 500 benchmark.
-    
+
     Args:
         portfolio_returns: Series of daily portfolio returns (index should be dates)
         start_date: Start date for comparison
         end_date: End date for comparison
-        
+
     Returns:
         Dictionary with comparison metrics and aligned data
     """
     # Get S&P 500 data
     sp500_df = get_sp500_data(start_date, end_date)
-    
+
     if sp500_df.empty:
         return {
             'error': 'Could not fetch benchmark data',
@@ -124,53 +124,53 @@ def get_benchmark_comparison(
             'alpha': None,
             'beta': None,
         }
-    
+
     # Align dates
     sp500_df = sp500_df.set_index('date')
-    
+
     # Convert portfolio returns to DataFrame if needed
     if isinstance(portfolio_returns.index, pd.DatetimeIndex):
         portfolio_dates = portfolio_returns.index
     else:
         portfolio_dates = pd.to_datetime(portfolio_returns.index)
-    
+
     portfolio_df = pd.DataFrame({
         'portfolio_return': portfolio_returns.values
     }, index=portfolio_dates)
-    
+
     # Merge on date
     merged = portfolio_df.join(sp500_df[['daily_return']], how='inner')
     merged = merged.rename(columns={'daily_return': 'benchmark_return'})
     merged = merged.dropna()
-    
+
     if len(merged) < 10:
         return {
             'error': 'Insufficient overlapping data points',
             'data_points': len(merged),
         }
-    
+
     # Calculate metrics
     portfolio_ret = merged['portfolio_return']
     benchmark_ret = merged['benchmark_return']
-    
+
     # Sharpe ratios (assuming 0 risk-free rate for simplicity)
     portfolio_sharpe = np.sqrt(252) * portfolio_ret.mean() / portfolio_ret.std() if portfolio_ret.std() > 0 else 0
     benchmark_sharpe = np.sqrt(252) * benchmark_ret.mean() / benchmark_ret.std() if benchmark_ret.std() > 0 else 0
-    
+
     # Beta and Alpha (CAPM)
     cov_matrix = np.cov(portfolio_ret, benchmark_ret)
     beta = cov_matrix[0, 1] / cov_matrix[1, 1] if cov_matrix[1, 1] > 0 else 0
     alpha = (portfolio_ret.mean() - beta * benchmark_ret.mean()) * 252  # Annualized
-    
+
     # Information Ratio
     tracking_error = (portfolio_ret - benchmark_ret).std() * np.sqrt(252)
     excess_return = (portfolio_ret.mean() - benchmark_ret.mean()) * 252
     information_ratio = excess_return / tracking_error if tracking_error > 0 else 0
-    
+
     # Cumulative returns for charting
     portfolio_cumulative = (1 + portfolio_ret).cumprod() - 1
     benchmark_cumulative = (1 + benchmark_ret).cumprod() - 1
-    
+
     return {
         'portfolio_sharpe': float(portfolio_sharpe),
         'benchmark_sharpe': float(benchmark_sharpe),
@@ -195,11 +195,11 @@ def calculate_rolling_metrics(
     window: int = 30
 ) -> Dict[str, List[float]]:
     """Calculate rolling performance metrics.
-    
+
     Args:
         returns: Series of daily returns
         window: Rolling window size in days
-        
+
     Returns:
         Dictionary with rolling metrics time series
     """
@@ -210,25 +210,25 @@ def calculate_rolling_metrics(
             'rolling_volatility': [],
             'rolling_return': [],
         }
-    
+
     # Rolling calculations
     rolling_mean = returns.rolling(window=window).mean()
     rolling_std = returns.rolling(window=window).std()
-    
+
     # Annualized metrics
     rolling_sharpe = np.sqrt(252) * rolling_mean / rolling_std
     rolling_volatility = rolling_std * np.sqrt(252)
     rolling_return = rolling_mean * 252
-    
+
     # Drop NaN values
     valid_idx = ~rolling_sharpe.isna()
-    
+
     dates = returns.index[valid_idx]
     if hasattr(dates, 'strftime'):
         date_strings = dates.strftime('%Y-%m-%d').tolist()
     else:
         date_strings = [str(d) for d in dates]
-    
+
     return {
         'dates': date_strings,
         'rolling_sharpe': rolling_sharpe[valid_idx].tolist(),
@@ -242,36 +242,36 @@ def get_returns_distribution(
     bins: int = 50
 ) -> Dict[str, Any]:
     """Calculate returns distribution statistics.
-    
+
     Args:
         returns: Series of daily returns
         bins: Number of histogram bins
-        
+
     Returns:
         Dictionary with distribution data and statistics
     """
     returns = returns.dropna()
-    
+
     if len(returns) < 2:
         return {
             'histogram': {'bins': [], 'counts': []},
             'statistics': {},
         }
-    
+
     # Histogram
     counts, bin_edges = np.histogram(returns, bins=bins)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-    
+
     # Statistics
     mean_ret = float(returns.mean())
     std_ret = float(returns.std())
     skewness = float(returns.skew()) if len(returns) > 2 else 0
     kurtosis = float(returns.kurtosis()) if len(returns) > 3 else 0
-    
+
     # VaR and CVaR at 95% confidence
     var_95 = float(np.percentile(returns, 5))
     cvar_95 = float(returns[returns <= var_95].mean()) if len(returns[returns <= var_95]) > 0 else var_95
-    
+
     # Percentiles
     percentiles = {
         'p1': float(np.percentile(returns, 1)),
@@ -282,7 +282,7 @@ def get_returns_distribution(
         'p95': float(np.percentile(returns, 95)),
         'p99': float(np.percentile(returns, 99)),
     }
-    
+
     return {
         'histogram': {
             'bins': bin_centers.tolist(),

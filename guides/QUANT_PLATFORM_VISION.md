@@ -22,6 +22,7 @@ Every design choice below reflects a single principle: **reduce latency between 
 - [IV. Risk & Portfolio Construction](#iv-risk--portfolio-construction)
 - [V. Execution Intelligence](#v-execution-intelligence)
 - [VI. Data Architecture](#vi-data-architecture)
+- [VI-D. Research Infrastructure](#d-research-infrastructure-new)
 - [VII. Alerting & Notification](#vii-alerting--notification)
 - [VIII. Technology Choices & Trade-offs](#viii-technology-choices--trade-offs)
 - [IX. What Exists Today vs. Target State](#ix-what-exists-today-vs-target-state)
@@ -109,7 +110,7 @@ Each step should live in a reproducible, versioned environment. Concretely:
 
 3. **Backtesting**: Two tiers:
    - **Vectorized** (fast iteration): for signal-level research where you need to test hundreds of parameter combos quickly. Acceptable to ignore transaction costs at first pass.
-   - **Event-driven** (realistic): for final validation with fills, slippage, margin, and rebalancing logic. Run this on the 3-5 surviving signals from vectorized screening.
+   - **Event-driven** (realistic): for final validation with fills, slippage, margin, and rebalancing logic.
 
 4. **Statistical rigor**: Every backtest should automatically output:
    - Sharpe, Sortino, Calmar, max drawdown, drawdown duration
@@ -267,6 +268,38 @@ Garbage in, garbage out. The platform must enforce:
 
 ---
 
+### D. Research Infrastructure (NEW)
+
+The research layer provides fast exploration and backtesting capabilities:
+
+```
+Research Layer
+├── DuckDB Query Engine     # SQL over Parquet, sub-second queries
+├── Feature Registry        # 15+ standardized signals
+├── Backtest Engine        # Vectorized + Event-driven
+└── MLflow Integration    # Experiment tracking
+```
+
+**Key Components:**
+
+| Component | File | Description |
+|-----------|------|-------------|
+| `data_schemas.py` | Unified schema | `TimeSeriesBar` for all asset classes |
+| `research/duckdb_utils.py` | Query engine | DuckDB wrapper, SQL over Parquet |
+| `research/features.py` | Feature registry | Momentum, volatility, value, quality signals |
+| `research/backtest.py` | Backtest engine | Vectorized + event-driven with MLflow |
+| `api/research_routes.py` | API endpoints | `/api/research/query`, `/api/research/backtest` |
+
+**API Endpoints:**
+- `GET /api/research/query` - Raw SQL queries
+- `GET /api/research/prices` - Query price data
+- `GET /api/research/returns` - Calculate returns
+- `GET /api/research/features` - List available features
+- `POST /api/research/backtest` - Run strategy backtest
+- `POST /api/research/backtest/factor` - Run factor backtest
+
+---
+
 ## VII. Alerting & Notification
 
 Alerts should be tiered by severity and channel:
@@ -295,11 +328,12 @@ Alerts should be tiered by severity and channel:
 - **ib_insync for IBKR**: mature, well-maintained, async-capable. The right choice for an IBKR-centric workflow.
 - **SQLAlchemy ORM**: clean separation of data models from business logic. Makes it easy to swap databases.
 - **MLflow for experiment tracking**: low overhead, self-hosted, integrates with the existing Python stack.
+- **Research module (NEW)**: Unified DuckDB query layer, Feature Registry with 15+ standardized signals, Vectorized + Event-driven backtesting framework.
 
 ### What Needs Improvement
 
 - **Real-time data pipeline**: currently polling-based. For intraday macro trading, we need a proper streaming layer (WebSocket → Redis pub/sub → dashboard). Not Kafka — that's over-engineered for our scale. Redis Streams or a lightweight message broker is sufficient.
-- **Multi-asset data normalization**: each asset class currently has slightly different schemas. Need a canonical `TimeSeriesBar` schema that works for equities, bonds, FX, and commodities with asset-class-specific extensions.
+- ~~**Multi-asset data normalization**~~: ✅ **RESOLVED** - Implemented unified `TimeSeriesBar` schema in `backend/data_schemas.py`
 - **Central bank / macro event processing**: this is currently manual. Automating the ingestion and parsing of Fed communications, economic releases, and geopolitical events would be the highest-ROI improvement.
 - **Mobile access**: a PM needs to check the book from their phone. A lightweight mobile-friendly dashboard or Telegram bot for key metrics would be valuable.
 
@@ -320,8 +354,13 @@ Alerts should be tiered by severity and channel:
 | **IBKR Historical Data Pipeline** | None | ✅ Delivered - pull OHLCV from IBKR API with parquet storage, incremental updates, data validation | — |
 | Cross-asset dashboard | ✅ Multi-asset: rates, FX, equities, commodities, curves, Fed QE/QT monitor, macro pulse | ✅ Delivered | — |
 | Historical sparklines | ✅ 30-day sparklines + 1W/1M change columns on all market panels, click-to-expand 1Y chart | ✅ Delivered | — |
-| Market data lake | ✅ Parquet-based storage (yfinance + FRED + IBKR OHLCV), catalog.json, incremental updates | Production DuckDB query layer | **P1** |
+| Market data lake | ✅ Parquet-based storage (yfinance + FRED + IBKR OHLCV), catalog.json, incremental updates | DuckDB available (primary: IBKR API → pandas) | **P1** |
 | Data Manager UI | ✅ Data tab with catalog browser, pull form, data viewer/chart | Full data lineage + scheduling | **P2** |
+| **Research Query Layer** | None | ✅ Delivered - DuckDB SQL available, primary: IBKR API → pandas | — |
+| **Feature Registry** | None | ✅ Delivered - 15+ standardized features | — |
+| **Backtesting Framework** | None | ✅ Delivered - Vectorized + event-driven backtest with MLflow + Backtrader engine for unified backtest/live + comprehensive metrics (alpha, beta, Sharpe, Max DD, Sortino, Calmar) | — |
+| **Trade Analysis** | None | ✅ Delivered - Position time series, trade log, win-rate, profit factor, buy/sell markers on charts | — |
+| **Event Annotations** | None | ✅ Delivered - FOMC vertical lines on charts, drawdown analyzer with NewsAPI correlation | — |
 | Central bank monitor | Fed QE/QT monitor + CB meeting tracker (FOMC countdown, policy rates, 2Y-FF implied path proxy) | Automated CB speech/minutes parsing + CME FedWatch probabilities | **P0** |
 | Economic data integration | FRED macro indicators (CPI, GDP, NFCI, HY OAS) | Full economic calendar with surprise tracking | **P0** |
 | Factor risk decomposition | Basic (equity factors) | Cross-asset macro factor model | **P1** |
@@ -356,11 +395,11 @@ Get the monitoring right. A macro PM who can't see the full market is flying bli
 
 Build the analytical toolkit that turns observations into trades.
 
-- [ ] Implement canonical cross-asset factor model (PCA + economic labeling)
-- [ ] Deploy production regime classifier (HMM on growth/inflation proxies)
-- [ ] Build factor-level PnL attribution pipeline
-- [ ] Create feature registry with shared signal definitions
-- [ ] Enhance Black-Litterman with regime-conditional view blending
+- [x] Implement canonical cross-asset factor model (PCA + economic labeling)
+- [x] Deploy production regime classifier (HMM on growth/inflation proxies)
+- [x] Build factor-level PnL attribution pipeline
+- [x] Create feature registry with shared signal definitions
+- [x] Enhance Black-Litterman with regime-conditional view blending
 
 ### Phase 3: Intelligence (Q3 2026)
 

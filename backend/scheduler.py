@@ -80,7 +80,7 @@ class PnLScheduler:
         except RuntimeError:
             # Fallback to get_event_loop if no loop is running
             loop = asyncio.get_event_loop()
-        
+
         self._stopped.clear()
         self._task = loop.create_task(self._run_loop())
         logger.info(
@@ -117,48 +117,48 @@ logger = logging.getLogger(__name__)
 
 class Scheduler:
     """Scheduler for periodic data updates."""
-    
+
     def __init__(self):
         self.scheduler = AsyncIOScheduler()
         self.data_fetcher = DataFetcher()
         self.data_processor = DataProcessor()
         self.running = False
-    
+
     async def update_data_job(self, account_id: Optional[str] = None):
         """Job to fetch and store account data."""
         try:
             logger.info("Starting scheduled data update...")
-            
+
             # Fetch all data
             result = await self.data_fetcher.fetch_all(account_id)
             account_id = result['account_id']
-            
+
             # Calculate performance metrics
             await asyncio.to_thread(
                 self.data_processor.calculate_performance_metrics,
                 account_id
             )
-            
+
             # Evaluate alert rules after data update
             try:
                 from backend.alert_scheduler import alert_scheduler
                 await alert_scheduler.evaluate_and_notify(account_id)
             except Exception as e:
                 logger.error(f"Error evaluating alerts: {e}", exc_info=True)
-            
+
             logger.info("Completed scheduled data update")
-            
+
         except Exception as e:
             logger.error(f"Error in scheduled data update: {e}")
-    
+
     def start(self, account_id: Optional[str] = None):
         """Start the scheduler."""
         if self.running:
             logger.warning("Scheduler is already running")
             return
-        
+
         interval_minutes = settings.app.update_interval_minutes
-        
+
         # Add job to scheduler
         self.scheduler.add_job(
             self.update_data_job,
@@ -168,20 +168,20 @@ class Scheduler:
             name='Update IBKR account data',
             replace_existing=True,
         )
-        
+
         self.scheduler.start()
         self.running = True
         logger.info(f"Scheduler started with {interval_minutes} minute interval")
-    
+
     def stop(self):
         """Stop the scheduler."""
         if not self.running:
             return
-        
+
         self.scheduler.shutdown()
         self.running = False
         logger.info("Scheduler stopped")
-    
+
     def get_jobs(self):
         """Get list of scheduled jobs."""
         return self.scheduler.get_jobs()
@@ -189,4 +189,3 @@ class Scheduler:
 
 # Global scheduler instance
 scheduler = Scheduler()
-

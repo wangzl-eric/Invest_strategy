@@ -62,4 +62,3 @@ volumes:
 networks:
   ibkr_network:
     driver: bridge
-

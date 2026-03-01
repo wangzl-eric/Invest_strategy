@@ -48,21 +48,21 @@ CUSTOM_STYLES = """
         --accent-yellow: #d29922;
         --border-color: #30363d;
     }
-    
+
     body {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
         color: var(--text-primary);
         min-height: 100vh;
     }
-    
+
     .dashboard-header {
         background: linear-gradient(90deg, #21262d 0%, #0d1117 100%);
         border-bottom: 1px solid var(--border-color);
         padding: 1.5rem 0;
         margin-bottom: 2rem;
     }
-    
+
     .dashboard-title {
         font-weight: 700;
         font-size: 1.75rem;
@@ -71,7 +71,7 @@ CUSTOM_STYLES = """
         -webkit-text-fill-color: transparent;
         margin: 0;
     }
-    
+
     .metric-card {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
@@ -80,13 +80,13 @@ CUSTOM_STYLES = """
         transition: all 0.3s ease;
         height: 100%;
     }
-    
+
     .metric-card:hover {
         border-color: var(--accent-blue);
         transform: translateY(-2px);
         box-shadow: 0 8px 30px rgba(88, 166, 255, 0.15);
     }
-    
+
     .metric-label {
         font-size: 0.75rem;
         font-weight: 500;
@@ -95,18 +95,18 @@ CUSTOM_STYLES = """
         color: var(--text-secondary);
         margin-bottom: 0.5rem;
     }
-    
+
     .metric-value {
         font-family: 'JetBrains Mono', monospace;
         font-size: 1.5rem;
         font-weight: 600;
         margin: 0;
     }
-    
+
     .metric-value.positive { color: var(--accent-green); }
     .metric-value.negative { color: var(--accent-red); }
     .metric-value.neutral { color: var(--accent-blue); }
-    
+
     .section-title {
         font-size: 1.1rem;
         font-weight: 600;
@@ -116,7 +116,7 @@ CUSTOM_STYLES = """
         align-items: center;
         gap: 0.5rem;
     }
-    
+
     .section-title::before {
         content: '';
         width: 4px;
@@ -124,7 +124,7 @@ CUSTOM_STYLES = """
         background: linear-gradient(180deg, #58a6ff, #a371f7);
         border-radius: 2px;
     }
-    
+
     .data-card {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
@@ -132,7 +132,7 @@ CUSTOM_STYLES = """
         padding: 1.5rem;
         margin-bottom: 1.5rem;
     }
-    
+
     .position-row {
         display: flex;
         justify-content: space-between;
@@ -140,22 +140,22 @@ CUSTOM_STYLES = """
         padding: 0.75rem 0;
         border-bottom: 1px solid var(--border-color);
     }
-    
+
     .position-row:last-child {
         border-bottom: none;
     }
-    
+
     .position-symbol {
         font-family: 'JetBrains Mono', monospace;
         font-weight: 600;
         color: var(--accent-blue);
     }
-    
+
     .position-details {
         font-size: 0.85rem;
         color: var(--text-secondary);
     }
-    
+
     .nav-tabs .nav-link {
         background: transparent;
         border: none;
@@ -164,19 +164,19 @@ CUSTOM_STYLES = """
         padding: 0.75rem 1.5rem;
         transition: all 0.2s ease;
     }
-    
+
     .nav-tabs .nav-link:hover {
         color: var(--text-primary);
         background: rgba(88, 166, 255, 0.1);
         border-radius: 8px;
     }
-    
+
     .nav-tabs .nav-link.active {
         color: var(--accent-blue);
         background: rgba(88, 166, 255, 0.15);
         border-radius: 8px;
     }
-    
+
     .refresh-btn {
         background: linear-gradient(90deg, #238636, #2ea043);
         border: none;
@@ -186,12 +186,12 @@ CUSTOM_STYLES = """
         border-radius: 8px;
         transition: all 0.2s ease;
     }
-    
+
     .refresh-btn:hover {
         transform: scale(1.02);
         box-shadow: 0 4px 15px rgba(46, 160, 67, 0.3);
     }
-    
+
     .status-indicator {
         display: inline-block;
         width: 8px;
@@ -200,65 +200,65 @@ CUSTOM_STYLES = """
         margin-right: 0.5rem;
         animation: pulse 2s infinite;
     }
-    
+
     .status-indicator.connected { background: var(--accent-green); }
     .status-indicator.disconnected { background: var(--accent-red); }
-    
+
     @keyframes pulse {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.5; }
     }
-    
+
     .empty-state {
         text-align: center;
         padding: 3rem;
         color: var(--text-secondary);
     }
-    
+
     .empty-state-icon {
         font-size: 3rem;
         margin-bottom: 1rem;
         opacity: 0.5;
     }
-    
+
     /* Custom scrollbar */
     ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
     }
-    
+
     ::-webkit-scrollbar-track {
         background: var(--bg-secondary);
     }
-    
+
     ::-webkit-scrollbar-thumb {
         background: var(--border-color);
         border-radius: 4px;
     }
-    
+
     ::-webkit-scrollbar-thumb:hover {
         background: var(--text-secondary);
     }
-    
+
     /* Mobile responsiveness */
     @media (max-width: 768px) {
         .dashboard-title {
             font-size: 1.25rem;
         }
-        
+
         .metric-value {
             font-size: 1.25rem;
         }
-        
+
         .data-card {
             padding: 1rem;
         }
-        
+
         .dashboard-header {
             padding: 1rem 0;
         }
     }
-    
+
     /* Print styles */
     @media print {
         .refresh-btn, .nav-tabs {
@@ -283,10 +283,10 @@ app.layout = html.Div([
         dangerously_allow_html=True,
         children=CUSTOM_STYLES,
     ) if hasattr(html.Div, 'dangerously_allow_html') else dcc.Markdown(CUSTOM_STYLES, dangerously_allow_html=True),
-    
+
     # WebSocket client for real-time updates
     create_websocket_client_component(API_BASE_URL),
-    
+
     # Stores for data
     dcc.Store(id='portfolio-data-store', data=None),
     dcc.Store(id='last-update-store', data=None),
@@ -295,10 +295,12 @@ app.layout = html.Div([
     dcc.Store(id='realtime-updates-store', data=None),  # Store for real-time WebSocket updates
     dcc.Store(id='market-data-store', data=None),  # Store for cross-asset market data
     dcc.Store(id='data-catalog-store', data=None),  # Store for data lake catalog
+    dcc.Store(id='source-status-store', data=None),  # Store for data source status
     dcc.Store(id='strategy-monitor-store', data=None),  # Store for strategy monitor (orders, fills, positions)
     dcc.Store(id='ibkr-status-store', data=None),  # Store for IBKR connection status
     dcc.Store(id='ibkr-prev-reachable', data=False),  # Track previous IBKR state for reconnect detection
-    
+    dcc.Store(id='auto-refresh-settings', data={'enabled': True, 'interval_minutes': 5}),  # Auto-refresh settings
+
     # Toast notification for Flex Query
     dbc.Toast(
         id="flex-toast",
@@ -309,14 +311,14 @@ app.layout = html.Div([
         icon="info",
         style={"position": "fixed", "top": 66, "right": 10, "width": 350, "zIndex": 1050},
     ),
-    
+
     # Auto-refresh interval (portfolio data)
     dcc.Interval(
         id='auto-refresh-interval',
         interval=5*60*1000,  # 5 minutes
         n_intervals=0
     ),
-    
+
     # Market data refresh interval (60 seconds, disabled until Markets tab is active)
     dcc.Interval(
         id='market-refresh-interval',
@@ -324,21 +326,21 @@ app.layout = html.Div([
         n_intervals=0,
         disabled=True,
     ),
-    
+
     # IBKR status check interval (every 30 seconds)
     dcc.Interval(
         id='ibkr-status-interval',
         interval=30*1000,
         n_intervals=0,
     ),
-    
+
     # IBKR warning banner (hidden by default, shown when TWS/Gateway is not reachable)
     html.Div(
         id='ibkr-warning-banner',
         children=[],
         style={'display': 'none'},
     ),
-    
+
     # Header
     html.Div([
         dbc.Container([
@@ -353,8 +355,8 @@ app.layout = html.Div([
                             html.Span("Checking…", id='connection-status-text', style={'fontSize': '0.85rem', 'color': '#8b949e'})
                         ]),
                         html.Span(id='last-update-text', style={
-                            'fontSize': '0.75rem', 
-                            'color': '#8b949e', 
+                            'fontSize': '0.75rem',
+                            'color': '#8b949e',
                             'marginLeft': '1.5rem'
                         }),
                         dbc.Button(
@@ -363,8 +365,38 @@ app.layout = html.Div([
                             className="refresh-btn ms-3",
                             size="sm",
                         ),
+                        # Auto-refresh controls
+                        dbc.Button(
+                            [html.I(className="fas fa-clock me-2"), "Auto"],
+                            id="auto-refresh-toggle",
+                            size="sm",
+                            color="secondary",
+                            outline=True,
+                            className="ms-2",
+                            title="Toggle auto-refresh",
+                            style={'minWidth': '60px'}
+                        ),
+                        dcc.Dropdown(
+                            id='auto-refresh-interval-dropdown',
+                            options=[
+                                {'label': '1 min', 'value': '1'},
+                                {'label': '5 min', 'value': '5'},
+                                {'label': '15 min', 'value': '15'},
+                                {'label': '30 min', 'value': '30'},
+                            ],
+                            value='5',
+                            clearable=False,
+                            searchable=False,
+                            style={
+                                'width': '80px',
+                                'fontSize': '0.75rem',
+                                'display': 'inline-block',
+                                'verticalAlign': 'middle',
+                                'marginLeft': '0.25rem'
+                            },
+                        ),
                         html.Span(
-                            "(Auto-refresh every 5 min)",
+                            id='auto-refresh-status',
                             style={
                                 'fontSize': '0.7rem',
                                 'color': '#8b949e',
@@ -397,12 +429,12 @@ app.layout = html.Div([
             ], align="center"),
         ], fluid=True),
     ], className="dashboard-header"),
-    
+
     # Main content
     dbc.Container([
         # Summary metrics row
         dbc.Row(id='summary-metrics-row', className="mb-4"),
-        
+
         # Main content tabs
         dbc.Tabs(
             id="main-tabs",
@@ -418,10 +450,10 @@ app.layout = html.Div([
             ],
             className="mb-4",
         ),
-        
+
         # Tab content
         html.Div(id="tab-content"),
-        
+
         # Loading overlay
         dcc.Loading(
             id="loading",
@@ -429,7 +461,7 @@ app.layout = html.Div([
             color="#58a6ff",
             children=html.Div(id="loading-output"),
         ),
-        
+
     ], fluid=True, style={'paddingBottom': '3rem'}),
 ])
 
@@ -465,25 +497,25 @@ def fetch_db_data():
         resp = requests.get(f"{API_BASE_URL}/account/summary", timeout=10)
         if resp.status_code == 200:
             data['account'] = resp.json()
-        
+
         # Positions
         resp = requests.get(f"{API_BASE_URL}/positions", timeout=10)
         if resp.status_code == 200:
             data['positions'] = resp.json()
-        
+
         # PnL history (get more data for analytics)
         resp = requests.get(f"{API_BASE_URL}/pnl?limit=365", timeout=10)
         if resp.status_code == 200:
             data['pnl_history'] = resp.json()
-        
+
         # Performance metrics (Sharpe, Sortino, max drawdown, etc.)
         resp = requests.get(f"{API_BASE_URL}/performance?limit=365", timeout=10)
         if resp.status_code == 200:
             data['performance'] = resp.json()
-            
+
     except Exception as e:
         logger.error(f"Error fetching DB data: {e}")
-    
+
     return data
 
 
@@ -514,7 +546,7 @@ def handle_realtime_updates(data):
     if data:
         update_type = data.get('type')
         logger.info(f"Received real-time update: {update_type}")
-        
+
         # Trigger a refresh of the relevant data
         # This will be handled by the existing refresh mechanism
         return data
@@ -683,32 +715,41 @@ def track_ibkr_reconnection(status_data, prev_reachable):
      Input('realtime-updates-store', 'data'),
      Input('ibkr-status-store', 'data')],
     [State('flex-data-store', 'data'),
-     State('ibkr-prev-reachable', 'data')],
+     State('ibkr-prev-reachable', 'data'),
+     State('auto-refresh-settings', 'data')],
     prevent_initial_call=False
 )
-def refresh_data(n_clicks, n_intervals, realtime_update, ibkr_status, flex_data, prev_reachable):
+def refresh_data(n_clicks, n_intervals, realtime_update, ibkr_status, flex_data, prev_reachable, auto_refresh_settings):
     """Refresh portfolio data.
 
     Triggers:
     - Manual refresh button
-    - Auto-refresh interval (5 min)
+    - Auto-refresh interval (configurable: 1, 5, 15, 30 min)
     - Real-time WebSocket updates
     - IBKR reconnection (was unreachable, now reachable) with stale data
     """
     ctx = dash.callback_context
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0] if ctx.triggered else None
 
+    # Check if auto-refresh is enabled
+    auto_refresh_enabled = auto_refresh_settings.get('enabled', True) if auto_refresh_settings else True
+
     should_fetch_from_ibkr = False
 
     if trigger_id == 'realtime-updates-store' and realtime_update:
         logger.info(f"Real-time update received: {realtime_update.get('type')}")
 
-    elif trigger_id in ['refresh-btn', 'auto-refresh-interval']:
-        if trigger_id == 'refresh-btn' and n_clicks:
+    elif trigger_id == 'refresh-btn':
+        # Manual refresh always triggers
+        if n_clicks:
             logger.info("Manual refresh triggered - fetching fresh data from IBKR…")
-        elif trigger_id == 'auto-refresh-interval' and n_intervals:
+            should_fetch_from_ibkr = True
+
+    elif trigger_id == 'auto-refresh-interval':
+        # Auto-refresh only if enabled
+        if auto_refresh_enabled and n_intervals:
             logger.info(f"Auto-refresh triggered (interval {n_intervals})…")
-        should_fetch_from_ibkr = True
+            should_fetch_from_ibkr = True
 
     elif trigger_id == 'ibkr-status-store' and ibkr_status:
         now_reachable = ibkr_status.get("ibkr_reachable", False)
@@ -751,20 +792,20 @@ def fetch_flex_query_on_demand(n_clicks):
     """Fetch ALL configured Flex Query reports when button is clicked."""
     if not n_clicks:
         return None, "", False, "info"
-    
+
     flex_data = fetch_flex_data()
-    
+
     if flex_data:
         # Handle new multi-report response format
         successful = flex_data.get('successful', 0)
         total = flex_data.get('total_queries', 0)
         results = flex_data.get('results', [])
         db_stats = flex_data.get('database', {})
-        
+
         # Build summary message with database import stats
         imported = db_stats.get('new_trades_imported', 0)
         skipped = db_stats.get('duplicates_skipped', 0)
-        
+
         if imported > 0:
             msg = f"✓ Fetched {successful}/{total} reports! 📊 {imported} new trades imported to DB"
             if skipped > 0:
@@ -773,7 +814,7 @@ def fetch_flex_query_on_demand(n_clicks):
             msg = f"✓ Fetched {successful}/{total} reports. No new trades ({skipped} already in DB)"
         else:
             msg = f"✓ Fetched {successful}/{total} reports!"
-        
+
         return flex_data, msg, True, "success"
     else:
         return None, "✗ Failed to fetch Flex Query data. Check backend logs.", True, "danger"
@@ -788,6 +829,61 @@ def update_last_update_text(update_time):
     if update_time:
         return f"Last updated: {update_time}"
     return ""
+
+
+@callback(
+    [Output('auto-refresh-status', 'children'),
+     Output('auto-refresh-settings', 'data'),
+     Output('auto-refresh-interval', 'interval')],
+    [Input('auto-refresh-interval', 'n_intervals')],
+    [State('auto-refresh-settings', 'data')],
+    prevent_initial_call=False
+)
+def manage_auto_refresh(n_intervals, settings):
+    """Manage auto-refresh interval and display status."""
+    if not settings:
+        settings = {'enabled': True, 'interval_minutes': 5}
+
+    enabled = settings.get('enabled', True)
+    interval = settings.get('interval_minutes', 5)
+
+    # Calculate next refresh time
+    if n_intervals and enabled:
+        next_refresh = interval - (n_intervals % interval)
+        status = f"Auto-refresh in {next_refresh} min"
+    elif enabled:
+        status = f"Auto-refresh every {interval} min"
+    else:
+        status = "Auto-refresh disabled"
+
+    interval_ms = interval * 60 * 1000
+    return status, settings, interval_ms
+
+
+@callback(
+    Output('auto-refresh-settings', 'data', allow_duplicate=True),
+    Input('auto-refresh-toggle', 'n_clicks'),
+    Input('auto-refresh-interval-dropdown', 'value'),
+    State('auto-refresh-settings', 'data'),
+    prevent_initial_call=True
+)
+def update_auto_refresh_settings(n_clicks, interval_value, current_settings):
+    """Update auto-refresh settings from UI controls."""
+    if not current_settings:
+        current_settings = {'enabled': True, 'interval_minutes': 5}
+
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        return current_settings
+
+    trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if trigger_id == 'auto-refresh-toggle':
+        current_settings['enabled'] = not current_settings.get('enabled', True)
+    elif trigger_id == 'auto-refresh-interval-dropdown' and interval_value:
+        current_settings['interval_minutes'] = int(interval_value)
+
+    return current_settings
 
 
 @callback(
@@ -807,14 +903,14 @@ def update_last_update_text(update_time):
 def update_performance_date_range(btn_1w, btn_1m, btn_6m, btn_12m, btn_all, btn_apply, picker_start, picker_end):
     """Update performance date range based on button clicks or date picker."""
     from datetime import datetime, timedelta
-    
+
     ctx = dash.callback_context
     if not ctx.triggered:
         return {'start_date': None, 'end_date': None}, None, None
-    
+
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
     today = datetime.now()
-    
+
     if trigger_id == 'date-range-1w':
         start_date = (today - timedelta(days=7)).strftime('%Y-%m-%d')
         end_date = today.strftime('%Y-%m-%d')
@@ -836,9 +932,9 @@ def update_performance_date_range(btn_1w, btn_1m, btn_6m, btn_12m, btn_all, btn_
         end_date = picker_end
     else:
         return {'start_date': None, 'end_date': None}, picker_start, picker_end
-    
+
     logger.info(f"Date range updated: {trigger_id} -> {start_date} to {end_date}")
-    
+
     # Update date picker to match selected range
     return {'start_date': start_date, 'end_date': end_date}, start_date, end_date
 
@@ -852,19 +948,19 @@ def update_summary_metrics(data, flex_store):
     """Update the summary metrics cards."""
     if not data and not flex_store:
         return []
-    
+
     data = data or {}
-    
+
     # Use flex from dedicated store if available, otherwise from portfolio store
     flex = flex_store or data.get('flex') or {}
     db = data.get('db') or {}
     account = db.get('account') or {}
-    
+
     # Extract values with fallbacks
     net_liq = flex.get('summary', {}).get('net_liquidation') or account.get('net_liquidation', 0)
     total_cash = flex.get('summary', {}).get('total_cash') or account.get('total_cash_value', 0)
     total_positions = flex.get('summary', {}).get('total_positions') or len(db.get('positions', []))
-    
+
     # Calculate P&L
     pnl_history = db.get('pnl_history', [])
     if pnl_history:
@@ -874,13 +970,13 @@ def update_summary_metrics(data, flex_store):
     else:
         total_pnl = 0
         unrealized_pnl = 0
-    
+
     # Format values
     def format_currency(val):
         if val is None:
             return "N/A"
         return f"${val:,.2f}"
-    
+
     return [
         dbc.Col([
             create_metric_card(
@@ -926,14 +1022,15 @@ def toggle_market_refresh(active_tab):
     Output('market-data-store', 'data'),
     [Input('main-tabs', 'active_tab'),
      Input('market-refresh-interval', 'n_intervals')],
-    prevent_initial_call=False,
+    prevent_initial_call=True,
 )
 def fetch_market_data(active_tab, n_intervals):
     """Fetch cross-asset market data when Markets tab is active."""
     if active_tab != "markets":
         return dash.no_update
     try:
-        resp = requests.get(f"{API_BASE_URL}/market/overview", timeout=60)
+        # Reduced timeout from 60s to 15s for faster perceived performance
+        resp = requests.get(f"{API_BASE_URL}/market/overview", timeout=15)
         if resp.status_code == 200:
             return resp.json()
         else:
@@ -958,6 +1055,24 @@ def fetch_data_catalog(active_tab):
             return resp.json()
     except Exception as e:
         logger.error(f"Error fetching data catalog: {e}")
+    return {}
+
+
+@callback(
+    Output('source-status-store', 'data'),
+    Input('main-tabs', 'active_tab'),
+    prevent_initial_call=True,
+)
+def fetch_source_status(active_tab):
+    """Fetch data source status when Data tab is active."""
+    if active_tab != "data":
+        return dash.no_update
+    try:
+        resp = requests.get(f"{API_BASE_URL}/market/source-status", timeout=10)
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception as e:
+        logger.error(f"Error fetching source status: {e}")
     return {}
 
 
@@ -987,9 +1102,10 @@ def fetch_strategy_monitor(active_tab):
      Input('performance-date-range-store', 'data'),
      Input('market-data-store', 'data'),
      Input('data-catalog-store', 'data'),
-     Input('strategy-monitor-store', 'data')]
+     Input('strategy-monitor-store', 'data'),
+     Input('source-status-store', 'data')]
 )
-def render_tab_content(active_tab, data, flex_store, date_range, market_data, catalog_data, strategy_data):
+def render_tab_content(active_tab, data, flex_store, date_range, market_data, catalog_data, strategy_data, source_status):
     """Render content based on active tab."""
     if active_tab == "markets":
         if market_data:
@@ -1000,7 +1116,7 @@ def render_tab_content(active_tab, data, flex_store, date_range, market_data, ca
         ], style={'textAlign': 'center', 'padding': '3rem'})
 
     if active_tab == "data":
-        return build_data_manager_layout(catalog_data or {})
+        return build_data_manager_layout(catalog_data or {}, source_status or {})
 
     if active_tab == "strategy":
         return build_strategy_monitor_layout(strategy_data or {})
@@ -1009,15 +1125,15 @@ def render_tab_content(active_tab, data, flex_store, date_range, market_data, ca
     data = data or {'flex': None, 'db': {}}
     if flex_store:
         data['flex'] = flex_store
-    
+
     # Extract date range for performance tab
     start_date = date_range.get('start_date') if date_range else None
     end_date = date_range.get('end_date') if date_range else None
-    
+
     # Log date range changes for debugging
     if active_tab == 'performance':
         logger.info(f"Rendering performance tab with date range: {start_date} to {end_date}")
-    
+
     # Check if we have any meaningful data
     db_data = data.get('db') or {}
     flex_data = data.get('flex') or {}
@@ -1025,14 +1141,14 @@ def render_tab_content(active_tab, data, flex_store, date_range, market_data, ca
     has_pnl = bool(db_data.get('pnl_history') or db_data.get('performance'))
     has_account = bool(db_data.get('account'))
     has_any_data = has_positions or has_pnl or has_account or bool(flex_data)
-    
+
     if not has_any_data:
         return html.Div([
             html.Div("📊", className="empty-state-icon"),
             html.H4("No portfolio data loaded."),
             html.P("Click 'Refresh' to load from database, or 'Fetch Flex Query' to retrieve from IBKR."),
         ], className="empty-state")
-    
+
     if active_tab == "portfolio":
         return create_portfolio_tab(data)
     elif active_tab == "performance":
@@ -1041,7 +1157,7 @@ def render_tab_content(active_tab, data, flex_store, date_range, market_data, ca
         return create_positions_tab(data)
     elif active_tab == "history":
         return create_history_tab(data)
-    
+
     return html.Div("Select a tab")
 
 
@@ -1329,10 +1445,10 @@ def create_portfolio_tab(data):
     """Create portfolio overview tab."""
     flex = data.get('flex') or {}
     db = data.get('db') or {}
-    
+
     # Get positions
     positions = flex.get('positions') or db.get('positions') or []
-    
+
     # Create allocation chart
     if positions:
         # Group by asset type
@@ -1344,7 +1460,7 @@ def create_portfolio_tab(data):
                 allocation_data[sec_type] += market_value
             else:
                 allocation_data[sec_type] = market_value
-        
+
         # Create pie chart
         colors = ['#58a6ff', '#3fb950', '#a371f7', '#d29922', '#f85149', '#8b949e']
         fig_allocation = go.Figure(data=[go.Pie(
@@ -1373,14 +1489,14 @@ def create_portfolio_tab(data):
         allocation_chart = dcc.Graph(figure=fig_allocation, config={'displayModeBar': False})
     else:
         allocation_chart = html.Div("No position data available", className="empty-state")
-    
+
     # Top holdings list
     top_holdings = sorted(
         [p for p in positions if p.get('quantity', 0) != 0],
         key=lambda x: abs(x.get('market_value') or x.get('quantity', 0) * (x.get('market_price') or 0)),
         reverse=True
     )[:10]
-    
+
     holdings_list = []
     for pos in top_holdings:
         symbol = pos.get('symbol', 'N/A')
@@ -1388,7 +1504,7 @@ def create_portfolio_tab(data):
         price = pos.get('market_price', 0) or 0
         value = qty * price if price else pos.get('market_value', 0) or 0
         pnl = pos.get('unrealized_pnl', 0) or 0
-        
+
         holdings_list.append(html.Div([
             html.Div([
                 html.Span(symbol, className="position-symbol"),
@@ -1402,19 +1518,19 @@ def create_portfolio_tab(data):
                 ),
             ]),
         ], className="position-row"))
-    
+
     # Account info from flex
     account_info = html.Div([
         html.P([
-            html.Strong("Account: "), 
+            html.Strong("Account: "),
             html.Span(flex.get('account_id', 'N/A'), style={'color': '#58a6ff'})
         ]),
         html.P([
-            html.Strong("Period: "), 
+            html.Strong("Period: "),
             html.Span(f"{flex.get('from_date', 'N/A')[:10] if flex.get('from_date') else 'N/A'} to {flex.get('to_date', 'N/A')[:10] if flex.get('to_date') else 'N/A'}")
         ]),
     ], style={'fontSize': '0.85rem', 'color': '#8b949e'}) if flex else html.Div()
-    
+
     return html.Div([
         dbc.Row([
             dbc.Col([
@@ -1443,7 +1559,7 @@ def create_portfolio_tab(data):
 
 def fetch_performance_analytics(start_date=None, end_date=None):
     """Fetch comprehensive performance analytics from backend with optional date range.
-    
+
     Args:
         start_date: Start date string in format 'YYYY-MM-DD' or None
         end_date: End date string in format 'YYYY-MM-DD' or None
@@ -1463,7 +1579,7 @@ def fetch_performance_analytics(start_date=None, end_date=None):
                 params['end_date'] = f"{end_date}T23:59:59"
             else:
                 params['end_date'] = end_date
-        
+
         logger.info(f"Fetching performance analytics with date range: {start_date} to {end_date}")
         resp = requests.get(f"{API_BASE_URL}/performance/analytics", params=params, timeout=30)
         if resp.status_code == 200:
@@ -1479,7 +1595,7 @@ def fetch_performance_analytics(start_date=None, end_date=None):
 
 def create_performance_tab(data, start_date=None, end_date=None):
     """Create enhanced performance tab with metrics, charts, and benchmark comparison.
-    
+
     Args:
         data: Portfolio data dictionary
         start_date: Optional start date string (YYYY-MM-DD) for filtering
@@ -1488,17 +1604,17 @@ def create_performance_tab(data, start_date=None, end_date=None):
     db = data.get('db') or {}
     pnl_history = db.get('pnl_history') or []
     performance_data = db.get('performance') or []
-    
+
     # Try to fetch comprehensive analytics from the new endpoint with date range
     analytics = fetch_performance_analytics(start_date=start_date, end_date=end_date)
-    
+
     # Check if we have any data at all
     has_any_data = bool(
         (analytics and (analytics.get('returns_series') or analytics.get('equity_series'))) or
         pnl_history or
         performance_data
     )
-    
+
     if not has_any_data:
         return html.Div([
             html.Div("📈", className="empty-state-icon"),
@@ -1510,7 +1626,7 @@ def create_performance_tab(data, start_date=None, end_date=None):
                 "ensure you have PnL history records in the database."
             ], style={'fontSize': '0.9rem', 'color': '#8b949e', 'marginTop': '1rem'}),
         ], className="empty-state")
-    
+
     # Prepare data for charts
     df = pd.DataFrame(pnl_history) if pnl_history else pd.DataFrame()
     if not df.empty:
@@ -1532,7 +1648,7 @@ def create_performance_tab(data, start_date=None, end_date=None):
             if not pnl_return.empty:
                 df.loc[is_flex, 'daily_return'] = pnl_return[is_flex]
             df['cumulative_return'] = (1 + df['daily_return'].fillna(0)).cumprod() - 1
-    
+
     # Extract metrics from analytics (always prefer fresh analytics over cached performance_data)
     # Analytics are recalculated based on date range, so they should always be used when available
     if analytics and not analytics.get('error'):
@@ -1556,7 +1672,7 @@ def create_performance_tab(data, start_date=None, end_date=None):
     else:
         sharpe = sortino = max_dd = volatility = total_return = annualized_return = 0
         logger.warning("No performance metrics available")
-    
+
     # =========================================================================
     # Metrics Cards Row
     # =========================================================================
@@ -1568,14 +1684,14 @@ def create_performance_tab(data, start_date=None, end_date=None):
         if is_ratio:
             return f"{value:.2f}"
         return f"{value:.4f}"
-    
+
     def metric_color(value, invert=False):
         if value is None:
             return "neutral"
         if invert:
             return "positive" if value < 0 else "negative" if value > 0 else "neutral"
         return "positive" if value > 0 else "negative" if value < 0 else "neutral"
-    
+
     metrics_row = dbc.Row([
         dbc.Col([
             create_metric_card("Sharpe Ratio", format_metric(sharpe, is_ratio=True), metric_color(sharpe))
@@ -1596,20 +1712,20 @@ def create_performance_tab(data, start_date=None, end_date=None):
             create_metric_card("Ann. Return", format_metric(annualized_return, is_percent=True), metric_color(annualized_return))
         ], xs=6, sm=4, md=2),
     ], className="mb-4")
-    
+
     # =========================================================================
     # Cumulative Returns Chart (Portfolio vs S&P 500)
     # =========================================================================
     fig_returns = go.Figure()
-    
+
     has_portfolio_data = False
     has_benchmark_data = False
-    
+
     portfolio_dates = []
     portfolio_cum_returns = []
     benchmark_dates = []
     benchmark_cum_returns = []
-    
+
     # Try to get portfolio cumulative returns from analytics returns_series first
     if analytics and analytics.get('returns_series'):
         returns_series = analytics['returns_series']
@@ -1618,12 +1734,12 @@ def create_performance_tab(data, start_date=None, end_date=None):
                 portfolio_dates = [item.get('date') for item in returns_series if item.get('date')]
                 # Ensure we're using cumulative_return, not NAV or other values
                 portfolio_cum_returns = [item.get('cumulative_return', 0) * 100 for item in returns_series if item.get('date')]  # Convert to percentage
-                
+
                 if portfolio_dates and portfolio_cum_returns and len(portfolio_dates) == len(portfolio_cum_returns):
                     has_portfolio_data = True
             except Exception as e:
                 logger.error(f"Error processing returns_series: {e}")
-    
+
     # Get benchmark cumulative returns if available (from analytics which is recalculated with date range)
     if analytics and analytics.get('benchmark_comparison'):
         bc = analytics['benchmark_comparison']
@@ -1633,7 +1749,7 @@ def create_performance_tab(data, start_date=None, end_date=None):
             benchmark_dates = ts.get('dates', [])
             # Ensure we're using benchmark_cumulative (cumulative return), not price values
             benchmark_cum_returns = [r * 100 for r in ts.get('benchmark_cumulative', [])]  # Convert to percentage
-            
+
             if benchmark_dates and benchmark_cum_returns and len(benchmark_dates) == len(benchmark_cum_returns):
                 has_benchmark_data = True
                 logger.info(f"Benchmark data available: {len(benchmark_dates)} data points")
@@ -1641,13 +1757,13 @@ def create_performance_tab(data, start_date=None, end_date=None):
                 logger.warning(f"Benchmark time series data incomplete: dates={len(benchmark_dates)}, returns={len(benchmark_cum_returns)}")
         else:
             logger.warning(f"Benchmark comparison error or missing: {bc.get('error', 'No time_series data')}")
-    
+
     # Fallback: use pnl_history data if analytics doesn't have returns_series
     if not has_portfolio_data and not df.empty and 'cumulative_return' in df.columns:
         portfolio_dates = df['date'].dt.strftime('%Y-%m-%d').tolist()
         portfolio_cum_returns = (df['cumulative_return'] * 100).tolist()
         has_portfolio_data = True
-    
+
     # Plot portfolio cumulative returns
     if has_portfolio_data and portfolio_dates and portfolio_cum_returns:
         fig_returns.add_trace(go.Scatter(
@@ -1659,7 +1775,7 @@ def create_performance_tab(data, start_date=None, end_date=None):
             fill='tozeroy',
             fillcolor='rgba(88, 166, 255, 0.1)',
         ))
-    
+
     # Plot benchmark cumulative returns (S&P 500)
     if has_benchmark_data and benchmark_dates and benchmark_cum_returns:
         fig_returns.add_trace(go.Scatter(
@@ -1669,7 +1785,7 @@ def create_performance_tab(data, start_date=None, end_date=None):
             name='S&P 500 (Cumulative Return)',
             line=dict(color='#f85149', width=2, dash='dash'),
         ))
-    
+
     # If still no data, show empty chart with message
     if not has_portfolio_data:
         fig_returns.add_annotation(
@@ -1679,7 +1795,7 @@ def create_performance_tab(data, start_date=None, end_date=None):
             showarrow=False,
             font=dict(size=14, color='#8b949e')
         )
-    
+
     fig_returns.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
@@ -1705,20 +1821,20 @@ def create_performance_tab(data, start_date=None, end_date=None):
         height=350,
         hovermode='x unified',
     )
-    
+
     # =========================================================================
     # Returns Distribution Histogram
     # =========================================================================
     fig_dist = go.Figure()
-    
+
     if analytics and analytics.get('distribution'):
         dist = analytics['distribution']
         hist = dist.get('histogram', {})
         stats = dist.get('statistics', {})
-        
+
         bins = hist.get('bins', [])
         counts = hist.get('counts', [])
-        
+
         if bins and counts:
             fig_dist.add_trace(go.Bar(
                 x=[b * 100 for b in bins],  # Convert to percentage
@@ -1727,7 +1843,7 @@ def create_performance_tab(data, start_date=None, end_date=None):
                 marker_color='#58a6ff',
                 opacity=0.7,
             ))
-            
+
             # Add VaR line
             var_95 = stats.get('var_95', 0)
             if var_95:
@@ -1748,7 +1864,7 @@ def create_performance_tab(data, start_date=None, end_date=None):
             marker_color='#58a6ff',
             opacity=0.7,
         ))
-    
+
     fig_dist.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
@@ -1767,12 +1883,12 @@ def create_performance_tab(data, start_date=None, end_date=None):
         height=300,
         showlegend=False,
     )
-    
+
     # =========================================================================
     # Net Liquidation / Equity Chart
     # =========================================================================
     fig_equity = go.Figure()
-    
+
     if not df.empty and 'net_liquidation' in df.columns:
         fig_equity.add_trace(go.Scatter(
             x=df['date'],
@@ -1783,7 +1899,7 @@ def create_performance_tab(data, start_date=None, end_date=None):
             fill='tozeroy',
             fillcolor='rgba(63, 185, 80, 0.1)',
         ))
-    
+
     fig_equity.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
@@ -1801,18 +1917,18 @@ def create_performance_tab(data, start_date=None, end_date=None):
         height=300,
         hovermode='x unified',
     )
-    
+
     # =========================================================================
     # Rolling Metrics Chart
     # =========================================================================
     fig_rolling = go.Figure()
-    
+
     if analytics and analytics.get('rolling_metrics'):
         rm = analytics['rolling_metrics']
         dates = rm.get('dates', [])
         rolling_sharpe = rm.get('rolling_sharpe', [])
         rolling_vol = rm.get('rolling_volatility', [])
-        
+
         if dates and rolling_sharpe:
             fig_rolling.add_trace(go.Scatter(
                 x=dates,
@@ -1823,7 +1939,7 @@ def create_performance_tab(data, start_date=None, end_date=None):
                 yaxis='y',
                 hovertemplate='<b>%{fullData.name}</b><br>Date: %{x}<br>Sharpe: %{y:.2f}<extra></extra>',
             ))
-        
+
         if dates and rolling_vol:
             fig_rolling.add_trace(go.Scatter(
                 x=dates,
@@ -1834,7 +1950,7 @@ def create_performance_tab(data, start_date=None, end_date=None):
                 yaxis='y2',
                 hovertemplate='<b>%{fullData.name}</b><br>Date: %{x}<br>Volatility: %{y:.2f}%<extra></extra>',
             ))
-    
+
     fig_rolling.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
@@ -1867,7 +1983,7 @@ def create_performance_tab(data, start_date=None, end_date=None):
         height=300,
         hovermode='x unified',
     )
-    
+
     # =========================================================================
     # Benchmark Comparison Stats Card
     # =========================================================================
@@ -1924,15 +2040,15 @@ def create_performance_tab(data, start_date=None, end_date=None):
                     ], width=4),
                 ], className="mt-2"),
             ], className="data-card", style={'marginTop': '1rem'})
-    
+
     # =========================================================================
     # Date Range Controls
     # =========================================================================
     from datetime import datetime, timedelta
-    
+
     # Calculate default date ranges
     today = datetime.now()
-    
+
     # Display current date range
     date_range_display = ""
     if start_date and end_date:
@@ -1943,7 +2059,7 @@ def create_performance_tab(data, start_date=None, end_date=None):
         date_range_display = f"Until: {end_date}"
     else:
         date_range_display = "Showing: All data"
-    
+
     date_range_controls = dbc.Row([
         dbc.Col([
             html.Div([
@@ -1966,9 +2082,9 @@ def create_performance_tab(data, start_date=None, end_date=None):
                         className="me-2"
                     ),
                     dbc.Button(
-                        "Apply", 
-                        id="apply-date-range", 
-                        size="sm", 
+                        "Apply",
+                        id="apply-date-range",
+                        size="sm",
                         color="primary",
                         className="ms-2"
                     ),
@@ -1987,7 +2103,7 @@ def create_performance_tab(data, start_date=None, end_date=None):
             })
         ], width=12),
     ])
-    
+
     # =========================================================================
     # Assemble the Layout
     # =========================================================================
@@ -1998,14 +2114,14 @@ def create_performance_tab(data, start_date=None, end_date=None):
         chart_title = "Cumulative Returns (Portfolio)"
     else:
         chart_title = "Cumulative Returns"
-    
+
     return html.Div([
         # Date Range Controls
         date_range_controls,
-        
+
         # Metrics Cards
         metrics_row,
-        
+
         # Cumulative Returns Chart
         dbc.Row([
             dbc.Col([
@@ -2019,10 +2135,10 @@ def create_performance_tab(data, start_date=None, end_date=None):
                 ], className="data-card"),
             ]),
         ]),
-        
+
         # Benchmark stats card
         benchmark_card if benchmark_card else html.Div(),
-        
+
         # Two column layout for distribution and equity
         dbc.Row([
             dbc.Col([
@@ -2038,7 +2154,7 @@ def create_performance_tab(data, start_date=None, end_date=None):
                 ], className="data-card"),
             ], md=6),
         ]),
-        
+
         # Rolling Metrics
         dbc.Row([
             dbc.Col([
@@ -2055,11 +2171,11 @@ def create_positions_tab(data):
     """Create detailed positions tab."""
     flex = data.get('flex') or {}
     db = data.get('db') or {}
-    
+
     # Determine data source
     positions = flex.get('positions') or db.get('positions') or []
     data_source = "Flex Query" if flex.get('positions') else "Database (IBKR TWS/Gateway)"
-    
+
     # Get latest position timestamp if available
     latest_timestamp = None
     if positions:
@@ -2078,10 +2194,10 @@ def create_positions_tab(data):
                 except Exception as e:
                     logger.debug(f"Could not parse timestamp {ts}: {e}")
                     pass
-        
+
         if timestamps:
             latest_timestamp = max(timestamps)
-    
+
     if not positions:
         return html.Div([
             html.Div("📋", className="empty-state-icon"),
@@ -2093,7 +2209,7 @@ def create_positions_tab(data):
                 "click 'Fetch Flex Query' to get historical positions from IBKR Flex Query."
             ], style={'fontSize': '0.9rem', 'color': '#8b949e', 'marginTop': '1rem'}),
         ], className="empty-state")
-    
+
     # Group by asset class
     positions_by_class = {}
     for pos in positions:
@@ -2101,7 +2217,7 @@ def create_positions_tab(data):
         if sec_type not in positions_by_class:
             positions_by_class[sec_type] = []
         positions_by_class[sec_type].append(pos)
-    
+
     sections = []
     for sec_type, pos_list in positions_by_class.items():
         # Create table for this asset class
@@ -2111,12 +2227,12 @@ def create_positions_tab(data):
             qty = pos.get('quantity', 0)
             if qty == 0:
                 continue
-                
+
             price = pos.get('market_price', 0) or pos.get('avg_cost', 0) or 0
             value = pos.get('market_value') or (qty * price)
             pnl = pos.get('unrealized_pnl')  # Keep None if not present
             currency = pos.get('currency', 'USD')
-            
+
             # Determine P&L display class (handle None explicitly)
             if pnl is not None:
                 pnl_class = 'positive' if pnl > 0 else 'negative' if pnl < 0 else 'neutral'
@@ -2126,7 +2242,7 @@ def create_positions_tab(data):
                 pnl_class = 'neutral'
                 pnl_display = "N/A"
                 pnl_color = '#8b949e'
-            
+
             rows.append(html.Tr([
                 html.Td(symbol, style={'fontWeight': '600', 'color': '#58a6ff'}),
                 html.Td(f"{qty:,.4f}"),
@@ -2135,7 +2251,7 @@ def create_positions_tab(data):
                 html.Td(pnl_display, style={'color': pnl_color}),
                 html.Td(currency, style={'color': '#8b949e'}),
             ]))
-        
+
         if rows:
             table = html.Table([
                 html.Thead([
@@ -2154,15 +2270,15 @@ def create_positions_tab(data):
                 'borderCollapse': 'collapse',
                 'fontSize': '0.9rem',
             })
-            
+
             # Add custom styling for table
             table_card = html.Div([
                 html.H5(f"{sec_type} ({len(rows)})", className="section-title"),
                 html.Div(table, style={'overflowX': 'auto'}),
             ], className="data-card")
-            
+
             sections.append(dbc.Col([table_card], xs=12, lg=6))
-    
+
     # Add data source info at the top
     data_source_info = html.Div([
         html.P([
@@ -2174,7 +2290,7 @@ def create_positions_tab(data):
             ),
         ]),
     ], style={'marginBottom': '1rem', 'padding': '0.5rem 1rem', 'background': 'rgba(88, 166, 255, 0.1)', 'borderRadius': '8px'})
-    
+
     return html.Div([
         data_source_info,
         dbc.Row(sections)
@@ -2184,9 +2300,9 @@ def create_positions_tab(data):
 def create_history_tab(data):
     """Create trade history tab."""
     flex = data.get('flex') or {}
-    
+
     recent_trades = flex.get('recent_trades') or []
-    
+
     if not recent_trades:
         return html.Div([
             html.Div("📜", className="empty-state-icon"),
@@ -2203,13 +2319,13 @@ def create_history_tab(data):
                 "3. Create/Edit query to include 'Trades' section",
             ], style={'fontSize': '0.9rem', 'color': '#8b949e'}),
         ], className="empty-state")
-    
+
     # Create trades table
     rows = []
     for trade in recent_trades:
         side = trade.get('side', 'N/A')
         side_color = '#3fb950' if side == 'BUY' else '#f85149'
-        
+
         rows.append(html.Tr([
             html.Td(trade.get('trade_date', 'N/A')[:10] if trade.get('trade_date') else 'N/A'),
             html.Td(trade.get('symbol', 'N/A'), style={'fontWeight': '600', 'color': '#58a6ff'}),
@@ -2222,7 +2338,7 @@ def create_history_tab(data):
                 style={'color': '#3fb950' if (trade.get('realized_pnl') or 0) > 0 else '#f85149'}
             ),
         ]))
-    
+
     table = html.Table([
         html.Thead([
             html.Tr([
@@ -2241,7 +2357,7 @@ def create_history_tab(data):
         'borderCollapse': 'collapse',
         'fontSize': '0.9rem',
     })
-    
+
     return html.Div([
         html.Div([
             html.H5("Recent Trades", className="section-title"),

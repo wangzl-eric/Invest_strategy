@@ -29,7 +29,7 @@ load_dotenv()
 def setup_logging() -> logging.Logger:
     """Setup logging to console and file."""
     log_file = project_root / "pa_automation.log"
-    
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s │ %(levelname)s │ %(message)s",
@@ -59,17 +59,17 @@ def automate_pa_daily(
 ) -> dict:
     """
     Download PA report and import into database.
-    
+
     Returns:
         dict with: success, csv_path, rows_imported, error
     """
     from scripts.download_portfolio_analyst import download_pa_report
     from backend.flex_importer import import_portfolio_analyst_csv
-    
+
     account_id = account_id or os.getenv("IBKR_ACCOUNT_ID")
     if not account_id:
         raise ValueError("Set IBKR_ACCOUNT_ID environment variable")
-    
+
     result = {
         "success": False,
         "csv_path": None,
@@ -77,18 +77,18 @@ def automate_pa_daily(
         "error": None,
         "timestamp": datetime.now().isoformat(),
     }
-    
+
     try:
         # Step 1: Download
         logger.info("━" * 50)
         logger.info(f"PA Automation: {account_id}")
         logger.info("━" * 50)
-        
+
         logger.info("[1/3] Downloading report...")
         csv_path = download_pa_report(account_id=account_id, download_dir=download_dir)
         result["csv_path"] = str(csv_path)
         logger.info(f"      Downloaded: {csv_path.name}")
-        
+
         # Step 2: Import
         logger.info("[2/3] Importing to database...")
         rows = import_portfolio_analyst_csv(
@@ -101,7 +101,7 @@ def automate_pa_daily(
         )
         result["rows_imported"] = rows
         logger.info(f"      Imported: {rows} rows")
-        
+
         # Step 3: Cleanup
         if cleanup_old and csv_path.parent.exists():
             logger.info("[3/3] Cleaning up old files...")
@@ -113,16 +113,16 @@ def automate_pa_daily(
                     deleted += 1
             if deleted:
                 logger.info(f"      Deleted: {deleted} old files")
-        
+
         result["success"] = True
         logger.info("━" * 50)
         logger.info("✓ PA Automation completed successfully")
         logger.info("━" * 50)
-        
+
     except Exception as e:
         result["error"] = str(e)
         logger.error(f"✗ PA Automation failed: {e}", exc_info=True)
-    
+
     return result
 
 
@@ -132,7 +132,7 @@ def automate_pa_daily(
 
 def main():
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Daily Portfolio Analyst automation")
     parser.add_argument("--account-id", help="Account ID (or IBKR_ACCOUNT_ID env)")
     parser.add_argument("--download-dir", help="Download directory")
@@ -142,9 +142,9 @@ def main():
     parser.add_argument("--date-format", help="Date format string (optional)")
     parser.add_argument("--no-cleanup", action="store_true", help="Keep all CSV files")
     parser.add_argument("--keep-days", type=int, default=30, help="Days to keep files")
-    
+
     args = parser.parse_args()
-    
+
     result = automate_pa_daily(
         account_id=args.account_id,
         download_dir=args.download_dir,
@@ -155,7 +155,7 @@ def main():
         cleanup_old=not args.no_cleanup,
         keep_days=args.keep_days,
     )
-    
+
     if result["success"]:
         print(f"✓ Imported {result['rows_imported']} rows from {result['csv_path']}")
         return 0

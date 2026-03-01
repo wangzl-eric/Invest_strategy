@@ -12,10 +12,10 @@ def create_positions_table(positions_data):
             style_cell={'textAlign': 'left'},
             style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'},
         )
-    
+
     # Convert to DataFrame
     df = pd.DataFrame(positions_data)
-    
+
     # Format columns
     columns = [
         {'name': 'Symbol', 'id': 'symbol'},
@@ -25,7 +25,7 @@ def create_positions_table(positions_data):
         {'name': 'Market Value', 'id': 'market_value', 'type': 'numeric', 'format': {'specifier': '.2f'}},
         {'name': 'Unrealized PnL', 'id': 'unrealized_pnl', 'type': 'numeric', 'format': {'specifier': '.2f'}},
     ]
-    
+
     # Style cells based on PnL
     def style_cell(value, column):
         if column == 'unrealized_pnl' and value is not None:
@@ -34,7 +34,7 @@ def create_positions_table(positions_data):
             elif value < 0:
                 return {'color': 'red', 'fontWeight': 'bold'}
         return {}
-    
+
     return dash_table.DataTable(
         data=df.to_dict('records'),
         columns=columns,
@@ -61,4 +61,3 @@ def create_positions_table(positions_data):
         page_action='native',
         page_size=20,
     )
-

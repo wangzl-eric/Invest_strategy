@@ -32,4 +32,3 @@ This checklist is intentionally conservative.
 - Manual approval step for order placement
 - Reduce size to minimum viable risk
 - Monitoring/alerts configured and tested (disconnects, rejected orders, daily loss breach)
-

@@ -486,7 +486,7 @@ from datetime import datetime
 
 def monitor_risk(account_id, check_interval=3600):
     """Monitor portfolio risk using ML features."""
-    
+
     while True:
         try:
             # Check regime
@@ -494,25 +494,25 @@ def monitor_risk(account_id, check_interval=3600):
                 "http://localhost:8000/api/analytics/regime-detection",
                 params={"account_id": account_id}
             ).json()
-            
+
             if regime['regime'] == 'bear':
                 print(f"⚠️ BEAR MARKET DETECTED at {datetime.now()}")
                 print(f"   Mean Return: {regime['mean_return']:.4%}")
                 # Trigger alerts, reduce exposure, etc.
-            
+
             # Check anomalies
             anomalies = requests.get(
                 "http://localhost:8000/api/analytics/anomaly-detection",
                 params={"account_id": account_id, "threshold_sigma": 3.5}
             ).json()
-            
+
             if anomalies['num_anomalies'] > 0:
                 print(f"🚨 ANOMALIES DETECTED: {anomalies['num_anomalies']}")
                 for date, value in zip(anomalies['anomaly_dates'], anomalies['anomaly_values']):
                     print(f"   {date}: {value:.4%}")
-            
+
             time.sleep(check_interval)
-            
+
         except Exception as e:
             print(f"Error in monitoring: {e}")
             time.sleep(60)
@@ -541,20 +541,20 @@ import requests
 def update_regime(n_clicks, account_id):
     if n_clicks is None:
         return ""
-    
+
     try:
         response = requests.get(
             "http://localhost:8000/api/analytics/regime-detection",
             params={"account_id": account_id}
         )
         result = response.json()
-        
+
         regime_color = {
             "bull": "green",
             "bear": "red",
             "neutral": "gray"
         }.get(result['regime'], "gray")
-        
+
         return html.Div([
             html.H4(f"Market Regime: {result['regime'].upper()}"),
             html.P(f"Confidence: {result['confidence']:.2f}"),
@@ -574,7 +574,7 @@ async function getMarketRegime(accountId) {
       `http://localhost:8000/api/analytics/regime-detection?account_id=${accountId}`
     );
     const result = await response.json();
-    
+
     return {
       regime: result.regime,
       confidence: result.confidence,
@@ -590,19 +590,19 @@ async function getMarketRegime(accountId) {
 // Use in component
 function RegimeIndicator({ accountId }) {
   const [regime, setRegime] = useState(null);
-  
+
   useEffect(() => {
     getMarketRegime(accountId).then(setRegime);
   }, [accountId]);
-  
+
   if (!regime) return <div>Loading...</div>;
-  
+
   const color = {
     bull: 'green',
     bear: 'red',
     neutral: 'gray'
   }[regime.regime];
-  
+
   return (
     <div style={{ color }}>
       <h3>Market Regime: {regime.regime.toUpperCase()}</h3>
@@ -643,16 +643,16 @@ Use multiple ML features together for comprehensive analysis:
 def comprehensive_risk_analysis(account_id):
     # Regime check
     regime = get_regime(account_id)
-    
+
     # Anomaly check
     anomalies = get_anomalies(account_id)
-    
+
     # Stress test
     stress = stress_test(account_id)
-    
+
     # Factor exposure
     factors = get_factors(account_id)
-    
+
     # Risk score
     risk_score = 0
     if regime['regime'] == 'bear':
@@ -663,7 +663,7 @@ def comprehensive_risk_analysis(account_id):
         risk_score += 30
     if factors['factor_loadings'][0]['loading'] > 1.5:  # High beta
         risk_score += 20
-    
+
     return {
         "risk_score": risk_score,
         "recommendation": "reduce_exposure" if risk_score > 50 else "maintain"

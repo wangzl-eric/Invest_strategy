@@ -352,4 +352,3 @@
 "ClientAccountID","CurrencyPrimary","AssetClass","Symbol","SecurityID","SecurityIDType","CUSIP","ISIN","ListingExchange","TradeID","TradeDate","TradePrice","CostBasis","FifoPnlRealized","MtmPnl","OrigTradePrice","OrigTradeDate","Buy/Sell","AccruedInterest","Weight"
 "ClientAccountID","CurrencyPrimary","AssetClass","Symbol","SecurityID","SecurityIDType","CUSIP","ISIN","ListingExchange","TradeID","TradeDate","TradePrice","CostBasis","FifoPnlRealized","MtmPnl","OrigTradePrice","OrigTradeDate","Buy/Sell","AccruedInterest","Weight"
 "ClientAccountID","CurrencyPrimary","AssetClass","Symbol","SecurityID","SecurityIDType","CUSIP","ISIN","ListingExchange","TradeID","TradeDate","TradePrice","CostBasis","FifoPnlRealized","MtmPnl","OrigTradePrice","OrigTradeDate","Buy/Sell","AccruedInterest","Weight"
-

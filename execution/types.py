@@ -33,4 +33,3 @@ class Fill:
     commission: float = 0.0
     venue: str = ""
     exec_id: str = ""
-

@@ -104,4 +104,3 @@ def weights_from_alpha(
 
     mu = alpha.reindex(returns.columns).fillna(0.0)
     return mean_variance_optimize(expected_returns=mu, cov=cov, prev_weights=prev_weights, cfg=cfg)
-

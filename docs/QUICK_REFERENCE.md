@@ -83,8 +83,8 @@ df = query_trades("SELECT * FROM trades WHERE realized_pnl > 100")
 # Aggregation
 df = query_trades("""
     SELECT symbol, SUM(realized_pnl) as pnl
-    FROM trades 
-    GROUP BY symbol 
+    FROM trades
+    GROUP BY symbol
     ORDER BY pnl DESC
 """)
 ```
@@ -101,41 +101,41 @@ trades.to_csv("my_trades.csv", index=False)
 
 ### Top Winners
 ```sql
-SELECT symbol, realized_pnl, exec_time 
-FROM trades 
-WHERE realized_pnl > 0 
-ORDER BY realized_pnl DESC 
+SELECT symbol, realized_pnl, exec_time
+FROM trades
+WHERE realized_pnl > 0
+ORDER BY realized_pnl DESC
 LIMIT 10
 ```
 
 ### Monthly P&L
 ```sql
-SELECT 
+SELECT
     strftime('%Y-%m', exec_time) as month,
     SUM(realized_pnl) as pnl_usd,
     SUM(realized_pnl_base) as pnl_hkd
-FROM trades 
+FROM trades
 GROUP BY month
 ORDER BY month
 ```
 
 ### Options vs Stocks
 ```sql
-SELECT 
+SELECT
     sec_type,
     COUNT(*) as trades,
     SUM(realized_pnl) as pnl
-FROM trades 
+FROM trades
 GROUP BY sec_type
 ```
 
 ### Win Rate
 ```sql
-SELECT 
+SELECT
     COUNT(CASE WHEN realized_pnl > 0 THEN 1 END) as wins,
     COUNT(CASE WHEN realized_pnl < 0 THEN 1 END) as losses,
     ROUND(100.0 * COUNT(CASE WHEN realized_pnl > 0 THEN 1 END) / COUNT(*), 1) as win_pct
-FROM trades 
+FROM trades
 WHERE realized_pnl != 0
 ```
 

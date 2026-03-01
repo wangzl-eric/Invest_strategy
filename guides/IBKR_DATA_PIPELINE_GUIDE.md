@@ -75,16 +75,16 @@ async def main():
         duration="1 Y",
         interval="1 day"
     )
-    
+
     for symbol, df in results.items():
         print(f"{symbol}: {len(df)} rows")
-    
+
     # Fetch forex data
     forex = await fetch_forex(
         pairs=["EURUSD", "GBPUSD"],
         duration="6 M"
     )
-    
+
     # Fetch futures
     futures = await fetch_futures(
         symbols=["ES", "CL", "GC"],

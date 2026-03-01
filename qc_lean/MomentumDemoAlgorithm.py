@@ -46,4 +46,3 @@ class MomentumDemoAlgorithm(QCAlgorithm):
         self.current_state = target
 
         self.Debug(f"{self.Time.date()} ROC(63)={roc_value:.4f} -> target={target}")
-

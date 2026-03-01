@@ -57,4 +57,3 @@ def ensure_datetime_index(df: pd.DataFrame) -> pd.DataFrame:
     if isinstance(df.index, pd.DatetimeIndex):
         return df.sort_index()
     raise ValueError("bars must have a DatetimeIndex or a 'timestamp' column")
-

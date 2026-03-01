@@ -3,14 +3,14 @@
   "workloads": {
     "maui": {
       "description": ".NET MAUI SDK for all platforms",
-      "extends": [ 
+      "extends": [
         "maui-mobile",
         "maui-desktop"
       ]
     },
     "maui-mobile": {
       "description": ".NET MAUI SDK for Mobile",
-      "extends": [ 
+      "extends": [
         "maui-android",
         "maui-ios",
         "maui-tizen"
@@ -18,7 +18,7 @@
     },
     "maui-desktop": {
       "description": ".NET MAUI SDK for Desktop",
-      "extends": [ 
+      "extends": [
         "maui-maccatalyst",
         "maui-windows"
       ]
@@ -51,21 +51,21 @@
     },
     "maui-android": {
       "description": ".NET MAUI SDK for Android",
-      "extends": [ 
+      "extends": [
         "maui-blazor",
         "android"
       ]
     },
     "maui-maccatalyst": {
       "description": ".NET MAUI SDK for Mac Catalyst",
-      "extends": [ 
+      "extends": [
         "maui-blazor",
         "maccatalyst"
       ]
     },
     "maui-ios": {
       "description": ".NET MAUI SDK for iOS",
-      "extends": [ 
+      "extends": [
         "maui-blazor",
         "ios"
       ]

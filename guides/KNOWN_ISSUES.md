@@ -6,6 +6,13 @@ Tracks bugs, gotchas, and workarounds encountered during development to prevent 
 
 ## Resolved Issues
 
+### 1. Backtrader IBStore requires ibpy (not available for Python 3)
+- **Date**: 2026-02-28
+- **Symptom**: `bt.stores.IBStore` raises AttributeError even though files exist
+- **Root cause**: Backtrader's IB integration requires the deprecated `ibpy` package, which is not available for Python 3. The modern alternative is `ib_insync` which we already use.
+- **Solution**: Our `LiveTradingEngine` uses our existing `IBKRClient` (based on `ib_insync`) instead of backtrader's native IB integration. This is actually better as it gives us full control.
+- **Prevention**: No fix needed - our implementation is superior.
+
 ### 1. `fredapi` not installed in conda environment
 - **Date**: 2026-02-24
 - **Symptom**: Macro Pulse, Rates FRED data, Fed QE/QT Monitor all showed no data. Backend returned empty arrays for all FRED-dependent panels.

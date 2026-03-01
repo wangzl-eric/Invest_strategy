@@ -18,7 +18,7 @@ def start_alert_scheduler():
     if scheduler.running:
         logger.warning("Alert scheduler already running")
         return
-    
+
     # Schedule alert evaluation every minute
     scheduler.add_job(
         evaluate_alerts,
@@ -26,7 +26,7 @@ def start_alert_scheduler():
         id="alert_evaluation",
         replace_existing=True
     )
-    
+
     scheduler.start()
     logger.info("Alert scheduler started (evaluating every 1 minute)")
 

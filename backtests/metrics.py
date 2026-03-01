@@ -39,4 +39,3 @@ def turnover(positions: pd.Series) -> float:
     """Simple turnover estimate: sum(abs(delta position))."""
     p = positions.fillna(0.0)
     return float(p.diff().abs().sum())
-

@@ -52,4 +52,3 @@ def get_db_context() -> Generator[Session, None, None]:
         raise
     finally:
         db.close()
-

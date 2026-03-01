@@ -15,16 +15,16 @@ def create_pnl_chart(pnl_data):
             html.P("3. Click 'Try it out' and 'Execute'", className="text-muted mb-1"),
             html.P("4. Refresh this page", className="text-muted"),
         ], style={'padding': '20px', 'textAlign': 'center'})
-    
+
     # Parse dates and extract values
     dates = [datetime.fromisoformat(record['date'].replace('Z', '+00:00')) for record in pnl_data]
     dates.reverse()  # Show oldest to newest
-    
+
     total_pnl = [record['total_pnl'] or 0 for record in reversed(pnl_data)]
     realized_pnl = [record['realized_pnl'] or 0 for record in reversed(pnl_data)]
     unrealized_pnl = [record['unrealized_pnl'] or 0 for record in reversed(pnl_data)]
     net_liquidation = [record['net_liquidation'] or 0 for record in reversed(pnl_data)]
-    
+
     # Create traces
     traces = [
         go.Scatter(
@@ -43,7 +43,7 @@ def create_pnl_chart(pnl_data):
             yaxis='y2',
         ),
     ]
-    
+
     layout = go.Layout(
         title='Account Value and PnL Over Time',
         xaxis=dict(title='Date'),
@@ -53,8 +53,7 @@ def create_pnl_chart(pnl_data):
         legend=dict(x=0, y=1),
         height=400,
     )
-    
-    figure = go.Figure(data=traces, layout=layout)
-    
-    return dcc.Graph(figure=figure)
 
+    figure = go.Figure(data=traces, layout=layout)
+
+    return dcc.Graph(figure=figure)

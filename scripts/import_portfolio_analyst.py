@@ -3,7 +3,7 @@
 
 Usage:
     python scripts/import_portfolio_analyst.py <csv_file> <account_id>
-    
+
 Example:
     python scripts/import_portfolio_analyst.py data/pa_reports/report.csv U1234567
 """
@@ -25,17 +25,17 @@ def main():
     parser.add_argument("--equity-column", default="Equity", help="Equity column name")
     parser.add_argument("--return-column", help="Return column name (optional)")
     parser.add_argument("--date-format", help="Date format (e.g., %%Y-%%m-%%d)")
-    
+
     args = parser.parse_args()
-    
+
     csv_path = Path(args.csv_file)
     if not csv_path.exists():
         print(f"✗ File not found: {args.csv_file}")
         return 1
-    
+
     print(f"Importing: {args.csv_file}")
     print(f"Account:   {args.account_id}")
-    
+
     try:
         rows = import_portfolio_analyst_csv(
             csv_path=str(csv_path),
@@ -45,12 +45,12 @@ def main():
             return_column=args.return_column,
             date_format=args.date_format,
         )
-        
+
         print(f"✓ Imported {rows} rows")
         print(f"  Database: {project_root / 'ibkr_analytics.db'}")
         print(f"  API: http://localhost:8000/api/pnl/history?account_id={args.account_id}")
         return 0
-        
+
     except Exception as e:
         print(f"✗ Error: {e}")
         return 1

@@ -56,4 +56,3 @@ class SimBrokerImpl:
         fills = self._fills
         self._fills = []
         return fills
-

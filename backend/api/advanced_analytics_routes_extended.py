@@ -46,25 +46,25 @@ async def detect_market_regime(
             latest = db.query(AccountSnapshot).order_by(desc(AccountSnapshot.timestamp)).first()
             if latest:
                 account_id = latest.account_id
-        
+
         if not account_id:
             raise HTTPException(status_code=400, detail="account_id is required")
-        
+
         # Get returns
         returns_df = data_processor.get_returns_series(account_id, start_date, end_date)
-        
+
         if returns_df.empty:
             raise HTTPException(status_code=400, detail="Insufficient data")
-        
+
         returns = pd.Series(
             returns_df['daily_return'].values,
             index=pd.to_datetime(returns_df['date'])
         )
-        
+
         result = regime_detector.detect_regime(returns, lookback_window)
-        
+
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -86,25 +86,25 @@ async def detect_anomalies(
             latest = db.query(AccountSnapshot).order_by(desc(AccountSnapshot.timestamp)).first()
             if latest:
                 account_id = latest.account_id
-        
+
         if not account_id:
             raise HTTPException(status_code=400, detail="account_id is required")
-        
+
         # Get returns
         returns_df = data_processor.get_returns_series(account_id, start_date, end_date)
-        
+
         if returns_df.empty:
             raise HTTPException(status_code=400, detail="Insufficient data")
-        
+
         returns = pd.Series(
             returns_df['daily_return'].values,
             index=pd.to_datetime(returns_df['date'])
         )
-        
+
         result = anomaly_detector.detect_anomalies(returns, threshold_sigma)
-        
+
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -123,26 +123,26 @@ async def stress_test_portfolio(
     """Perform stress testing with various scenarios."""
     try:
         import json
-        
+
         if not account_id:
             latest = db.query(AccountSnapshot).order_by(desc(AccountSnapshot.timestamp)).first()
             if latest:
                 account_id = latest.account_id
-        
+
         if not account_id:
             raise HTTPException(status_code=400, detail="account_id is required")
-        
+
         # Get returns
         returns_df = data_processor.get_returns_series(account_id, start_date, end_date)
-        
+
         if returns_df.empty:
             raise HTTPException(status_code=400, detail="Insufficient data")
-        
+
         returns = pd.Series(
             returns_df['daily_return'].values,
             index=pd.to_datetime(returns_df['date'])
         )
-        
+
         # Parse scenarios
         if scenarios:
             scenario_list = json.loads(scenarios)
@@ -153,11 +153,11 @@ async def stress_test_portfolio(
                 {"name": "Moderate Correction", "market_shock": -0.10, "volatility_multiplier": 1.5},
                 {"name": "Volatility Spike", "market_shock": 0.0, "volatility_multiplier": 2.0},
             ]
-        
+
         result = mc_simulator.stress_test(returns, scenario_list)
-        
+
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:

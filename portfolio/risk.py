@@ -43,4 +43,3 @@ def apply_stress(weights: pd.Series, scenario: StressScenario) -> float:
 
     w = weights.reindex(scenario.shock.index).fillna(0.0)
     return float((w * scenario.shock).sum())
-

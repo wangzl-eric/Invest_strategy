@@ -105,13 +105,13 @@ async def main():
     # Connect to IBKR
     ibkr_client = IBKRClient()
     await ibkr_client.connect()
-    
+
     # Start scheduler (replace with your account ID)
     scheduler.start(account_id="YOUR_ACCOUNT_ID")
-    
+
     print("Scheduler started! Data will be fetched every 15 minutes.")
     print("Press Ctrl+C to stop.")
-    
+
     # Keep running
     try:
         while True:
@@ -191,4 +191,3 @@ You can also leave `account_id` blank when fetching - the system will auto-detec
 5. ✅ Fetch data using `/api/fetch-data` endpoint
 6. ✅ View dashboard at `http://localhost:8050`
 7. ✅ Set up scheduler for automatic updates (optional)
-

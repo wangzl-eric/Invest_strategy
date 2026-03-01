@@ -21,26 +21,26 @@ from backend.flex_importer import calculate_and_update_returns
 def recalculate_all_returns():
     """Recalculate returns for all accounts in the database."""
     db_path = project_root / "ibkr_analytics.db"
-    
+
     if not db_path.exists():
         print(f"Database not found at {db_path}")
         return False
-    
+
     print(f"Recalculating returns for all accounts in {db_path}...")
     print("=" * 60)
-    
+
     with get_db_context() as db:
         # Get all unique account IDs
         account_ids = db.query(PnLHistory.account_id).distinct().all()
         account_ids = [row[0] for row in account_ids]
-        
+
         if not account_ids:
             print("No accounts found in pnl_history table")
             return False
-        
+
         print(f"Found {len(account_ids)} account(s): {', '.join(account_ids)}")
         print()
-        
+
         total_records = 0
         for account_id in account_ids:
             try:
@@ -48,23 +48,23 @@ def recalculate_all_returns():
                 count = db.query(PnLHistory).filter(
                     PnLHistory.account_id == account_id
                 ).count()
-                
+
                 print(f"Account: {account_id}")
                 print(f"  Records: {count}")
                 print(f"  Recalculating returns...", end=" ")
-                
+
                 # Recalculate returns
                 calculate_and_update_returns(account_id, db)
-                
+
                 print("✓")
                 total_records += count
-                
+
             except Exception as e:
                 print(f"✗ Error: {e}")
                 import traceback
                 traceback.print_exc()
                 continue
-        
+
         # Commit all changes
         db.commit()
         print()
@@ -74,7 +74,7 @@ def recalculate_all_returns():
         print("New calculation method:")
         print("  daily_return = total_pnl / previous_day_net_liquidation")
         print("  cumulative_return = (1 + r1) × (1 + r2) × ... - 1")
-        
+
         return True
 
 if __name__ == "__main__":
