@@ -35,39 +35,164 @@ A full-stack quantitative analytics platform for Interactive Brokers (IBKR) acco
 
 ## Architecture Overview
 
+> **Interactive Diagram**: Open [`docs/architecture_overview.drawio`](./docs/architecture_overview.drawio) in [draw.io](https://app.diagrams.net/) to view and edit the interactive architecture diagram.
+
 ```
-┌───────────────────────────────────────────────────────────────────┐
-│                         Data Sources                              │
-│  IBKR TWS/Gateway ─ Flex Queries ─ Stooq ─ Polygon ─ Binance    │
-│  ECB FX ─ Yahoo Finance ─ Portfolio Analyst CSV                   │
-└────────────────────────────┬──────────────────────────────────────┘
-                             │
-            ┌────────────────▼────────────────┐
-            │        Ingestion Layer           │
-            │  ib_insync · Flex Query Client   │
-            │  Quant Data Connectors · CSV     │
-            └────────────────┬────────────────┘
-                             │
-     ┌───────────────────────▼───────────────────────┐
-     │              Storage Layer                      │
-     │  SQLite / PostgreSQL ─ Parquet Data Lake        │
-     │  DuckDB (ad-hoc SQL) ─ InfluxDB / TimescaleDB  │
-     │  Redis (cache)                                  │
-     └──────────┬──────────────────────┬──────────────┘
-                │                      │
-   ┌────────────▼──────────┐  ┌────────▼──────────────┐
-   │   FastAPI Backend     │  │  Research / Notebooks  │
-   │  REST + WebSocket     │  │  Jupyter · DuckDB SQL  │
-   │  Auth · Rate Limit    │  │  MLflow Experiments    │
-   │  Alerts · Scheduler   │  └───────────────────────┘
-   └────────────┬──────────┘
-                │
-   ┌────────────▼──────────┐
-   │   Plotly Dash Frontend │
-   │  Dark-themed SPA       │
-   │  Real-time WebSocket   │
-   └────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                                    DATA SOURCES                                      │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌──────────────┐ │
+│  │   IBKR TWS API  │  │   FRED API      │  │  Yahoo Finance  │  │   Flex Query │ │
+│  │  (Live Prices,  │  │  (Treasury      │  │  (Equities,     │  │   (Historical│ │
+│  │   Positions,     │  │   Yields,       │  │   Commodities,  │  │    Trades,    │ │
+│  │   News, Orders) │  │   Macro Data)   │  │   FX)           │  │    P&L)       │ │
+│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘  └──────┬───────┘ │
+│           │                    │                    │                   │         │
+└───────────┼────────────────────┼────────────────────┼───────────────────┼─────────┘
+            │                    │                    │                   │
+            ▼                    ▼                    ▼                   ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                                  INGESTION LAYER                                     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌──────────────┐ │
+│  │  IBKR Client    │  │  Market Data    │  │   Flex Query    │  │   CSV/XML    │ │
+│  │  (ib_insync)    │  │   Service       │  │   Client        │  │   Import     │ │
+│  │  - Live data    │  │  (yfinance,     │  │  - Statements   │  │   (PA,       │ │
+│  │  - News         │  │   FRED)         │  │  - Trades        │  │    Trades)   │ │
+│  │  - Market Data  │  │  - Caching      │  │  - Activity     │  │              │ │
+│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘  └──────┬───────┘ │
+│           │                    │                    │                   │         │
+└───────────┼────────────────────┼────────────────────┼───────────────────┼─────────┘
+            │                    │                    │                   │
+            ▼                    ▼                    ▼                   ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                                   STORAGE LAYER                                      │
+│  ┌────────────────────────────────────────────────────────────────────────────────┐ │
+│  │                          PARQUET DATA LAKE                                      │ │
+│  │   data/market_data/          data/flex_reports/        data_lake/            │ │
+│  │   ├── prices/                ├── {date}/               ├── raw/               │ │
+│  │   │   ├── equities.parquet   │   ├── trades/          ├── clean/             │ │
+│  │   │   ├── fx.parquet         │   └── mtm/             └── features/         │ │
+│  │   ├── fred/                  │                        research.duckdb       │ │
+│  │   │   ├── treasury_yields    └────────────────────────┘                       │ │
+│  │   │   ├── macro_indicators   ┌─────────────────────────────────────────────┐│ │
+│  │   │   └── fed_liquidity      │  SQLAlchemy DB (SQLite/PostgreSQL)          ││ │
+│  │   └── catalog.json           │  Account · Positions · Trades · Alerts     ││ │
+│  └──────────────────────────────┴──────────────────────────────────────────────┘│ │
+│                                                                                    │
+│  ┌─────────────────────────────┐  ┌─────────────────────────────────────────────┐│ │
+│  │      Redis (Cache)          │  │  DuckDB (Ad-hoc SQL)                      ││ │
+│  │  Price缓存 · Rate Limits     │  │  Query Parquet without loading to memory ││ │
+│  └─────────────────────────────┘  └─────────────────────────────────────────────┘│ │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+            │
+            ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                              RESEARCH & ANALYSIS                                     │
+│  ┌──────────────────────────────┐  ┌─────────────────────────────────────────────┐ │
+│  │    BACKTESTING ENGINE        │  │    SIGNAL RESEARCH                         │ │
+│  │  ┌────────────────────────┐  │  │  ┌─────────────────────────────────────┐   │ │
+│  │  │   Backtrader          │  │  │  │  backtests/strategies/               │   │ │
+│  │  │   Event-driven        │  │  │  │  - MomentumSignal                    │   │ │
+│  │  │   - Realistic fills   │  │  │  │  - CarrySignal                       │   │ │
+│  │  │   - Commission model  │  │  │  │  - MeanReversionSignal               │   │ │
+│  │  └───────────┬────────────┘  │  │  │  - BlendedSignals                    │   │ │
+│  │              │                │  │  └─────────────────────────────────────┘   │ │
+│  │  ┌──────────▼────────────┐   │  │  ┌─────────────────────────────────────┐   │ │
+│  │  │   FORWARD-PASS        │   │  │  │  backtests/builder.py               │   │ │
+│  │  │   TRACKING             │   │  │  │  - Signal → Alpha → Weights          │   │ │
+│  │  │   - Signal context    │   │  │  │  - Portfolio optimization            │   │ │
+│  │  │   - Predictions       │   │  │  └─────────────────────────────────────┘   │ │
+│  │  │   - Confidence        │   │  │                                            │ │
+│  │  └───────────────────────┘   │  │  backtests/forward_pass/                   │ │
+│  └──────────────────────────────┘  │  - TradeTracker · ComparisonView           │ │
+│                                     └─────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+            │
+            ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                                  BACKEND API                                          │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐ │
+│  │                            FASTAPI APPLICATION                                 │ │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────────────────┐│ │
+│  │  │  /api/news  │ │ /api/market │ │ /api/data   │ │  /api/attribution      ││ │
+│  │  │  - Equity   │ │  - Rates    │ │  - Catalog  │ │  - Forward-pass        ││ │
+│  │  │  - Forex    │ │  - FX       │ │  - Pull     │ │  - Post-trade         ││ │
+│  │  │  - Futures  │ │  - Equities │ │  - Query    │ │  - LLM explanations   ││ │
+│  │  │  - Bulletins│ │  - Commod   │ │  - Update   │ │    (Qwen/DashScope)   ││ │
+│  │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────────────────┘│ │
+│  │                                                                                 │ │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────────────────┐│ │
+│  │  │  /api/account│ │ /api/analytics│ │ /api/alerts │ │  /api/reporting        ││ │
+│  │  │  - Summary  │ │  - Optimize │ │  - Rules    │ │  - PDF/Excel export    ││ │
+│  │  │  - Positions│ │  - Monte    │ │  - History │ │                        ││ │
+│  │  │  - PnL      │ │    Carlo    │ │  - Notify  │ │                        ││ │
+│  │  │  - Trades   │ │  - Factor   │ │            │ │                        ││ │
+│  │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────────────────┘│ │
+│  │                                                                                 │ │
+│  │  WEBSOCKET: /api/ws/{connection_id} - Real-time PnL & positions               │ │
+│  │  MIDDLEWARE: Auth (JWT/API Key) · Rate Limit · CORS · Metrics                │ │
+│  └─────────────────────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+            │
+            ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                                FRONTEND DASHBOARD                                    │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐ │
+│  │                          PLOTLY DASH (Cyborg Dark Theme)                       │ │
+│  │                                                                                 │ │
+│  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐  │ │
+│  │  │Portfolio│ │Performance│ │Positions│ │ History │ │ Markets │ │  Data   │  │ │
+│  │  │ NAV,    │ │ Cumulative│ │Holdings │ │ Trade   │ │ Rates,  │ │ Manager │  │ │
+│  │  │ Daily   │ │ Return   │ │ with    │ │ Log     │ │ FX,     │ │ Catalog │  │ │
+│  │  │ PnL     │ │ Drawdown │ │ Sector  │ │         │ │ Equities│ │ Pull   │  │ │
+│  │  │ Sharpe  │ │ vs SPX  │ │ Weight  │ │         │ │ Commod  │ │ Charts │  │ │
+│  │  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘  │ │
+│  │                                                                                 │ │
+│  │  REAL-TIME: WebSocket connection for live PnL/position updates                │ │
+│  │  INTERACTIVITY: Sparklines · Click-to-expand charts · Data Manager pull        │ │
+│  └─────────────────────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+            │
+            ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                                  LIVE TRADING                                        │
+│  ┌──────────────────────────────┐  ┌─────────────────────────────────────────────┐ │
+│  │    EXECUTION FRAMEWORK       │  │    IBKR TWS/GATEWAY                         │ │
+│  │  ┌────────────────────────┐  │  │                                             │ │
+│  │  │   Risk Engine          │  │  │  ┌─────────┐  ┌──────────┐  ┌───────────┐ │ │
+│  │  │   - Max position      │  │  │  │ Live    │  │ Market   │  │  News    │ │ │
+│  │  │   - Max daily loss    │  │  │  │ Prices  │  │ Orders   │  │  Feed    │ │ │
+│  │  │   - Kill switch       │  │  │  └────┬────┘  └────┬─────┘  └─────┬─────┘ │ │
+│  │  └───────────┬────────────┘  │  │       │            │              │       │ │
+│  │              │                │  │       ▼            ▼              ▼       │ │
+│  │  ┌──────────▼────────────┐   │  │  ┌─────────────────────────────────────────┐│ │
+│  │  │   Order Management    │   │  │  │         EXECUTION RUNNER                ││ │
+│  │  │   - Staged orders     │   │  │  │  Validate → Risk Check → Submit → Record││ │
+│  │  │   - Audit trail       │   │  │  └─────────────────────────────────────────┘│ │
+│  │  └───────────────────────┘   │  │                                             │ │
+│  └──────────────────────────────┘  └─────────────────────────────────────────────┘ │
+│                                                                                    │
+│  DATA FLOW: Backtest Signals → Forward-Pass Tracker → Risk Engine → IBKR Order  │
+│             ←───────────────── Real-time Attribution ←──────────────────────────    │
+└─────────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Philosophy
+
+This platform follows a **discretionary-systematic hybrid** approach:
+
+1. **Signals drive decisions, not black boxes** — The system encodes your views (momentum, carry, mean-reversion) as signals, but you retain full control over allocation and risk.
+
+2. **Research and production share the same code** — Signals defined in `backtests/strategies/` are used directly in backtesting and live trading via Backtrader integration. No drift between research and execution.
+
+3. **Dual-tracking PnL attribution** — For every trade, we track:
+   - **Forward-pass**: What the strategy predicted at entry (signal context, confidence)
+   - **Post-trade**: What actually happened (factor contributions, news impact)
+   
+   This enables LLM-powered explanations (via Qwen) that compare predictions vs. reality.
+
+4. **Look-ahead bias prevention** — Forward-pass signals use only data available at time t. The tracker records what was known at each timestamp for verification.
 
 ---
 
@@ -92,6 +217,9 @@ A full-stack quantitative analytics platform for Interactive Brokers (IBKR) acco
 | **Data Lake** | Parquet partitions, DuckDB SQL views, pandera validation, MLflow experiment tracking |
 | **Automation** | Playwright-based PA download, daily cron scheduler, Flex Query scheduled fetches |
 | **QuantConnect** | Local Lean engine integration for C#/Python algorithm backtests |
+| **News Pipeline** | IBKR News API integration for equities, forex, futures, indices, and market bulletins |
+| **LLM Attribution** | Qwen (DashScope) powered PnL attribution with strategy context and historical summaries |
+| **Forward-Pass Tracking** | Dual-tracking: forward-pass signal interpretation (no look-ahead) + post-trade attribution comparison |
 
 ---
 
@@ -144,6 +272,10 @@ FastAPI application that wires together all routers, middleware, and lifecycle h
 | `validators.py` | Input validation utilities |
 | `middleware.py` | Request timing and Prometheus metric collection |
 | `rate_limiter.py` | Per-IP rate limiting middleware |
+| `news_service.py` | High-level news abstraction layer using IBKR API |
+| `llm_client.py` | Qwen (DashScope) LLM client for PnL attribution explanations |
+| `attribution_engine.py` | Orchestrates PnL attribution workflow with news and LLM |
+| `drawdown_analyzer.py` | Analyzes drawdowns and correlates with news events |
 
 **API route files:**
 
@@ -157,6 +289,8 @@ FastAPI application that wires together all routers, middleware, and lifecycle h
 | `alert_routes.py` | `/api` | CRUD for alert rules/channels, alert history, test notifications |
 | `reporting_routes.py` | `/api` | PDF/Excel report generation and download |
 | `websocket_routes.py` | `/api` | WebSocket endpoint for real-time PnL/position streaming |
+| `news_routes.py` | `/api/news` | Equity, forex, futures, index news, market bulletins, portfolio news |
+| `attribution_routes.py` | `/api/attribution` | PnL attribution with LLM explanations, forward-pass tracking, history |
 | `schemas.py` | — | Pydantic request/response models for all endpoints |
 
 ### 2. IBKR Integration
@@ -506,6 +640,28 @@ The `quant_data/` package provides a vendor-agnostic research data layer:
 | GET | `/api/market/sparklines` | Batch 30-day sparkline data |
 | GET | `/api/market/historical/{symbol}` | Historical daily closes (up to 1Y) |
 
+### News
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/news/equity` | Fetch equity news for a symbol |
+| POST | `/api/news/equity/df` | Fetch equity news as DataFrame |
+| POST | `/api/news/forex` | Fetch forex news for a currency pair |
+| POST | `/api/news/futures` | Fetch futures news for a contract |
+| POST | `/api/news/index` | Fetch index news |
+| POST | `/api/news/portfolio` | Fetch news for portfolio positions |
+| GET | `/api/news/bulletins` | Fetch IBKR market bulletins |
+| GET | `/api/news/providers` | List available news providers |
+| GET | `/api/news/health` | News service health check |
+
+### Attribution
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/attribution/run` | Run PnL attribution with LLM explanation |
+| POST | `/api/attribution/daily` | Run daily attribution for all signals |
+| GET | `/api/attribution/history` | Fetch attribution history |
+| GET | `/api/attribution/signals` | List available signals for attribution |
+| GET | `/api/attribution/llm-status` | Check LLM configuration status |
+
 ### Data Management
 | Method | Path | Description |
 |--------|------|-------------|
@@ -601,6 +757,10 @@ Access:
 | `LOG_FORMAT` | `text` | Set to `json` for structured logging |
 | `POLYGON_API_KEY` | — | Polygon.io API key |
 | `KILL_SWITCH` | — | Set to `true` to halt all order submission |
+| `QWEN_API_KEY` | — | Qwen/DashScope API key for LLM attribution |
+| `QWEN_MODEL` | `qwen-turbo` | Qwen model name |
+| `QWEN_MAX_TOKENS` | `1024` | Max tokens for LLM response |
+| `QWEN_TEMPERATURE` | `0.7` | LLM temperature |
 
 ### Configuration Files
 
@@ -660,6 +820,8 @@ pytest tests/integration/
 | `tests/unit/test_data_processor.py` | Performance metric calculations |
 | `tests/unit/test_blend.py` | Alpha blending |
 | `tests/unit/test_portfolio_optimizer.py` | Markowitz/risk parity |
+| `tests/unit/test_news_service.py` | News service and API routes |
+| `tests/unit/test_forward_pass.py` | Forward-pass tracking and comparison |
 | `tests/integration/test_api_routes.py` | FastAPI route integration |
 | `tests/conftest.py` | Shared fixtures |
 
@@ -678,6 +840,8 @@ Invest_strategy/
 │   │   ├── alert_routes.py     # Alert CRUD
 │   │   ├── reporting_routes.py # Report generation
 │   │   ├── websocket_routes.py # WebSocket endpoint
+│   │   ├── news_routes.py      # News API endpoints
+│   │   ├── attribution_routes.py # PnL attribution endpoints
 │   │   └── schemas.py          # Pydantic models
 │   ├── main.py                 # FastAPI app entry point
 │   ├── models.py               # SQLAlchemy ORM models
@@ -712,7 +876,11 @@ Invest_strategy/
 │   ├── logging_config.py       # Structured logging setup
 │   ├── error_tracking.py       # Sentry integration
 │   ├── tracing.py              # OpenTelemetry tracing
-│   └── validators.py           # Input validation
+│   ├── validators.py           # Input validation
+│   ├── news_service.py         # News abstraction layer (IBKR API)
+│   ├── llm_client.py           # Qwen/DashScope LLM client for attribution
+│   ├── attribution_engine.py   # PnL attribution orchestration
+│   └── drawdown_analyzer.py    # Drawdown analysis with news correlation
 │
 ├── frontend/                   # Plotly Dash dashboard
 │   ├── app.py                  # Dash application
@@ -735,12 +903,32 @@ Invest_strategy/
 │   ├── rebalancer.py           # Automated rebalancing
 │   └── advanced_analytics.py   # Portfolio-level analytics
 │
-├── backtests/                  # Backtesting engines
+├── backtests/                  # Unified backtesting framework
+│   ├── __init__.py            # Exports
 │   ├── core.py                 # Core types (CostModel, BacktestResult)
-│   └── metrics.py              # Sharpe, drawdown, total return
-│   └── event_driven/           # Event-driven backtester
-│       ├── engine.py           # Queue-based engine
-│       └── events.py           # Event type definitions
+│   ├── metrics.py              # Sharpe, drawdown, total return
+│   ├── builder.py              # Portfolio builder: signals → alpha → weights
+│   ├── walkforward.py          # Walk-forward analysis
+│   │
+│   ├── strategies/             # Signal definitions (upstream of backtesting)
+│   │   ├── __init__.py        # Exports: signals, blending, metadata
+│   │   ├── signals.py         # Signal classes (Momentum, Carry, MeanReversion)
+│   │   └── metadata.py        # Strategy metadata for PnL attribution
+│   │
+│   ├── forward_pass/          # Dual-tracking: forward-pass vs post-trade
+│   │   ├── __init__.py
+│   │   ├── trade_tracker.py  # Signal context per trade
+│   │   └── comparison.py     # Side-by-side comparison view
+│   │
+│   ├── event_driven/          # Event-driven backtester (Backtrader)
+│   │   ├── __init__.py
+│   │   ├── engine.py
+│   │   └── events.py
+│   │
+│   └── runners/               # Experiment runners
+│       ├── __init__.py
+│       ├── momentum.py        # Momentum signal experiment
+│       └── portfolio_opt.py   # Portfolio optimization experiment
 │
 ├── execution/                  # Trade execution framework
 │   ├── runner.py               # Paper/live execution runner
@@ -771,14 +959,12 @@ Invest_strategy/
 │   ├── Results/                # Backtest output
 │   └── Lean/                   # Lean engine (submodule)
 │
-├── research/                   # Research experiments
-│   └── experiments/
-│       ├── run_example_momentum.py
-│       └── run_example_portfolio_opt.py
-│
 ├── scripts/                    # Utility and automation scripts
 ├── notebooks/                  # Jupyter notebooks
 ├── tests/                      # Unit and integration tests
+│   ├── unit/                   # Unit tests
+│   ├── integration/            # Integration tests
+│   └── conftest.py             # Shared pytest fixtures
 ├── infrastructure/             # Docker configuration
 │   ├── docker-compose.yml
 │   ├── docker-compose.research.yml

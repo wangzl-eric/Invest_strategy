@@ -1,0 +1,354 @@
+<mxfile host="app.diagrams.net" modified="2026-03-02T00:00:00.000Z" agent="Claude" version="21.0.0">
+  <diagram name="Architecture Overview" id="architecture">
+    <mxGraphModel dx="2400" dy="1600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="PA Investment Platform - Architecture Overview" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=24;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="400" y="20" width="800" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== DATA SOURCES ==================== -->
+        <mxCell id="ds_title" value="DATA SOURCES" style="text;html=1;strokeColor=#666;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="200" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- IBKR -->
+        <mxCell id="ds_ibkr" value="IBKR TWS/Gateway&#xa;Flex Query&#xa;Portfolio Analyst" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="40" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Market Data -->
+        <mxCell id="ds_market" value="Market Data&#xa;yfinance&#xa;FRED&#xa;IBKR API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="180" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Alternative Data -->
+        <mxCell id="ds_alt" value="Alternative Data&#xa;Stooq&#xa;Polygon&#xa;Binance" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="40" y="200" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- External APIs -->
+        <mxCell id="ds_api" value="External APIs&#xa;Qwen LLM&#xa;(DashScope)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="180" y="200" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== DATA INGESTION ==================== -->
+        <mxCell id="ing_title" value="DATA INGESTION" style="text;html=1;strokeColor=#666;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="360" y="80" width="200" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- IBKR Client -->
+        <mxCell id="ing_ibkr" value="IBKR Client&#xa;(ib_insync)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="360" y="120" width="100" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Flex Query -->
+        <mxCell id="ing_flex" value="Flex Query&#xa;Client" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="480" y="120" width="100" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Data Fetcher -->
+        <mxCell id="ing_fetch" value="Data Fetcher&#xa;Scheduler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="360" y="190" width="100" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- News Service -->
+        <mxCell id="ing_news" value="News Service&#xa;(IBKR API)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="480" y="190" width="100" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== STORAGE ==================== -->
+        <mxCell id="stor_title" value="STORAGE" style="text;html=1;strokeColor=#666;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="660" y="80" width="200" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- SQL Database -->
+        <mxCell id="stor_sql" value="SQL Database&#xa;(SQLite/PostgreSQL)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="660" y="120" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Parquet Data Lake -->
+        <mxCell id="stor_parquet" value="Parquet&#xa;Data Lake" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="660" y="190" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- DuckDB -->
+        <mxCell id="stor_duckdb" value="DuckDB&#xa;(SQL Queries)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="800" y="120" width="100" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Cache -->
+        <mxCell id="stor_cache" value="Redis&#xa;(Cache)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="800" y="190" width="100" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== RESEARCH & ANALYSIS ==================== -->
+ id="res_title        <mxCell" value="RESEARCH &amp; ANALYSIS" style="text;html=1;strokeColor=#666;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="960" y="80" width="200" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Signals -->
+        <mxCell id="res_signals" value="Signals&#xa;(Momentum, Carry,&#xa;MeanReversion...)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="960" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Backtesting -->
+        <mxCell id="res_backtest" value="Backtesting&#xa;(Backtrader)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="1100" y="120" width="100" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Forward Pass -->
+        <mxCell id="res_forward" value="Forward-Pass&#xa;Tracking" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="960" y="200" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Attribution -->
+        <mxCell id="res_attr" value="PnL Attribution&#xa;+ LLM Explanations" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="1100" y="200" width="100" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== BACKEND API ==================== -->
+        <mxCell id="be_title" value="BACKEND API (FastAPI)" style="text;html=1;strokeColor=#666;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="320" width="200" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Core Routes -->
+        <mxCell id="be_core" value="Core Routes&#xa;(Account, Positions, PnL)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="40" y="360" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Market Routes -->
+        <mxCell id="be_market" value="Market Routes&#xa;(Rates, FX, Equities,&#xa;Commodities, Curves)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="180" y="360" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Data Routes -->
+        <mxCell id="be_data" value="Data Routes&#xa;(Catalog, Pull, Query)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="40" y="430" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- News Routes -->
+        <mxCell id="be_news" value="News Routes&#xa;(Equity, Forex,&#xa;Bulletins)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="180" y="430" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Attribution Routes -->
+        <mxCell id="be_attr" value="Attribution Routes&#xa;(Run, History,&#xa;LLM Status)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="40" y="500" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Analytics Routes -->
+        <mxCell id="be_analytics" value="Analytics Routes&#xa;(Optimization,&#xa;Monte Carlo)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="180" y="500" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== DASHBOARD ==================== -->
+        <mxCell id="dash_title" value="DASHBOARD (Plotly Dash)" style="text;html=1;strokeColor=#666;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="380" y="320" width="200" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Portfolio Tab -->
+        <mxCell id="dash_port" value="Portfolio&#xa;(NAV, PnL, Metrics)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="380" y="360" width="100" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Performance Tab -->
+        <mxCell id="dash_perf" value="Performance&#xa;(Returns, Drawdown)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="500" y="360" width="100" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Markets Tab -->
+        <mxCell id="dash_mkt" value="Markets&#xa;(Rates, FX, Equities,&#xa;Commodities, Curves)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="380" y="430" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Data Tab -->
+        <mxCell id="dash_data" value="Data Manager&#xa;(Catalog, Pull, Viewer)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="520" y="430" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Positions Tab -->
+        <mxCell id="dash_pos" value="Positions&#xa;(Holdings, PnL)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="380" y="510" width="100" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- History Tab -->
+        <mxCell id="dash_hist" value="History&#xa;(Trade Log)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="500" y="510" width="100" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== LIVE TRADING ==================== -->
+        <mxCell id="live_title" value="LIVE TRADING" style="text;html=1;strokeColor=#666;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="720" y="320" width="200" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Execution Runner -->
+        <mxCell id="live_exec" value="Execution Runner&#xa;(Paper/Live)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="720" y="360" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Risk Engine -->
+        <mxCell id="live_risk" value="Risk Engine&#xa;(Pre-trade checks)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="860" y="360" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Broker Interface -->
+        <mxCell id="live_broker" value="Broker Interface&#xa;(IBKR Adapter)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="720" y="430" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Alerts -->
+        <mxCell id="live_alerts" value="Alerts&#xa;(PnL, Drawdown,&#xa;Notifications)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="860" y="430" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== CONNECTIONS ==================== -->
+        
+        <!-- Data Sources to Ingestion -->
+        <mxCell id="conn_ds1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1;dashed=1" edge="1" parent="1" source="ds_ibkr" target="ing_ibkr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_ds2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1;dashed=1" edge="1" parent="1" source="ds_market" target="ing_fetch">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_ds3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1;dashed=1" edge="1" parent="1" source="ds_api" target="ing_news">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Ingestion to Storage -->
+        <mxCell id="conn_ing1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1" edge="1" parent="1" source="ing_ibkr" target="stor_sql">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_ing2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1" edge="1" parent="1" source="ing_fetch" target="stor_parquet">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_ing3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1" edge="1" parent="1" source="ing_news" target="stor_parquet">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Storage to Research -->
+        <mxCell id="conn_res1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1" edge="1" parent="1" source="stor_parquet" target="res_signals">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_res2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1" edge="1" parent="1" source="res_signals" target="res_backtest">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_res3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1" edge="1" parent="1" source="res_backtest" target="res_forward">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_res4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1" edge="1" parent="1" source="res_forward" target="res_attr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Storage to Backend -->
+        <mxCell id="conn_be1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1" edge="1" parent="1" source="stor_sql" target="be_core">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_be2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1" edge="1" parent="1" source="stor_parquet" target="be_data">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Backend to Dashboard -->
+        <mxCell id="conn_dash1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1" edge="1" parent="1" source="be_core" target="dash_port">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_dash2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1" edge="1" parent="1" source="be_market" target="dash_mkt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Backend to Live Trading -->
+        <mxCell id="conn_live1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1" edge="1" parent="1" source="be_analytics" target="live_exec">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_live2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1" edge="1" parent="1" source="live_exec" target="live_broker">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Live Trading to IBKR -->
+        <mxCell id="conn_ibkr" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=2" edge="1" parent="1" source="live_broker" target="ds_ibkr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Research to Backend for Attribution -->
+        <mxCell id="conn_attr" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1" edge="1" parent="1" source="res_attr" target="be_attr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- WebSocket real-time -->
+        <mxCell id="conn_ws" value="WebSocket&#xa;(Real-time)" style="text;html=1;strokeColor=#666;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=10;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="320" y="400" width="60" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== LEGEND ==================== -->
+        <mxCell id="leg_title" value="LEGEND" style="text;html=1;strokeColor=#666;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1100" y="320" width="80" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg1" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="1">
+          <mxGeometry x="1100" y="350" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1t" value="Data" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1125" y="352" width="60" height="16" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="1">
+          <mxGeometry x="1100" y="375" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2t" value="Compute" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1125" y="377" width="60" height="16" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg3" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="1">
+          <mxGeometry x="1100" y="400" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3t" value="Storage" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1125" y="402" width="60" height="16" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg4" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450" vertex="1" parent="1">
+          <mxGeometry x="1100" y="425" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4t" value="AI/ML" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1125" y="427" width="60" height="16" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg5" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="1">
+          <mxGeometry x="1100" y="450" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="leg5t" value="API" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1125" y="452" width="60" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- Flow arrows -->
+        <mxCell id="flow1" value="Solid: Data Flow" style="text;html=1;strokeColor=#666;fillColor=none;align=left;verticalAlign=middle;fontSize=9;fontStyle=0" vertex="1" parent="1">
+          <mxGeometry x="1100" y="490" width="100" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="flow2" value="Dashed: Async/API" style="text;html=1;strokeColor=#666;fillColor=none;align=left;verticalAlign=middle;fontSize=9;fontStyle=0" vertex="1" parent="1">
+          <mxGeometry x="1100" y="508" width="100" height="16" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== DATA FLOW NOTES ==================== -->
+        <mxCell id="note_title" value="KEY DATA FLOWS" style="text;html=1;strokeColor=#666;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="580" width="140" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="note1" value="1. Research → Backtest → Forward-Pass → Attribution" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="40" y="610" width="300" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="note2" value="2. Live: Signals → Optimizer → Risk → Execution → IBKR" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="40" y="628" width="300" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="note3" value="3. Dashboard: Real-time via WebSocket" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="40" y="646" width="300" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="note4" value="4. Attribution: News → LLM → Explanation" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="40" y="664" width="300" height="16" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

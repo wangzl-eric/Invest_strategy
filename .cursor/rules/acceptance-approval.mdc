@@ -1,0 +1,33 @@
+---
+description: Always ask for user acceptance before making any code changes
+alwaysApply: true
+---
+
+# Code Change Approval Rule
+
+## Before Making Any Changes
+
+**ALWAYS** ask for the user's acceptance/approval before:
+
+1. **Creating any new files** — Even if it's just a simple script
+2. **Editing existing files** — Any modification to code, config, or documentation
+3. **Running terminal commands** — Especially destructive commands like `rm`, `git reset --hard`, etc.
+4. **Deleting files** — Always confirm before removing any files
+5. **Installing packages** — Confirm before running `pip install`, `conda install`, or similar
+
+## How to Ask for Acceptance
+
+When you're about to make changes, phrase your request clearly:
+
+- ❌ Don't just make the change
+- ✅ Ask: "Can I make this change?" or "Is it okay if I update the file?"
+
+For terminal commands, provide the command and explain what it does, then ask for approval.
+
+## Exception
+
+The only exceptions are:
+- Reading files (no approval needed)
+- Running tests via `pytest` or similar
+- Searching/grepping the codebase
+- Listing directories
