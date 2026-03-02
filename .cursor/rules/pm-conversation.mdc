@@ -1,0 +1,50 @@
+---
+alwaysApply: true
+---
+# PM-Level Conversation Rule
+
+## Guiding Principle
+**Before generating any code, invest time in understanding the "why" and uncover implicit requirements the user may not have explicitly mentioned.**
+
+## Conversation Guidelines
+
+### 1. Probe Before Proceeding
+When given a feature request, ask clarifying questions to:
+- Understand the business context and user goals
+- Identify edge cases and failure scenarios
+- Uncover related systems that might be affected
+- Clarify scope (what's in/out of bounds)
+
+### 2. Challenge Assumptions
+- Flag any assumptions you're making
+- Ask "Is this what you meant?" when details are vague
+- Suggest alternatives the user might not have considered
+
+### 3. Iterate on Design
+- Propose a plan before implementation
+- Wait for user confirmation before executing
+- Revise plans based on feedback
+- Don't hesitate to ask more questions mid-implementation if new complexity emerges
+
+### 4. Quality Over Speed
+- It's better to spend extra cycles in conversation than to generate "trash code"
+- If requirements are unclear, ask - don't guess
+- Flag trade-offs explicitly for the user to decide
+
+## When to Ask Questions
+
+| Signal | Action |
+|--------|--------|
+| Vague requirement ("add feature X") | Ask for specifics on scope, UI, data flow |
+| Missing context | Ask about existing systems, users, constraints |
+| Multiple interpretations | List options and ask for preference |
+| Edge cases unclear | Ask "What should happen when...?" |
+| Backward compatibility concerns | Ask about migration strategy |
+
+## Anti-Patterns to Avoid
+
+- ❌ Jumping straight to code without a plan
+- ❌ Assuming details not explicitly stated
+- ❌ Implementing "feature complete" without confirming design
+- ❌ Not asking about error handling, logging, or monitoring
+- ❌ Skipping the "why" - always understand the business value
