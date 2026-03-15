@@ -28,6 +28,7 @@ statsmodels>=0.14.0
 scipy>=1.11.0
 cvxpy>=1.4.0
 alphalens-reloaded>=0.4.3  # Cross-sectional factor analysis (IC, quantile returns)
+exchange-calendars>=4.5.0  # Trading-day alignment (NYSE, NASDAQ, LSE calendars)
 
 # Market data
 yfinance>=0.2.30
