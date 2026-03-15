@@ -464,8 +464,12 @@ class PortfolioBuilder:
             rebal_dates = returns.index
         elif rebal_freq == "weekly":
             rebal_dates = returns.resample("W-FRI").last().dropna().index
-        else:  # monthly
+        elif rebal_freq == "monthly":
             rebal_dates = returns.resample("M").last().dropna().index
+        else:
+            # Pass the configured frequency string directly to resample(),
+            # supporting any valid pandas offset alias (e.g. "2M", "Q", "BQ").
+            rebal_dates = returns.resample(rebal_freq).last().dropna().index
 
         # Build weight matrix: at each date, what are the portfolio weights?
         # Seed from the pre-computed initial weights to get the asset list.
