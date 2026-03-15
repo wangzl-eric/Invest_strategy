@@ -421,6 +421,7 @@ class PortfolioBuilder:
         end_date: Optional[str] = None,
         cost_model: Optional[Any] = None,
         dynamic_reoptimize: bool = True,
+        target_vol: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Backtest the portfolio using computed signals and optimized weights.
@@ -440,6 +441,11 @@ class PortfolioBuilder:
                 every rebalance date using only data available up to that date.
                 If False, the pre-computed ``self.weights`` are used throughout
                 (faster but overstates weight stability).
+            target_vol: Annualised volatility target (e.g. 0.12 for 12%). When
+                set, portfolio gross exposure is scaled down at each rebalance
+                so that trailing 60-day realised vol matches the target.
+                Exposure is never levered up (scale = min(1.0, target/realised)).
+                When None (default), no scaling is applied.
         """
         if self.weights is None:
             self.optimize_weights()
@@ -480,6 +486,8 @@ class PortfolioBuilder:
 
         weight_matrix = pd.DataFrame(0.0, index=returns.index, columns=common_assets)
 
+        VOL_WINDOW = 60  # trailing days for realised vol estimation
+
         current_weights = self.weights[common_assets].fillna(0)
         for date in returns.index:
             is_rebal = date in rebal_dates or date == returns.index[0]
@@ -496,6 +504,25 @@ class PortfolioBuilder:
                 except Exception:
                     # Fall back to previous weights on optimization failure
                     pass
+
+            if is_rebal and target_vol is not None:
+                # Compute trailing 60-day realised portfolio vol using the
+                # weight_matrix rows already filled (previous-weights returns).
+                # No look-ahead: only rows before the current date are used.
+                loc = returns.index.get_loc(date)
+                if loc >= VOL_WINDOW:
+                    trailing_asset_rets = returns.iloc[loc - VOL_WINDOW : loc][
+                        common_assets
+                    ]
+                    trailing_weights = weight_matrix.iloc[loc - VOL_WINDOW : loc]
+                    trailing_port_rets = (trailing_weights * trailing_asset_rets).sum(
+                        axis=1
+                    )
+                    port_vol = trailing_port_rets.std() * np.sqrt(252)
+                    if port_vol > 0:
+                        scale = min(1.0, target_vol / port_vol)
+                        current_weights = current_weights * scale
+
             weight_matrix.loc[date] = current_weights
 
         # Compute portfolio returns: sum of (weight * asset return) per day
