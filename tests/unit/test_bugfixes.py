@@ -526,3 +526,63 @@ class TestBug10RebalanceFreqPassthrough:
             "total_return" in result
         ), "backtest() with 2M freq should return valid result"
         assert "sharpe_ratio" in result
+
+
+# ===========================================================================
+# Bug 11 (Round 2): target_vol parameter in backtest()
+# ===========================================================================
+
+
+class TestBug11TargetVol:
+    """target_vol=X should reduce max drawdown vs target_vol=None on volatile data."""
+
+    def _run(self, target_vol, seed=42, n=800):
+        from backtests.builder import PortfolioBuilder, PortfolioConfig
+
+        rng = np.random.RandomState(seed)
+        dates = pd.bdate_range("2018-01-01", periods=n)
+        # Deliberately volatile: daily sigma = 3%
+        returns_arr = rng.normal(0.0002, 0.03, (n, 3))
+        prices = pd.DataFrame(
+            100 * np.exp(np.cumsum(returns_arr, axis=0)),
+            index=dates,
+            columns=["A", "B", "C"],
+        )
+
+        config = PortfolioConfig(
+            universe=["A", "B", "C"],
+            optimization="equal_weight",
+            rebalance_frequency="monthly",
+        )
+        builder = PortfolioBuilder(config)
+        builder.prices = prices
+        builder.data = {t: prices[[t]] for t in prices.columns}
+        builder.weights = pd.Series({"A": 1 / 3, "B": 1 / 3, "C": 1 / 3})
+        return builder.backtest(dynamic_reoptimize=False, target_vol=target_vol)
+
+    def test_target_vol_reduces_max_drawdown(self):
+        """target_vol=0.12 must produce a smaller max drawdown than no vol target."""
+        result_unscaled = self._run(target_vol=None)
+        result_scaled = self._run(target_vol=0.12)
+
+        assert "max_drawdown" in result_unscaled
+        assert "max_drawdown" in result_scaled
+
+        # max_drawdown is negative; less-negative = smaller drawdown
+        assert result_scaled["max_drawdown"] > result_unscaled["max_drawdown"], (
+            f"target_vol=0.12 drawdown ({result_scaled['max_drawdown']:.4f}) "
+            f"should be smaller than unscaled ({result_unscaled['max_drawdown']:.4f})"
+        )
+
+    def test_target_vol_none_unchanged(self):
+        """target_vol=None must leave behaviour identical to not passing the param."""
+        result_default = self._run(target_vol=None)
+        assert "total_return" in result_default
+        assert "max_drawdown" in result_default
+
+    def test_target_vol_result_is_valid(self):
+        """backtest(target_vol=0.15) must return a complete, finite result dict."""
+        result = self._run(target_vol=0.15)
+        for key in ("total_return", "sharpe_ratio", "max_drawdown", "volatility"):
+            assert key in result
+            assert np.isfinite(result[key]), f"{key} must be finite"
