@@ -8,7 +8,7 @@ Two usage modes:
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Union, Type
+from typing import Dict, List, Optional, Type, Union
 
 import numpy as np
 import pandas as pd
@@ -69,17 +69,24 @@ class MomentumSignal(BaseSignal):
 
 
 class CarrySignal(BaseSignal):
-    """Carry proxy: for rates/futures, (forward - spot) / spot.
-    For equities without forward data: uses rolling return as carry proxy.
+    """Short-term momentum proxy registered as 'carry_proxy'.
+
+    NOTE: This signal does NOT compute a true carry (i.e. rate differential or
+    roll yield). It computes the rolling mean of past returns, which is a
+    short-term momentum signal.  The name is a misnomer inherited from an
+    earlier version of the codebase.
+
+    For a true FX carry signal (interest rate differential), use FXCarrySignal
+    (to be implemented).  Do not use this signal in any carry strategy.
     """
 
     name = "carry_proxy"
     lookback = 21
 
     def compute(self, prices: pd.DataFrame) -> Union[pd.Series, pd.DataFrame]:
-        # Simple carry proxy: expected forward return (rolling mean of past returns)
+        # Rolling mean of past returns — short-term momentum, not carry.
         rets = prices.pct_change()
-        carry = rets.rolling(self.lookback, min_periods=1).mean()
+        carry = rets.rolling(self.lookback, min_periods=self.lookback).mean()
         return carry.iloc[:, 0] if carry.shape[1] == 1 else carry
 
 
@@ -96,9 +103,9 @@ class MeanReversionSignal(BaseSignal):
             self.lookback = lookback
 
     def compute(self, prices: pd.DataFrame) -> Union[pd.Series, pd.DataFrame]:
-        ma = prices.rolling(self.lookback, min_periods=self.lookback // 2).mean()
+        ma = prices.rolling(self.lookback, min_periods=self.lookback).mean()
         z = (prices - ma) / prices.rolling(
-            self.lookback, min_periods=self.lookback // 2
+            self.lookback, min_periods=self.lookback
         ).std()
         z = z.replace([np.inf, -np.inf], np.nan)
         # Negative so that high price -> short signal
@@ -120,7 +127,7 @@ class VolatilitySignal(BaseSignal):
 
     def compute(self, prices: pd.DataFrame) -> Union[pd.Series, pd.DataFrame]:
         returns = prices.pct_change()
-        vol = returns.rolling(self.lookback, min_periods=self.lookback // 2).std()
+        vol = returns.rolling(self.lookback, min_periods=self.lookback).std()
         # Invert: low vol = high signal (expect vol to expand)
         signal = -vol
         return signal.iloc[:, 0] if signal.shape[1] == 1 else signal
@@ -147,12 +154,12 @@ class ATRSignal(BaseSignal):
             self.lookback = lookback
 
     def compute(self, prices: pd.DataFrame) -> Union[pd.Series, pd.DataFrame]:
-        # Need OHLC data - if only close, use close-based approximation
+        # Need OHLC data - if only close, use close-based approximation.
+        # ATR ≈ mean absolute daily return (already a ratio, dimensionless).
+        # Do NOT divide by prices again — pct_change() already normalizes by price.
         returns = prices.pct_change().abs()
-        atr = returns.rolling(self.lookback, min_periods=self.lookback // 2).mean()
-        # Normalize by price
-        atr_norm = atr / prices
-        signal = -atr_norm  # Low ATR = buy
+        atr = returns.rolling(self.lookback, min_periods=self.lookback).mean()
+        signal = -atr  # Low ATR = buy
         return signal.iloc[:, 0] if signal.shape[1] == 1 else signal
 
     def to_positions(
@@ -181,12 +188,12 @@ class RSISignal(BaseSignal):
         delta = prices.diff()
         gain = (
             (delta.where(delta > 0, 0))
-            .rolling(window=self.lookback, min_periods=self.lookback // 2)
+            .rolling(window=self.lookback, min_periods=self.lookback)
             .mean()
         )
         loss = (
             (-delta.where(delta < 0, 0))
-            .rolling(window=self.lookback, min_periods=self.lookback // 2)
+            .rolling(window=self.lookback, min_periods=self.lookback)
             .mean()
         )
 
@@ -239,8 +246,8 @@ class BollingerPositionSignal(BaseSignal):
             self.num_std = num_std
 
     def compute(self, prices: pd.DataFrame) -> Union[pd.Series, pd.DataFrame]:
-        sma = prices.rolling(self.lookback, min_periods=self.lookback // 2).mean()
-        std = prices.rolling(self.lookback, min_periods=self.lookback // 2).std()
+        sma = prices.rolling(self.lookback, min_periods=self.lookback).mean()
+        std = prices.rolling(self.lookback, min_periods=self.lookback).std()
 
         upper = sma + self.num_std * std
         lower = sma - self.num_std * std
@@ -270,12 +277,8 @@ class SMACrossoverSignal(BaseSignal):
         self.name = f"sma_cross_{self.fast_period}_{self.slow_period}"
 
     def compute(self, prices: pd.DataFrame) -> Union[pd.Series, pd.DataFrame]:
-        fast_sma = prices.rolling(
-            self.fast_period, min_periods=self.fast_period // 2
-        ).mean()
-        slow_sma = prices.rolling(
-            self.slow_period, min_periods=self.slow_period // 2
-        ).mean()
+        fast_sma = prices.rolling(self.fast_period, min_periods=self.fast_period).mean()
+        slow_sma = prices.rolling(self.slow_period, min_periods=self.slow_period).mean()
 
         # Normalize by price
         signal = (fast_sma - slow_sma) / prices
@@ -295,9 +298,10 @@ class VolumeSignal(BaseSignal):
             self.lookback = lookback
 
     def compute(self, prices: pd.DataFrame) -> Union[pd.Series, pd.DataFrame]:
-        # This requires volume data - if not available, return zeros
-        # In practice, you'd pass volume as a separate DataFrame
-        # For now, return neutral signal
+        # Volume data is not available via the standard price DataFrame.
+        # This signal is intentionally excluded from the default registry to
+        # prevent it from silently diluting blended signals with zeros.
+        # To use, pass a volume DataFrame explicitly and override this method.
         return pd.Series(0, index=prices.index)
 
 
@@ -325,8 +329,14 @@ class SignalBlender:
         for signal, weight in zip(self.signals, self.weights):
             sig = signal.compute(prices)
 
-            # Normalize to z-scores for fair blending
-            sig_norm = (sig - sig.mean()) / sig.std() if sig.std() > 0 else sig
+            # Normalize to z-scores using expanding window (no look-ahead bias)
+            expanding_mean = sig.expanding(min_periods=60).mean()
+            expanding_std = sig.expanding(min_periods=60).std()
+            sig_norm = (
+                (sig - expanding_mean) / expanding_std
+                if (expanding_std > 0).any()
+                else sig
+            )
 
             if blended is None:
                 blended = sig_norm * weight
@@ -377,6 +387,9 @@ def _init_defaults():
     register(BollingerPositionSignal(lookback=10, num_std=1.5))  # Tight bands
     register(SMACrossoverSignal(fast=50, slow=200))
     register(SMACrossoverSignal(fast=20, slow=50))
+    # VolumeSignal is NOT registered: it returns zeros when no volume data is
+    # provided and would silently dilute any blended signal. Instantiate it
+    # explicitly if you have a volume DataFrame and override compute().
 
 
 _init_defaults()
@@ -386,6 +399,7 @@ _init_defaults()
 # Backtrader Integration - Create Strategy from Signal
 # ============================================================================
 
+
 def create_signal_strategy(
     signal_class: Type[BaseSignal],
     signal_params: Optional[Dict] = None,
@@ -393,73 +407,71 @@ def create_signal_strategy(
 ) -> type:
     """
     Create a Backtrader Strategy class from a signal class.
-    
+
     This provides native Backtrader compatibility while using our signal system.
-    
+
     Args:
         signal_class: Signal class (e.g., MomentumSignal)
         signal_params: Parameters for the signal
         threshold: Signal threshold for entry/exit
-        
+
     Returns:
         Backtrader Strategy class
-        
+
     Example:
         from backtests.strategies import create_signal_strategy, MomentumSignal
-        
+
         StrategyClass = create_signal_strategy(MomentumSignal, {'lookback': 60, 'skip': 21})
         cerebro.addstrategy(StrategyClass)
     """
     import backtrader as bt
-    
+
     signal_params = signal_params or {}
-    
+
     class SignalStrategy(bt.Strategy):
-        params = (
-            ('threshold', threshold),
-        )
-        
+        params = (("threshold", threshold),)
+
         def __init__(self):
             # Create signal instance
             self.signal = signal_class(**signal_params)
             self.order = None
             # Store price history for signal computation
             self._price_history = []
-            
+
         def notify_order(self, order):
             if order.status in [order.Completed]:
                 self.order = None
-                
+
         def next(self):
             if self.order:
                 return
-                
+
             # Get current close
             close = self.data.close[0]
             self._price_history.append(close)
-            
+
             # Keep only lookback period
-            lookback = getattr(self.signal, 'lookback', 60)
+            lookback = getattr(self.signal, "lookback", 60)
             if len(self._price_history) > lookback + 20:
                 self._price_history.pop(0)
-                
+
             # Need enough data
             if len(self._price_history) < lookback:
                 return
-                
+
             # Compute signal using pandas
-            prices_df = pd.DataFrame({'close': self._price_history})
+            prices_df = pd.DataFrame({"close": self._price_history})
             sig_values = self.signal.compute(prices_df)
-            
+
             # Get latest signal value
             if isinstance(sig_values, pd.Series):
                 sig = sig_values.iloc[-1]
             else:
                 sig = sig_values
-                
+
             # Convert to position
             position = np.sign(sig) if not pd.isna(sig) else 0
-            
+
             # Execute based on signal
             if position > self.params.threshold:
                 if not self.position:
@@ -470,7 +482,7 @@ def create_signal_strategy(
             elif position == 0:
                 if self.position:
                     self.order = self.close()
-    
+
     # Set strategy name
     SignalStrategy.__name__ = f"Signal_{signal_class.__name__}"
     return SignalStrategy
@@ -484,74 +496,72 @@ def create_blended_strategy(
 ) -> type:
     """
     Create a Backtrader Strategy class from multiple blended signals.
-    
+
     Args:
         signal_classes: List of signal classes
         signal_params: List of parameter dicts for each signal
         weights: Weights for blending
         threshold: Signal threshold for entry/exit
-        
+
     Returns:
         Backtrader Strategy class
     """
     import backtrader as bt
-    
+
     signal_params = signal_params or [{}] * len(signal_classes)
     weights = weights or [1.0 / len(signal_classes)] * len(signal_classes)
-    
+
     class BlendedSignalStrategy(bt.Strategy):
-        params = (
-            ('threshold', threshold),
-        )
-        
+        params = (("threshold", threshold),)
+
         def __init__(self):
             # Create signal instances
             self.signals = [
-                sig_class(**params) 
+                sig_class(**params)
                 for sig_class, params in zip(signal_classes, signal_params)
             ]
             self.weights = weights
             self.order = None
             self._price_history = []
-            
+
         def notify_order(self, order):
             if order.status in [order.Completed]:
                 self.order = None
-                
+
         def next(self):
             if self.order:
                 return
-                
+
             # Get current close
             close = self.data.close[0]
             self._price_history.append(close)
-            
+
             # Keep only lookback period
-            lookback = max(getattr(s, 'lookback', 60) for s in self.signals)
+            lookback = max(getattr(s, "lookback", 60) for s in self.signals)
             if len(self._price_history) > lookback + 20:
                 self._price_history.pop(0)
-                
+
             if len(self._price_history) < lookback:
                 return
-                
+
             # Compute blended signal
             blended = 0
-            prices_df = pd.DataFrame({'close': self._price_history})
-            
+            prices_df = pd.DataFrame({"close": self._price_history})
+
             for sig, weight in zip(self.signals, self.weights):
                 sig_values = sig.compute(prices_df)
                 if isinstance(sig_values, pd.Series):
                     sig_val = sig_values.iloc[-1]
                 else:
                     sig_val = sig_values
-                    
+
                 # Normalize
                 if not pd.isna(sig_val):
                     blended += sig_val * weight
-                    
+
             # Convert to position
             position = np.sign(blended) if not pd.isna(blended) else 0
-            
+
             # Execute
             if position > self.params.threshold:
                 if not self.position:
@@ -562,7 +572,7 @@ def create_blended_strategy(
             elif position == 0:
                 if self.position:
                     self.order = self.close()
-    
+
     BlendedSignalStrategy.__name__ = "BlendedSignalStrategy"
     return BlendedSignalStrategy
 
@@ -576,6 +586,7 @@ def run_signal_research(
     prices: pd.DataFrame,
     signal_names: List[str] = None,
     metric: str = "sharpe",
+    cost_bps: float = 10.0,
 ) -> pd.DataFrame:
     """
     Run research on multiple signals.
@@ -584,6 +595,7 @@ def run_signal_research(
         prices: Price data (DataFrame with 'close' column)
         signal_names: List of signal names to test (None = all)
         metric: Metric to optimize ('sharpe', 'return', 'calmar')
+        cost_bps: Transaction cost in basis points (default 10bps = 0.1%)
 
     Returns:
         DataFrame with signal research results
@@ -605,6 +617,11 @@ def run_signal_research(
         # Simple return calculation
         returns = prices["close"].pct_change()
         signal_returns = positions.shift(1) * returns
+
+        # Deduct transaction costs at position changes
+        position_changes = positions.diff().abs()
+        cost_per_change = position_changes * (cost_bps / 10000)
+        signal_returns = signal_returns - cost_per_change
 
         # Remove NaN
         valid = ~(positions.isna() | returns.isna())
@@ -643,6 +660,150 @@ def run_signal_research(
     return pd.DataFrame(results)
 
 
+def run_signal_research_ml(
+    prices: pd.DataFrame,
+    signal_names: Optional[List[str]] = None,
+    profit_take_mult: float = 2.0,
+    stop_loss_mult: float = 2.0,
+    vertical_barrier_days: int = 10,
+    vol_lookback: int = 20,
+    n_cv_splits: int = 5,
+    embargo_pct: float = 0.01,
+) -> pd.DataFrame:
+    """Evaluate signals using triple-barrier labels and purged K-fold CV.
+
+    Replaces the fixed-time horizon evaluation in ``run_signal_research`` with
+    path-aware labels and contamination-free cross-validation.
+
+    For each signal:
+    1. Triple-barrier labels are generated for every entry date.
+    2. Purged K-fold splits ensure no label-outcome overlap between
+       train and test folds.
+    3. IC (Spearman rank correlation of signal with label) and accuracy
+       are computed on each test fold and averaged.
+
+    Args:
+        prices: DataFrame with a 'close' column and DatetimeIndex.
+        signal_names: Names of signals to evaluate. Defaults to all registered.
+        profit_take_mult: Vol multiplier for upper barrier.
+        stop_loss_mult: Vol multiplier for lower barrier.
+        vertical_barrier_days: Max holding period in trading days.
+        vol_lookback: Rolling window for vol estimation.
+        n_cv_splits: Number of purged K-fold splits.
+        embargo_pct: Fraction of observations to embargo after each test fold.
+
+    Returns:
+        DataFrame sorted by IC IR (descending) with columns:
+            signal, mean_ic, ic_std, ic_ir, mean_accuracy, n_folds,
+            label_pos_pct, label_neg_pct, label_zero_pct
+    """
+    from backtests.stats.cross_validation import purged_kfold_split
+    from backtests.strategies.labeling import TripleBarrierLabeler
+
+    if "close" not in prices.columns:
+        raise ValueError("prices must have a 'close' column")
+
+    close = prices["close"].dropna()
+
+    labeler = TripleBarrierLabeler(
+        profit_take_mult=profit_take_mult,
+        stop_loss_mult=stop_loss_mult,
+        vertical_barrier_days=vertical_barrier_days,
+        vol_lookback=vol_lookback,
+    )
+    labeled = labeler.label(close)
+
+    if labeled.empty:
+        return pd.DataFrame()
+
+    all_entry_dates = pd.DatetimeIndex(labeled.index)
+    t1_series = labeled["t1"]  # label end times for purging
+    y = labeled["label"]
+
+    splits = purged_kfold_split(
+        all_entry_dates,
+        n_splits=n_cv_splits,
+        embargo_pct=embargo_pct,
+        label_end_times=t1_series,
+    )
+
+    if not splits:
+        return pd.DataFrame()
+
+    if signal_names is None:
+        signal_names = list_signals()
+
+    results = []
+
+    for sig_name in signal_names:
+        signal_obj = get_signal(sig_name)
+        if signal_obj is None:
+            continue
+
+        sig_values = signal_obj.compute(prices[["close"]])
+        if isinstance(sig_values, pd.DataFrame):
+            sig_values = sig_values.iloc[:, 0]
+
+        # Align signal values to labeled entry dates
+        sig_at_events = sig_values.reindex(all_entry_dates)
+
+        fold_ics: List[float] = []
+        fold_accs: List[float] = []
+
+        for train_idx, test_idx in splits:
+            if len(test_idx) < 5:
+                continue
+
+            test_dates = all_entry_dates[test_idx]
+            sig_test = sig_at_events.loc[test_dates].dropna()
+            if len(sig_test) < 5:
+                continue
+
+            y_test = y.loc[sig_test.index]
+
+            # IC: Spearman rank correlation between signal and label
+            ic = float(sig_test.corr(y_test.astype(float), method="spearman"))
+            if not np.isnan(ic):
+                fold_ics.append(ic)
+
+            # Directional accuracy on non-zero labels (+1 / -1 only)
+            nonzero_mask = y_test != 0
+            if nonzero_mask.sum() >= 5:
+                pred_dir = np.sign(sig_test.loc[nonzero_mask])
+                acc = float((pred_dir == y_test.loc[nonzero_mask]).mean())
+                fold_accs.append(acc)
+
+        if not fold_ics:
+            continue
+
+        mean_ic = float(np.nanmean(fold_ics))
+        ic_std = float(np.nanstd(fold_ics))
+        ic_ir = mean_ic / ic_std if ic_std > 0 else 0.0
+
+        results.append(
+            {
+                "signal": sig_name,
+                "mean_ic": mean_ic,
+                "ic_std": ic_std,
+                "ic_ir": ic_ir,
+                "mean_accuracy": float(np.nanmean(fold_accs)) if fold_accs else np.nan,
+                "n_folds": len(fold_ics),
+                "label_pos_pct": float((y == 1).mean()),
+                "label_neg_pct": float((y == -1).mean()),
+                "label_zero_pct": float((y == 0).mean()),
+            }
+        )
+
+    if not results:
+        return pd.DataFrame()
+
+    return (
+        pd.DataFrame(results)
+        .sort_values("ic_ir", ascending=False)
+        .reset_index(drop=True)
+    )
+
+
 __all__ = [
     "BaseSignal",
     "MomentumSignal",
@@ -660,6 +821,7 @@ __all__ = [
     "get_signal",
     "list_signals",
     "run_signal_research",
+    "run_signal_research_ml",
     "create_signal_strategy",
     "create_blended_strategy",
 ]
