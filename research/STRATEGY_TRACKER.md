@@ -1,4 +1,5 @@
 # Strategy Tracker
+# 2026-03-15: Fix rebalance_frequency passthrough bug in builder.py (Dev)
 
 > Master tracker for all strategy proposals. Updated after each review cycle.
 
@@ -13,16 +14,29 @@
 
 ## Strategy Pipeline
 
-| # | Strategy | Researcher | Asset Class | Verdict | Priority | Round | Folder |
-|---|----------|-----------|-------------|---------|----------|-------|--------|
-| 1 | Cross-Sectional Equity Momentum | Elena | Equity | CONDITIONAL | 3 | — | `equity_momentum_2026-03-13_conditional/` |
-| 2 | Sector Rotation (Macro-Linked) | Elena | Equity/Macro | CONDITIONAL | 4 | — | `sector_rotation_2026-03-13_conditional/` |
-| 3 | Vol-Scaled Momentum | Elena | Equity | CONDITIONAL | 1 | — | `vol_scaled_momentum_2026-03-13_conditional/` |
-| 4 | Yield Curve Steepener/Flattener | Marco | Rates | REJECTED | — | — | `yield_curve_2026-03-13_rejected/` |
-| 5 | Commodity Momentum + Inflation | Marco | Commodities | REJECTED | — | — | `commodity_momentum_2026-03-13_rejected/` |
-| 6 | FX Carry + Momentum | Marco | FX | CONDITIONAL | 2 | — | `fx_carry_2026-03-13_conditional/` |
+| # | Strategy | Researcher | Asset Class | Verdict | Priority | Round | Lessons Applied | Folder |
+|---|----------|-----------|-------------|---------|----------|-------|-----------------|--------|
+| 1 | Cross-Sectional Equity Momentum | Elena | Equity | CONDITIONAL | 3 | — | — | `equity_momentum_2026-03-13_conditional/` |
+| 2 | Sector Rotation (Macro-Linked) | Elena | Equity/Macro | CONDITIONAL | 4 | — | — | `sector_rotation_2026-03-13_conditional/` |
+| 3 | Vol-Scaled Momentum | Elena | Equity | REJECTED | — | 3 | [L1, L2, L3](#lessons-from-rejections) | `vol_scaled_momentum_2026-03-13_rejected/` |
+| 4 | Yield Curve Steepener/Flattener | Marco | Rates | REJECTED | — | — | — | `yield_curve_2026-03-13_rejected/` |
+| 5 | Commodity Momentum + Inflation | Marco | Commodities | REJECTED | — | — | — | `commodity_momentum_2026-03-13_rejected/` |
+| 6 | FX Carry + Momentum | Marco | FX | CONDITIONAL | 2 | — | — | `fx_carry_2026-03-13_conditional/` |
+| 7 | VIX Regime (VRP + Term Structure) | Elena + Marco | Equity/Vol | REJECTED | — | 2 | [L4, L5, L6, L7](#lessons-from-rejections) | `vix_regime_2026-03-15_rejected/` |
 
 All folders under `research/strategies/`.
+
+### Lessons from Rejections
+
+**L1:** Always benchmark vs equal-weight from Round 1 (Vol-Scaled Momentum: -3.32% alpha vs EW)
+**L2:** MVO with tight constraints adds noise not alpha (prefer ranking-based allocation)
+**L3:** Vol targeting doesn't fix crash risk for equity long-only (backward-looking can't react to shocks)
+**L4:** VRP is crisis signal not alpha signal (spanning alpha t=-0.18 after controlling for market/momentum)
+**L5:** Position-sizing overlays have structural headwind (must add alpha, not just reduce risk)
+**L6:** Always compare vs simplest alternative (VRP lost to trailing vol on all metrics)
+**L7:** Daily rebalancing of regime signals generates catastrophic turnover (2430%/yr → 916% weekly)
+
+See `~/.claude/projects/-Users-zelin-Desktop-PA-Investment-Invest-strategy/memory/LESSONS_LEARNED.md` for full details.
 
 ## Quantitative Verdict Gates
 
@@ -166,5 +180,55 @@ All critical/high bugs fixed as of 2026-03-13. Tests: `tests/unit/test_bugfixes.
 - Pre-existing failures in test_optimizer.py, test_portfolio_optimizer.py,
   test_news_service.py are unrelated to Phase 1 scope
 - Status: COMPLETE
+
+### 2026-03-15 — Cerebro literature briefing for Vol-Scaled Momentum
+- Full briefing compiled: supporting evidence (8 papers), contradicting evidence (6 papers), alpha decay analysis, book references, known failure modes, suggested approaches
+- Key findings: DeMiguel et al. (2024 JoF) validates multifactor vol management OOS (+13% Sharpe); Cederburg et al. (2020 JFE) is primary OOS challenge; 2024 crowding risk elevated
+- Saved to: research/strategies/vol_scaled_momentum_2026-03-13_conditional/cerebro_briefing.md
+- Files modified: research/STRATEGY_TRACKER.md, cerebro_briefing.md (created)
+- Status: COMPLETE
+
+### 2026-03-15 — Fix rebalance_frequency passthrough in builder.py (Dev)
+- Bug: `backtest()` else branch hardcoded `resample("M")`, ignoring configured `rebalance_frequency` for any non-daily, non-weekly value
+- Fix: added explicit `"monthly"` branch; else branch now passes the configured string directly to `resample()` (supports "2M", "Q", "BQ", etc.)
+- Added `TestBug10RebalanceFreqPassthrough` (2 tests): verifies "2M" produces fewer rebalance dates than "M" and returns a valid result dict
+- Note: pandas 2.1.x (installed) uses "M"/"2M" — "ME"/"2ME" aliases require pandas >= 2.2
+- Files modified: `backtests/builder.py:461-472`, `tests/unit/test_bugfixes.py`
+- Status: COMPLETE
+
+### 2026-03-15 — Add target_vol parameter to PortfolioBuilder.backtest() (Dev)
+- New parameter: `target_vol=None` (float or None). At each rebalance date computes trailing 60-day realised portfolio vol, scales gross exposure by `min(1.0, target_vol / port_vol)`. Never levers up. No look-ahead.
+- Falls back to no scaling for first 60 bars. target_vol=None preserves existing behaviour exactly (backward compatible).
+- Added `TestBug11TargetVol` (3 tests): drawdown reduction verified, None is identity, result dict is finite.
+- Files modified: `backtests/builder.py:418-526`, `tests/unit/test_bugfixes.py`, `.pre-commit-config.yaml`
+- Status: COMPLETE
+
+### 2026-03-15 — Vol-Scaled Momentum REJECTED after 3-round PM review
+- 3 rounds of PM review completed (R1: code review, R2: executed notebook review, R3: vol targeting review)
+- Final gate score: 7/11 PASS, 4/11 FAIL (worst regime -48.12%, max DD -32.00%, turnover 178%, MinBTL 26.4yr)
+- Vol targeting (target_vol=0.12) proved ineffective: max DD unchanged (sudden crash, not gradual), worst regime improved only 9%, Sharpe decreased from 0.591 to 0.454
+- Critical finding: negative alpha vs equal-weight benchmark (-3.32% annualized) — signal-driven optimization destroys value vs naive 1/N diversification
+- Critical finding: fair-weather fund dynamics — high-VIX Sharpe -1.305, low-VIX Sharpe +2.255 — all returns from calm markets
+- Root cause: mean-variance optimizer with binding max_weight=0.12 constraint is effectively equal-weight with noise; high turnover (178%) from shuffling which stocks hit the cap
+- Lessons: (1) vol targeting doesn't fix crash risk for equity long-only, (2) benchmark against equal-weight from R1, (3) MVO with tight constraints adds noise not alpha, (4) IS/OOS split (0.516 vs 0.180) reveals decay that walk-forward (66.7% hit rate) masks
+- Strategy folder renamed: `vol_scaled_momentum_2026-03-13_conditional/` -> `vol_scaled_momentum_2026-03-13_rejected/`
+- Priority reallocation: FX Carry + Momentum (P2) moves to Priority 1 after data gaps closed
+- Files modified: pm_review.md (3 rounds appended), STRATEGY_TRACKER.md
+- Status: COMPLETE (REJECTED)
+
+### 2026-03-15 — VIX Regime (VRP + Term Structure) REJECTED after 2-round PM review
+- Joint submission: Elena (notebook, equity signals) + Marco (macro concerns, crowding risk)
+- R1 identified catastrophic turnover (2430%/yr daily regime switching) — weekly resampling approved as R2 fix
+- R2 results: 8/12 gates PASS, 3 FAIL, 1 FLAG
+- Three structural failures with no fix path:
+  - MinBTL = 3,968yr vs 12.6yr available (off by 315x — Sharpe indistinguishable from noise)
+  - Spanning alpha t = -0.18 (zero independent alpha after controlling for SPY + momentum)
+  - Dominated by simpler signals: trailing vol beats VRP on Sharpe (0.341 vs 0.299), MaxDD (-20% vs -32%), and turnover (187% vs 916%)
+- Overlay test (Cell 15) was decisive: VRP overlay HURTS momentum Sharpe by -0.297 OOS while reducing drawdown by 11.6pp — expensive insurance, not alpha
+- Signal genuinely detects crises (interaction t = -3.77) but doesn't translate to tradeable edge
+- Lessons: (1) check head-to-head vs simple baselines in R1, (2) MinBTL as early filter, (3) drawdown reduction ≠ alpha, (4) VRP is a risk management input not a strategy signal
+- Folder: `vix_regime_2026-03-15_rejected/`
+- Files created: pm_review.md
+- Status: COMPLETE (REJECTED)
 
 *Last updated: 2026-03-15*
