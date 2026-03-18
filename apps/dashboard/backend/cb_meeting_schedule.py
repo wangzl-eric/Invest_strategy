@@ -12,22 +12,22 @@ from typing import List, Optional, Tuple
 _FOMC_MEETINGS: List[Tuple[date, bool]] = [
     # 2025
     (date(2025, 1, 29), False),
-    (date(2025, 3, 19), True),   # SEP
+    (date(2025, 3, 19), True),  # SEP
     (date(2025, 5, 7), False),
-    (date(2025, 6, 18), True),   # SEP
+    (date(2025, 6, 18), True),  # SEP
     (date(2025, 7, 30), False),
-    (date(2025, 9, 17), True),   # SEP
+    (date(2025, 9, 17), True),  # SEP
     (date(2025, 10, 29), False),
     (date(2025, 12, 10), True),  # SEP
     # 2026
     (date(2026, 1, 28), False),
-    (date(2026, 3, 18), True),   # SEP
+    (date(2026, 3, 18), True),  # SEP
     (date(2026, 4, 29), False),
-    (date(2026, 6, 17), True),   # SEP
+    (date(2026, 6, 17), True),  # SEP
     (date(2026, 7, 29), False),
-    (date(2026, 9, 16), True),   # SEP
+    (date(2026, 9, 16), True),  # SEP
     (date(2026, 10, 28), False),
-    (date(2026, 12, 9), True),   # SEP
+    (date(2026, 12, 9), True),  # SEP
     # 2027 (typical pattern; update when Fed publishes)
     (date(2027, 1, 27), False),
     (date(2027, 3, 17), True),
@@ -49,19 +49,23 @@ def get_next_fomc_meeting(as_of: Optional[date] = None) -> Optional[Tuple[date, 
     return None
 
 
-def get_upcoming_fomc_meetings(as_of: Optional[date] = None, limit: int = 4) -> List[dict]:
+def get_upcoming_fomc_meetings(
+    as_of: Optional[date] = None, limit: int = 4
+) -> List[dict]:
     """Return list of upcoming FOMC meetings with countdown."""
     today = as_of or date.today()
     result = []
     for meeting_date, has_sep in _FOMC_MEETINGS:
         if meeting_date >= today and len(result) < limit:
             delta = (meeting_date - today).days
-            result.append({
-                "date": meeting_date.isoformat(),
-                "days_until": delta,
-                "has_sep": has_sep,
-                "label": f"{meeting_date.strftime('%b %d')}{' (SEP)' if has_sep else ''}",
-            })
+            result.append(
+                {
+                    "date": meeting_date.isoformat(),
+                    "days_until": delta,
+                    "has_sep": has_sep,
+                    "label": f"{meeting_date.strftime('%b %d')}{' (SEP)' if has_sep else ''}",
+                }
+            )
     return result
 
 

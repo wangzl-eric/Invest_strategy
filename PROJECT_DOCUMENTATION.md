@@ -113,9 +113,11 @@ The repo is best understood as two primary product surfaces that share libraries
 
 | Surface | Main Paths | Purpose |
 |---------|------------|---------|
-| **Investment dashboard application** | `backend/`, `frontend/`, `data/` | broker/account workflows, APIs, UI, stored operational data |
-| **Quant research workstation** | `backtests/`, `portfolio/`, `execution/`, `quant_data/`, `research/`, `notebooks/` | ingestion, strategy research, backtesting, optimization, paper-trading prep |
-| **Optional extensions** | `cerebro/`, `qc_lean/` | separate research tooling and external-engine experiments |
+| **Investment dashboard application** | `apps/dashboard/backend/`, `apps/dashboard/frontend/`, `data/` | broker/account workflows, APIs, UI, stored operational data |
+| **Quant research workstation** | `workstation/backtests/`, `workstation/portfolio/`, `workstation/execution/`, `workstation/quant_data/`, `workstation/research/`, `workstation/notebooks/` | ingestion, strategy research, backtesting, optimization, paper-trading prep |
+| **Optional extensions** | `extensions/cerebro/`, `qc_lean/` | separate research tooling and external-engine experiments |
+
+Legacy root paths such as `backend/`, `frontend/`, `backtests/`, and `quant_data/` are currently kept as compatibility symlinks.
 
 Important distinctions:
 
@@ -949,45 +951,38 @@ Invest_strategy/
 │   ├── config.py             # Settings loader
 │   └── main.py               # Entry point
 │
-├── frontend/                 # Dash dashboard
-│   ├── app.py                # Main application
-│   ├── assets/               # CSS
-│   └── components/           # UI components
+├── apps/
+│   └── dashboard/
+│       ├── backend/          # FastAPI dashboard backend
+│       └── frontend/         # Dash dashboard frontend
 │
-├── backtests/                # Backtesting framework
-│   ├── core.py               # Core types
-│   └── metrics.py            # Performance metrics
-│
-├── portfolio/                # Portfolio management
-│   ├── optimizer.py          # Mean-variance optimization
-│   ├── risk.py               # Covariance estimation
-│   ├── blend.py              # Alpha blending
-│   └── rebalancer.py         # Order generation
-│
-├── execution/                # Trading execution
-│   ├── runner.py             # Execution loop
-│   ├── risk.py               # Risk controls
-│   ├── broker.py             # Broker interface
-│   ├── sim_broker.py         # Simulated broker
-│   ├── audit.py              # DB recording
-│   └── types.py              # Data types
+├── workstation/
+│   ├── backtests/           # Research and validation framework
+│   ├── portfolio/           # Optimization and allocation
+│   ├── execution/           # Paper/live execution path
+│   ├── quant_data/          # Market-data code: connectors, schemas, registry
+│   ├── research/            # Strategy folders, reviews, and audit outputs
+│   ├── notebooks/           # Notebooks and templates
+│   ├── playground/          # Fast-iteration sandbox
+│   └── books_and_papers/    # Reference library
 │
 ├── data/                     # Stored market data and broker exports
 │   ├── market_data/
 │   └── flex_reports/
 │
-├── quant_data/               # Market-data code: connectors, schemas, registry
-│   ├── connectors/           # Data source connectors
-│   │   ├── stooq.py
-│   │   ├── binance_public.py
-│   │   ├── polygon.py
-│   │   └── ecb_fx.py
-│   ├── io/                   # I/O utilities
-│   ├── pipelines/            # Ingestion pipelines
-│   ├── duckdb_store.py       # DuckDB interface
-│   ├── spec.py               # Canonical schemas
-│   ├── paths.py              # Path helpers
-│   └── meta_db.py            # Metadata DB
+├── backend/                  # Compatibility symlink -> apps/dashboard/backend
+├── frontend/                 # Compatibility symlink -> apps/dashboard/frontend
+├── backtests/                # Compatibility symlink -> workstation/backtests
+├── portfolio/                # Compatibility symlink -> workstation/portfolio
+├── execution/                # Compatibility symlink -> workstation/execution
+├── quant_data/               # Compatibility symlink -> workstation/quant_data
+├── research/                 # Compatibility symlink -> workstation/research
+├── notebooks/                # Compatibility symlink -> workstation/notebooks
+├── playground/               # Compatibility symlink -> workstation/playground
+├── books_and_papers/         # Compatibility symlink -> workstation/books_and_papers
+│
+├── extensions/
+│   └── cerebro/             # Optional research-ingestion extension
 │
 ├── qc_lean/                  # Optional external Lean workspace
 │   ├── Lean/                 # Lean engine source
@@ -996,18 +991,11 @@ Invest_strategy/
 │   ├── config.json           # Lean config
 │   └── *.py                  # Strategy files
 │
-├── notebooks/                # Jupyter notebooks
-│   ├── analysis.ipynb        # General analysis
-│   ├── qc_lean_momentum_demo.ipynb  # QC demo
-│   └── test_connection.py
-│
 ├── scripts/                  # Utility scripts
 │   ├── init_db.py
 │   ├── automate_pa_daily.py
 │   ├── ingest_*.py
 │   └── ...
-│
-├── research/                 # Strategy folders, reviews, and audit outputs
 │
 ├── tests/                    # Test suite
 │
@@ -1138,10 +1126,10 @@ kill -9 <PID>
 | Document | Description |
 |----------|-------------|
 | [README.md](README.md) | Main project readme |
-| [DATABASE_GUIDE.md](guides/DATABASE_GUIDE.md) | Database queries, P&L analysis |
-| [IBKR_SETUP_GUIDE.md](guides/IBKR_SETUP_GUIDE.md) | IBKR TWS/Gateway configuration |
-| [FLEX_QUERY_SETUP.md](guides/FLEX_QUERY_SETUP.md) | Flex Query web service setup |
-| [PA_AUTOMATION_SETUP.md](guides/PA_AUTOMATION_SETUP.md) | Portfolio Analyst automation |
+| [DATABASE_GUIDE.md](docs/guides/DATABASE_GUIDE.md) | Database queries, P&L analysis |
+| [IBKR_SETUP_GUIDE.md](docs/guides/IBKR_SETUP_GUIDE.md) | IBKR TWS/Gateway configuration |
+| [FLEX_QUERY_SETUP.md](docs/guides/FLEX_QUERY_SETUP.md) | Flex Query web service setup |
+| [PA_AUTOMATION_SETUP.md](docs/guides/PA_AUTOMATION_SETUP.md) | Portfolio Analyst automation |
 | [QUANT_DATA_SPEC.md](docs/QUANT_DATA_SPEC.md) | Canonical data specifications |
 | [QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md) | Quick reference commands |
 | [DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md) | Production deployment checklist |

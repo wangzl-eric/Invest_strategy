@@ -16,7 +16,6 @@ from execution.types import OrderRequest
 from portfolio.blend import Signal, blend_signals
 from portfolio.optimizer import weights_from_alpha
 
-
 PriceGetter = Callable[[str], float]
 
 
@@ -66,7 +65,9 @@ def _load_prices(
         try:
             import yfinance as yf
 
-            data = yf.download(tickers, start=start_str, end=end_str, progress=False, threads=True)
+            data = yf.download(
+                tickers, start=start_str, end=end_str, progress=False, threads=True
+            )
             if data.empty:
                 return pd.DataFrame()
             if isinstance(data.columns, pd.MultiIndex):
@@ -75,7 +76,13 @@ def _load_prices(
                     if ticker in data["Close"].columns:
                         close = data["Close"][ticker]
                         for idx, val in close.items():
-                            records.append({"date": idx.date().isoformat(), "ticker": ticker, "close": float(val)})
+                            records.append(
+                                {
+                                    "date": idx.date().isoformat(),
+                                    "ticker": ticker,
+                                    "close": float(val),
+                                }
+                            )
                 df = pd.DataFrame(records)
             else:
                 df = data.reset_index()
@@ -97,12 +104,17 @@ def _load_prices(
 def _get_current_positions_from_db(account_id: str) -> Dict[str, float]:
     """Get current positions (symbol -> quantity) from database."""
     try:
-        from backend.database import get_db_context
-        from backend.models import Position
         from sqlalchemy import desc
 
+        from backend.database import get_db_context
+        from backend.models import Position
+
         with get_db_context() as db:
-            query = db.query(Position).filter(Position.account_id == account_id).order_by(desc(Position.timestamp))
+            query = (
+                db.query(Position)
+                .filter(Position.account_id == account_id)
+                .order_by(desc(Position.timestamp))
+            )
             positions = query.all()
             latest = {}
             for p in positions:
@@ -130,7 +142,11 @@ def _compute_target_weights(
         try:
             scores = sig.compute(prices)
             if isinstance(scores, pd.DataFrame):
-                row = scores.dropna(how="all").iloc[-1] if not scores.empty else pd.Series(dtype=float)
+                row = (
+                    scores.dropna(how="all").iloc[-1]
+                    if not scores.empty
+                    else pd.Series(dtype=float)
+                )
             else:
                 row = scores.reindex(prices.columns).fillna(0.0)
             if not row.dropna().empty:
@@ -184,11 +200,15 @@ def run_strategy(
         )
         return []
 
-    target_weights = _compute_target_weights(prices, config.signals, config.signal_weights)
+    target_weights = _compute_target_weights(
+        prices, config.signals, config.signal_weights
+    )
     if target_weights is None:
         return []
 
-    current_positions = _get_current_positions_from_db(config.account_id) if config.account_id else {}
+    current_positions = (
+        _get_current_positions_from_db(config.account_id) if config.account_id else {}
+    )
     portfolio_value = config.portfolio_value
 
     orders: List[OrderRequest] = []
@@ -233,7 +253,9 @@ def run_and_submit(
 
     Returns list of order row IDs that were submitted to the broker.
     """
-    orders = run_strategy(broker=broker, price_getter=price_getter, config=config, risk_engine=risk_engine)
+    orders = run_strategy(
+        broker=broker, price_getter=price_getter, config=config, risk_engine=risk_engine
+    )
     if not orders:
         return []
 

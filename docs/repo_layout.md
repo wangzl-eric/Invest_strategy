@@ -8,33 +8,49 @@ The most useful framing is:
 - a **quant research workstation** for ingestion, strategy research, backtesting, and optimization
 - a small set of **optional extensions** that should stay isolated
 
-The table below maps the current directories into that model.
+The current physical layout now groups those areas under `apps/`, `workstation/`, and `extensions/`. Legacy root paths are kept as compatibility symlinks during the transition.
 
 ## Stack Map
 
 | Path | Category | Status | Purpose |
 |------|----------|--------|---------|
-| `backend/` | Dashboard app | Active | FastAPI service, IBKR integration, persistence, APIs |
-| `frontend/` | Dashboard app | Active | Dash dashboard for monitoring and controls |
+| `apps/dashboard/backend/` | Dashboard app | Active | FastAPI service, IBKR integration, persistence, APIs |
+| `apps/dashboard/frontend/` | Dashboard app | Active | Dash dashboard for monitoring and controls |
 | `data/` | Shared runtime data | Active | Pulled datasets, market data files, broker exports, catalogs |
-| `backtests/` | Research workstation | Active | Signal research, walk-forward analysis, stats, reporting |
-| `portfolio/` | Research workstation | Active | Alpha blending, optimization, risk analytics, rebalancing |
-| `execution/` | Research workstation | Active | Paper/live order flow, broker abstraction, risk checks |
-| `quant_data/` | Research workstation | Active | Data-ingestion code, schemas, connectors, registry, DuckDB helpers |
-| `research/` | Research output | Active | Strategy notes, reviews, tracker, framework audits |
-| `notebooks/` | Research workspace | Active | Exploratory notebooks and templates |
-| `cerebro/` | Optional extension | Experimental | Research-ingestion and idea-generation pipeline |
+| `workstation/backtests/` | Research workstation | Active | Signal research, walk-forward analysis, stats, reporting |
+| `workstation/portfolio/` | Research workstation | Active | Alpha blending, optimization, risk analytics, rebalancing |
+| `workstation/execution/` | Research workstation | Active | Paper/live order flow, broker abstraction, risk checks |
+| `workstation/quant_data/` | Research workstation | Active | Data-ingestion code, schemas, connectors, registry, DuckDB helpers |
+| `workstation/research/` | Research output | Active | Strategy notes, reviews, tracker, framework audits |
+| `workstation/notebooks/` | Research workspace | Active | Exploratory notebooks and templates |
+| `extensions/cerebro/` | Optional extension | Experimental | Research-ingestion and idea-generation pipeline |
 | `qc_lean/` | Optional external integration | Isolated | Local QuantConnect Lean runtime, engine source, results |
 | `docs/` | Documentation | Active | Guides, specs, architecture notes |
 | `scripts/` | Tooling | Active | CLI entry points, ingestion jobs, automation |
 | `tests/` | Verification | Active | Unit and integration coverage |
+
+## Compatibility
+
+These legacy root paths currently remain in place as symlinks:
+
+- `backend/`
+- `frontend/`
+- `backtests/`
+- `portfolio/`
+- `execution/`
+- `quant_data/`
+- `research/`
+- `notebooks/`
+- `playground/`
+- `books_and_papers/`
+- `cerebro/`
 
 ## Naming Decisions
 
 ### `data/` vs `quant_data/`
 
 - `data/` is not a Python package. It is the runtime storage root for pulled datasets and broker artifacts.
-- `quant_data/` is the Python package that fetches, validates, normalizes, and registers those datasets.
+- `workstation/quant_data/` is the Python package that fetches, validates, normalizes, and registers those datasets.
 - The names overlap semantically, but they represent different layers: storage vs code.
 
 ### `backtests/` vs `backend/backtest_engine.py`
@@ -56,17 +72,17 @@ The table below maps the current directories into that model.
 
 ## Recommended Boundaries
 
-- Put API, DB, broker, and scheduler code in `backend/`.
-- Put UI code in `frontend/`.
-- Put reusable research logic in `backtests/`, `portfolio/`, `execution/`, or `quant_data/`.
+- Put API, DB, broker, and scheduler code in `apps/dashboard/backend/`.
+- Put UI code in `apps/dashboard/frontend/`.
+- Put reusable research logic in `workstation/backtests/`, `workstation/portfolio/`, `workstation/execution/`, or `workstation/quant_data/`.
 - Put raw or generated files in `data/`.
-- Keep optional or experimental integrations clearly marked, like `cerebro/` and `qc_lean/`.
+- Keep optional or experimental integrations clearly marked, like `extensions/cerebro/` and `qc_lean/`.
 
 ## Follow-Up Refactors
 
-These are reasonable, but were intentionally not done in this pass because they are import- and path-sensitive:
+These are reasonable next steps, but were intentionally not done in this pass because they are import- and path-sensitive:
 
 1. Move `qc_lean/` under `external/` or out of the repo entirely.
-2. Move `backend/backtest_engine.py` into `backtests/event_driven/` and keep a compatibility import.
-3. Introduce a single `apps/` and `libs/` root layout, with compatibility shims for existing imports.
+2. Move `backend/backtest_engine.py` into `workstation/backtests/event_driven/` and keep a compatibility import.
+3. Replace the compatibility symlinks with updated imports and path references once the new grouped layout has settled.
 4. Split optional systems like `cerebro/` into their own package or workspace once the interfaces stabilize.

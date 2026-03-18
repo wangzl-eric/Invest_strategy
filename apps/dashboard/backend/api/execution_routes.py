@@ -4,12 +4,12 @@ import logging
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
 from sqlalchemy import desc
+from sqlalchemy.orm import Session
 
-from backend.database import get_db
-from backend.models import ExecutionOrder, ExecutionFill, Position, PnLHistory
 from backend.auth import get_current_user_or_api_key
+from backend.database import get_db
+from backend.models import ExecutionFill, ExecutionOrder, PnLHistory, Position
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,9 @@ async def get_execution_orders(
     db: Session = Depends(get_db),
 ):
     """Get recent execution orders for the strategy monitor."""
-    query = db.query(ExecutionOrder).order_by(desc(ExecutionOrder.created_at)).limit(limit)
+    query = (
+        db.query(ExecutionOrder).order_by(desc(ExecutionOrder.created_at)).limit(limit)
+    )
     if account_id:
         query = query.filter(ExecutionOrder.account_id == account_id)
     orders = query.all()
@@ -68,7 +70,12 @@ async def get_execution_fills(
     db: Session = Depends(get_db),
 ):
     """Get recent execution fills for the strategy monitor."""
-    fills = db.query(ExecutionFill).order_by(desc(ExecutionFill.created_at)).limit(limit).all()
+    fills = (
+        db.query(ExecutionFill)
+        .order_by(desc(ExecutionFill.created_at))
+        .limit(limit)
+        .all()
+    )
     return {"fills": [_fill_to_dict(f) for f in fills]}
 
 
@@ -95,12 +102,14 @@ async def get_strategy_monitor_data(
     for p in latest_positions.values():
         mv = p.market_value or (float(p.quantity or 0) * float(p.market_price or 0))
         total_mv += abs(mv)
-        positions_list.append({
-            "symbol": p.symbol,
-            "quantity": float(p.quantity or 0),
-            "market_value": mv,
-            "market_price": float(p.market_price or 0),
-        })
+        positions_list.append(
+            {
+                "symbol": p.symbol,
+                "quantity": float(p.quantity or 0),
+                "market_value": mv,
+                "market_price": float(p.market_price or 0),
+            }
+        )
 
     # Recent PnL (paper/live)
     pnl_query = db.query(PnLHistory).order_by(desc(PnLHistory.date)).limit(30)
@@ -108,16 +117,29 @@ async def get_strategy_monitor_data(
         pnl_query = pnl_query.filter(PnLHistory.account_id == account_id)
     pnl_rows = pnl_query.all()
     pnl_summary = {
-        "daily": [{"date": r.date.isoformat()[:10] if r.date else None, "total_pnl": float(r.total_pnl or 0)} for r in pnl_rows[:7]],
+        "daily": [
+            {
+                "date": r.date.isoformat()[:10] if r.date else None,
+                "total_pnl": float(r.total_pnl or 0),
+            }
+            for r in pnl_rows[:7]
+        ],
         "total_recent": sum(float(r.total_pnl or 0) for r in pnl_rows),
     }
 
     # Recent orders
-    orders = db.query(ExecutionOrder).order_by(desc(ExecutionOrder.created_at)).limit(50).all()
+    orders = (
+        db.query(ExecutionOrder)
+        .order_by(desc(ExecutionOrder.created_at))
+        .limit(50)
+        .all()
+    )
     orders_list = [_order_to_dict(o) for o in orders]
 
     # Recent fills
-    fills = db.query(ExecutionFill).order_by(desc(ExecutionFill.created_at)).limit(50).all()
+    fills = (
+        db.query(ExecutionFill).order_by(desc(ExecutionFill.created_at)).limit(50).all()
+    )
     fills_list = [_fill_to_dict(f) for f in fills]
 
     return {

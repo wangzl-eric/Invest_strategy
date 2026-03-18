@@ -253,9 +253,11 @@ The repo is easier to understand as two primary product surfaces that share doma
 
 | Surface | Main Paths | Purpose |
 |---------|------------|---------|
-| **Investment dashboard application** | `backend/`, `frontend/`, `data/` | API, broker/account workflows, monitoring UI, stored operational data |
-| **Quant research workstation** | `backtests/`, `portfolio/`, `execution/`, `quant_data/`, `research/`, `notebooks/` | data ingestion, signal research, strategy testing, optimization, paper-trading preparation |
-| **Optional extensions** | `cerebro/`, `qc_lean/` | separate research tooling and external-engine experiments |
+| **Investment dashboard application** | `apps/dashboard/backend/`, `apps/dashboard/frontend/`, `data/` | API, broker/account workflows, monitoring UI, stored operational data |
+| **Quant research workstation** | `workstation/backtests/`, `workstation/portfolio/`, `workstation/execution/`, `workstation/quant_data/`, `workstation/research/`, `workstation/notebooks/` | data ingestion, signal research, strategy testing, optimization, paper-trading preparation |
+| **Optional extensions** | `extensions/cerebro/`, `qc_lean/` | separate research tooling and external-engine experiments |
+
+For compatibility, the legacy root paths like `backend/`, `frontend/`, `backtests/`, and `quant_data/` are currently symlinks to the grouped locations above.
 
 The two confusing overlaps are intentional once viewed this way:
 
@@ -853,19 +855,38 @@ pytest tests/integration/
 
 ```
 Invest_strategy/
-├── backend/                    # Investment dashboard backend app
-├── frontend/                   # Investment dashboard frontend app
+├── apps/
+│   ├── dashboard/
+│   │   ├── backend/            # Investment dashboard backend app
+│   │   └── frontend/           # Investment dashboard frontend app
+│   └── README.md
+├── workstation/
+│   ├── backtests/             # Research workstation: backtests and stats
+│   ├── portfolio/             # Research workstation: blending and optimization
+│   ├── execution/             # Research workstation: paper/live execution path
+│   ├── quant_data/            # Research workstation: ingestion code and registry
+│   ├── research/              # Strategy notes, audits, reviews, trackers
+│   ├── notebooks/             # Exploratory notebooks and templates
+│   ├── playground/            # Fast-iteration sandbox
+│   ├── books_and_papers/      # Reference library
+│   └── README.md
+├── extensions/
+│   ├── cerebro/               # Optional research-ingestion extension
+│   └── README.md
+├── qc_lean/                    # Optional QuantConnect Lean workspace
 ├── data/                       # Stored operational and market datasets
 │
-├── backtests/                  # Research workstation: backtests and stats
-├── portfolio/                  # Research workstation: blending and optimization
-├── execution/                  # Research workstation: paper/live execution path
-├── quant_data/                 # Research workstation: ingestion code and registry
-├── research/                   # Strategy notes, audits, reviews, trackers
-├── notebooks/                  # Exploratory notebooks and templates
-│
-├── cerebro/                    # Optional research-ingestion extension
-├── qc_lean/                    # Optional QuantConnect Lean workspace
+├── backend/                    # Compatibility symlink -> apps/dashboard/backend
+├── frontend/                   # Compatibility symlink -> apps/dashboard/frontend
+├── backtests/                  # Compatibility symlink -> workstation/backtests
+├── portfolio/                  # Compatibility symlink -> workstation/portfolio
+├── execution/                  # Compatibility symlink -> workstation/execution
+├── quant_data/                 # Compatibility symlink -> workstation/quant_data
+├── research/                   # Compatibility symlink -> workstation/research
+├── notebooks/                  # Compatibility symlink -> workstation/notebooks
+├── playground/                 # Compatibility symlink -> workstation/playground
+├── books_and_papers/           # Compatibility symlink -> workstation/books_and_papers
+├── cerebro/                    # Compatibility symlink -> extensions/cerebro
 │
 ├── scripts/                    # Automation and CLI entry points
 ├── tests/                      # Unit and integration tests
@@ -897,15 +918,15 @@ Directory-level READMEs are provided for the ambiguous top-level areas. Start wi
 
 | Guide | Description |
 |-------|-------------|
-| [DATABASE_GUIDE.md](guides/DATABASE_GUIDE.md) | Database queries, P&L analysis, sample code |
-| [FLEX_QUERY_SETUP.md](guides/FLEX_QUERY_SETUP.md) | Setting up IBKR Flex Queries |
-| [IBKR_SETUP_GUIDE.md](guides/IBKR_SETUP_GUIDE.md) | TWS/Gateway configuration |
-| [PA_AUTOMATION_SETUP.md](guides/PA_AUTOMATION_SETUP.md) | Portfolio Analyst download automation |
-| [ADVANCED_ANALYTICS_USAGE.md](guides/ADVANCED_ANALYTICS_USAGE.md) | Optimization, Monte Carlo, factor analysis |
-| [ALERT_SETUP_GUIDE.md](guides/ALERT_SETUP_GUIDE.md) | Alert rules and notification channels |
-| [EMAIL_ALERT_SETUP.md](guides/EMAIL_ALERT_SETUP.md) | Email notification configuration |
-| [ML_FEATURES_USAGE.md](guides/ML_FEATURES_USAGE.md) | Machine learning features |
-| [PNL_QUERY_GUIDE.md](guides/PNL_QUERY_GUIDE.md) | P&L querying guide |
+| [DATABASE_GUIDE.md](docs/guides/DATABASE_GUIDE.md) | Database queries, P&L analysis, sample code |
+| [FLEX_QUERY_SETUP.md](docs/guides/FLEX_QUERY_SETUP.md) | Setting up IBKR Flex Queries |
+| [IBKR_SETUP_GUIDE.md](docs/guides/IBKR_SETUP_GUIDE.md) | TWS/Gateway configuration |
+| [PA_AUTOMATION_SETUP.md](docs/guides/PA_AUTOMATION_SETUP.md) | Portfolio Analyst download automation |
+| [ADVANCED_ANALYTICS_USAGE.md](docs/guides/ADVANCED_ANALYTICS_USAGE.md) | Optimization, Monte Carlo, factor analysis |
+| [ALERT_SETUP_GUIDE.md](docs/guides/ALERT_SETUP_GUIDE.md) | Alert rules and notification channels |
+| [EMAIL_ALERT_SETUP.md](docs/guides/EMAIL_ALERT_SETUP.md) | Email notification configuration |
+| [ML_FEATURES_USAGE.md](docs/guides/ML_FEATURES_USAGE.md) | Machine learning features |
+| [PNL_QUERY_GUIDE.md](docs/guides/PNL_QUERY_GUIDE.md) | P&L querying guide |
 
 ---
 
