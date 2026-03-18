@@ -8,6 +8,8 @@ The most useful framing is:
 - a **quant research workstation** for ingestion, strategy research, backtesting, and optimization
 - a small set of **optional extensions** that should stay isolated
 
+For the end-to-end research flow, see [`docs/data_backtest_report_pipeline.md`](./data_backtest_report_pipeline.md).
+
 The current physical layout now groups those areas under `apps/`, `workstation/`, and `extensions/`. Legacy root paths are kept as compatibility symlinks during the transition.
 
 ## Stack Map

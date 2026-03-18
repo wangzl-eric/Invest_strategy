@@ -37,6 +37,8 @@ A full-stack quantitative analytics platform for Interactive Brokers (IBKR) acco
 ## Architecture Overview
 
 > **Interactive Diagram**: Open [`docs/architecture_overview.drawio`](./docs/architecture_overview.drawio) in [draw.io](https://app.diagrams.net/) to view and edit the interactive architecture diagram.
+>
+> **Pipeline Map**: See [`docs/data_backtest_report_pipeline.md`](./docs/data_backtest_report_pipeline.md) for the canonical data -> backtest -> report flow and boundary decisions.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐

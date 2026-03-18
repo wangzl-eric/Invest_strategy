@@ -8,8 +8,8 @@ from pathlib import Path
 
 
 def _workspace_root() -> Path:
-    # Assumes this file lives in {root}/quant_data/qconfig.py
-    return Path(__file__).resolve().parent.parent
+    # This file now lives in {repo}/workstation/quant_data/qconfig.py.
+    return Path(__file__).resolve().parents[2]
 
 
 @dataclass(frozen=True)
