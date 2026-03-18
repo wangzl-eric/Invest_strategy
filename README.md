@@ -264,7 +264,8 @@ The two confusing overlaps are intentional once viewed this way:
 - `data/` stores files on disk for the dashboard and research flows.
 - `quant_data/` is the code package that ingests and manages those files for the research workstation.
 - `backtests/` is the research framework.
-- `backend/backtest_engine.py` is the event-driven Backtrader adapter attached to the app/live side.
+- `workstation/backtests/event_driven/backtest_engine.py` is the canonical event-driven Backtrader adapter.
+- `backend/backtest_engine.py` is now a compatibility shim for existing imports.
 
 See [`docs/repo_layout.md`](./docs/repo_layout.md) for the maintained stack map and cleanup guidance.
 
@@ -438,7 +439,8 @@ The `portfolio/` package implements a research-to-execution pipeline:
 
 The platform uses Backtrader for event-driven backtesting:
 
-**BacktestEngine** (`backend/backtest_engine.py`) — for realistic simulation:
+**BacktestEngine** (`workstation/backtests/event_driven/backtest_engine.py`) — for realistic simulation.
+Existing imports via `backend.backtest_engine` still work through a compatibility shim:
 - Implements full backtesting workflow with order execution
 - Supports multiple data feeds for multi-asset strategies
 - Custom strategies extend `bt.Strader.Strategy`

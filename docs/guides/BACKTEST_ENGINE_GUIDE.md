@@ -328,6 +328,6 @@ def objective(trial):
 
 ## 6. Reference
 
-- **Engine API:** `backend/backtest_engine.py` — `BacktestEngine.__init__(sizer=..., sizer_params=...)`
+- **Engine API:** `workstation/backtests/event_driven/backtest_engine.py` — `BacktestEngine.__init__(sizer=..., sizer_params=...)`
 - **Backtrader Sizers:** https://www.backtrader.com/docu/sizers/sizers/
 - **AllInSizer:** https://www.backtrader.com/docu/sizers-reference/
