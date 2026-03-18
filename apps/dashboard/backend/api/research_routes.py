@@ -17,6 +17,7 @@ import pandas as pd
 from fastapi import APIRouter, Body, HTTPException, Query
 
 from backend.config import settings
+from backend.data_pipeline import data_pipeline
 from backend.llm_verdict import generate_hybrid_verdict, run_verdict
 from backend.research.duckdb_utils import get_research_db
 from backend.research.features import compute_features, get_feature_registry
@@ -125,6 +126,7 @@ async def research_query(
 
 @router.get("/prices")
 async def get_research_prices(
+    dataset: Optional[str] = Query(None, description="Canonical dataset key"),
     tickers: Optional[str] = Query(None, description="Comma-separated tickers"),
     asset_class: Optional[str] = Query(
         None, description="Asset class (equity, fx, futures, commodity)"
@@ -133,19 +135,25 @@ async def get_research_prices(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     limit: int = Query(1000, description="Maximum rows"),
+    refresh_if_missing: bool = Query(
+        False,
+        description="If true, refresh from source before returning when local data is empty",
+    ),
 ):
-    """Query price data with filters."""
+    """Query locally stored research prices through the unified data pipeline."""
     try:
         ticker_list = tickers.split(",") if tickers else None
-
-        with get_research_db() as db:
-            df = db.query_prices(
-                tickers=ticker_list,
-                asset_class=asset_class,
-                source=source,
-                start_date=start_date,
-                end_date=end_date,
-            )
+        local_req = data_pipeline.build_local_request(
+            dataset=dataset,
+            source=source,
+            asset_class=asset_class,
+            identifiers=ticker_list,
+            start_date=start_date,
+            end_date=end_date,
+            limit=limit,
+            refresh_if_missing=refresh_if_missing,
+        )
+        df = data_pipeline.query_local(local_req)
 
         if limit and len(df) > limit:
             df = df.tail(limit)
