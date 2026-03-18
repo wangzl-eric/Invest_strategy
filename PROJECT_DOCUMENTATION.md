@@ -202,7 +202,10 @@ Two complementary layers are available:
 For event-driven backtesting with realistic order execution:
 
 ```python
-from backend.backtest_engine import BacktestEngine, IBKRDataFeed
+from workstation.backtests.event_driven.backtest_engine import (
+    BacktestEngine,
+    IBKRDataFeed,
+)
 import backtrader as bt
 
 # Define a strategy
@@ -719,7 +722,10 @@ import sys
 sys.path.insert(0, "/Users/zelin/Desktop/PA Investment/Invest_strategy")
 
 from quant_data.duckdb_store import connect, register_parquet_view
-from backend.backtest_engine import BacktestEngine, IBKRDataFeed
+from workstation.backtests.event_driven.backtest_engine import (
+    BacktestEngine,
+    IBKRDataFeed,
+)
 
 # Load market data from Parquet
 con = connect()

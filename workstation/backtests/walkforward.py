@@ -304,7 +304,7 @@ class WalkForwardAnalyzer:
         df = df.reset_index(drop=True)
         df.columns = ["date", "open", "high", "low", "close", "volume"]
 
-        from backend.backtest_engine import IBKRDataFeed
+        from workstation.backtests.event_driven.backtest_engine import IBKRDataFeed
 
         data_feed = IBKRDataFeed(dataname=df)
         engine.add_data(data_feed, name="asset")
@@ -539,7 +539,7 @@ class GridSearch:
         df = df.reset_index(drop=True)
         df.columns = ["date", "open", "high", "low", "close", "volume"]
 
-        from backend.backtest_engine import IBKRDataFeed
+        from workstation.backtests.event_driven.backtest_engine import IBKRDataFeed
 
         data_feed = IBKRDataFeed(dataname=df)
         engine.add_data(data_feed, name="asset")
@@ -767,7 +767,7 @@ class CostSensitivityAnalyzer:
         df = df.reset_index(drop=True)
         df.columns = ["date", "open", "high", "low", "close", "volume"]
 
-        from backend.backtest_engine import IBKRDataFeed
+        from workstation.backtests.event_driven.backtest_engine import IBKRDataFeed
 
         data_feed = IBKRDataFeed(dataname=df)
         engine.add_data(data_feed, name="asset")

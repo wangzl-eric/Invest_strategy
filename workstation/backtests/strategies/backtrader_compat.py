@@ -179,7 +179,10 @@ def run_backtest_with_signals(
     Returns:
         Backtest results dictionary
     """
-    from backend.backtest_engine import BacktestEngine, IBKRDataFeed
+    from workstation.backtests.event_driven.backtest_engine import (
+        BacktestEngine,
+        IBKRDataFeed,
+    )
 
     weights = weights or [1.0 / len(signal_names)] * len(signal_names)
 
@@ -217,7 +220,9 @@ def run_backtest_with_signals(
     engine.add_data(IBKRDataFeed(dataname=bt_data), name="asset")
 
     # Use SignalStrategy with blended signals
-    from backend.backtest_engine import create_signal_strategy_class
+    from workstation.backtests.event_driven.backtest_engine import (
+        create_signal_strategy_class,
+    )
 
     StrategyClass = create_signal_strategy_class(
         signals=blended,

@@ -21,9 +21,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import mlflow
 
-# Use BacktestEngine for backtesting
-from backend.backtest_engine import BacktestEngine, IBKRDataFeed
 from quant_data.duckdb_store import connect, register_parquet_view
+from workstation.backtests.event_driven.backtest_engine import (
+    BacktestEngine,
+    IBKRDataFeed,
+)
 
 
 @dataclass(frozen=True)
