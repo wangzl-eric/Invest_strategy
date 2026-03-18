@@ -5,7 +5,7 @@ using DuckDB's ability to read Parquet files directly with SQL.
 """
 
 import logging
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -16,8 +16,8 @@ from backend.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Default data directory
-DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "market_data"
+# Default data directory shared across dashboard and workstation flows.
+DATA_DIR = Path(__file__).resolve().parents[4] / "data" / "market_data"
 PRICES_DIR = DATA_DIR / "prices"
 FRED_DIR = DATA_DIR / "fred"
 

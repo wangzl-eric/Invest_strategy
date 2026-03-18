@@ -63,24 +63,33 @@ cost_model = CompositeCostModel([
 from backtests.run_manager import RunManager
 
 rm = RunManager()
-run_id = rm.save_run(config=config, result=result, strategy_name="fx_carry")
+run = rm.save_run(
+    strategy_name="fx_carry",
+    params=config,
+    metrics=result.metrics,
+    equity_curve=result.equity_curve,
+    daily_returns=result.portfolio_returns,
+)
 ```
 
 ## Architecture
 
 ```
-backtests/
+apps/dashboard/backend/
+  api/             FastAPI routes for dashboard, data, and reporting
+  market_data_*    Dashboard-facing market data services and storage
+  reporting.py     Operational PDF reports for account/trade workflows
+workstation/quant_data/
+  connectors/      Source adapters and dataset normalization
+  pipelines/       Ingestion into the research data lake
+  registry.py      Dataset versioning and ingestion lineage
+workstation/backtests/
   builder.py       Vectorized backtesting (PortfolioBuilder)
   walkforward.py   Walk-forward analysis
-  strategies/      Signal framework (BaseSignal subclasses)
-  stats/           PSR, Deflated Sharpe, MinBTL, CPCV, bootstrap
-  costs/           Transaction cost & slippage models
+  event_driven/    Event-driven engine and compatibility layer
+  reporting/       QuantStats + markdown/json review artifacts
   run_manager.py   Run persistence (UUID, git commit tracking)
-  parallel.py      Parameter sweeps (ProcessPoolExecutor)
-portfolio/
-  optimizer.py     CVXPY mean-variance, risk parity
-  risk_analytics.py  Risk decomposition
-research/
+workstation/research/
   strategies/      Strategy folders with notebooks and reviews
   STRATEGY_TRACKER.md  Master tracker
 ```
@@ -97,6 +106,7 @@ When reviewing or writing signal code:
 ## Data
 
 - **Parquet files:** `data/market_data/` with `catalog.json`
+- **Research data lake:** `data_lake/` for partitioned quant-data datasets
 - **Ticker universe:** `config/ticker_universe.py`
 - **Schema:** prices = `(date, ticker, open, high, low, close, volume)`
 
@@ -114,6 +124,7 @@ Flake8 config: `--max-line-length=120 --ignore=E501,W503`
 
 - `skills/data-pulling/SKILL.md` — source-aware data pulls with validation and consistent reporting
 - `skills/rigorous-backtest/SKILL.md` — tiered (`specific` / `rigorous` / `highly-rigorous`) backtest execution and review with engine validation, QuantStats reporting, and PyPortfolioOpt comparison for optimizer-heavy work
+- `skills/research-pipeline/SKILL.md` — end-to-end orchestration for data refresh, backtest execution, run persistence, and research review artifact generation
 
 ## Quantitative Gates (11 required for strategy approval)
 

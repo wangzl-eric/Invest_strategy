@@ -21,7 +21,6 @@ data/market_data/
 
 import json
 import logging
-import os
 import threading
 import uuid
 from datetime import datetime, timedelta
@@ -30,9 +29,19 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
+from backend.market_data_service import (
+    COMMODITY_TICKERS,
+    EQUITY_TICKERS,
+    FED_LIQUIDITY_SERIES,
+    FX_TICKERS,
+    MACRO_FRED_SERIES,
+    RATES_FRED_SERIES,
+    RATES_TICKERS,
+)
+
 logger = logging.getLogger(__name__)
 
-_BASE_DIR = Path(__file__).resolve().parent.parent / "data" / "market_data"
+_BASE_DIR = Path(__file__).resolve().parents[3] / "data" / "market_data"
 _PRICES_DIR = _BASE_DIR / "prices"
 _FRED_DIR = _BASE_DIR / "fred"
 _CATALOG_PATH = _BASE_DIR / "catalog.json"
@@ -57,16 +66,6 @@ _FRED_CATEGORY_FILES = {
     "macro_indicators": _FRED_DIR / "macro_indicators.parquet",
     "fed_liquidity": _FRED_DIR / "fed_liquidity.parquet",
 }
-
-from backend.market_data_service import (
-    COMMODITY_TICKERS,
-    EQUITY_TICKERS,
-    FED_LIQUIDITY_SERIES,
-    FX_TICKERS,
-    MACRO_FRED_SERIES,
-    RATES_FRED_SERIES,
-    RATES_TICKERS,
-)
 
 _ASSET_CLASS_TICKERS = {
     "equities": list(EQUITY_TICKERS.keys()),
@@ -542,7 +541,7 @@ class MarketDataStore:
             nest_asyncio.apply()
 
             records = asyncio.run(fetch_all())
-        except RuntimeError as e:
+        except RuntimeError:
             # Fallback: create new event loop
             try:
                 loop = asyncio.new_event_loop()
