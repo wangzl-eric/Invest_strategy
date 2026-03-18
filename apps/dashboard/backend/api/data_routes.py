@@ -1,15 +1,12 @@
 """Data management API routes for the Parquet market data lake."""
 
-import logging
-import threading
 from typing import List, Optional
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
-from backend.market_data_store import get_job_status, market_data_store
-
-logger = logging.getLogger(__name__)
+from backend.data_pipeline import data_pipeline
+from backend.market_data_store import market_data_store
 
 router = APIRouter()
 
@@ -32,6 +29,18 @@ class PullResponse(BaseModel):
     status: str
 
 
+class RefreshRequestModel(BaseModel):
+    dataset: Optional[str] = None
+    source: Optional[str] = None
+    asset_class: Optional[str] = None
+    identifiers: List[str]
+    start_date: str
+    end_date: str
+    interval: str = "1 day"
+    sec_type: Optional[str] = None
+    exchange: Optional[str] = None
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -43,57 +52,82 @@ async def get_catalog():
     return market_data_store.get_catalog()
 
 
+@router.post("/data/refresh")
+async def refresh_data(req: RefreshRequestModel):
+    """Canonical refresh job endpoint for local market data."""
+    try:
+        refresh_req = data_pipeline.build_refresh_request(
+            dataset=req.dataset,
+            source=req.source,
+            asset_class=req.asset_class,
+            identifiers=req.identifiers,
+            start_date=req.start_date,
+            end_date=req.end_date,
+            interval=req.interval,
+            sec_type=req.sec_type,
+            exchange=req.exchange,
+        )
+        job_id = data_pipeline.start_refresh_job(refresh_req)
+        return PullResponse(job_id=job_id, status="running")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
 @router.post("/data/pull")
 async def pull_data(req: PullRequest):
-    """Trigger a data pull and run it in a background thread."""
-    from backend.market_data_store import _create_job, _finish_job
-
-    job_id = _create_job(f"pull {req.source}/{req.asset_class}")
-
-    def _run():
-        try:
-            if req.source == "yfinance":
-                rows = market_data_store.pull_yf_data(
-                    req.tickers,
-                    req.start_date,
-                    req.end_date,
-                    req.asset_class,
-                )
-            elif req.source == "fred":
-                rows = market_data_store.pull_fred_data(
-                    req.tickers,
-                    req.start_date,
-                    req.end_date,
-                    req.asset_class,
-                )
-            else:
-                _finish_job(job_id, error=f"Unknown source: {req.source}")
-                return
-            _finish_job(job_id, rows=rows)
-        except Exception as e:
-            logger.error(f"Pull job {job_id} failed: {e}")
-            _finish_job(job_id, error=str(e))
-
-    threading.Thread(target=_run, daemon=True).start()
-    return PullResponse(job_id=job_id, status="running")
+    """Legacy refresh endpoint backed by the unified data pipeline."""
+    try:
+        refresh_req = data_pipeline.build_refresh_request(
+            source=req.source,
+            asset_class=req.asset_class,
+            identifiers=req.tickers,
+            start_date=req.start_date,
+            end_date=req.end_date,
+        )
+        job_id = data_pipeline.start_refresh_job(refresh_req)
+        return PullResponse(job_id=job_id, status="running")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.get("/data/query")
 async def query_data(
-    asset_class: str = Query(..., description="Asset class or FRED category"),
+    dataset: Optional[str] = Query(None, description="Canonical dataset key"),
+    asset_class: Optional[str] = Query(
+        None,
+        description="Legacy asset class or FRED category selector",
+    ),
+    source: Optional[str] = Query(None, description="Optional source hint"),
     tickers: Optional[str] = Query(None, description="Comma-separated tickers"),
     start: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     limit: int = Query(500, ge=1, le=10000),
+    refresh_if_missing: bool = Query(
+        False,
+        description="If true, refresh from source before returning when local data is empty",
+    ),
 ):
-    """Query stored market data from Parquet files."""
-    ticker_list = [t.strip() for t in tickers.split(",")] if tickers else None
-    df = market_data_store.query(asset_class, ticker_list, start, end)
-    if df.empty:
-        return {"rows": [], "total": 0}
-    total = len(df)
-    df = df.tail(limit)
-    return {"rows": df.to_dict(orient="records"), "total": total}
+    """Query locally stored research data through the unified access layer."""
+    try:
+        identifiers = [t.strip() for t in tickers.split(",")] if tickers else None
+        local_req = data_pipeline.build_local_request(
+            dataset=dataset,
+            source=source,
+            asset_class=asset_class,
+            identifiers=identifiers,
+            start_date=start,
+            end_date=end,
+            limit=limit,
+            refresh_if_missing=refresh_if_missing,
+        )
+        df = data_pipeline.query_local(local_req)
+        if df.empty:
+            return {"rows": [], "total": 0}
+        total = len(df)
+        df = df.tail(limit)
+        return {"rows": df.to_dict(orient="records"), "total": total}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.post("/data/update-all")
@@ -106,7 +140,7 @@ async def update_all():
 @router.get("/data/pull-status/{job_id}")
 async def pull_status(job_id: str):
     """Check status of a background data pull job."""
-    status = get_job_status(job_id)
+    status = data_pipeline.get_job_status(job_id)
     if status is None:
         return {"error": "Job not found", "job_id": job_id}
     return status
@@ -131,38 +165,24 @@ class IBKRPullRequest(BaseModel):
 
 @router.post("/data/ibkr/pull-historical")
 async def pull_ibkr_historical(req: IBKRPullRequest):
-    """Pull historical data from IBKR and store in Parquet.
+    """Pull historical data from IBKR through the unified refresh job layer.
 
     Requires IB Gateway or TWS to be running with API access enabled.
     """
-    from backend.market_data_store import _create_job, _finish_job
-
-    # Validate asset class
-    valid_asset_classes = ["ibkr_equities", "ibkr_fx", "ibkr_futures", "ibkr_options"]
-    if req.asset_class not in valid_asset_classes:
-        return {"error": f"Invalid asset class. Must be one of: {valid_asset_classes}"}
-
-    job_id = _create_job(f"ibkr pull {req.asset_class}")
-
-    def _run():
-        try:
-            rows = market_data_store.pull_ibkr_data(
-                tickers=req.tickers,
-                start_date=req.start_date,
-                end_date=req.end_date,
-                asset_class=req.asset_class,
-                interval=req.interval,
-                sec_type=req.sec_type,
-                exchange=req.exchange,
-            )
-            _finish_job(job_id, rows=rows)
-            logger.info(f"IBKR pull job {job_id} completed: {rows} rows")
-        except Exception as e:
-            logger.error(f"IBKR pull job {job_id} failed: {e}")
-            _finish_job(job_id, error=str(e))
-
-    threading.Thread(target=_run, daemon=True).start()
-    return PullResponse(job_id=job_id, status="running")
+    try:
+        refresh_req = data_pipeline.build_refresh_request(
+            dataset=req.asset_class,
+            identifiers=req.tickers,
+            start_date=req.start_date,
+            end_date=req.end_date,
+            interval=req.interval,
+            sec_type=req.sec_type,
+            exchange=req.exchange,
+        )
+        job_id = data_pipeline.start_refresh_job(refresh_req)
+        return PullResponse(job_id=job_id, status="running")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.get("/data/ibkr/subscription-status")

@@ -44,9 +44,15 @@ Research reporting
 
 ### 2. Research access
 
+- `backend.data_pipeline.UnifiedDataPipeline` is now the canonical local-first access layer for research queries and refresh jobs.
 - `backend.research.duckdb_utils` reads the shared Parquet cache in `data/market_data/`.
 - `workstation/quant_data/duckdb_store.py` is the DuckDB helper for the newer partitioned `data_lake/` side.
 - Today, many dashboard and notebook flows still consume `data/market_data/` directly, so treating `data_lake/` as an automatic replacement would be incorrect.
+
+Recommended rule:
+
+- Use `backend.data_pipeline` when you want one interface that can query local data and trigger a source refresh job.
+- Use `backend.research.duckdb_utils` directly only for lower-level DuckDB work or custom SQL.
 
 ### 3. Backtesting
 

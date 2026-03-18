@@ -180,7 +180,7 @@ class ResearchDB:
 
         if end_date:
             query += " AND date <= $end_date"
-            params["start_date"] = str(end_date)
+            params["end_date"] = str(end_date)
 
         query += " ORDER BY ticker, date"
 

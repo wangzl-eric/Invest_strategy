@@ -36,6 +36,7 @@ conda run -n ibkr-analytics env PYTHONPATH=. python ...
 3. Keep the pipeline boundary clear.
    - `workstation/quant_data/` is ingestion and dataset metadata code.
    - `workstation/backtests/` is research and validation code.
+   - `backend.data_pipeline` is the canonical local-first interface for reading cached research data and launching refresh jobs.
    - `apps/dashboard/backend/reporting.py` is for operational account/trade PDFs, not research backtest verdicts.
 
 4. Persist serious runs.
