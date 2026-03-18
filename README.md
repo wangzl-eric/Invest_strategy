@@ -9,6 +9,7 @@ A full-stack quantitative analytics platform for Interactive Brokers (IBKR) acco
 - [Architecture Overview](#architecture-overview)
 - [Feature Summary](#feature-summary)
 - [Technology Stack](#technology-stack)
+- [Repo Layout](#repo-layout)
 - [Module Reference](#module-reference)
   - [Backend API Service](#1-backend-api-service)
   - [IBKR Integration](#2-ibkr-integration)
@@ -189,7 +190,7 @@ This platform follows a **discretionary-systematic hybrid** approach:
 3. **Dual-tracking PnL attribution** — For every trade, we track:
    - **Forward-pass**: What the strategy predicted at entry (signal context, confidence)
    - **Post-trade**: What actually happened (factor contributions, news impact)
-   
+
    This enables LLM-powered explanations (via Qwen) that compare predictions vs. reality.
 
 4. **Look-ahead bias prevention** — Forward-pass signals use only data available at time t. The tracker records what was known at each timestamp for verification.
@@ -243,6 +244,27 @@ This platform follows a **discretionary-systematic hybrid** approach:
 | Browser Automation | Playwright |
 | Containerization | Docker, Docker Compose |
 | QuantConnect | Lean Engine (.NET SDK) |
+
+---
+
+## Repo Layout
+
+The repo is easier to understand as two primary product surfaces that share domain libraries:
+
+| Surface | Main Paths | Purpose |
+|---------|------------|---------|
+| **Investment dashboard application** | `backend/`, `frontend/`, `data/` | API, broker/account workflows, monitoring UI, stored operational data |
+| **Quant research workstation** | `backtests/`, `portfolio/`, `execution/`, `quant_data/`, `research/`, `notebooks/` | data ingestion, signal research, strategy testing, optimization, paper-trading preparation |
+| **Optional extensions** | `cerebro/`, `qc_lean/` | separate research tooling and external-engine experiments |
+
+The two confusing overlaps are intentional once viewed this way:
+
+- `data/` stores files on disk for the dashboard and research flows.
+- `quant_data/` is the code package that ingests and manages those files for the research workstation.
+- `backtests/` is the research framework.
+- `backend/backtest_engine.py` is the event-driven Backtrader adapter attached to the app/live side.
+
+See [`docs/repo_layout.md`](./docs/repo_layout.md) for the maintained stack map and cleanup guidance.
 
 ---
 
@@ -424,7 +446,7 @@ The platform uses Backtrader for event-driven backtesting:
 
 **Core types** (`backtests/core.py`): `CostModel`, `SlippageModel`, `BacktestResult`.
 
-**QuantConnect / Lean** (`qc_lean/`): local Lean engine installation with .NET SDK for running QuantConnect algorithms. Includes a `MomentumDemoAlgorithm.py` example and results output.
+**QuantConnect / Lean** (`qc_lean/`): optional local Lean integration. Treat this as an isolated external-engine workspace rather than a core Python package.
 
 ### 7. Execution Framework
 
@@ -831,165 +853,31 @@ pytest tests/integration/
 
 ```
 Invest_strategy/
-├── backend/                    # FastAPI backend service
-│   ├── api/                    # Route handlers and schemas
-│   │   ├── routes.py           # Core API routes
-│   │   ├── auth_routes.py      # Authentication endpoints
-│   │   ├── backtest_routes.py  # Backtest endpoints
-│   │   ├── advanced_analytics_routes.py
-│   │   ├── alert_routes.py     # Alert CRUD
-│   │   ├── reporting_routes.py # Report generation
-│   │   ├── websocket_routes.py # WebSocket endpoint
-│   │   ├── news_routes.py      # News API endpoints
-│   │   ├── attribution_routes.py # PnL attribution endpoints
-│   │   └── schemas.py          # Pydantic models
-│   ├── main.py                 # FastAPI app entry point
-│   ├── models.py               # SQLAlchemy ORM models
-│   ├── database.py             # DB engine and session
-│   ├── config.py               # Settings from YAML + env
-│   ├── ibkr_client.py          # IBKR TWS/Gateway client
-│   ├── flex_query_client.py    # Flex Query Web Service client
-│   ├── flex_importer.py        # CSV/XML import logic
-│   ├── flex_parser.py          # Flex response parsing
-│   ├── db_utils.py             # CLI database utilities
-│   ├── data_fetcher.py         # Live data fetching
-│   ├── data_processor.py       # Performance calculations
-│   ├── data_providers.py       # Market data provider interface
-│   ├── benchmark_service.py    # S&P 500 benchmark data
-│   ├── advanced_analytics.py   # Optimization, Monte Carlo, factor analysis
-│   ├── auth.py                 # JWT + API key authentication
-│   ├── broker_interface.py     # Broker adapter pattern
-│   ├── alert_engine.py         # Alert rule evaluation
-│   ├── alert_scheduler.py      # Scheduled alert checks
-│   ├── notifications.py        # Multi-channel notification dispatch
-│   ├── reporting.py            # PDF report generation
-│   ├── export.py               # Excel export
-│   ├── cache.py                # Redis caching layer
-│   ├── circuit_breaker.py      # Circuit breaker pattern
-│   ├── websocket_manager.py    # WebSocket connection manager
-│   ├── realtime_broadcaster.py # Real-time data broadcasting
-│   ├── scheduler.py            # PnL fetch scheduler
-│   ├── timeseries_db.py        # TimescaleDB / InfluxDB abstraction
-│   ├── middleware.py           # Request metrics middleware
-│   ├── rate_limiter.py         # Rate limiting
-│   ├── metrics.py              # Prometheus metrics
-│   ├── logging_config.py       # Structured logging setup
-│   ├── error_tracking.py       # Sentry integration
-│   ├── tracing.py              # OpenTelemetry tracing
-│   ├── validators.py           # Input validation
-│   ├── news_service.py         # News abstraction layer (IBKR API)
-│   ├── llm_client.py           # Qwen/DashScope LLM client for attribution
-│   ├── attribution_engine.py   # PnL attribution orchestration
-│   └── drawdown_analyzer.py    # Drawdown analysis with news correlation
+├── backend/                    # Investment dashboard backend app
+├── frontend/                   # Investment dashboard frontend app
+├── data/                       # Stored operational and market datasets
 │
-├── frontend/                   # Plotly Dash dashboard
-│   ├── app.py                  # Dash application
-│   ├── websocket_client.py     # WebSocket client
-│   ├── realtime_integration.js # JS WebSocket handler
-│   ├── assets/custom.css       # Custom styles
-│   └── components/             # Reusable UI components
-│       ├── charts.py
-│       ├── metrics_cards.py
-│       ├── performance_metrics.py
-│       ├── pnl_chart.py
-│       ├── positions_table.py
-│       └── trade_history.py
+├── backtests/                  # Research workstation: backtests and stats
+├── portfolio/                  # Research workstation: blending and optimization
+├── execution/                  # Research workstation: paper/live execution path
+├── quant_data/                 # Research workstation: ingestion code and registry
+├── research/                   # Strategy notes, audits, reviews, trackers
+├── notebooks/                  # Exploratory notebooks and templates
 │
-├── portfolio/                  # Portfolio construction library
-│   ├── optimizer.py            # cvxpy mean-variance optimizer
-│   ├── blend.py                # Signal blending
-│   ├── risk.py                 # Covariance estimation, stress tests
-│   ├── risk_analytics.py       # Extended risk analytics
-│   ├── rebalancer.py           # Automated rebalancing
-│   └── advanced_analytics.py   # Portfolio-level analytics
+├── cerebro/                    # Optional research-ingestion extension
+├── qc_lean/                    # Optional QuantConnect Lean workspace
 │
-├── backtests/                  # Unified backtesting framework
-│   ├── __init__.py            # Exports
-│   ├── core.py                 # Core types (CostModel, BacktestResult)
-│   ├── metrics.py              # Sharpe, drawdown, total return
-│   ├── builder.py              # Portfolio builder: signals → alpha → weights
-│   ├── walkforward.py          # Walk-forward analysis
-│   │
-│   ├── strategies/             # Signal definitions (upstream of backtesting)
-│   │   ├── __init__.py        # Exports: signals, blending, metadata
-│   │   ├── signals.py         # Signal classes (Momentum, Carry, MeanReversion)
-│   │   └── metadata.py        # Strategy metadata for PnL attribution
-│   │
-│   ├── forward_pass/          # Dual-tracking: forward-pass vs post-trade
-│   │   ├── __init__.py
-│   │   ├── trade_tracker.py  # Signal context per trade
-│   │   └── comparison.py     # Side-by-side comparison view
-│   │
-│   ├── event_driven/          # Event-driven backtester (Backtrader)
-│   │   ├── __init__.py
-│   │   ├── engine.py
-│   │   └── events.py
-│   │
-│   └── runners/               # Experiment runners
-│       ├── __init__.py
-│       ├── momentum.py        # Momentum signal experiment
-│       └── portfolio_opt.py   # Portfolio optimization experiment
-│
-├── execution/                  # Trade execution framework
-│   ├── runner.py               # Paper/live execution runner
-│   ├── risk.py                 # Pre-trade risk controls
-│   ├── broker.py               # Broker interface
-│   ├── sim_broker.py           # Simulated broker
-│   ├── audit.py                # Order/fill audit trail
-│   └── types.py                # OrderRequest, Fill types
-│
-├── quant_data/                 # Research data lake
-│   ├── spec.py                 # Canonical dataset schemas
-│   ├── connectors/             # Market data connectors
-│   │   ├── stooq.py            # Stooq (free daily OHLCV)
-│   │   ├── polygon.py          # Polygon.io (paid)
-│   │   ├── binance_public.py   # Binance (crypto)
-│   │   └── ecb_fx.py           # ECB FX rates
-│   ├── pipelines/              # Data ingestion pipelines
-│   │   └── ingest_bars.py
-│   ├── io/parquet_writer.py    # Parquet output
-│   ├── duckdb_store.py         # DuckDB SQL layer
-│   ├── meta_db.py              # Metadata catalog
-│   └── qconfig.py              # Data lake settings
-│
-├── qc_lean/                    # QuantConnect Lean engine
-│   ├── MomentumDemoAlgorithm.py
-│   ├── config.json
-│   ├── Data/                   # Market hours database
-│   ├── Results/                # Backtest output
-│   └── Lean/                   # Lean engine (submodule)
-│
-├── scripts/                    # Utility and automation scripts
-├── notebooks/                  # Jupyter notebooks
+├── scripts/                    # Automation and CLI entry points
 ├── tests/                      # Unit and integration tests
-│   ├── unit/                   # Unit tests
-│   ├── integration/            # Integration tests
-│   └── conftest.py             # Shared pytest fixtures
-├── infrastructure/             # Docker configuration
-│   ├── docker-compose.yml
-│   ├── docker-compose.research.yml
-│   ├── Dockerfile.backend
-│   ├── Dockerfile.frontend
-│   └── Dockerfile.research
+├── docs/                       # Specs, guides, architecture notes
+├── infrastructure/             # Docker and deployment assets
 ├── config/                     # Application configuration
-│   └── app_config.yaml
-├── guides/                     # User guides
-│   ├── DATABASE_GUIDE.md
-│   ├── FLEX_QUERY_SETUP.md
-│   ├── IBKR_SETUP_GUIDE.md
-│   ├── PA_AUTOMATION_SETUP.md
-│   ├── ADVANCED_ANALYTICS_USAGE.md
-│   ├── ALERT_SETUP_GUIDE.md
-│   ├── EMAIL_ALERT_SETUP.md
-│   ├── ML_FEATURES_USAGE.md
-│   └── PNL_QUERY_GUIDE.md
-├── docs/                       # Technical specifications
-├── data_lake/                  # Parquet data storage
 ├── requirements.txt
 ├── environment.yml
-├── .env.example
-└── .gitignore
+└── AGENTS.md
 ```
+
+Directory-level READMEs are provided for the ambiguous top-level areas. Start with [`docs/repo_layout.md`](./docs/repo_layout.md) if you want the current stack map.
 
 ---
 

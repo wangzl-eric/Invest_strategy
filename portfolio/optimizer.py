@@ -15,7 +15,9 @@ class OptimizationConfig:
     turnover_aversion: float = 0.0  # L1 turnover penalty
     max_weight: float = 0.10
     min_weight: float = -0.10  # allow modest shorting by default
-    target_gross: Optional[float] = None  # if set, constrain sum(abs(w)) <= target_gross
+    target_gross: Optional[
+        float
+    ] = None  # if set, constrain sum(abs(w)) <= target_gross
 
 
 def mean_variance_optimize(
@@ -56,7 +58,11 @@ def mean_variance_optimize(
     risk = cp.quad_form(w, Sigma_stable)
 
     turnover = cp.norm1(w - w0)
-    obj = cp.Maximize(mu @ w - float(cfg.risk_aversion) * risk - float(cfg.turnover_aversion) * turnover)
+    obj = cp.Maximize(
+        mu @ w
+        - float(cfg.risk_aversion) * risk
+        - float(cfg.turnover_aversion) * turnover
+    )
 
     constraints = [
         cp.sum(w) == 1.0,
@@ -103,4 +109,6 @@ def weights_from_alpha(
         raise ValueError(f"Unknown cov_method: {cov_method}")
 
     mu = alpha.reindex(returns.columns).fillna(0.0)
-    return mean_variance_optimize(expected_returns=mu, cov=cov, prev_weights=prev_weights, cfg=cfg)
+    return mean_variance_optimize(
+        expected_returns=mu, cov=cov, prev_weights=prev_weights, cfg=cfg
+    )

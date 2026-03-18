@@ -7,13 +7,13 @@ This module provides:
 - Experiment tracking integration with MLflow
 """
 
+from backend.research.backtest import BacktestExperiment, EventDrivenBacktest
 from backend.research.duckdb_utils import ResearchDB
 from backend.research.features import FeatureRegistry, compute_features
-from backend.research.backtest import EventDrivenBacktest, BacktestExperiment
 
 __all__ = [
     "ResearchDB",
-    "FeatureRegistry", 
+    "FeatureRegistry",
     "compute_features",
     "EventDrivenBacktest",
     "BacktestExperiment",

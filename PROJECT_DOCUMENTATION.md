@@ -107,6 +107,26 @@ This is a **full-stack quantitative analytics platform** for Interactive Brokers
 
 ---
 
+### Repository Layout
+
+The repo is best understood as two primary product surfaces that share libraries:
+
+| Surface | Main Paths | Purpose |
+|---------|------------|---------|
+| **Investment dashboard application** | `backend/`, `frontend/`, `data/` | broker/account workflows, APIs, UI, stored operational data |
+| **Quant research workstation** | `backtests/`, `portfolio/`, `execution/`, `quant_data/`, `research/`, `notebooks/` | ingestion, strategy research, backtesting, optimization, paper-trading prep |
+| **Optional extensions** | `cerebro/`, `qc_lean/` | separate research tooling and external-engine experiments |
+
+Important distinctions:
+
+- `data/` stores files. `quant_data/` is the Python package that manages those files.
+- `backtests/` is the research framework. `backend/backtest_engine.py` is the event-driven execution adapter.
+- `qc_lean/` is an optional local Lean workspace, not part of the core Python package graph.
+
+See `docs/repo_layout.md` for the maintained stack map.
+
+---
+
 ## 2. Core Components
 
 ### 2.1 Backend API (`backend/`)
@@ -168,12 +188,12 @@ This is a **full-stack quantitative analytics platform** for Interactive Brokers
 
 ### 2.3 Backtesting Framework (`backtests/`)
 
-Two backtesting approaches are available:
+Two complementary layers are available:
 
-| Approach | File | Use Case |
-|----------|------|----------|
-| **Backtrader** | `backend/backtest_engine.py` | Event-driven with realistic simulation |
-| **Research** | `backend/research/backtest.py` | Quick strategy testing |
+| Layer | File(s) | Use Case |
+|-------|---------|----------|
+| **Research framework** | `backtests/builder.py`, `backtests/walkforward.py`, `backtests/stats/` | portfolio research, walk-forward validation, statistical tests |
+| **Event-driven engine** | `backend/backtest_engine.py` | Backtrader-based simulation with execution realism |
 
 #### Using BacktestEngine (Backtrader)
 
@@ -186,12 +206,12 @@ import backtrader as bt
 # Define a strategy
 class MyStrategy(bt.Strategy):
     params = (('period', 20),)
-    
+
     def __init__(self):
         self.sma = bt.indicators.SimpleMovingAverage(
             self.data.close, period=self.params.period
         )
-        
+
     def next(self):
         if self.data.close[0] > self.sma[0]:
             self.buy()
@@ -229,17 +249,17 @@ class BacktestResult:
 
 ### 2.4 QuantConnect Lean Integration (`qc_lean/`)
 
-Full QuantConnect Lean engine integration for professional-grade backtesting:
+Optional QuantConnect Lean integration for local experimentation. Treat this directory as an isolated external-engine workspace:
 
 **Directory Structure**:
 ```
 qc_lean/
-├── Lean/                    # Full Lean engine source
-├── Data/                    # Market data (equity/usa/daily/)
-├── Results/                 # Backtest output
+├── Lean/                    # Lean engine source / vendor subtree
+├── Data/                    # Lean-formatted market data
+├── Results/                 # Generated backtest output
 ├── config.json              # Lean configuration
 ├── MomentumDemoAlgorithm.py # Example strategy
-└── .dotnet/                 # .NET runtime
+└── .dotnet/                 # Local .NET runtime
 ```
 
 **Example Strategy** (`MomentumDemoAlgorithm.py`):
@@ -952,7 +972,11 @@ Invest_strategy/
 │   ├── audit.py              # DB recording
 │   └── types.py              # Data types
 │
-├── quant_data/               # Market data infrastructure
+├── data/                     # Stored market data and broker exports
+│   ├── market_data/
+│   └── flex_reports/
+│
+├── quant_data/               # Market-data code: connectors, schemas, registry
 │   ├── connectors/           # Data source connectors
 │   │   ├── stooq.py
 │   │   ├── binance_public.py
@@ -965,10 +989,10 @@ Invest_strategy/
 │   ├── paths.py              # Path helpers
 │   └── meta_db.py            # Metadata DB
 │
-├── qc_lean/                  # QuantConnect Lean
+├── qc_lean/                  # Optional external Lean workspace
 │   ├── Lean/                 # Lean engine source
-│   ├── Data/                 # Market data
-│   ├── Results/              # Backtest output
+│   ├── Data/                 # Lean-formatted market data
+│   ├── Results/              # Generated backtest output
 │   ├── config.json           # Lean config
 │   └── *.py                  # Strategy files
 │
@@ -983,10 +1007,7 @@ Invest_strategy/
 │   ├── ingest_*.py
 │   └── ...
 │
-├── research/                 # Research experiments
-│   └── experiments/
-│       ├── run_example_momentum.py
-│       └── run_example_portfolio_opt.py
+├── research/                 # Strategy folders, reviews, and audit outputs
 │
 ├── tests/                    # Test suite
 │

@@ -85,7 +85,7 @@ class PnLScheduler:
         self._task = loop.create_task(self._run_loop())
         logger.info(
             "PnL scheduler task started",
-            extra={"interval_minutes": settings.app.update_interval_minutes}
+            extra={"interval_minutes": settings.app.update_interval_minutes},
         )
 
     async def stop(self):
@@ -101,10 +101,12 @@ class PnLScheduler:
             pass
         logger.info("PnL scheduler task cancelled")
 
+
 """Scheduled jobs for data updates."""
-import logging
 import asyncio
+import logging
 from typing import Optional
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
@@ -131,17 +133,17 @@ class Scheduler:
 
             # Fetch all data
             result = await self.data_fetcher.fetch_all(account_id)
-            account_id = result['account_id']
+            account_id = result["account_id"]
 
             # Calculate performance metrics
             await asyncio.to_thread(
-                self.data_processor.calculate_performance_metrics,
-                account_id
+                self.data_processor.calculate_performance_metrics, account_id
             )
 
             # Evaluate alert rules after data update
             try:
                 from backend.alert_scheduler import alert_scheduler
+
                 await alert_scheduler.evaluate_and_notify(account_id)
             except Exception as e:
                 logger.error(f"Error evaluating alerts: {e}", exc_info=True)
@@ -164,8 +166,8 @@ class Scheduler:
             self.update_data_job,
             trigger=IntervalTrigger(minutes=interval_minutes),
             args=[account_id],
-            id='update_data',
-            name='Update IBKR account data',
+            id="update_data",
+            name="Update IBKR account data",
             replace_existing=True,
         )
 

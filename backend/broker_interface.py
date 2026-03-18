@@ -1,9 +1,9 @@
 """Abstract broker interface for multi-broker support."""
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Dict, Optional, Any
-from datetime import datetime
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Position:
     """Standardized position data structure."""
+
     symbol: str
     quantity: float
     market_price: float
@@ -25,6 +26,7 @@ class Position:
 @dataclass
 class Trade:
     """Standardized trade data structure."""
+
     symbol: str
     side: str  # BUY, SELL
     quantity: float
@@ -39,6 +41,7 @@ class Trade:
 @dataclass
 class AccountSummary:
     """Standardized account summary."""
+
     account_id: str
     net_liquidation: float
     total_cash: float
@@ -61,7 +64,9 @@ class BrokerInterface(ABC):
         pass
 
     @abstractmethod
-    async def get_account_summary(self, account_id: Optional[str] = None) -> AccountSummary:
+    async def get_account_summary(
+        self, account_id: Optional[str] = None
+    ) -> AccountSummary:
         """Get account summary."""
         pass
 
@@ -75,7 +80,7 @@ class BrokerInterface(ABC):
         self,
         account_id: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[Trade]:
         """Get trade history."""
         pass
@@ -100,17 +105,19 @@ class IBKRBrokerAdapter(BrokerInterface):
         """Disconnect from IBKR."""
         await self.ibkr_client.disconnect()
 
-    async def get_account_summary(self, account_id: Optional[str] = None) -> AccountSummary:
+    async def get_account_summary(
+        self, account_id: Optional[str] = None
+    ) -> AccountSummary:
         """Get IBKR account summary."""
         account_data = await self.ibkr_client.get_account_summary(account_id)
 
         return AccountSummary(
-            account_id=account_data.get('account', account_id or ''),
-            net_liquidation=float(account_data.get('NetLiquidation', 0) or 0),
-            total_cash=float(account_data.get('TotalCashValue', 0) or 0),
-            buying_power=float(account_data.get('BuyingPower', 0) or 0),
-            currency=account_data.get('currency', 'USD'),
-            timestamp=datetime.utcnow()
+            account_id=account_data.get("account", account_id or ""),
+            net_liquidation=float(account_data.get("NetLiquidation", 0) or 0),
+            total_cash=float(account_data.get("TotalCashValue", 0) or 0),
+            buying_power=float(account_data.get("BuyingPower", 0) or 0),
+            currency=account_data.get("currency", "USD"),
+            timestamp=datetime.utcnow(),
         )
 
     async def get_positions(self, account_id: Optional[str] = None) -> List[Position]:
@@ -119,17 +126,19 @@ class IBKRBrokerAdapter(BrokerInterface):
 
         positions = []
         for pos_data in positions_data:
-            positions.append(Position(
-                symbol=pos_data['contract']['symbol'],
-                quantity=float(pos_data['position']),
-                market_price=float(pos_data.get('marketPrice', 0) or 0),
-                market_value=float(pos_data.get('marketValue', 0) or 0),
-                avg_cost=float(pos_data.get('avgCost', 0) or 0),
-                unrealized_pnl=float(pos_data.get('unrealizedPnL', 0) or 0),
-                currency=pos_data['contract'].get('currency', 'USD'),
-                sec_type=pos_data['contract'].get('secType', 'STK'),
-                exchange=pos_data['contract'].get('exchange')
-            ))
+            positions.append(
+                Position(
+                    symbol=pos_data["contract"]["symbol"],
+                    quantity=float(pos_data["position"]),
+                    market_price=float(pos_data.get("marketPrice", 0) or 0),
+                    market_value=float(pos_data.get("marketValue", 0) or 0),
+                    avg_cost=float(pos_data.get("avgCost", 0) or 0),
+                    unrealized_pnl=float(pos_data.get("unrealizedPnL", 0) or 0),
+                    currency=pos_data["contract"].get("currency", "USD"),
+                    sec_type=pos_data["contract"].get("secType", "STK"),
+                    exchange=pos_data["contract"].get("exchange"),
+                )
+            )
 
         return positions
 
@@ -137,15 +146,19 @@ class IBKRBrokerAdapter(BrokerInterface):
         self,
         account_id: Optional[str] = None,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> List[Trade]:
         """Get IBKR trades."""
         trades_data = await self.ibkr_client.get_trades(account_id)
 
         trades = []
         for trade_data in trades_data:
-            exec_time_str = trade_data['execution'].get('time')
-            exec_time = datetime.fromisoformat(exec_time_str) if exec_time_str else datetime.utcnow()
+            exec_time_str = trade_data["execution"].get("time")
+            exec_time = (
+                datetime.fromisoformat(exec_time_str)
+                if exec_time_str
+                else datetime.utcnow()
+            )
 
             # Filter by date if provided
             if start_date and exec_time < start_date:
@@ -153,17 +166,19 @@ class IBKRBrokerAdapter(BrokerInterface):
             if end_date and exec_time > end_date:
                 continue
 
-            trades.append(Trade(
-                symbol=trade_data['contract']['symbol'],
-                side=trade_data['execution']['side'],
-                quantity=float(trade_data['execution']['shares']),
-                price=float(trade_data['execution']['price']),
-                commission=float(trade_data.get('commission', 0) or 0),
-                trade_date=exec_time,
-                exec_id=trade_data['execution']['execId'],
-                currency=trade_data['contract'].get('currency', 'USD'),
-                sec_type=trade_data['contract'].get('secType', 'STK')
-            ))
+            trades.append(
+                Trade(
+                    symbol=trade_data["contract"]["symbol"],
+                    side=trade_data["execution"]["side"],
+                    quantity=float(trade_data["execution"]["shares"]),
+                    price=float(trade_data["execution"]["price"]),
+                    commission=float(trade_data.get("commission", 0) or 0),
+                    trade_date=exec_time,
+                    exec_id=trade_data["execution"]["execId"],
+                    currency=trade_data["contract"].get("currency", "USD"),
+                    sec_type=trade_data["contract"].get("secType", "STK"),
+                )
+            )
 
         return trades
 

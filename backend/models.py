@@ -1,7 +1,17 @@
 """SQLAlchemy database models."""
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import Column, Integer, Float, String, DateTime, Boolean, ForeignKey, Text
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -10,6 +20,7 @@ Base = declarative_base()
 
 class AccountSnapshot(Base):
     """Account snapshot at a point in time."""
+
     __tablename__ = "account_snapshots"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -32,6 +43,7 @@ class AccountSnapshot(Base):
 
 class Position(Base):
     """Current position snapshot."""
+
     __tablename__ = "positions"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -56,6 +68,7 @@ class Position(Base):
 
 class PnLHistory(Base):
     """Historical PnL records."""
+
     __tablename__ = "pnl_history"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -73,7 +86,9 @@ class PnLHistory(Base):
     total_cash = Column(Float)
 
     # Returns (calculated from net_liquidation)
-    daily_return = Column(Float)  # Daily return: (net_liquidation_today / net_liquidation_yesterday) - 1
+    daily_return = Column(
+        Float
+    )  # Daily return: (net_liquidation_today / net_liquidation_yesterday) - 1
     cumulative_return = Column(Float)  # Cumulative return from start of series
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -81,6 +96,7 @@ class PnLHistory(Base):
 
 class Trade(Base):
     """Trade execution record."""
+
     __tablename__ = "trades"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -132,6 +148,7 @@ class Trade(Base):
 
 class PerformanceMetric(Base):
     """Calculated performance metrics."""
+
     __tablename__ = "performance_metrics"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -180,7 +197,9 @@ class ExecutionOrder(Base):
     order_type = Column(String, default="MKT")  # MKT/LMT
     limit_price = Column(Float)
 
-    status = Column(String, default="created")  # created/submitted/filled/cancelled/rejected
+    status = Column(
+        String, default="created"
+    )  # created/submitted/filled/cancelled/rejected
     external_order_id = Column(String, index=True)  # IBKR orderId or simulator id
     error = Column(Text, default="")
 
@@ -211,13 +230,16 @@ class RiskEvent(Base):
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     severity = Column(String, default="WARN")  # INFO/WARN/ERROR
-    event_type = Column(String, nullable=False)  # e.g. MAX_DAILY_LOSS, MAX_POSITION_NOTIONAL
+    event_type = Column(
+        String, nullable=False
+    )  # e.g. MAX_DAILY_LOSS, MAX_POSITION_NOTIONAL
     message = Column(Text, default="")
     context_json = Column(Text, default="{}")
 
 
 class User(Base):
     """User account model."""
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -231,13 +253,23 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    accounts = relationship("UserAccount", back_populates="user", cascade="all, delete-orphan")
-    api_keys = relationship("APIKey", back_populates="user", cascade="all, delete-orphan")
-    preferences = relationship("UserPreferences", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    accounts = relationship(
+        "UserAccount", back_populates="user", cascade="all, delete-orphan"
+    )
+    api_keys = relationship(
+        "APIKey", back_populates="user", cascade="all, delete-orphan"
+    )
+    preferences = relationship(
+        "UserPreferences",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
 
 
 class UserAccount(Base):
     """Link between users and IBKR accounts."""
+
     __tablename__ = "user_accounts"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -254,10 +286,13 @@ class UserAccount(Base):
 
 class UserPreferences(Base):
     """User preferences and settings."""
+
     __tablename__ = "user_preferences"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id"), unique=True, nullable=False, index=True
+    )
     default_account_id = Column(String)  # Default IBKR account to use
     theme = Column(String, default="dark")  # dark/light
     timezone = Column(String, default="UTC")
@@ -273,6 +308,7 @@ class UserPreferences(Base):
 
 class APIKey(Base):
     """API keys for programmatic access."""
+
     __tablename__ = "api_keys"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -291,10 +327,13 @@ class APIKey(Base):
 
 class Role(Base):
     """Role definitions for RBAC."""
+
     __tablename__ = "roles"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, nullable=False, index=True)  # admin, viewer, trader, analyst
+    name = Column(
+        String, unique=True, nullable=False, index=True
+    )  # admin, viewer, trader, analyst
     description = Column(Text)
     permissions_json = Column(Text, default="{}")  # JSON object with permissions
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -302,6 +341,7 @@ class Role(Base):
 
 class UserRole(Base):
     """Many-to-many relationship between users and roles."""
+
     __tablename__ = "user_roles"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -310,18 +350,19 @@ class UserRole(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Unique constraint
-    __table_args__ = (
-        {"sqlite_autoincrement": True},
-    )
+    __table_args__ = ({"sqlite_autoincrement": True},)
 
 
 class AuditLog(Base):
     """Audit log for user actions."""
+
     __tablename__ = "audit_logs"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
-    action = Column(String, nullable=False, index=True)  # login, logout, create, update, delete, etc.
+    action = Column(
+        String, nullable=False, index=True
+    )  # login, logout, create, update, delete, etc.
     resource_type = Column(String, index=True)  # user, account, trade, etc.
     resource_id = Column(String, index=True)
     ip_address = Column(String)
@@ -332,6 +373,7 @@ class AuditLog(Base):
 
 class AlertRule(Base):
     """Configurable alert rules."""
+
     __tablename__ = "alert_rules"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -371,6 +413,7 @@ class AlertRule(Base):
 
 class Alert(Base):
     """Triggered alerts."""
+
     __tablename__ = "alerts"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -386,7 +429,9 @@ class Alert(Base):
     context_json = Column(Text, default="{}")  # Additional context data
 
     # Status
-    status = Column(String, default="ACTIVE", index=True)  # ACTIVE, ACKNOWLEDGED, RESOLVED
+    status = Column(
+        String, default="ACTIVE", index=True
+    )  # ACTIVE, ACKNOWLEDGED, RESOLVED
     acknowledged_at = Column(DateTime, nullable=True)
     acknowledged_by = Column(String, nullable=True)
     resolved_at = Column(DateTime, nullable=True)
@@ -405,6 +450,7 @@ class Alert(Base):
 
 class AlertHistory(Base):
     """Historical record of alerts (for audit and analysis)."""
+
     __tablename__ = "alert_history"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -413,7 +459,9 @@ class AlertHistory(Base):
     account_id = Column(String, nullable=False, index=True)
 
     # Event details
-    event_type = Column(String, nullable=False)  # TRIGGERED, ACKNOWLEDGED, RESOLVED, NOTIFICATION_SENT
+    event_type = Column(
+        String, nullable=False
+    )  # TRIGGERED, ACKNOWLEDGED, RESOLVED, NOTIFICATION_SENT
     message = Column(Text)
     context_json = Column(Text, default="{}")
 
@@ -422,12 +470,15 @@ class AlertHistory(Base):
 
 class AlertChannel(Base):
     """Notification channels for alerts."""
+
     __tablename__ = "alert_channels"
 
     id = Column(Integer, primary_key=True, index=True)
     account_id = Column(String, nullable=False, index=True)
     name = Column(String, nullable=False)
-    channel_type = Column(String, nullable=False, index=True)  # EMAIL, SMS, PUSH, SLACK, TEAMS, WEBHOOK
+    channel_type = Column(
+        String, nullable=False, index=True
+    )  # EMAIL, SMS, PUSH, SLACK, TEAMS, WEBHOOK
 
     # Channel configuration (JSON stored as text)
     # For EMAIL: {"to": "user@example.com", "smtp_server": "...", "smtp_port": 587, "username": "...", "password": "..."}
@@ -442,3 +493,68 @@ class AlertChannel(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class PnLAttribution(Base):
+    """LLM-generated explanations for PnL movements."""
+
+    __tablename__ = "pnl_attributions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    # Scope: portfolio or signal/strategy level
+    scope = Column(String, nullable=False, index=True)  # 'portfolio' or 'signal'
+
+    # Target identification
+    account_id = Column(String, index=True)  # Nullable for cross-portfolio analysis
+    target_name = Column(
+        String, nullable=False, index=True
+    )  # 'main_portfolio' or 'momentum_tech'
+
+    # Date being analyzed
+    analysis_date = Column(DateTime, nullable=False, index=True)
+
+    # PnL change that triggered this analysis
+    pnl_change_pct = Column(Float, nullable=False)
+    pnl_change_dollar = Column(Float, nullable=False)
+
+    # Previous day's values (for context)
+    previous_pnl = Column(Float)  # PnL at close yesterday
+    current_pnl = Column(Float)  # PnL at close today
+
+    # News used for attribution (JSON array of article metadata)
+    news_articles_json = Column(Text, default="[]")
+
+    # News sources used: 'ibkr', 'newsapi', or 'ibkr+newsapi'
+    news_sources = Column(String, default="")
+
+    # Number of news articles fetched
+    news_count = Column(Integer, default=0)
+
+    # LLM explanation (JSON)
+    # {
+    #   "sentiment": "negative",
+    #   "themes": ["fed_hawkish", "tech_selloff"],
+    #   "catalysts": ["FOMC_minutes", "NVDA_guidance"],
+    #   "narrative": "...",
+    #   "strategy_specific_impact": "...",
+    #   "confidence": 0.85
+    # }
+    explanation_json = Column(Text, nullable=False, default="{}")
+
+    # Position impacts (JSON array)
+    # [{"symbol": "AAPL", "pnl_contribution": -500, "reason": "earnings_miss"}]
+    position_impacts_json = Column(Text, default="[]")
+
+    # Confidence score from LLM (0.0 - 1.0)
+    confidence = Column(Float)
+
+    # Status: 'success', 'failed', 'skipped'
+    status = Column(String, index=True, default="success")
+
+    # Error message if failed
+    error_message = Column(Text, default="")
+
+    # Trigger type: 'threshold_portfolio', 'threshold_signal', 'manual'
+    trigger_type = Column(String, index=True)

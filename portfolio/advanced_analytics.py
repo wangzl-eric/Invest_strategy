@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -18,9 +18,11 @@ logger = logging.getLogger(__name__)
 # Portfolio Optimization Models
 # =============================================================================
 
+
 @dataclass
 class OptimizationResult:
     """Result of portfolio optimization."""
+
     weights: pd.Series
     expected_return: float
     expected_volatility: float
@@ -112,7 +114,9 @@ def markowitz_optimize(
     # Calculate metrics
     exp_return = float(weights @ expected_returns)
     exp_vol = float(np.sqrt(weights @ cov_matrix @ weights))
-    sharpe_ratio = float((exp_return - risk_free_rate) / exp_vol) if exp_vol > 0 else 0.0
+    sharpe_ratio = (
+        float((exp_return - risk_free_rate) / exp_vol) if exp_vol > 0 else 0.0
+    )
 
     return OptimizationResult(
         weights=weights,
@@ -266,14 +270,13 @@ def risk_parity_optimize(
 
     # Constraints
     constraints = [
-        {'type': 'eq', 'fun': lambda w: np.sum(w) - 1.0},  # Sum to 1
+        {"type": "eq", "fun": lambda w: np.sum(w) - 1.0},  # Sum to 1
     ]
 
     if target_risk is not None:
-        constraints.append({
-            'type': 'eq',
-            'fun': lambda w: np.sqrt(w @ Sigma @ w) - target_risk
-        })
+        constraints.append(
+            {"type": "eq", "fun": lambda w: np.sqrt(w @ Sigma @ w) - target_risk}
+        )
 
     # Bounds: long-only
     bounds = [(0.0, 1.0) for _ in range(n)]
@@ -285,10 +288,10 @@ def risk_parity_optimize(
     result = minimize(
         objective,
         w0,
-        method='SLSQP',
+        method="SLSQP",
         bounds=bounds,
         constraints=constraints,
-        options={'maxiter': 1000}
+        options={"maxiter": 1000},
     )
 
     if not result.success:
@@ -317,9 +320,11 @@ def risk_parity_optimize(
 # Factor Analysis
 # =============================================================================
 
+
 @dataclass
 class FactorAnalysisResult:
     """Result of factor analysis."""
+
     factor_loadings: pd.DataFrame  # Assets x Factors
     factor_returns: pd.Series  # Time series of factor returns
     r_squared: pd.Series  # R-squared per asset
@@ -360,22 +365,22 @@ def fama_french_analysis(
     market_aligned = market_returns.loc[common_idx]
 
     # Build factor matrix
-    factors = pd.DataFrame({'Market': market_aligned}, index=common_idx)
+    factors = pd.DataFrame({"Market": market_aligned}, index=common_idx)
 
     if hml is not None:
         hml_aligned = hml.reindex(common_idx).dropna()
         if len(hml_aligned) > 0:
-            factors['HML'] = hml_aligned
+            factors["HML"] = hml_aligned
 
     if smb is not None:
         smb_aligned = smb.reindex(common_idx).dropna()
         if len(smb_aligned) > 0:
-            factors['SMB'] = smb_aligned
+            factors["SMB"] = smb_aligned
 
     if umd is not None:
         umd_aligned = umd.reindex(common_idx).dropna()
         if len(umd_aligned) > 0:
-            factors['UMD'] = umd_aligned
+            factors["UMD"] = umd_aligned
 
     # Remove rows with any NaN
     factors = factors.dropna()
@@ -454,13 +459,13 @@ def style_analysis(
             """Minimize sum of squared residuals."""
             return np.sum((y - X @ w) ** 2)
 
-        constraints = [
-            {'type': 'eq', 'fun': lambda w: np.sum(w) - 1.0}
-        ]
+        constraints = [{"type": "eq", "fun": lambda w: np.sum(w) - 1.0}]
         bounds = [(0.0, 1.0) for _ in range(X.shape[1])]
 
         w0 = np.ones(X.shape[1]) / X.shape[1]
-        result = minimize(objective, w0, method='SLSQP', bounds=bounds, constraints=constraints)
+        result = minimize(
+            objective, w0, method="SLSQP", bounds=bounds, constraints=constraints
+        )
 
         if not result.success:
             raise RuntimeError(f"Style analysis optimization failed: {result.message}")
@@ -486,10 +491,10 @@ def style_analysis(
     tracking_error = np.std(y - y_pred) * np.sqrt(252)  # Annualized
 
     return {
-        'style_weights': style_weights,
-        'r_squared': r_squared,
-        'tracking_error': tracking_error,
-        'residuals': pd.Series(y - y_pred, index=common_idx),
+        "style_weights": style_weights,
+        "r_squared": r_squared,
+        "tracking_error": tracking_error,
+        "residuals": pd.Series(y - y_pred, index=common_idx),
     }
 
 
@@ -497,9 +502,11 @@ def style_analysis(
 # Attribution Analysis
 # =============================================================================
 
+
 @dataclass
 class AttributionResult:
     """Result of performance attribution."""
+
     total_attribution: float
     factor_attribution: pd.Series  # Attribution by factor
     sector_attribution: Optional[pd.Series] = None
@@ -538,7 +545,9 @@ def factor_attribution(
         portfolio_weights = portfolio_weights.reindex(common_assets).fillna(0.0)
 
     # Portfolio factor exposure = weighted sum of asset loadings
-    portfolio_exposure = (factor_loadings.loc[common_assets].T * portfolio_weights).T.sum()
+    portfolio_exposure = (
+        factor_loadings.loc[common_assets].T * portfolio_weights
+    ).T.sum()
 
     # Factor attribution = exposure * factor return
     factor_attrib = portfolio_exposure * factor_returns
@@ -576,7 +585,9 @@ def sector_attribution(
     # Align sectors
     common_sectors = sector_weights.index.intersection(sector_returns.index)
 
-    sector_attrib = sector_weights.loc[common_sectors] * sector_returns.loc[common_sectors]
+    sector_attrib = (
+        sector_weights.loc[common_sectors] * sector_returns.loc[common_sectors]
+    )
     total_attrib = sector_attrib.sum()
 
     return AttributionResult(
@@ -610,7 +621,10 @@ def security_attribution(
     common_securities = portfolio_weights.index.intersection(security_returns.columns)
 
     # Calculate contribution = weight * return
-    security_contrib = portfolio_weights.loc[common_securities] * security_returns[common_securities].mean()
+    security_contrib = (
+        portfolio_weights.loc[common_securities]
+        * security_returns[common_securities].mean()
+    )
     total_attrib = security_contrib.sum()
 
     return AttributionResult(
@@ -626,9 +640,11 @@ def security_attribution(
 # Monte Carlo Simulations
 # =============================================================================
 
+
 @dataclass
 class MonteCarloResult:
     """Result of Monte Carlo simulation."""
+
     simulated_returns: np.ndarray  # n_simulations x n_periods
     simulated_equity: np.ndarray  # n_simulations x n_periods
     percentiles: Dict[str, float]  # Percentiles of final equity
@@ -687,11 +703,11 @@ def monte_carlo_simulation(
     final_values = equity[:, -1]
 
     percentiles = {
-        'p5': float(np.percentile(final_values, 5)),
-        'p25': float(np.percentile(final_values, 25)),
-        'p50': float(np.percentile(final_values, 50)),
-        'p75': float(np.percentile(final_values, 75)),
-        'p95': float(np.percentile(final_values, 95)),
+        "p5": float(np.percentile(final_values, 5)),
+        "p25": float(np.percentile(final_values, 25)),
+        "p50": float(np.percentile(final_values, 50)),
+        "p75": float(np.percentile(final_values, 75)),
+        "p95": float(np.percentile(final_values, 95)),
     }
 
     probability_of_loss = float(np.mean(final_values < initial_value))
@@ -783,11 +799,11 @@ def monte_carlo_portfolio_simulation(
     final_values = equity[:, -1]
 
     percentiles = {
-        'p5': float(np.percentile(final_values, 5)),
-        'p25': float(np.percentile(final_values, 25)),
-        'p50': float(np.percentile(final_values, 50)),
-        'p75': float(np.percentile(final_values, 75)),
-        'p95': float(np.percentile(final_values, 95)),
+        "p5": float(np.percentile(final_values, 5)),
+        "p25": float(np.percentile(final_values, 25)),
+        "p50": float(np.percentile(final_values, 50)),
+        "p75": float(np.percentile(final_values, 75)),
+        "p95": float(np.percentile(final_values, 95)),
     }
 
     probability_of_loss = float(np.mean(final_values < initial_value))

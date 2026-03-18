@@ -13,14 +13,15 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+import pandas as pd
+
 from backend.db_utils import (
-    get_trades_df,
+    get_account_pnl_totals,
     get_daily_pnl,
     get_trade_summary,
-    get_account_pnl_totals,
-    query_trades
+    get_trades_df,
+    query_trades,
 )
-import pandas as pd
 
 
 def main():
@@ -42,8 +43,19 @@ def main():
     print("-" * 80)
     daily = get_daily_pnl()
     if not daily.empty:
-        print(daily[['date', 'trade_count', 'realized_pnl', 'realized_pnl_hkd',
-                     'cumulative_pnl_usd']].tail(10).to_string(index=False))
+        print(
+            daily[
+                [
+                    "date",
+                    "trade_count",
+                    "realized_pnl",
+                    "realized_pnl_hkd",
+                    "cumulative_pnl_usd",
+                ]
+            ]
+            .tail(10)
+            .to_string(index=False)
+        )
     else:
         print("No daily P&L data available")
 
@@ -53,7 +65,11 @@ def main():
     summary = get_trade_summary()
     if not summary.empty:
         top_symbols = summary.head(10)
-        print(top_symbols[['trade_count', 'realized_pnl_usd', 'realized_pnl_hkd']].to_string())
+        print(
+            top_symbols[
+                ["trade_count", "realized_pnl_usd", "realized_pnl_hkd"]
+            ].to_string()
+        )
     else:
         print("No trade summary data available")
 
@@ -62,15 +78,19 @@ def main():
     print("-" * 80)
     recent_trades = get_trades_df(limit=5)
     if not recent_trades.empty:
-        print(recent_trades[['exec_time', 'symbol', 'side', 'shares',
-                            'price', 'realized_pnl']].to_string(index=False))
+        print(
+            recent_trades[
+                ["exec_time", "symbol", "side", "shares", "price", "realized_pnl"]
+            ].to_string(index=False)
+        )
     else:
         print("No trades found")
 
     # 5. Monthly P&L summary (using SQL)
     print("\n5. MONTHLY P&L SUMMARY")
     print("-" * 80)
-    monthly = query_trades("""
+    monthly = query_trades(
+        """
         SELECT
             strftime('%Y-%m', exec_time) as month,
             COUNT(*) as trades,
@@ -80,7 +100,8 @@ def main():
         GROUP BY month
         ORDER BY month DESC
         LIMIT 12
-    """)
+    """
+    )
     if not monthly.empty:
         print(monthly.to_string(index=False))
     else:
@@ -89,7 +110,8 @@ def main():
     # 6. Win/Loss statistics
     print("\n6. WIN/LOSS STATISTICS")
     print("-" * 80)
-    win_loss = query_trades("""
+    win_loss = query_trades(
+        """
         SELECT
             CASE
                 WHEN realized_pnl > 0 THEN 'Win'
@@ -102,13 +124,18 @@ def main():
         FROM trades
         WHERE realized_pnl != 0
         GROUP BY outcome
-    """)
+    """
+    )
     if not win_loss.empty:
         print(win_loss.to_string(index=False))
 
         # Calculate win rate
-        total = win_loss['count'].sum()
-        wins = win_loss[win_loss['outcome'] == 'Win']['count'].sum() if 'Win' in win_loss['outcome'].values else 0
+        total = win_loss["count"].sum()
+        wins = (
+            win_loss[win_loss["outcome"] == "Win"]["count"].sum()
+            if "Win" in win_loss["outcome"].values
+            else 0
+        )
         win_rate = (wins / total * 100) if total > 0 else 0
         print(f"\nWin Rate: {win_rate:.2f}%")
     else:

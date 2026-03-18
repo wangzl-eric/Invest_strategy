@@ -26,7 +26,13 @@ class SimMarket:
 class SimBrokerImpl:
     name = "sim"
 
-    def __init__(self, market: SimMarket, *, commission_per_order: float = 0.0, venue: str = "SIM"):
+    def __init__(
+        self,
+        market: SimMarket,
+        *,
+        commission_per_order: float = 0.0,
+        venue: str = "SIM",
+    ):
         self.market = market
         self.commission_per_order = commission_per_order
         self.venue = venue

@@ -1,7 +1,8 @@
 """Alert evaluation scheduler integration."""
-import logging
 import asyncio
+import logging
 from typing import Optional
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
@@ -24,7 +25,7 @@ def start_alert_scheduler():
         evaluate_alerts,
         trigger=IntervalTrigger(minutes=1),
         id="alert_evaluation",
-        replace_existing=True
+        replace_existing=True,
     )
 
     scheduler.start()

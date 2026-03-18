@@ -1,8 +1,10 @@
 """Unit tests for data processor."""
-import pytest
-import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta
+
+import numpy as np
+import pandas as pd
+import pytest
+
 from backend.data_processor import DataProcessor
 
 
@@ -108,7 +110,9 @@ class TestDataProcessor:
     def test_calculate_sharpe_ratio_with_risk_free_rate(self, sample_returns_series):
         """Test Sharpe ratio with risk-free rate."""
         processor = DataProcessor()
-        sharpe = processor.calculate_sharpe_ratio(sample_returns_series, risk_free_rate=0.02)
+        sharpe = processor.calculate_sharpe_ratio(
+            sample_returns_series, risk_free_rate=0.02
+        )
 
         assert isinstance(sharpe, float)
         assert not np.isnan(sharpe)

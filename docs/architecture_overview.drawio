@@ -206,7 +206,7 @@
         </mxCell>
 
         <!-- ==================== CONNECTIONS ==================== -->
-        
+
         <!-- Data Sources to Ingestion -->
         <mxCell id="conn_ds1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666;strokeWidth=1;dashed=1" edge="1" parent="1" source="ds_ibkr" target="ing_ibkr">
           <mxGeometry relative="1" as="geometry" />

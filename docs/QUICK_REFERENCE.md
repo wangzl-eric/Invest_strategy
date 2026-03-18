@@ -165,6 +165,6 @@ WHERE realized_pnl != 0
 
 ## 📖 Full Documentation
 
-- [DATABASE_GUIDE.md](../guides/DATABASE_GUIDE.md) - Complete database guide
-- [FLEX_QUERY_SETUP.md](../guides/FLEX_QUERY_SETUP.md) - Flex Query setup
+- [DATABASE_GUIDE.md](guides/DATABASE_GUIDE.md) - Complete database guide
+- [FLEX_QUERY_SETUP.md](guides/FLEX_QUERY_SETUP.md) - Flex Query setup
 - [README.md](../README.md) - Project overview

@@ -1,6 +1,7 @@
 """FastAPI middleware for request tracking and metrics."""
-import time
 import logging
+import time
+
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -28,8 +29,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             logger.error(f"Error processing request: {e}")
             status_code = 500
             response = Response(
-                status_code=500,
-                content=f"Internal Server Error: {str(e)}"
+                status_code=500, content=f"Internal Server Error: {str(e)}"
             )
 
         # Calculate duration
@@ -41,7 +41,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
                 method=request.method,
                 endpoint=request.url.path,
                 status_code=status_code,
-                duration=duration
+                duration=duration,
             )
         except Exception as e:
             logger.warning(f"Error tracking metrics: {e}")

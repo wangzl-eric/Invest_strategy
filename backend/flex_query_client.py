@@ -11,16 +11,17 @@ Usage:
     client = FlexQueryClient(token="your_flex_token")
     trades = await client.fetch_trades(query_id="123456")
 """
-import logging
 import asyncio
+import logging
+import os
 import xml.etree.ElementTree as ET
-from datetime import datetime, date
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass, field
+from datetime import date, datetime
 from enum import Enum
 from io import StringIO
 from pathlib import Path
-import os
+from typing import Any, Dict, List, Optional
+
 import aiohttp
 import pandas as pd
 
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 class FlexQueryStatus(Enum):
     """Status codes from Flex Query API."""
+
     SUCCESS = "Success"
     WARN = "Warn"
     FAIL = "Fail"
@@ -37,6 +39,7 @@ class FlexQueryStatus(Enum):
 @dataclass
 class FlexTrade:
     """Parsed trade from Flex Query response."""
+
     account_id: str
     trade_id: str
     exec_id: str
@@ -70,25 +73,26 @@ class FlexTrade:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for database insertion."""
         return {
-            'account_id': self.account_id,
-            'exec_id': self.exec_id or self.trade_id,
-            'exec_time': self.trade_date,
-            'symbol': self.symbol,
-            'sec_type': self.sec_type,
-            'currency': self.currency,
-            'side': self.side,
-            'shares': abs(self.quantity),
-            'price': self.price,
-            'avg_price': self.price,
-            'cum_qty': abs(self.quantity),
-            'commission': self.commission,
-            'realized_pnl': self.realized_pnl,
+            "account_id": self.account_id,
+            "exec_id": self.exec_id or self.trade_id,
+            "exec_time": self.trade_date,
+            "symbol": self.symbol,
+            "sec_type": self.sec_type,
+            "currency": self.currency,
+            "side": self.side,
+            "shares": abs(self.quantity),
+            "price": self.price,
+            "avg_price": self.price,
+            "cum_qty": abs(self.quantity),
+            "commission": self.commission,
+            "realized_pnl": self.realized_pnl,
         }
 
 
 @dataclass
 class FlexPosition:
     """Parsed position from Flex Query response."""
+
     account_id: str
     symbol: str
     description: str
@@ -109,21 +113,22 @@ class FlexPosition:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
-            'account_id': self.account_id,
-            'symbol': self.symbol,
-            'sec_type': self.sec_type,
-            'currency': self.currency,
-            'quantity': self.quantity,
-            'avg_cost': self.cost_basis_price,
-            'market_price': self.market_price,
-            'market_value': self.market_value,
-            'unrealized_pnl': self.unrealized_pnl,
+            "account_id": self.account_id,
+            "symbol": self.symbol,
+            "sec_type": self.sec_type,
+            "currency": self.currency,
+            "quantity": self.quantity,
+            "avg_cost": self.cost_basis_price,
+            "market_price": self.market_price,
+            "market_value": self.market_value,
+            "unrealized_pnl": self.unrealized_pnl,
         }
 
 
 @dataclass
 class FlexCashTransaction:
     """Parsed cash transaction from Flex Query response."""
+
     account_id: str
     transaction_id: str
     date: datetime
@@ -136,20 +141,21 @@ class FlexCashTransaction:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
-            'account_id': self.account_id,
-            'transaction_id': self.transaction_id,
-            'date': self.date,
-            'currency': self.currency,
-            'amount': self.amount,
-            'type': self.transaction_type,
-            'description': self.description,
-            'symbol': self.symbol,
+            "account_id": self.account_id,
+            "transaction_id": self.transaction_id,
+            "date": self.date,
+            "currency": self.currency,
+            "amount": self.amount,
+            "type": self.transaction_type,
+            "description": self.description,
+            "symbol": self.symbol,
         }
 
 
 @dataclass
 class FlexQueryResult:
     """Complete result from a Flex Query."""
+
     account_id: str
     from_date: datetime
     to_date: datetime
@@ -170,6 +176,7 @@ class FlexQueryResult:
 
 class FlexQueryError(Exception):
     """Exception raised for Flex Query errors."""
+
     def __init__(self, message: str, error_code: Optional[str] = None):
         self.message = message
         self.error_code = error_code
@@ -184,7 +191,9 @@ class FlexQueryClient:
     2. Fetch statement using reference code → get XML data
     """
 
-    BASE_URL = "https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService"
+    BASE_URL = (
+        "https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService"
+    )
 
     # Retry settings
     MAX_RETRIES = 15  # Increased for CSV format (may take longer to generate)
@@ -202,22 +211,14 @@ class FlexQueryClient:
         self.token = token
         self.timeout = aiohttp.ClientTimeout(total=timeout)
 
-    async def _send_request(
-        self,
-        query_id: str,
-        session: aiohttp.ClientSession
-    ) -> str:
+    async def _send_request(self, query_id: str, session: aiohttp.ClientSession) -> str:
         """Step 1: Send request to generate report.
 
         Returns:
             Reference code to fetch the statement
         """
         url = f"{self.BASE_URL}.SendRequest"
-        params = {
-            't': self.token,
-            'q': query_id,
-            'v': '3'  # API version
-        }
+        params = {"t": self.token, "q": query_id, "v": "3"}  # API version
 
         logger.info(f"Sending Flex Query request for query_id={query_id}")
 
@@ -228,16 +229,16 @@ class FlexQueryClient:
         # Parse response XML
         root = ET.fromstring(xml_text)
 
-        status = root.find('Status')
-        if status is None or status.text != 'Success':
-            error_code = root.find('ErrorCode')
-            error_msg = root.find('ErrorMessage')
+        status = root.find("Status")
+        if status is None or status.text != "Success":
+            error_code = root.find("ErrorCode")
+            error_msg = root.find("ErrorMessage")
             raise FlexQueryError(
                 f"Flex Query request failed: {error_msg.text if error_msg is not None else 'Unknown error'}",
-                error_code.text if error_code is not None else None
+                error_code.text if error_code is not None else None,
             )
 
-        reference_code = root.find('ReferenceCode')
+        reference_code = root.find("ReferenceCode")
         if reference_code is None or not reference_code.text:
             raise FlexQueryError("No reference code in response")
 
@@ -248,7 +249,7 @@ class FlexQueryClient:
         self,
         reference_code: str,
         session: aiohttp.ClientSession,
-        prefer_csv: bool = True
+        prefer_csv: bool = True,
     ) -> str:
         """Step 2: Fetch the generated statement.
 
@@ -261,18 +262,16 @@ class FlexQueryClient:
             Statement data (XML or CSV format)
         """
         url = f"{self.BASE_URL}.GetStatement"
-        params = {
-            't': self.token,
-            'q': reference_code,
-            'v': '3'
-        }
+        params = {"t": self.token, "q": reference_code, "v": "3"}
 
         # Try to request CSV format if supported (some IBKR API versions support 'type' parameter)
         if prefer_csv:
-            params['type'] = 'CSV'  # Request CSV format
+            params["type"] = "CSV"  # Request CSV format
 
         for attempt in range(self.MAX_RETRIES):
-            logger.info(f"Fetching statement (attempt {attempt + 1}/{self.MAX_RETRIES})")
+            logger.info(
+                f"Fetching statement (attempt {attempt + 1}/{self.MAX_RETRIES})"
+            )
 
             async with session.get(url, params=params) as response:
                 response.raise_for_status()
@@ -281,8 +280,12 @@ class FlexQueryClient:
             # Check if response is CSV format (starts with column headers in quotes or comma-separated)
             # CSV can be tab-separated (TSV) or comma-separated
             is_csv = (
-                (response_text.startswith('"') and ('\t' in response_text[:200] or ',' in response_text[:200])) or
-                (len(response_text) > 100 and ',' in response_text[:200] and not response_text.strip().startswith('<'))
+                response_text.startswith('"')
+                and ("\t" in response_text[:200] or "," in response_text[:200])
+            ) or (
+                len(response_text) > 100
+                and "," in response_text[:200]
+                and not response_text.strip().startswith("<")
             )
 
             if is_csv:
@@ -290,24 +293,31 @@ class FlexQueryClient:
                 return response_text
 
             # Check if statement is XML format
-            if response_text.startswith('<FlexQueryResponse') or response_text.startswith('<FlexStatementResponse'):
+            if response_text.startswith(
+                "<FlexQueryResponse"
+            ) or response_text.startswith("<FlexStatementResponse"):
                 # IMPORTANT: XML responses can be either the final report OR a small status payload
                 # like: <Status>Warn</Status><ErrorCode>1019</ErrorCode> (still generating).
                 root = ET.fromstring(response_text)
 
-                status = root.find('.//Status') or root.find('Status')
-                error_code = root.find('.//ErrorCode') or root.find('ErrorCode')
-                error_msg = root.find('.//ErrorMessage') or root.find('ErrorMessage')
+                status = root.find(".//Status") or root.find("Status")
+                error_code = root.find(".//ErrorCode") or root.find("ErrorCode")
+                error_msg = root.find(".//ErrorMessage") or root.find("ErrorMessage")
 
                 # Hard failure
-                if status is not None and status.text == 'Fail':
+                if status is not None and status.text == "Fail":
                     raise FlexQueryError(
                         f"Statement fetch failed: {error_msg.text if error_msg is not None else 'Unknown error'}",
-                        error_code.text if error_code is not None else None
+                        error_code.text if error_code is not None else None,
                     )
 
                 # Still generating
-                if status is not None and status.text == 'Warn' and error_code is not None and error_code.text == '1019':
+                if (
+                    status is not None
+                    and status.text == "Warn"
+                    and error_code is not None
+                    and error_code.text == "1019"
+                ):
                     wait_time = self.CSV_RETRY_DELAY if prefer_csv else self.RETRY_DELAY
                     logger.info(
                         f"Statement still generating (XML Warn 1019; waiting for report), waiting {wait_time}s..."
@@ -322,20 +332,26 @@ class FlexQueryClient:
             # Check if still generating (small XML response with status)
             try:
                 root = ET.fromstring(response_text)
-                status = root.find('Status')
-                if status is not None and status.text == 'Warn':
-                    error_code = root.find('ErrorCode')
-                    if error_code is not None and error_code.text == '1019':
+                status = root.find("Status")
+                if status is not None and status.text == "Warn":
+                    error_code = root.find("ErrorCode")
+                    if error_code is not None and error_code.text == "1019":
                         # Statement still being generated - wait longer if we prefer CSV
-                        wait_time = self.CSV_RETRY_DELAY if prefer_csv else self.RETRY_DELAY
-                        logger.info(f"Statement still generating (waiting for CSV format), waiting {wait_time}s...")
+                        wait_time = (
+                            self.CSV_RETRY_DELAY if prefer_csv else self.RETRY_DELAY
+                        )
+                        logger.info(
+                            f"Statement still generating (waiting for CSV format), waiting {wait_time}s..."
+                        )
                         await asyncio.sleep(wait_time)
                         continue
                     # Other warning - log it
-                    error_msg = root.find('ErrorMessage')
-                    logger.warning(f"Flex Query warning: {error_msg.text if error_msg is not None else 'Unknown'}")
-                elif status is not None and status.text == 'Fail':
-                    error_msg = root.find('ErrorMessage')
+                    error_msg = root.find("ErrorMessage")
+                    logger.warning(
+                        f"Flex Query warning: {error_msg.text if error_msg is not None else 'Unknown'}"
+                    )
+                elif status is not None and status.text == "Fail":
+                    error_msg = root.find("ErrorMessage")
                     raise FlexQueryError(
                         f"Statement fetch failed: {error_msg.text if error_msg is not None else 'Unknown error'}"
                     )
@@ -343,14 +359,20 @@ class FlexQueryClient:
                 # Not XML - might be CSV or other format
                 # If it's a substantial response (not a small error message), accept it
                 if len(response_text) > 500:
-                    logger.info(f"Statement retrieved (non-XML format, {len(response_text)} bytes)")
+                    logger.info(
+                        f"Statement retrieved (non-XML format, {len(response_text)} bytes)"
+                    )
                     return response_text
 
             # Unexpected response
-            logger.warning(f"Unexpected response ({len(response_text)} bytes), retrying in {self.RETRY_DELAY}s...")
+            logger.warning(
+                f"Unexpected response ({len(response_text)} bytes), retrying in {self.RETRY_DELAY}s..."
+            )
             await asyncio.sleep(self.RETRY_DELAY)
 
-        raise FlexQueryError(f"Failed to fetch statement after {self.MAX_RETRIES} attempts")
+        raise FlexQueryError(
+            f"Failed to fetch statement after {self.MAX_RETRIES} attempts"
+        )
 
     def _parse_date(self, date_str: Optional[str]) -> Optional[datetime]:
         """Parse date string from Flex Query."""
@@ -359,10 +381,10 @@ class FlexQueryClient:
 
         # Try different formats
         formats = [
-            '%Y%m%d',           # 20231215
-            '%Y-%m-%d',         # 2023-12-15
-            '%Y%m%d;%H%M%S',    # 20231215;143052
-            '%Y-%m-%d %H:%M:%S' # 2023-12-15 14:30:52
+            "%Y%m%d",  # 20231215
+            "%Y-%m-%d",  # 2023-12-15
+            "%Y%m%d;%H%M%S",  # 20231215;143052
+            "%Y-%m-%d %H:%M:%S",  # 2023-12-15 14:30:52
         ]
 
         for fmt in formats:
@@ -376,7 +398,7 @@ class FlexQueryClient:
 
     def _parse_float(self, value: Optional[str]) -> float:
         """Parse float value, handling empty strings."""
-        if not value or value.strip() == '':
+        if not value or value.strip() == "":
             return 0.0
         try:
             return float(value)
@@ -388,51 +410,54 @@ class FlexQueryClient:
         trades = []
 
         # Find all Trade elements (may be nested under Trades or directly under FlexStatement)
-        for trade_elem in root.findall('.//Trade'):
+        for trade_elem in root.findall(".//Trade"):
             try:
                 # Get trade attributes
                 attrs = trade_elem.attrib
 
                 # Skip if not a trade execution
-                level_of_detail = attrs.get('levelOfDetail', '')
-                if level_of_detail and level_of_detail not in ['EXECUTION', 'ORDER']:
+                level_of_detail = attrs.get("levelOfDetail", "")
+                if level_of_detail and level_of_detail not in ["EXECUTION", "ORDER"]:
                     continue
 
                 trade = FlexTrade(
-                    account_id=attrs.get('accountId', account_id),
-                    trade_id=attrs.get('tradeID', ''),
-                    exec_id=attrs.get('ibExecID', attrs.get('tradeID', '')),
-                    symbol=attrs.get('symbol', ''),
-                    description=attrs.get('description', ''),
-                    sec_type=attrs.get('assetCategory', 'STK'),
-                    currency=attrs.get('currency', 'USD'),
-                    exchange=attrs.get('exchange', ''),
-                    trade_date=self._parse_date(attrs.get('tradeDate')) or datetime.now(),
-                    settle_date=self._parse_date(attrs.get('settleDateTarget')),
-                    trade_time=attrs.get('tradeTime'),
-                    side='BUY' if self._parse_float(attrs.get('quantity', '0')) > 0 else 'SELL',
-                    quantity=self._parse_float(attrs.get('quantity', '0')),
-                    price=self._parse_float(attrs.get('tradePrice', '0')),
-                    proceeds=self._parse_float(attrs.get('proceeds', '0')),
-                    commission=self._parse_float(attrs.get('ibCommission', '0')),
-                    tax=self._parse_float(attrs.get('taxes', '0')),
-                    cost_basis=self._parse_float(attrs.get('cost', '0')),
-                    realized_pnl=self._parse_float(attrs.get('fifoPnlRealized', '0')),
-                    order_type=attrs.get('orderType'),
-                    asset_category=attrs.get('assetCategory'),
-                    underlying_symbol=attrs.get('underlyingSymbol'),
-                    multiplier=self._parse_float(attrs.get('multiplier', '1')) or 1.0,
+                    account_id=attrs.get("accountId", account_id),
+                    trade_id=attrs.get("tradeID", ""),
+                    exec_id=attrs.get("ibExecID", attrs.get("tradeID", "")),
+                    symbol=attrs.get("symbol", ""),
+                    description=attrs.get("description", ""),
+                    sec_type=attrs.get("assetCategory", "STK"),
+                    currency=attrs.get("currency", "USD"),
+                    exchange=attrs.get("exchange", ""),
+                    trade_date=self._parse_date(attrs.get("tradeDate"))
+                    or datetime.now(),
+                    settle_date=self._parse_date(attrs.get("settleDateTarget")),
+                    trade_time=attrs.get("tradeTime"),
+                    side="BUY"
+                    if self._parse_float(attrs.get("quantity", "0")) > 0
+                    else "SELL",
+                    quantity=self._parse_float(attrs.get("quantity", "0")),
+                    price=self._parse_float(attrs.get("tradePrice", "0")),
+                    proceeds=self._parse_float(attrs.get("proceeds", "0")),
+                    commission=self._parse_float(attrs.get("ibCommission", "0")),
+                    tax=self._parse_float(attrs.get("taxes", "0")),
+                    cost_basis=self._parse_float(attrs.get("cost", "0")),
+                    realized_pnl=self._parse_float(attrs.get("fifoPnlRealized", "0")),
+                    order_type=attrs.get("orderType"),
+                    asset_category=attrs.get("assetCategory"),
+                    underlying_symbol=attrs.get("underlyingSymbol"),
+                    multiplier=self._parse_float(attrs.get("multiplier", "1")) or 1.0,
                 )
 
                 # Combine trade date and time if available
                 if trade.trade_time and trade.trade_date:
                     try:
-                        time_parts = trade.trade_time.split(':')
+                        time_parts = trade.trade_time.split(":")
                         if len(time_parts) >= 2:
                             trade.trade_date = trade.trade_date.replace(
                                 hour=int(time_parts[0]),
                                 minute=int(time_parts[1]),
-                                second=int(time_parts[2]) if len(time_parts) > 2 else 0
+                                second=int(time_parts[2]) if len(time_parts) > 2 else 0,
                             )
                     except (ValueError, IndexError):
                         pass
@@ -450,25 +475,32 @@ class FlexQueryClient:
         """Parse positions from Flex Query XML."""
         positions = []
 
-        for pos_elem in root.findall('.//OpenPosition'):
+        for pos_elem in root.findall(".//OpenPosition"):
             try:
                 attrs = pos_elem.attrib
 
                 position = FlexPosition(
-                    account_id=attrs.get('accountId', account_id),
-                    symbol=attrs.get('symbol', ''),
-                    description=attrs.get('description', ''),
-                    sec_type=attrs.get('assetCategory', 'STK'),
-                    currency=attrs.get('currency', 'USD'),
-                    quantity=self._parse_float(attrs.get('position', '0')),
-                    cost_basis_price=self._parse_float(attrs.get('costBasisPrice', '0')),
-                    cost_basis_money=self._parse_float(attrs.get('costBasisMoney', '0')),
-                    market_price=self._parse_float(attrs.get('markPrice', '0')),
-                    market_value=self._parse_float(attrs.get('positionValue', '0')),
-                    unrealized_pnl=self._parse_float(attrs.get('fifoPnlUnrealized', '0')),
-                    realized_pnl=self._parse_float(attrs.get('fifoPnlRealized', '0')),
-                    report_date=self._parse_date(attrs.get('reportDate')) or datetime.now(),
-                    asset_category=attrs.get('assetCategory'),
+                    account_id=attrs.get("accountId", account_id),
+                    symbol=attrs.get("symbol", ""),
+                    description=attrs.get("description", ""),
+                    sec_type=attrs.get("assetCategory", "STK"),
+                    currency=attrs.get("currency", "USD"),
+                    quantity=self._parse_float(attrs.get("position", "0")),
+                    cost_basis_price=self._parse_float(
+                        attrs.get("costBasisPrice", "0")
+                    ),
+                    cost_basis_money=self._parse_float(
+                        attrs.get("costBasisMoney", "0")
+                    ),
+                    market_price=self._parse_float(attrs.get("markPrice", "0")),
+                    market_value=self._parse_float(attrs.get("positionValue", "0")),
+                    unrealized_pnl=self._parse_float(
+                        attrs.get("fifoPnlUnrealized", "0")
+                    ),
+                    realized_pnl=self._parse_float(attrs.get("fifoPnlRealized", "0")),
+                    report_date=self._parse_date(attrs.get("reportDate"))
+                    or datetime.now(),
+                    asset_category=attrs.get("assetCategory"),
                 )
 
                 positions.append(position)
@@ -480,23 +512,28 @@ class FlexQueryClient:
         logger.info(f"Parsed {len(positions)} positions from Flex Query")
         return positions
 
-    def _parse_cash_transactions(self, root: ET.Element, account_id: str) -> List[FlexCashTransaction]:
+    def _parse_cash_transactions(
+        self, root: ET.Element, account_id: str
+    ) -> List[FlexCashTransaction]:
         """Parse cash transactions from Flex Query XML."""
         transactions = []
 
-        for trans_elem in root.findall('.//CashTransaction'):
+        for trans_elem in root.findall(".//CashTransaction"):
             try:
                 attrs = trans_elem.attrib
 
                 transaction = FlexCashTransaction(
-                    account_id=attrs.get('accountId', account_id),
-                    transaction_id=attrs.get('transactionID', ''),
-                    date=self._parse_date(attrs.get('dateTime') or attrs.get('reportDate')) or datetime.now(),
-                    currency=attrs.get('currency', 'USD'),
-                    amount=self._parse_float(attrs.get('amount', '0')),
-                    transaction_type=attrs.get('type', ''),
-                    description=attrs.get('description', ''),
-                    symbol=attrs.get('symbol'),
+                    account_id=attrs.get("accountId", account_id),
+                    transaction_id=attrs.get("transactionID", ""),
+                    date=self._parse_date(
+                        attrs.get("dateTime") or attrs.get("reportDate")
+                    )
+                    or datetime.now(),
+                    currency=attrs.get("currency", "USD"),
+                    amount=self._parse_float(attrs.get("amount", "0")),
+                    transaction_type=attrs.get("type", ""),
+                    description=attrs.get("description", ""),
+                    symbol=attrs.get("symbol"),
                 )
 
                 transactions.append(transaction)
@@ -513,19 +550,19 @@ class FlexQueryClient:
         info = {}
 
         # Look for EquitySummaryInBase or similar elements
-        equity_elem = root.find('.//EquitySummaryInBase')
+        equity_elem = root.find(".//EquitySummaryInBase")
         if equity_elem is not None:
             attrs = equity_elem.attrib
-            info['net_liquidation'] = self._parse_float(attrs.get('total', '0'))
-            info['cash'] = self._parse_float(attrs.get('cash', '0'))
+            info["net_liquidation"] = self._parse_float(attrs.get("total", "0"))
+            info["cash"] = self._parse_float(attrs.get("cash", "0"))
 
         # Also check AccountInformation
-        account_elem = root.find('.//AccountInformation')
+        account_elem = root.find(".//AccountInformation")
         if account_elem is not None:
             attrs = account_elem.attrib
-            info['account_id'] = attrs.get('accountId', '')
-            info['account_type'] = attrs.get('accountType', '')
-            info['currency'] = attrs.get('currency', 'USD')
+            info["account_id"] = attrs.get("accountId", "")
+            info["account_type"] = attrs.get("accountType", "")
+            info["currency"] = attrs.get("currency", "USD")
 
         return info
 
@@ -534,65 +571,100 @@ class FlexQueryClient:
         # CSV/TSV format typically starts with column headers
         # XML format starts with <?xml or <FlexQueryResponse or <FlexStatementResponse
         text = text.strip()
-        return not (text.startswith('<?xml') or
-                   text.startswith('<FlexQueryResponse') or
-                   text.startswith('<FlexStatementResponse') or
-                   text.startswith('<FlexStatement'))
+        return not (
+            text.startswith("<?xml")
+            or text.startswith("<FlexQueryResponse")
+            or text.startswith("<FlexStatementResponse")
+            or text.startswith("<FlexStatement")
+        )
 
     def _parse_csv_trades(self, df: pd.DataFrame, account_id: str) -> List[FlexTrade]:
         """Parse trades from CSV DataFrame."""
         trades = []
 
         # Find rows that look like trades (have TradeID or Symbol columns)
-        trade_cols = ['Symbol', 'TradeID', 'IBExecID', 'Buy/Sell', 'Quantity', 'TradePrice']
+        trade_cols = [
+            "Symbol",
+            "TradeID",
+            "IBExecID",
+            "Buy/Sell",
+            "Quantity",
+            "TradePrice",
+        ]
 
         # Check if this looks like a trade section
-        if not any(col in df.columns for col in ['Symbol', 'TradeID']):
+        if not any(col in df.columns for col in ["Symbol", "TradeID"]):
             return trades
 
         for _, row in df.iterrows():
             try:
                 # Skip rows without essential trade data
-                symbol = str(row.get('Symbol', '')).strip()
-                if not symbol or symbol == 'nan' or symbol == 'Symbol':
+                symbol = str(row.get("Symbol", "")).strip()
+                if not symbol or symbol == "nan" or symbol == "Symbol":
                     continue
 
                 # Parse trade date
-                trade_date_str = str(row.get('TradeDate', row.get('DateTime', row.get('Date', ''))))
+                trade_date_str = str(
+                    row.get("TradeDate", row.get("DateTime", row.get("Date", "")))
+                )
                 trade_date = self._parse_date(trade_date_str) or datetime.now()
 
                 # Determine side from Buy/Sell or quantity sign
-                buy_sell = str(row.get('Buy/Sell', '')).upper()
-                quantity = self._parse_float(str(row.get('Quantity', '0')))
-                if buy_sell in ['BUY', 'B']:
-                    side = 'BUY'
-                elif buy_sell in ['SELL', 'S']:
-                    side = 'SELL'
+                buy_sell = str(row.get("Buy/Sell", "")).upper()
+                quantity = self._parse_float(str(row.get("Quantity", "0")))
+                if buy_sell in ["BUY", "B"]:
+                    side = "BUY"
+                elif buy_sell in ["SELL", "S"]:
+                    side = "SELL"
                 else:
-                    side = 'BUY' if quantity > 0 else 'SELL'
+                    side = "BUY" if quantity > 0 else "SELL"
 
                 trade = FlexTrade(
-                    account_id=str(row.get('ClientAccountID', row.get('AccountId', account_id))),
-                    trade_id=str(row.get('TradeID', '')),
-                    exec_id=str(row.get('IBExecID', row.get('ExecID', row.get('TradeID', '')))),
+                    account_id=str(
+                        row.get("ClientAccountID", row.get("AccountId", account_id))
+                    ),
+                    trade_id=str(row.get("TradeID", "")),
+                    exec_id=str(
+                        row.get("IBExecID", row.get("ExecID", row.get("TradeID", "")))
+                    ),
                     symbol=symbol,
-                    description=str(row.get('Description', '')),
-                    sec_type=str(row.get('AssetClass', row.get('AssetCategory', 'STK'))),
-                    currency=str(row.get('CurrencyPrimary', row.get('Currency', 'USD'))),
-                    exchange=str(row.get('Exchange', row.get('ListingExchange', ''))),
+                    description=str(row.get("Description", "")),
+                    sec_type=str(
+                        row.get("AssetClass", row.get("AssetCategory", "STK"))
+                    ),
+                    currency=str(
+                        row.get("CurrencyPrimary", row.get("Currency", "USD"))
+                    ),
+                    exchange=str(row.get("Exchange", row.get("ListingExchange", ""))),
                     trade_date=trade_date,
-                    settle_date=self._parse_date(str(row.get('SettleDateTarget', ''))),
-                    trade_time=str(row.get('TradeTime', '')),
+                    settle_date=self._parse_date(str(row.get("SettleDateTarget", ""))),
+                    trade_time=str(row.get("TradeTime", "")),
                     side=side,
                     quantity=quantity,
-                    price=self._parse_float(str(row.get('TradePrice', row.get('Price', '0')))),
-                    proceeds=self._parse_float(str(row.get('Proceeds', '0'))),
-                    commission=self._parse_float(str(row.get('IBCommission', row.get('Commission', row.get('Commissions', '0'))))),
-                    tax=self._parse_float(str(row.get('Taxes', '0'))),
-                    cost_basis=self._parse_float(str(row.get('CostBasis', row.get('Cost', '0')))),
-                    realized_pnl=self._parse_float(str(row.get('FifoPnlRealized', row.get('RealizedPnl', '0')))),
-                    asset_category=str(row.get('AssetClass', row.get('AssetCategory', ''))),
-                    multiplier=self._parse_float(str(row.get('Multiplier', '1'))) or 1.0,
+                    price=self._parse_float(
+                        str(row.get("TradePrice", row.get("Price", "0")))
+                    ),
+                    proceeds=self._parse_float(str(row.get("Proceeds", "0"))),
+                    commission=self._parse_float(
+                        str(
+                            row.get(
+                                "IBCommission",
+                                row.get("Commission", row.get("Commissions", "0")),
+                            )
+                        )
+                    ),
+                    tax=self._parse_float(str(row.get("Taxes", "0"))),
+                    cost_basis=self._parse_float(
+                        str(row.get("CostBasis", row.get("Cost", "0")))
+                    ),
+                    realized_pnl=self._parse_float(
+                        str(row.get("FifoPnlRealized", row.get("RealizedPnl", "0")))
+                    ),
+                    asset_category=str(
+                        row.get("AssetClass", row.get("AssetCategory", ""))
+                    ),
+                    multiplier=self._parse_float(str(row.get("Multiplier", "1")))
+                    or 1.0,
                 )
 
                 trades.append(trade)
@@ -604,40 +676,70 @@ class FlexQueryClient:
         logger.info(f"Parsed {len(trades)} trades from CSV")
         return trades
 
-    def _parse_csv_positions(self, df: pd.DataFrame, account_id: str) -> List[FlexPosition]:
+    def _parse_csv_positions(
+        self, df: pd.DataFrame, account_id: str
+    ) -> List[FlexPosition]:
         """Parse positions from CSV DataFrame."""
         positions = []
 
         # Check for position-related columns
-        position_indicators = ['CloseQuantity', 'Position', 'Quantity', 'ClosePrice']
+        position_indicators = ["CloseQuantity", "Position", "Quantity", "ClosePrice"]
         if not any(col in df.columns for col in position_indicators):
             return positions
 
         for _, row in df.iterrows():
             try:
-                symbol = str(row.get('Symbol', '')).strip()
-                if not symbol or symbol == 'nan' or symbol == 'Symbol':
+                symbol = str(row.get("Symbol", "")).strip()
+                if not symbol or symbol == "nan" or symbol == "Symbol":
                     continue
 
-                quantity = self._parse_float(str(row.get('CloseQuantity', row.get('Position', row.get('Quantity', '0')))))
+                quantity = self._parse_float(
+                    str(
+                        row.get(
+                            "CloseQuantity",
+                            row.get("Position", row.get("Quantity", "0")),
+                        )
+                    )
+                )
                 if quantity == 0:
                     continue
 
                 position = FlexPosition(
-                    account_id=str(row.get('ClientAccountID', row.get('AccountId', account_id))),
+                    account_id=str(
+                        row.get("ClientAccountID", row.get("AccountId", account_id))
+                    ),
                     symbol=symbol,
-                    description=str(row.get('Description', '')),
-                    sec_type=str(row.get('AssetClass', row.get('AssetCategory', 'STK'))),
-                    currency=str(row.get('CurrencyPrimary', row.get('Currency', 'USD'))),
+                    description=str(row.get("Description", "")),
+                    sec_type=str(
+                        row.get("AssetClass", row.get("AssetCategory", "STK"))
+                    ),
+                    currency=str(
+                        row.get("CurrencyPrimary", row.get("Currency", "USD"))
+                    ),
                     quantity=quantity,
-                    cost_basis_price=self._parse_float(str(row.get('CostBasisPrice', '0'))),
-                    cost_basis_money=self._parse_float(str(row.get('CostBasisMoney', '0'))),
-                    market_price=self._parse_float(str(row.get('ClosePrice', row.get('MarkPrice', '0')))),
-                    market_value=self._parse_float(str(row.get('PositionValue', row.get('Value', '0')))),
-                    unrealized_pnl=self._parse_float(str(row.get('FifoPnlUnrealized', row.get('UnrealizedPnl', '0')))),
-                    realized_pnl=self._parse_float(str(row.get('FifoPnlRealized', row.get('RealizedPnl', '0')))),
-                    report_date=self._parse_date(str(row.get('ReportDate', ''))) or datetime.now(),
-                    asset_category=str(row.get('AssetClass', row.get('AssetCategory', ''))),
+                    cost_basis_price=self._parse_float(
+                        str(row.get("CostBasisPrice", "0"))
+                    ),
+                    cost_basis_money=self._parse_float(
+                        str(row.get("CostBasisMoney", "0"))
+                    ),
+                    market_price=self._parse_float(
+                        str(row.get("ClosePrice", row.get("MarkPrice", "0")))
+                    ),
+                    market_value=self._parse_float(
+                        str(row.get("PositionValue", row.get("Value", "0")))
+                    ),
+                    unrealized_pnl=self._parse_float(
+                        str(row.get("FifoPnlUnrealized", row.get("UnrealizedPnl", "0")))
+                    ),
+                    realized_pnl=self._parse_float(
+                        str(row.get("FifoPnlRealized", row.get("RealizedPnl", "0")))
+                    ),
+                    report_date=self._parse_date(str(row.get("ReportDate", "")))
+                    or datetime.now(),
+                    asset_category=str(
+                        row.get("AssetClass", row.get("AssetCategory", ""))
+                    ),
                 )
 
                 positions.append(position)
@@ -657,7 +759,7 @@ class FlexQueryClient:
         trades = []
         positions = []
         cash_transactions = []
-        account_id = ''
+        account_id = ""
         from_date = datetime.now()
         to_date = datetime.now()
         net_liquidation = None
@@ -665,7 +767,7 @@ class FlexQueryClient:
 
         # Split by double newlines or detect section breaks
         # IBKR CSV often has multiple tables concatenated
-        lines = csv_text.strip().split('\n')
+        lines = csv_text.strip().split("\n")
 
         current_section_lines = []
         sections = []
@@ -674,16 +776,18 @@ class FlexQueryClient:
             # Detect new section (new header row)
             if line.startswith('"') and '\t"' in line and current_section_lines:
                 # Check if this looks like a new header
-                if current_section_lines and not current_section_lines[-1].startswith('"ClientAccountID'):
+                if current_section_lines and not current_section_lines[-1].startswith(
+                    '"ClientAccountID'
+                ):
                     # Save current section
                     if current_section_lines:
-                        sections.append('\n'.join(current_section_lines))
+                        sections.append("\n".join(current_section_lines))
                     current_section_lines = []
             current_section_lines.append(line)
 
         # Don't forget the last section
         if current_section_lines:
-            sections.append('\n'.join(current_section_lines))
+            sections.append("\n".join(current_section_lines))
 
         # If no clear sections, treat the whole thing as one
         if not sections:
@@ -694,7 +798,7 @@ class FlexQueryClient:
             try:
                 # Try to read as TSV first, then CSV
                 try:
-                    df = pd.read_csv(StringIO(section_text), sep='\t', dtype=str)
+                    df = pd.read_csv(StringIO(section_text), sep="\t", dtype=str)
                 except:
                     df = pd.read_csv(StringIO(section_text), dtype=str)
 
@@ -702,21 +806,35 @@ class FlexQueryClient:
                     continue
 
                 # Extract account ID from first row if available
-                if 'ClientAccountID' in df.columns and not account_id:
-                    first_account = df['ClientAccountID'].dropna().iloc[0] if len(df) > 0 else ''
-                    if first_account and str(first_account) != 'nan':
+                if "ClientAccountID" in df.columns and not account_id:
+                    first_account = (
+                        df["ClientAccountID"].dropna().iloc[0] if len(df) > 0 else ""
+                    )
+                    if first_account and str(first_account) != "nan":
                         account_id = str(first_account)
 
                 # Extract date range
-                if 'FromDate' in df.columns and 'ToDate' in df.columns:
-                    from_date_str = df['FromDate'].dropna().iloc[0] if len(df['FromDate'].dropna()) > 0 else ''
-                    to_date_str = df['ToDate'].dropna().iloc[0] if len(df['ToDate'].dropna()) > 0 else ''
+                if "FromDate" in df.columns and "ToDate" in df.columns:
+                    from_date_str = (
+                        df["FromDate"].dropna().iloc[0]
+                        if len(df["FromDate"].dropna()) > 0
+                        else ""
+                    )
+                    to_date_str = (
+                        df["ToDate"].dropna().iloc[0]
+                        if len(df["ToDate"].dropna()) > 0
+                        else ""
+                    )
                     from_date = self._parse_date(str(from_date_str)) or from_date
                     to_date = self._parse_date(str(to_date_str)) or to_date
 
                 # Extract net liquidation if available
-                if 'EndingValue' in df.columns:
-                    ending_val = df['EndingValue'].dropna().iloc[0] if len(df['EndingValue'].dropna()) > 0 else '0'
+                if "EndingValue" in df.columns:
+                    ending_val = (
+                        df["EndingValue"].dropna().iloc[0]
+                        if len(df["EndingValue"].dropna()) > 0
+                        else "0"
+                    )
                     net_liquidation = self._parse_float(str(ending_val))
 
                 # Parse trades from this section
@@ -744,7 +862,9 @@ class FlexQueryClient:
             raw_xml=csv_text,
         )
 
-        logger.info(f"Parsed CSV statement: {len(trades)} trades, {len(positions)} positions")
+        logger.info(
+            f"Parsed CSV statement: {len(trades)} trades, {len(positions)} positions"
+        )
         return result
 
     def parse_statement(self, response_text: str) -> FlexQueryResult:
@@ -766,13 +886,13 @@ class FlexQueryClient:
         root = ET.fromstring(response_text)
 
         # Get statement info
-        statement = root.find('.//FlexStatement') or root
-        attrs = statement.attrib if hasattr(statement, 'attrib') else {}
+        statement = root.find(".//FlexStatement") or root
+        attrs = statement.attrib if hasattr(statement, "attrib") else {}
 
-        account_id = attrs.get('accountId', '')
-        from_date = self._parse_date(attrs.get('fromDate')) or datetime.now()
-        to_date = self._parse_date(attrs.get('toDate')) or datetime.now()
-        generated_at = self._parse_date(attrs.get('whenGenerated')) or datetime.now()
+        account_id = attrs.get("accountId", "")
+        from_date = self._parse_date(attrs.get("fromDate")) or datetime.now()
+        to_date = self._parse_date(attrs.get("toDate")) or datetime.now()
+        generated_at = self._parse_date(attrs.get("whenGenerated")) or datetime.now()
 
         # Parse all sections
         trades = self._parse_trades(root, account_id)
@@ -781,15 +901,15 @@ class FlexQueryClient:
         account_info = self._parse_account_info(root)
 
         result = FlexQueryResult(
-            account_id=account_id or account_info.get('account_id', ''),
+            account_id=account_id or account_info.get("account_id", ""),
             from_date=from_date,
             to_date=to_date,
             generated_at=generated_at,
             trades=trades,
             positions=positions,
             cash_transactions=cash_transactions,
-            net_liquidation=account_info.get('net_liquidation'),
-            total_cash=account_info.get('cash'),
+            net_liquidation=account_info.get("net_liquidation"),
+            total_cash=account_info.get("cash"),
             raw_xml=response_text,
         )
 
@@ -800,7 +920,7 @@ class FlexQueryClient:
         response_text: str,
         query_id: str,
         query_name: str = "",
-        query_type: str = "activity"
+        query_type: str = "activity",
     ) -> Optional[Path]:
         """Save the raw Flex Query response to a file.
 
@@ -830,13 +950,17 @@ class FlexQueryClient:
             timestamp = datetime.now().strftime("%H%M%S")
 
             # Sanitize query name for filename (replace spaces/special chars)
-            safe_name = query_name.replace(" ", "_").replace("/", "-") if query_name else query_id
+            safe_name = (
+                query_name.replace(" ", "_").replace("/", "-")
+                if query_name
+                else query_id
+            )
             safe_name = "".join(c for c in safe_name if c.isalnum() or c in "_-")
 
             # Determine file extension based on content
-            if response_text.strip().startswith('"') or '\t' in response_text[:100]:
+            if response_text.strip().startswith('"') or "\t" in response_text[:100]:
                 ext = "csv"
-            elif response_text.strip().startswith('<'):
+            elif response_text.strip().startswith("<"):
                 ext = "xml"
             else:
                 ext = "txt"
@@ -845,7 +969,7 @@ class FlexQueryClient:
             filepath = data_dir / filename
 
             # Save the file
-            with open(filepath, 'w', encoding='utf-8') as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 f.write(response_text)
 
             logger.info(f"Saved Flex Query response to: {filepath}")
@@ -860,7 +984,7 @@ class FlexQueryClient:
         query_id: str,
         query_name: str = "",
         query_type: str = "activity",
-        save_raw: bool = True
+        save_raw: bool = True,
     ) -> FlexQueryResult:
         """Fetch and parse a Flex Query statement.
 
@@ -879,13 +1003,23 @@ class FlexQueryClient:
 
             # Wait a bit before fetching
             # For mark-to-market queries, wait longer as CSV generation may take more time
-            wait_time = self.STATEMENT_READY_WAIT * 2 if query_type == "mark-to-market" else self.STATEMENT_READY_WAIT
-            logger.info(f"Waiting {wait_time}s for statement generation (query_type={query_type})...")
+            wait_time = (
+                self.STATEMENT_READY_WAIT * 2
+                if query_type == "mark-to-market"
+                else self.STATEMENT_READY_WAIT
+            )
+            logger.info(
+                f"Waiting {wait_time}s for statement generation (query_type={query_type})..."
+            )
             await asyncio.sleep(wait_time)
 
             # Step 2: Fetch the statement (prefer CSV format, especially for mark-to-market)
-            prefer_csv = query_type == "mark-to-market"  # Always prefer CSV for mark-to-market queries
-            response_text = await self._get_statement(reference_code, session, prefer_csv=prefer_csv)
+            prefer_csv = (
+                query_type == "mark-to-market"
+            )  # Always prefer CSV for mark-to-market queries
+            response_text = await self._get_statement(
+                reference_code, session, prefer_csv=prefer_csv
+            )
 
             # Step 3: Save the raw response if requested
             saved_path = None
@@ -894,7 +1028,7 @@ class FlexQueryClient:
                     response_text,
                     query_id,
                     query_name=query_name,
-                    query_type=query_type
+                    query_type=query_type,
                 )
 
             # Step 4: Parse the statement

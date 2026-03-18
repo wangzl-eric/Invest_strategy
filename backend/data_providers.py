@@ -1,8 +1,9 @@
 """Data provider interfaces for market data from multiple sources."""
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Dict, Optional, Callable
 from datetime import datetime, timedelta
+from typing import Callable, Dict, List, Optional
+
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ class MarketDataProvider(ABC):
         symbol: str,
         start_date: datetime,
         end_date: datetime,
-        interval: str = "1d"
+        interval: str = "1d",
     ) -> pd.DataFrame:
         """Get historical price data."""
         pass
@@ -39,6 +40,7 @@ class YahooFinanceProvider(MarketDataProvider):
     def __init__(self):
         try:
             import yfinance as yf
+
             self.yf = yf
         except ImportError:
             logger.error("yfinance not installed")
@@ -49,7 +51,7 @@ class YahooFinanceProvider(MarketDataProvider):
         symbol: str,
         start_date: datetime,
         end_date: datetime,
-        interval: str = "1d"
+        interval: str = "1d",
     ) -> pd.DataFrame:
         """Get historical data from Yahoo Finance."""
         if not self.yf:
@@ -126,6 +128,7 @@ class IBKRProvider(MarketDataProvider):
         """Get or create the IBKR client."""
         if self._client is None:
             from backend.ibkr_client import IBKRClient
+
             self._client = IBKRClient()
         return self._client
 
@@ -139,7 +142,7 @@ class IBKRProvider(MarketDataProvider):
         symbol: str,
         start_date: datetime,
         end_date: datetime,
-        interval: str = "1d"
+        interval: str = "1d",
     ) -> pd.DataFrame:
         """Get historical data from IBKR.
 
@@ -175,12 +178,38 @@ class IBKRProvider(MarketDataProvider):
         exchange = "SMART"
 
         # Check if it's forex (contains / or is a currency pair)
-        if "/" in symbol or symbol in ["EURUSD", "GBPUSD", "USDJPY", "USDCAD", "USDCHF", "AUDUSD", "NZDUSD"]:
+        if "/" in symbol or symbol in [
+            "EURUSD",
+            "GBPUSD",
+            "USDJPY",
+            "USDCAD",
+            "USDCHF",
+            "AUDUSD",
+            "NZDUSD",
+        ]:
             sec_type = "CASH"
             exchange = "IDEALPRO"
 
         # Check if it's a futures symbol
-        futures_symbols = ["ES", "NQ", "YM", "RTY", "CL", "GC", "SI", "NG", "ZB", "ZN", "ZF", "ZT", "HE", "LE", "ZS", "ZM", "ZO"]
+        futures_symbols = [
+            "ES",
+            "NQ",
+            "YM",
+            "RTY",
+            "CL",
+            "GC",
+            "SI",
+            "NG",
+            "ZB",
+            "ZN",
+            "ZF",
+            "ZT",
+            "HE",
+            "LE",
+            "ZS",
+            "ZM",
+            "ZO",
+        ]
         if symbol in futures_symbols:
             sec_type = "FUT"
             exchange = "CME"
@@ -191,7 +220,9 @@ class IBKRProvider(MarketDataProvider):
             if loop.is_running():
                 # If we're in an async context, we need to handle differently
                 # For now, return empty and let caller use async version
-                logger.warning("IBKRProvider.get_historical_data called in async context - use async version instead")
+                logger.warning(
+                    "IBKRProvider.get_historical_data called in async context - use async version instead"
+                )
                 return pd.DataFrame()
 
             client = self._get_client()
@@ -203,7 +234,7 @@ class IBKRProvider(MarketDataProvider):
                     duration=duration,
                     interval=ibkr_interval,
                     start_date=start_date,
-                    end_date=end_date
+                    end_date=end_date,
                 )
             )
             return result
@@ -225,14 +256,24 @@ class IBKRProvider(MarketDataProvider):
         sec_type = "STK"
         exchange = "SMART"
 
-        if "/" in symbol or symbol in ["EURUSD", "GBPUSD", "USDJPY", "USDCAD", "USDCHF", "AUDUSD", "NZDUSD"]:
+        if "/" in symbol or symbol in [
+            "EURUSD",
+            "GBPUSD",
+            "USDJPY",
+            "USDCAD",
+            "USDCHF",
+            "AUDUSD",
+            "NZDUSD",
+        ]:
             sec_type = "CASH"
             exchange = "IDEALPRO"
 
         try:
             loop = asyncio.get_event_loop()
             if loop.is_running():
-                logger.warning("IBKRProvider.get_quote called in async context - use async version instead")
+                logger.warning(
+                    "IBKRProvider.get_quote called in async context - use async version instead"
+                )
                 return {}
 
             client = self._get_client()
@@ -264,7 +305,7 @@ class IBKRProvider(MarketDataProvider):
             "8h": "8 hours",
             "1d": "1 day",
             "1w": "1 week",
-            "1mo": "1 month"
+            "1mo": "1 month",
         }
         return interval_map.get(interval.lower(), "1 day")
 
@@ -273,7 +314,7 @@ class IBKRProvider(MarketDataProvider):
         symbol: str,
         start_date: datetime,
         end_date: datetime,
-        interval: str = "1d"
+        interval: str = "1d",
     ) -> pd.DataFrame:
         """Async version of get_historical_data."""
         if not await self._ensure_connected():
@@ -297,7 +338,15 @@ class IBKRProvider(MarketDataProvider):
         sec_type = "STK"
         exchange = "SMART"
 
-        if "/" in symbol or symbol in ["EURUSD", "GBPUSD", "USDJPY", "USDCAD", "USDCHF", "AUDUSD", "NZDUSD"]:
+        if "/" in symbol or symbol in [
+            "EURUSD",
+            "GBPUSD",
+            "USDJPY",
+            "USDCAD",
+            "USDCHF",
+            "AUDUSD",
+            "NZDUSD",
+        ]:
             sec_type = "CASH"
             exchange = "IDEALPRO"
 
@@ -310,7 +359,7 @@ class IBKRProvider(MarketDataProvider):
                 duration=duration,
                 interval=ibkr_interval,
                 start_date=start_date,
-                end_date=end_date
+                end_date=end_date,
             )
         except Exception as e:
             logger.error(f"Error fetching IBKR data for {symbol}: {e}")
@@ -324,7 +373,15 @@ class IBKRProvider(MarketDataProvider):
         sec_type = "STK"
         exchange = "SMART"
 
-        if "/" in symbol or symbol in ["EURUSD", "GBPUSD", "USDJPY", "USDCAD", "USDCHF", "AUDUSD", "NZDUSD"]:
+        if "/" in symbol or symbol in [
+            "EURUSD",
+            "GBPUSD",
+            "USDJPY",
+            "USDCAD",
+            "USDCHF",
+            "AUDUSD",
+            "NZDUSD",
+        ]:
             sec_type = "CASH"
             exchange = "IDEALPRO"
 
@@ -348,7 +405,7 @@ class PolygonProvider(MarketDataProvider):
         symbol: str,
         start_date: datetime,
         end_date: datetime,
-        interval: str = "1d"
+        interval: str = "1d",
     ) -> pd.DataFrame:
         """Get historical data from Polygon.io."""
         # TODO: Implement
@@ -371,14 +428,20 @@ class DataProviderManager:
         self.providers: Dict[str, MarketDataProvider] = {}
         self.default_provider: Optional[str] = None
 
-    def register_provider(self, provider_id: str, provider: MarketDataProvider, set_default: bool = False):
+    def register_provider(
+        self, provider_id: str, provider: MarketDataProvider, set_default: bool = False
+    ):
         """Register a data provider."""
         self.providers[provider_id] = provider
         if set_default or self.default_provider is None:
             self.default_provider = provider_id
-        logger.info(f"Registered data provider: {provider_id} ({provider.get_provider_name()})")
+        logger.info(
+            f"Registered data provider: {provider_id} ({provider.get_provider_name()})"
+        )
 
-    def get_provider(self, provider_id: Optional[str] = None) -> Optional[MarketDataProvider]:
+    def get_provider(
+        self, provider_id: Optional[str] = None
+    ) -> Optional[MarketDataProvider]:
         """Get a provider by ID, or default if not specified."""
         provider_id = provider_id or self.default_provider
         return self.providers.get(provider_id) if provider_id else None
@@ -389,7 +452,7 @@ class DataProviderManager:
         start_date: datetime,
         end_date: datetime,
         provider_id: Optional[str] = None,
-        interval: str = "1d"
+        interval: str = "1d",
     ) -> pd.DataFrame:
         """Get historical data from specified or default provider."""
         provider = self.get_provider(provider_id)
@@ -417,7 +480,7 @@ class DataProviderManager:
         start_date: datetime,
         end_date: datetime,
         asset_class: str,
-        interval: str = "1d"
+        interval: str = "1d",
     ) -> Dict:
         """Get historical data with automatic fallback.
 
@@ -440,13 +503,15 @@ class DataProviderManager:
                 continue
 
             try:
-                data = provider.get_historical_data(symbol, start_date, end_date, interval)
+                data = provider.get_historical_data(
+                    symbol, start_date, end_date, interval
+                )
                 if not data.empty:
                     return {
                         "data": data,
                         "source_used": provider_id,
                         "fallback_reason": None,
-                        "success": True
+                        "success": True,
                     }
             except Exception as e:
                 logger.debug(f"Provider {provider_id} failed for {symbol}: {e}")
@@ -457,14 +522,10 @@ class DataProviderManager:
             "data": pd.DataFrame(),
             "source_used": None,
             "fallback_reason": f"All providers failed for {symbol}",
-            "success": False
+            "success": False,
         }
 
-    def get_quote_with_fallback(
-        self,
-        symbol: str,
-        asset_class: str
-    ) -> Dict:
+    def get_quote_with_fallback(self, symbol: str, asset_class: str) -> Dict:
         """Get quote with automatic fallback.
 
         Args:
@@ -486,7 +547,7 @@ class DataProviderManager:
                         "quote": quote,
                         "source_used": provider_id,
                         "fallback_reason": None,
-                        "success": True
+                        "success": True,
                     }
             except Exception as e:
                 logger.debug(f"Provider {provider_id} failed for quote {symbol}: {e}")
@@ -496,7 +557,7 @@ class DataProviderManager:
             "quote": {},
             "source_used": None,
             "fallback_reason": f"All providers failed for quote {symbol}",
-            "success": False
+            "success": False,
         }
 
     def _get_priority_order(self, asset_class: str) -> List[str]:
@@ -505,7 +566,7 @@ class DataProviderManager:
         Tries to use the data_source_manager if available, otherwise uses defaults.
         """
         try:
-            from backend.data_source_manager import data_source_manager, DataSource
+            from backend.data_source_manager import DataSource, data_source_manager
 
             # Map provider IDs to data sources
             source_to_provider = {
@@ -515,7 +576,11 @@ class DataProviderManager:
 
             # Get priority sources from manager
             sources = data_source_manager.get_priority_order(asset_class)
-            return [source_to_provider.get(s, s.value) for s in sources if s in source_to_provider]
+            return [
+                source_to_provider.get(s, s.value)
+                for s in sources
+                if s in source_to_provider
+            ]
         except ImportError:
             # Fallback to default order
             if asset_class in ["equity", "fx", "commodities"]:
@@ -530,7 +595,7 @@ class DataProviderManager:
         for provider_id, provider in self.providers.items():
             status[provider_id] = {
                 "name": provider.get_provider_name(),
-                "available": True  # Would need health check to determine actual status
+                "available": True,  # Would need health check to determine actual status
             }
         return status
 
@@ -547,7 +612,13 @@ except Exception as e:
 
 # Register IBKR provider (requires IB Gateway/TWS to be running)
 try:
-    ibkr_provider = IBKRProvider()
+    from backend.config import settings
+
+    ibkr_provider = IBKRProvider(
+        host=settings.ibkr.host,
+        port=settings.ibkr.port,
+        client_id=settings.ibkr.client_id,
+    )
     data_provider_manager.register_provider("ibkr", ibkr_provider)
 except Exception as e:
     logger.warning(f"Could not register IBKR provider: {e}")

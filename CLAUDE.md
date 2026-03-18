@@ -152,6 +152,47 @@ agent-deck                                  # open session manager
 
 **Config:** `~/.agent-deck/config.toml` | Conductor: `~/.agent-deck/conductor/research/CLAUDE.md`
 
+## Playground (Market Study Platform)
+
+The `playground/` directory is a **separate space** from formal research for learning, exploration, and hypothesis generation:
+
+```
+playground/
+├── README.md                    # Overview and quick start
+├── QUICK_REFERENCE.md          # Common tasks cheat sheet
+├── data_helpers.py             # Simplified data access wrappers
+├── notebooks/                  # Interactive exploration notebooks
+│   ├── 00_getting_started.ipynb
+│   ├── 01_market_overview.ipynb
+│   ├── 02_correlation_explorer.ipynb
+│   ├── 03_regime_detector.ipynb
+│   └── 04_signal_sandbox.ipynb
+├── studies/                    # Saved exploration results
+│   └── {date}_{topic}/        # Timestamped study folders
+├── agents/                     # Playground-specific agents
+│   ├── tutor.md               # Educational guide (no rigor gates)
+│   └── explorer.md            # Hypothesis generator
+└── skills/                     # Playground-specific skills
+    └── market-study/          # Exploratory workflow
+```
+
+**Key differences from research:**
+- **No rigor gates** - No statistical thresholds, PM review, or formal requirements
+- **Fast iteration** - Explore ideas quickly without backtest validation
+- **Learning-focused** - Educational guidance instead of challenge/critique
+- **Lightweight docs** - Simple findings.md instead of formal proposals
+
+**Agents:**
+- **Tutor** - Explains concepts, suggests next steps (educational, not evaluative)
+- **Explorer** - Generates study ideas, identifies patterns (curiosity-driven)
+
+**Leverages existing infrastructure:**
+- Data: `quant_data/`, `market_data_store`, `market_data_service`
+- Skills: `data-pulling` (relaxed validation), `market-intelligence-synthesizer`
+- Notebooks: Complements existing tutorials in `notebooks/`
+
+**Migration to research:** When playground study shows promise, follow migration path in `playground/README.md` (check lessons learned, message Cerebro, create strategy folder, use formal template, follow v2 workflow).
+
 ## Gotchas
 
 See `~/.claude/projects/-Users-zelin-Desktop-PA-Investment-Invest-strategy/memory/GOTCHAS.md` for detailed technical pitfalls (14 gotchas across 8 categories: Dash, FastAPI, FRED, yfinance, Backtrader, Pandas, DuckDB, Jupyter).

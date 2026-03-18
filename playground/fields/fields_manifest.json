@@ -1,0 +1,150 @@
+{
+  "name": "Playground Field Organization",
+  "version": "1.0.0",
+  "created": "2026-03-18",
+  "description": "Topic-based organization system for personal market research and exploration",
+  "fields": [
+    {
+      "name": "volatility",
+      "focus": "Volatility dynamics, regime detection, and volatility-based trading strategies",
+      "primary_data": ["VIX", "VIX3M", "SPY", "VVIX"],
+      "key_questions": [
+        "How does implied volatility predict realized volatility?",
+        "What drives volatility risk premium (VRP)?",
+        "How do volatility regimes affect asset returns?",
+        "Can volatility term structure predict market moves?"
+      ]
+    },
+    {
+      "name": "momentum",
+      "focus": "Price momentum, trend following, and momentum factor analysis",
+      "primary_data": ["Equity ETFs", "Sector ETFs", "Commodity ETFs"],
+      "key_questions": [
+        "What lookback periods work best for momentum?",
+        "How does momentum interact with volatility?",
+        "When do momentum strategies crash?",
+        "Cross-sectional vs time-series momentum?"
+      ]
+    },
+    {
+      "name": "carry",
+      "focus": "Carry strategies across asset classes (FX, commodities, fixed income)",
+      "primary_data": ["FX Rates", "Interest Rates", "Commodity Futures", "Bond Yields"],
+      "key_questions": [
+        "What drives carry returns?",
+        "How does carry interact with momentum?",
+        "When do carry strategies crash?",
+        "How to measure carry across different assets?"
+      ]
+    },
+    {
+      "name": "macro",
+      "focus": "Macroeconomic indicators, business cycle analysis, and regime-based investing",
+      "primary_data": ["GDP", "CPI", "Unemployment", "Interest Rates", "Yield Curve"],
+      "key_questions": [
+        "How do macro regimes affect asset returns?",
+        "Which indicators predict recessions?",
+        "How to position portfolios across business cycles?",
+        "What drives central bank policy changes?"
+      ]
+    },
+    {
+      "name": "correlation",
+      "focus": "Cross-asset correlations, diversification, and correlation regime analysis",
+      "primary_data": ["Equity Indices", "Fixed Income", "Commodities", "Alternatives"],
+      "key_questions": [
+        "How do correlations change over time?",
+        "What drives correlation breakdowns?",
+        "How stable are diversification benefits?",
+        "Do correlations spike during crises?"
+      ]
+    },
+    {
+      "name": "options",
+      "focus": "Options pricing, volatility trading, and derivatives strategies",
+      "primary_data": ["VIX", "Options Data", "Underlying Prices"],
+      "key_questions": [
+        "How to price options accurately?",
+        "What drives option implied volatility?",
+        "How to trade volatility skew?",
+        "How do Greeks behave in practice?"
+      ]
+    },
+    {
+      "name": "fx",
+      "focus": "Foreign exchange analysis, currency strategies, and FX market dynamics",
+      "primary_data": ["Major Pairs", "EM Currencies", "Interest Rates"],
+      "key_questions": [
+        "What drives currency movements?",
+        "How to trade FX carry strategies?",
+        "What's the role of central bank policy?",
+        "How do real exchange rates mean-revert?"
+      ]
+    },
+    {
+      "name": "crypto",
+      "focus": "Cryptocurrency analysis, crypto-equity relationships, and digital asset strategies",
+      "primary_data": ["BTC/USDT", "ETH/USDT", "Major Altcoins"],
+      "key_questions": [
+        "How does crypto correlate with traditional assets?",
+        "What drives crypto volatility?",
+        "Is crypto a diversifier or risk-on asset?",
+        "How to analyze crypto momentum?"
+      ]
+    },
+    {
+      "name": "portfolio",
+      "focus": "Portfolio construction, optimization, and rebalancing strategies",
+      "primary_data": ["Multi-asset ETFs", "Historical returns", "Covariance matrices"],
+      "key_questions": [
+        "How to build optimal portfolios?",
+        "What's the right balance between risk and return?",
+        "How often to rebalance?",
+        "Mean-variance vs risk parity vs equal weight?"
+      ]
+    }
+  ],
+  "structure": {
+    "field_template": {
+      "README.md": "Field overview, key questions, data sources, common analyses",
+      "notebooks/": "Field-specific analysis notebooks",
+      "studies/": "Completed studies with findings",
+      "studies/INDEX.md": "Study tracker for the field",
+      "data/": "Field-specific cached data",
+      "agents/": "Field-specific agent configurations (optional)"
+    },
+    "study_template": {
+      "README.md": "Study overview, hypothesis, methodology, findings",
+      "analysis.ipynb": "Main analysis notebook",
+      "data/": "Study-specific data cache",
+      "charts/": "Exported visualizations"
+    }
+  },
+  "shared_resources": {
+    "data_helpers.py": "Data access wrappers for all fields",
+    "viz_helpers.py": "Reusable plotting functions",
+    "notebooks/": "General-purpose notebooks"
+  },
+  "workflow": {
+    "start_study": [
+      "Choose field (cd playground/fields/{field})",
+      "Create study folder (mkdir studies/{date}_{topic})",
+      "Copy template (cp ../STUDY_TEMPLATE.md studies/{date}_{topic}/README.md)",
+      "Create notebook and analyze",
+      "Update field INDEX.md"
+    ],
+    "graduate_to_research": [
+      "Document in field README (add to 'Promising Studies')",
+      "Review lessons learned (memory/LESSONS_LEARNED.md)",
+      "Message Cerebro for literature briefing",
+      "Create research strategy folder (research/strategies/)",
+      "Follow v2 workflow (multi-round PM review)"
+    ]
+  },
+  "documentation": [
+    "playground/FIELDS.md - Field organization guide",
+    "playground/GET_STARTED_QUICK.md - Quick start workflow",
+    "playground/QUICK_REFERENCE.md - Detailed reference",
+    "playground/README.md - Overview and integration"
+  ]
+}

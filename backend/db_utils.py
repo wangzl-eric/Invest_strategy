@@ -26,18 +26,25 @@ Usage:
     pnl = get_daily_pnl(currency="USD")
 """
 import logging
-from datetime import datetime, date
-from typing import Optional, List, Dict, Any, Union
-from pathlib import Path
-import pandas as pd
 import uuid
+from datetime import date, datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
-from sqlalchemy import func, desc, and_, or_, text
+import pandas as pd
+from sqlalchemy import and_, desc, func, or_, text
 from sqlalchemy.orm import Session
 
-from backend.database import get_db_context, init_db, engine
-from backend.models import Trade, PnLHistory, Position, AccountSnapshot, PerformanceMetric, Base
+from backend.database import engine, get_db_context, init_db
 from backend.flex_parser import FlexParser, load_all_flex_reports
+from backend.models import (
+    AccountSnapshot,
+    Base,
+    PerformanceMetric,
+    PnLHistory,
+    Position,
+    Trade,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -49,10 +56,11 @@ DEFAULT_USD_HKD_RATE = 7.78
 # Import from FlexQueryResult (Direct from API)
 # =============================================================================
 
+
 def import_trades_from_flex_result(
     result,  # FlexQueryResult object
     base_currency: str = "HKD",
-    default_fx_rate: float = DEFAULT_USD_HKD_RATE
+    default_fx_rate: float = DEFAULT_USD_HKD_RATE,
 ) -> Dict[str, Any]:
     """
     Import trades directly from a FlexQueryResult object into the database.
@@ -67,7 +75,12 @@ def import_trades_from_flex_result(
         Dict with import statistics
     """
     if not result.trades:
-        return {"status": "no_trades", "imported": 0, "skipped": 0, "source": "flex_api"}
+        return {
+            "status": "no_trades",
+            "imported": 0,
+            "skipped": 0,
+            "source": "flex_api",
+        }
 
     imported = 0
     skipped = 0
@@ -88,13 +101,15 @@ def import_trades_from_flex_result(
                     continue
 
                 # Get currency and FX rate
-                currency = trade.currency or 'USD'
+                currency = trade.currency or "USD"
                 # Use FX rates from result if available
-                fx_rate = result.fx_rates.get(currency, default_fx_rate if currency == 'USD' else 1.0)
+                fx_rate = result.fx_rates.get(
+                    currency, default_fx_rate if currency == "USD" else 1.0
+                )
                 realized_pnl = trade.realized_pnl or 0.0
 
                 # Calculate P&L in base currency
-                if currency == 'USD':
+                if currency == "USD":
                     realized_pnl_base = realized_pnl * fx_rate
                 elif currency == base_currency:
                     realized_pnl_base = realized_pnl
@@ -103,14 +118,14 @@ def import_trades_from_flex_result(
 
                 # Create trade record
                 db_trade = Trade(
-                    account_id=trade.account_id or result.account_id or 'Unknown',
+                    account_id=trade.account_id or result.account_id or "Unknown",
                     exec_id=exec_id,
                     exec_time=trade.trade_date or datetime.now(),
-                    symbol=trade.symbol or '',
-                    sec_type=trade.sec_type or 'STK',
+                    symbol=trade.symbol or "",
+                    sec_type=trade.sec_type or "STK",
                     currency=currency,
                     exchange=trade.exchange or None,
-                    side=trade.side or '',
+                    side=trade.side or "",
                     shares=abs(trade.quantity or 0),
                     price=trade.price or 0.0,
                     proceeds=trade.proceeds or 0.0,
@@ -156,7 +171,7 @@ def import_trades_from_flex_result(
 def import_all_flex_data(
     result,  # FlexQueryResult object
     base_currency: str = "HKD",
-    default_fx_rate: float = DEFAULT_USD_HKD_RATE
+    default_fx_rate: float = DEFAULT_USD_HKD_RATE,
 ) -> Dict[str, Any]:
     """
     Import ALL data from a FlexQueryResult into the database:
@@ -182,11 +197,13 @@ def import_all_flex_data(
         "account_snapshots": {"imported": 0, "skipped": 0},
     }
 
-    account_id = result.account_id or 'Unknown'
+    account_id = result.account_id or "Unknown"
 
     # Import trades
     if result.trades:
-        trade_stats = import_trades_from_flex_result(result, base_currency, default_fx_rate)
+        trade_stats = import_trades_from_flex_result(
+            result, base_currency, default_fx_rate
+        )
         stats["trades"] = {
             "imported": trade_stats.get("imported", 0),
             "skipped": trade_stats.get("skipped", 0),
@@ -198,12 +215,20 @@ def import_all_flex_data(
             for pos in result.positions:
                 try:
                     # Check if position already exists (by account_id, symbol, and date)
-                    pos_date = result.to_date.date() if result.to_date else datetime.now().date()
-                    existing = db.query(Position).filter(
-                        Position.account_id == (pos.account_id or account_id),
-                        Position.symbol == (pos.symbol or ''),
-                        func.date(Position.timestamp) == pos_date
-                    ).first()
+                    pos_date = (
+                        result.to_date.date()
+                        if result.to_date
+                        else datetime.now().date()
+                    )
+                    existing = (
+                        db.query(Position)
+                        .filter(
+                            Position.account_id == (pos.account_id or account_id),
+                            Position.symbol == (pos.symbol or ""),
+                            func.date(Position.timestamp) == pos_date,
+                        )
+                        .first()
+                    )
 
                     if existing:
                         stats["positions"]["skipped"] += 1
@@ -212,9 +237,9 @@ def import_all_flex_data(
                     # Create position record
                     db_position = Position(
                         account_id=pos.account_id or account_id,
-                        symbol=pos.symbol or '',
-                        sec_type=pos.sec_type or 'STK',
-                        currency=pos.currency or 'USD',
+                        symbol=pos.symbol or "",
+                        sec_type=pos.sec_type or "STK",
+                        currency=pos.currency or "USD",
                         quantity=pos.quantity or 0.0,
                         avg_cost=pos.avg_cost or 0.0,
                         market_price=pos.market_price or 0.0,
@@ -231,7 +256,9 @@ def import_all_flex_data(
 
             db.commit()
 
-        logger.info(f"Imported {stats['positions']['imported']} positions, skipped {stats['positions']['skipped']} duplicates")
+        logger.info(
+            f"Imported {stats['positions']['imported']} positions, skipped {stats['positions']['skipped']} duplicates"
+        )
 
     # Import PnL History
     pnl_imported = False
@@ -239,11 +266,17 @@ def import_all_flex_data(
         with get_db_context() as db:
             try:
                 # Check if PnL record already exists for this date
-                pnl_date = result.to_date.replace(hour=0, minute=0, second=0, microsecond=0)
-                existing = db.query(PnLHistory).filter(
-                    PnLHistory.account_id == account_id,
-                    func.date(PnLHistory.date) == pnl_date.date()
-                ).first()
+                pnl_date = result.to_date.replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
+                existing = (
+                    db.query(PnLHistory)
+                    .filter(
+                        PnLHistory.account_id == account_id,
+                        func.date(PnLHistory.date) == pnl_date.date(),
+                    )
+                    .first()
+                )
 
                 if existing:
                     stats["pnl"]["skipped"] += 1
@@ -256,7 +289,9 @@ def import_all_flex_data(
                     # Calculate unrealized PnL from positions if available
                     unrealized_pnl = 0.0
                     if result.positions:
-                        unrealized_pnl = sum(p.unrealized_pnl or 0.0 for p in result.positions)
+                        unrealized_pnl = sum(
+                            p.unrealized_pnl or 0.0 for p in result.positions
+                        )
 
                     pnl_record = PnLHistory(
                         account_id=account_id,
@@ -279,13 +314,16 @@ def import_all_flex_data(
     # Calculate and update returns after importing PnL data
     if pnl_imported:
         from backend.flex_importer import calculate_and_update_returns
+
         with get_db_context() as db:
             try:
                 calculate_and_update_returns(account_id, db)
                 db.commit()
                 logger.info(f"Calculated returns for account {account_id}")
             except Exception as e:
-                logger.warning(f"Error calculating returns for account {account_id}: {e}")
+                logger.warning(
+                    f"Error calculating returns for account {account_id}: {e}"
+                )
 
     # Import Account Snapshot (if we have net liquidation data)
     if result.net_liquidation is not None and result.to_date:
@@ -296,11 +334,15 @@ def import_all_flex_data(
                 # Use a time window approach instead of extract
                 time_window_start = snapshot_time.replace(second=0, microsecond=0)
                 time_window_end = time_window_start.replace(second=59)
-                existing = db.query(AccountSnapshot).filter(
-                    AccountSnapshot.account_id == account_id,
-                    AccountSnapshot.timestamp >= time_window_start,
-                    AccountSnapshot.timestamp <= time_window_end
-                ).first()
+                existing = (
+                    db.query(AccountSnapshot)
+                    .filter(
+                        AccountSnapshot.account_id == account_id,
+                        AccountSnapshot.timestamp >= time_window_start,
+                        AccountSnapshot.timestamp <= time_window_end,
+                    )
+                    .first()
+                )
 
                 if existing:
                     stats["account_snapshots"]["skipped"] += 1
@@ -321,16 +363,16 @@ def import_all_flex_data(
                 db.rollback()
 
     total_imported = (
-        stats["trades"]["imported"] +
-        stats["positions"]["imported"] +
-        stats["pnl"]["imported"] +
-        stats["account_snapshots"]["imported"]
+        stats["trades"]["imported"]
+        + stats["positions"]["imported"]
+        + stats["pnl"]["imported"]
+        + stats["account_snapshots"]["imported"]
     )
     total_skipped = (
-        stats["trades"]["skipped"] +
-        stats["positions"]["skipped"] +
-        stats["pnl"]["skipped"] +
-        stats["account_snapshots"]["skipped"]
+        stats["trades"]["skipped"]
+        + stats["positions"]["skipped"]
+        + stats["pnl"]["skipped"]
+        + stats["account_snapshots"]["skipped"]
     )
 
     logger.info(
@@ -352,11 +394,14 @@ def import_all_flex_data(
 # Database Initialization
 # =============================================================================
 
+
 def init_database():
     """Initialize database tables. Run this once to create all tables."""
     init_db()
     print("✓ Database initialized successfully")
-    print(f"  Tables: trades, positions, pnl_history, account_snapshots, performance_metrics")
+    print(
+        f"  Tables: trades, positions, pnl_history, account_snapshots, performance_metrics"
+    )
 
 
 def reset_trades_table():
@@ -364,6 +409,7 @@ def reset_trades_table():
     Trade.__table__.drop(engine, checkfirst=True)
     Trade.__table__.create(engine, checkfirst=True)
     print("✓ Trades table reset")
+
 
 def reset_pnl_history_table():
     """Drop and recreate the pnl_history table (WARNING: deletes all PnL history!)."""
@@ -376,10 +422,11 @@ def reset_pnl_history_table():
 # Import from Flex Query
 # =============================================================================
 
+
 def import_trades_from_flex(
     data_dir: str = "data/flex_reports",
     base_currency: str = "HKD",
-    default_fx_rate: float = DEFAULT_USD_HKD_RATE
+    default_fx_rate: float = DEFAULT_USD_HKD_RATE,
 ) -> Dict[str, Any]:
     """
     Import trades from Flex Query CSV/XML files into the database.
@@ -394,7 +441,7 @@ def import_trades_from_flex(
     """
     # Parse all flex query files
     data = load_all_flex_reports(data_dir)
-    trades_df = data['trades']
+    trades_df = data["trades"]
 
     if trades_df.empty:
         return {"status": "no_trades", "imported": 0, "skipped": 0}
@@ -407,8 +454,8 @@ def import_trades_from_flex(
         for _, row in trades_df.iterrows():
             try:
                 # Generate exec_id if missing
-                exec_id = row.get('exec_id') or row.get('trade_id')
-                if not exec_id or pd.isna(exec_id) or exec_id == '':
+                exec_id = row.get("exec_id") or row.get("trade_id")
+                if not exec_id or pd.isna(exec_id) or exec_id == "":
                     exec_id = f"flex_{uuid.uuid4().hex[:12]}"
 
                 # Check if trade already exists
@@ -418,12 +465,20 @@ def import_trades_from_flex(
                     continue
 
                 # Parse values
-                currency = str(row.get('currency', 'USD'))
-                fx_rate = float(row.get('fx_rate', default_fx_rate)) if pd.notna(row.get('fx_rate')) else default_fx_rate
-                realized_pnl = float(row.get('realized_pnl', 0)) if pd.notna(row.get('realized_pnl')) else 0.0
+                currency = str(row.get("currency", "USD"))
+                fx_rate = (
+                    float(row.get("fx_rate", default_fx_rate))
+                    if pd.notna(row.get("fx_rate"))
+                    else default_fx_rate
+                )
+                realized_pnl = (
+                    float(row.get("realized_pnl", 0))
+                    if pd.notna(row.get("realized_pnl"))
+                    else 0.0
+                )
 
                 # Calculate P&L in base currency
-                if currency == 'USD':
+                if currency == "USD":
                     realized_pnl_base = realized_pnl * fx_rate
                 elif currency == base_currency:
                     realized_pnl_base = realized_pnl
@@ -431,7 +486,7 @@ def import_trades_from_flex(
                     realized_pnl_base = realized_pnl  # Keep as is for other currencies
 
                 # Parse trade date
-                trade_date = row.get('trade_datetime') or row.get('trade_date')
+                trade_date = row.get("trade_datetime") or row.get("trade_date")
                 if isinstance(trade_date, str):
                     trade_date = pd.to_datetime(trade_date)
                 elif pd.isna(trade_date):
@@ -439,32 +494,60 @@ def import_trades_from_flex(
 
                 # Create trade record
                 trade = Trade(
-                    account_id=str(row.get('account_id', 'U13798787')),
+                    account_id=str(row.get("account_id", "U13798787")),
                     exec_id=exec_id,
                     exec_time=trade_date,
-                    symbol=str(row.get('symbol', '')),
-                    sec_type=str(row.get('asset_class', 'STK')),
+                    symbol=str(row.get("symbol", "")),
+                    sec_type=str(row.get("asset_class", "STK")),
                     currency=currency,
-                    exchange=str(row.get('exchange', '')) if pd.notna(row.get('exchange')) else None,
-                    side=str(row.get('side', '')),
-                    shares=abs(float(row.get('quantity', 0))),
-                    price=float(row.get('price', 0)) if pd.notna(row.get('price')) else 0.0,
-                    proceeds=float(row.get('proceeds', 0)) if pd.notna(row.get('proceeds')) else 0.0,
-                    commission=float(row.get('commission', 0)) if pd.notna(row.get('commission')) else 0.0,
-                    taxes=float(row.get('taxes', 0)) if pd.notna(row.get('taxes')) else 0.0,
-                    cost_basis=float(row.get('cost_basis', 0)) if pd.notna(row.get('cost_basis')) else 0.0,
+                    exchange=str(row.get("exchange", ""))
+                    if pd.notna(row.get("exchange"))
+                    else None,
+                    side=str(row.get("side", "")),
+                    shares=abs(float(row.get("quantity", 0))),
+                    price=float(row.get("price", 0))
+                    if pd.notna(row.get("price"))
+                    else 0.0,
+                    proceeds=float(row.get("proceeds", 0))
+                    if pd.notna(row.get("proceeds"))
+                    else 0.0,
+                    commission=float(row.get("commission", 0))
+                    if pd.notna(row.get("commission"))
+                    else 0.0,
+                    taxes=float(row.get("taxes", 0))
+                    if pd.notna(row.get("taxes"))
+                    else 0.0,
+                    cost_basis=float(row.get("cost_basis", 0))
+                    if pd.notna(row.get("cost_basis"))
+                    else 0.0,
                     realized_pnl=realized_pnl,
                     realized_pnl_base=realized_pnl_base,
-                    mtm_pnl=float(row.get('mtm_pnl', 0)) if pd.notna(row.get('mtm_pnl')) else 0.0,
+                    mtm_pnl=float(row.get("mtm_pnl", 0))
+                    if pd.notna(row.get("mtm_pnl"))
+                    else 0.0,
                     fx_rate_to_base=fx_rate,
                     base_currency=base_currency,
-                    underlying=str(row.get('underlying', '')) if pd.notna(row.get('underlying')) else None,
-                    strike=float(row.get('strike', 0)) if pd.notna(row.get('strike')) else None,
-                    expiry=str(row.get('expiry', '')) if pd.notna(row.get('expiry')) else None,
-                    put_call=str(row.get('put_call', '')) if pd.notna(row.get('put_call')) else None,
-                    multiplier=float(row.get('multiplier', 1)) if pd.notna(row.get('multiplier')) else 1.0,
-                    order_type=str(row.get('order_type', '')) if pd.notna(row.get('order_type')) else None,
-                    trade_id=str(row.get('trade_id', '')) if pd.notna(row.get('trade_id')) else None,
+                    underlying=str(row.get("underlying", ""))
+                    if pd.notna(row.get("underlying"))
+                    else None,
+                    strike=float(row.get("strike", 0))
+                    if pd.notna(row.get("strike"))
+                    else None,
+                    expiry=str(row.get("expiry", ""))
+                    if pd.notna(row.get("expiry"))
+                    else None,
+                    put_call=str(row.get("put_call", ""))
+                    if pd.notna(row.get("put_call"))
+                    else None,
+                    multiplier=float(row.get("multiplier", 1))
+                    if pd.notna(row.get("multiplier"))
+                    else 1.0,
+                    order_type=str(row.get("order_type", ""))
+                    if pd.notna(row.get("order_type"))
+                    else None,
+                    trade_id=str(row.get("trade_id", ""))
+                    if pd.notna(row.get("trade_id"))
+                    else None,
                 )
 
                 db.add(trade)
@@ -489,6 +572,7 @@ def import_trades_from_flex(
 # =============================================================================
 # Query Functions
 # =============================================================================
+
 
 def get_trades_df(
     symbol: Optional[str] = None,
@@ -516,7 +600,7 @@ def get_trades_df(
         query = db.query(Trade)
 
         if symbol:
-            if '%' in symbol:
+            if "%" in symbol:
                 query = query.filter(Trade.symbol.like(symbol))
             else:
                 query = query.filter(Trade.symbol == symbol)
@@ -547,22 +631,24 @@ def get_trades_df(
         # Convert to DataFrame
         data = []
         for t in trades:
-            data.append({
-                'id': t.id,
-                'exec_time': t.exec_time,
-                'symbol': t.symbol,
-                'sec_type': t.sec_type,
-                'side': t.side,
-                'shares': t.shares,
-                'price': t.price,
-                'currency': t.currency,
-                'commission': t.commission,
-                'realized_pnl': t.realized_pnl,
-                'realized_pnl_hkd': t.realized_pnl_base,
-                'fx_rate': t.fx_rate_to_base,
-                'exchange': t.exchange,
-                'exec_id': t.exec_id,
-            })
+            data.append(
+                {
+                    "id": t.id,
+                    "exec_time": t.exec_time,
+                    "symbol": t.symbol,
+                    "sec_type": t.sec_type,
+                    "side": t.side,
+                    "shares": t.shares,
+                    "price": t.price,
+                    "currency": t.currency,
+                    "commission": t.commission,
+                    "realized_pnl": t.realized_pnl,
+                    "realized_pnl_hkd": t.realized_pnl_base,
+                    "fx_rate": t.fx_rate_to_base,
+                    "exchange": t.exchange,
+                    "exec_id": t.exec_id,
+                }
+            )
 
         return pd.DataFrame(data)
 
@@ -599,73 +685,96 @@ def get_daily_returns(
                 query = query.filter(PnLHistory.account_id == account_id)
             if start_date:
                 if isinstance(start_date, str):
-                    start_date = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+                    start_date = datetime.fromisoformat(
+                        start_date.replace("Z", "+00:00")
+                    )
                 query = query.filter(PnLHistory.date >= start_date)
             if end_date:
                 if isinstance(end_date, str):
-                    end_date = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+                    end_date = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
                 query = query.filter(PnLHistory.date <= end_date)
 
             pnl_records = query.all()
 
             if len(pnl_records) < 1:
-                return pd.DataFrame(columns=[
-                    'date', 'account_id',
-                    'realized_pnl', 'unrealized_pnl', 'total_pnl', 'mtm',
-                    'net_liquidation', 'total_cash',
-                    'daily_return', 'cumulative_return'
-                ])
+                return pd.DataFrame(
+                    columns=[
+                        "date",
+                        "account_id",
+                        "realized_pnl",
+                        "unrealized_pnl",
+                        "total_pnl",
+                        "mtm",
+                        "net_liquidation",
+                        "total_cash",
+                        "daily_return",
+                        "cumulative_return",
+                    ]
+                )
 
             data = []
             for record in pnl_records:
-                data.append({
-                    'date': record.date,
-                    'account_id': record.account_id,
-                    'net_liquidation': record.net_liquidation,
-                    'total_cash': record.total_cash,
-                    'realized_pnl': record.realized_pnl,
-                    'unrealized_pnl': record.unrealized_pnl,
-                    'total_pnl': record.total_pnl,
-                    'mtm': record.mtm,  # Mark-to-Market PnL
-                    'daily_return': record.daily_return,  # Use stored value (may be None)
-                    'cumulative_return': record.cumulative_return,  # Use stored value (may be None)
-                })
+                data.append(
+                    {
+                        "date": record.date,
+                        "account_id": record.account_id,
+                        "net_liquidation": record.net_liquidation,
+                        "total_cash": record.total_cash,
+                        "realized_pnl": record.realized_pnl,
+                        "unrealized_pnl": record.unrealized_pnl,
+                        "total_pnl": record.total_pnl,
+                        "mtm": record.mtm,  # Mark-to-Market PnL
+                        "daily_return": record.daily_return,  # Use stored value (may be None)
+                        "cumulative_return": record.cumulative_return,  # Use stored value (may be None)
+                    }
+                )
 
             df = pd.DataFrame(data)
-            df['date'] = pd.to_datetime(df['date'])
-            df = df.sort_values('date')
+            df["date"] = pd.to_datetime(df["date"])
+            df = df.sort_values("date")
 
             # Check if stored returns are available (not all NULL)
-            has_stored_returns = not (df['daily_return'].isna().all() and df['cumulative_return'].isna().all())
+            has_stored_returns = not (
+                df["daily_return"].isna().all() and df["cumulative_return"].isna().all()
+            )
 
             if has_stored_returns:
                 # Use stored values, but fill in any missing ones by calculation
-                missing_mask = df['daily_return'].isna()
+                missing_mask = df["daily_return"].isna()
                 if missing_mask.any():
-                    logger.info("Some returns are missing in pnl_history, calculating from net_liquidation")
+                    logger.info(
+                        "Some returns are missing in pnl_history, calculating from net_liquidation"
+                    )
                     # Calculate for missing rows
-                    calculated_returns = df['net_liquidation'].pct_change()
+                    calculated_returns = df["net_liquidation"].pct_change()
                     calculated_cumulative = (1 + calculated_returns).cumprod() - 1
                     # Fill missing values
-                    df.loc[missing_mask, 'daily_return'] = calculated_returns[missing_mask]
-                    df.loc[missing_mask, 'cumulative_return'] = calculated_cumulative[missing_mask]
+                    df.loc[missing_mask, "daily_return"] = calculated_returns[
+                        missing_mask
+                    ]
+                    df.loc[missing_mask, "cumulative_return"] = calculated_cumulative[
+                        missing_mask
+                    ]
             else:
                 # No stored returns available, calculate from scratch
-                logger.info("No stored returns found in pnl_history, calculating from net_liquidation")
-                df['daily_return'] = df['net_liquidation'].pct_change()
-                df['cumulative_return'] = (1 + df['daily_return']).cumprod() - 1
+                logger.info(
+                    "No stored returns found in pnl_history, calculating from net_liquidation"
+                )
+                df["daily_return"] = df["net_liquidation"].pct_change()
+                df["cumulative_return"] = (1 + df["daily_return"]).cumprod() - 1
                 # Set first record's cumulative_return to 0
                 if len(df) > 0:
-                    df.loc[df.index[0], 'cumulative_return'] = 0.0
+                    df.loc[df.index[0], "cumulative_return"] = 0.0
 
             # Drop rows where daily_return is still NaN (first row typically)
-            df = df.dropna(subset=['daily_return'])
+            df = df.dropna(subset=["daily_return"])
 
             # Return all columns from pnl_history table
             return df
     else:
         # Calculate returns from Account Snapshots (equity values)
         from backend.data_processor import DataProcessor
+
         processor = DataProcessor()
 
         if not account_id:
@@ -675,18 +784,20 @@ def get_daily_returns(
                 if first_snapshot:
                     account_id = first_snapshot.account_id
                 else:
-                    return pd.DataFrame(columns=['date', 'daily_return', 'cumulative_return', 'equity'])
+                    return pd.DataFrame(
+                        columns=["date", "daily_return", "cumulative_return", "equity"]
+                    )
 
         start_dt = None
         end_dt = None
         if start_date:
             if isinstance(start_date, str):
-                start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+                start_dt = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
             else:
                 start_dt = start_date
         if end_date:
             if isinstance(end_date, str):
-                end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+                end_dt = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
             else:
                 end_dt = end_date
 
@@ -714,26 +825,38 @@ def get_daily_pnl(
     if trades.empty:
         return pd.DataFrame()
 
-    trades['date'] = pd.to_datetime(trades['exec_time']).dt.date
+    trades["date"] = pd.to_datetime(trades["exec_time"]).dt.date
 
     if group_by_currency:
-        daily = trades.groupby(['date', 'currency']).agg({
-            'id': 'count',
-            'realized_pnl': 'sum',
-            'realized_pnl_hkd': 'sum',
-            'commission': 'sum',
-        }).rename(columns={'id': 'trade_count'})
+        daily = (
+            trades.groupby(["date", "currency"])
+            .agg(
+                {
+                    "id": "count",
+                    "realized_pnl": "sum",
+                    "realized_pnl_hkd": "sum",
+                    "commission": "sum",
+                }
+            )
+            .rename(columns={"id": "trade_count"})
+        )
     else:
-        daily = trades.groupby('date').agg({
-            'id': 'count',
-            'realized_pnl': 'sum',
-            'realized_pnl_hkd': 'sum',
-            'commission': 'sum',
-        }).rename(columns={'id': 'trade_count'})
+        daily = (
+            trades.groupby("date")
+            .agg(
+                {
+                    "id": "count",
+                    "realized_pnl": "sum",
+                    "realized_pnl_hkd": "sum",
+                    "commission": "sum",
+                }
+            )
+            .rename(columns={"id": "trade_count"})
+        )
 
     daily = daily.reset_index()
-    daily['cumulative_pnl_usd'] = daily['realized_pnl'].cumsum()
-    daily['cumulative_pnl_hkd'] = daily['realized_pnl_hkd'].cumsum()
+    daily["cumulative_pnl_usd"] = daily["realized_pnl"].cumsum()
+    daily["cumulative_pnl_hkd"] = daily["realized_pnl_hkd"].cumsum()
 
     return daily
 
@@ -754,21 +877,29 @@ def get_trade_summary(
     if trades.empty:
         return pd.DataFrame()
 
-    summary = trades.groupby('symbol').agg({
-        'id': 'count',
-        'shares': 'sum',
-        'realized_pnl': 'sum',
-        'realized_pnl_hkd': 'sum',
-        'commission': 'sum',
-    }).rename(columns={
-        'id': 'trade_count',
-        'shares': 'total_shares',
-        'realized_pnl': 'realized_pnl_usd',
-        'realized_pnl_hkd': 'realized_pnl_hkd',
-        'commission': 'total_commission',
-    })
+    summary = (
+        trades.groupby("symbol")
+        .agg(
+            {
+                "id": "count",
+                "shares": "sum",
+                "realized_pnl": "sum",
+                "realized_pnl_hkd": "sum",
+                "commission": "sum",
+            }
+        )
+        .rename(
+            columns={
+                "id": "trade_count",
+                "shares": "total_shares",
+                "realized_pnl": "realized_pnl_usd",
+                "realized_pnl_hkd": "realized_pnl_hkd",
+                "commission": "total_commission",
+            }
+        )
+    )
 
-    return summary.sort_values('realized_pnl_usd', ascending=False)
+    return summary.sort_values("realized_pnl_usd", ascending=False)
 
 
 def get_account_pnl_totals() -> Dict[str, float]:
@@ -780,17 +911,17 @@ def get_account_pnl_totals() -> Dict[str, float]:
     """
     with get_db_context() as db:
         result = db.query(
-            func.sum(Trade.realized_pnl).label('total_usd'),
-            func.sum(Trade.realized_pnl_base).label('total_hkd'),
-            func.sum(Trade.commission).label('total_commission'),
-            func.count(Trade.id).label('trade_count'),
+            func.sum(Trade.realized_pnl).label("total_usd"),
+            func.sum(Trade.realized_pnl_base).label("total_hkd"),
+            func.sum(Trade.commission).label("total_commission"),
+            func.count(Trade.id).label("trade_count"),
         ).first()
 
         return {
-            'total_pnl_usd': result.total_usd or 0.0,
-            'total_pnl_hkd': result.total_hkd or 0.0,
-            'total_commissions': result.total_commission or 0.0,
-            'trade_count': result.trade_count or 0,
+            "total_pnl_usd": result.total_usd or 0.0,
+            "total_pnl_hkd": result.total_hkd or 0.0,
+            "total_commissions": result.total_commission or 0.0,
+            "trade_count": result.trade_count or 0,
         }
 
 
@@ -810,6 +941,7 @@ def query_trades(sql: str) -> pd.DataFrame:
 # =============================================================================
 # P&L Recording
 # =============================================================================
+
 
 def record_daily_pnl(
     account_id: str,
@@ -853,6 +985,7 @@ def record_daily_pnl(
 # Print/Display Functions
 # =============================================================================
 
+
 def print_trade_summary():
     """Print formatted trade summary to console."""
     summary = get_trade_summary()
@@ -870,10 +1003,14 @@ def print_trade_summary():
     print("-" * 70)
 
     for symbol, row in summary.iterrows():
-        print(f"{symbol:<25} {row['trade_count']:>8} {row['realized_pnl_usd']:>14,.2f} {row['realized_pnl_hkd']:>14,.2f}")
+        print(
+            f"{symbol:<25} {row['trade_count']:>8} {row['realized_pnl_usd']:>14,.2f} {row['realized_pnl_hkd']:>14,.2f}"
+        )
 
     print("-" * 70)
-    print(f"{'TOTAL':<25} {totals['trade_count']:>8} {totals['total_pnl_usd']:>14,.2f} {totals['total_pnl_hkd']:>14,.2f}")
+    print(
+        f"{'TOTAL':<25} {totals['trade_count']:>8} {totals['total_pnl_usd']:>14,.2f} {totals['total_pnl_hkd']:>14,.2f}"
+    )
     print(f"{'Commissions':<25} {'':>8} {totals['total_commissions']:>14,.2f}")
     print("=" * 70)
 
@@ -890,13 +1027,17 @@ def print_daily_pnl():
         print("No trades found in database.")
         return
 
-    print(f"\n{'Date':<12} {'Trades':>8} {'Daily USD':>14} {'Daily HKD':>14} {'Cumul USD':>14} {'Cumul HKD':>14}")
+    print(
+        f"\n{'Date':<12} {'Trades':>8} {'Daily USD':>14} {'Daily HKD':>14} {'Cumul USD':>14} {'Cumul HKD':>14}"
+    )
     print("-" * 80)
 
     for _, row in daily.iterrows():
-        print(f"{str(row['date']):<12} {row['trade_count']:>8} "
-              f"{row['realized_pnl']:>14,.2f} {row['realized_pnl_hkd']:>14,.2f} "
-              f"{row['cumulative_pnl_usd']:>14,.2f} {row['cumulative_pnl_hkd']:>14,.2f}")
+        print(
+            f"{str(row['date']):<12} {row['trade_count']:>8} "
+            f"{row['realized_pnl']:>14,.2f} {row['realized_pnl_hkd']:>14,.2f} "
+            f"{row['cumulative_pnl_usd']:>14,.2f} {row['cumulative_pnl_hkd']:>14,.2f}"
+        )
 
     print("=" * 80)
 
@@ -911,7 +1052,8 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     if len(sys.argv) < 2:
-        print("""
+        print(
+            """
 IBKR Database Utility
 
 Usage:
@@ -926,7 +1068,8 @@ Commands:
     reset       - Reset trades table (WARNING: deletes data!)
     reset-pnl   - Reset pnl_history table (WARNING: deletes data!)
     query <sql> - Run SQL query
-        """)
+        """
+        )
         sys.exit(0)
 
     command = sys.argv[1].lower()
@@ -938,7 +1081,7 @@ Commands:
         print("Importing trades from Flex Query files...")
         result = import_trades_from_flex()
         print(f"✓ Imported: {result['imported']}, Skipped: {result['skipped']}")
-        if result.get('errors'):
+        if result.get("errors"):
             print(f"  Errors: {result['errors']}")
 
     elif command == "summary":
@@ -962,7 +1105,9 @@ Commands:
             print("Cancelled.")
 
     elif command == "reset-pnl":
-        confirm = input("Are you sure you want to reset the pnl_history table? (yes/no): ")
+        confirm = input(
+            "Are you sure you want to reset the pnl_history table? (yes/no): "
+        )
         if confirm.lower() == "yes":
             reset_pnl_history_table()
         else:

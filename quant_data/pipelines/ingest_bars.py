@@ -11,7 +11,11 @@ from quant_data.io.parquet_writer import ParquetWriteResult, write_bars_partitio
 from quant_data.meta_db import get_meta_db_context
 from quant_data.paths import DataLakeConfig
 from quant_data.qconfig import QuantDataSettings
-from quant_data.registry import finish_ingestion_run, register_dataset_version, start_ingestion_run
+from quant_data.registry import (
+    finish_ingestion_run,
+    register_dataset_version,
+    start_ingestion_run,
+)
 from quant_data.spec import DatasetId, DatasetLayer
 
 
@@ -70,7 +74,9 @@ def ingest_bars_to_lake(
                 venue=req.venue or None,
             )
             finish_ingestion_run(db, run_id=run.id, status="success")
-            return IngestBarsResult(dataset_version=reg.version, files_written=write_res.files_written)
+            return IngestBarsResult(
+                dataset_version=reg.version, files_written=write_res.files_written
+            )
         except Exception as e:
             finish_ingestion_run(db, run_id=run.id, status="failed", error=str(e))
             raise

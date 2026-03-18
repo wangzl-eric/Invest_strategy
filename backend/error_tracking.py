@@ -1,7 +1,7 @@
 """Error tracking and monitoring integration."""
 import logging
-from typing import Optional, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -10,6 +10,7 @@ try:
     import sentry_sdk
     from sentry_sdk.integrations.fastapi import FastApiIntegration
     from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+
     HAS_SENTRY = True
 except ImportError:
     HAS_SENTRY = False
@@ -45,7 +46,9 @@ class ErrorTracker:
             elif not dsn:
                 logger.info("Sentry DSN not configured - error tracking disabled")
 
-    def capture_exception(self, exception: Exception, context: Optional[Dict[str, Any]] = None):
+    def capture_exception(
+        self, exception: Exception, context: Optional[Dict[str, Any]] = None
+    ):
         """Capture an exception."""
         if self.initialized and HAS_SENTRY:
             with sentry_sdk.push_scope() as scope:
@@ -57,7 +60,12 @@ class ErrorTracker:
             # Fallback to logging
             logger.error(f"Exception: {exception}", exc_info=True, extra=context)
 
-    def capture_message(self, message: str, level: str = "info", context: Optional[Dict[str, Any]] = None):
+    def capture_message(
+        self,
+        message: str,
+        level: str = "info",
+        context: Optional[Dict[str, Any]] = None,
+    ):
         """Capture a message."""
         if self.initialized and HAS_SENTRY:
             with sentry_sdk.push_scope() as scope:
@@ -77,6 +85,5 @@ class ErrorTracker:
 
 # Global error tracker
 error_tracker = ErrorTracker(
-    dsn=None,  # Set via SENTRY_DSN environment variable
-    environment="development"
+    dsn=None, environment="development"  # Set via SENTRY_DSN environment variable
 )

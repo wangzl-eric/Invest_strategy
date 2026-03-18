@@ -1,7 +1,8 @@
 """WebSocket client component for Dash frontend."""
-import dash
-from dash import html, dcc
 import logging
+
+import dash
+from dash import dcc, html
 
 logger = logging.getLogger(__name__)
 
@@ -191,31 +192,36 @@ WEBSOCKET_CLIENT_JS = """
 """
 
 
-def create_websocket_client_component(api_base_url: str = "http://localhost:8000/api", account_id: str = None):
+def create_websocket_client_component(
+    api_base_url: str = "http://localhost:8000/api", account_id: str = None
+):
     """Create a Dash component that includes the WebSocket client JavaScript."""
     # Read the integration script
     import os
-    integration_script_path = os.path.join(os.path.dirname(__file__), 'realtime_integration.js')
+
+    integration_script_path = os.path.join(
+        os.path.dirname(__file__), "realtime_integration.js"
+    )
     integration_script = ""
     if os.path.exists(integration_script_path):
-        with open(integration_script_path, 'r') as f:
+        with open(integration_script_path, "r") as f:
             integration_script = f.read()
 
-    return html.Div([
-        html.Script(
-            children=f"""
+    return html.Div(
+        [
+            html.Script(
+                children=f"""
             window.API_BASE_URL = '{api_base_url}';
             window.ACCOUNT_ID = {f"'{account_id}'" if account_id else 'null'};
             """,
-            type="text/javascript"
-        ),
-        html.Script(
-            children=WEBSOCKET_CLIENT_JS,
-            type="text/javascript"
-        ),
-        html.Script(
-            children=integration_script,
-            type="text/javascript"
-        ) if integration_script else html.Div(),
-        html.Div(id="websocket-status", style={"display": "none"}),  # Hidden status indicator
-    ])
+                type="text/javascript",
+            ),
+            html.Script(children=WEBSOCKET_CLIENT_JS, type="text/javascript"),
+            html.Script(children=integration_script, type="text/javascript")
+            if integration_script
+            else html.Div(),
+            html.Div(
+                id="websocket-status", style={"display": "none"}
+            ),  # Hidden status indicator
+        ]
+    )

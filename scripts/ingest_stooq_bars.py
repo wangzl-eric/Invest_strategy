@@ -19,7 +19,9 @@ from quant_data.spec import DatasetLayer
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("--symbols", required=True, help="Comma-separated symbols (e.g. AAPL,MSFT)")
+    p.add_argument(
+        "--symbols", required=True, help="Comma-separated symbols (e.g. AAPL,MSFT)"
+    )
     p.add_argument("--start", required=True, help="YYYY-MM-DD")
     p.add_argument("--end", required=True, help="YYYY-MM-DD")
     p.add_argument("--universe", default="us_equities")
@@ -28,10 +30,16 @@ def main() -> int:
     symbols = [s.strip().upper() for s in args.symbols.split(",") if s.strip()]
     connector = StooqBarsConnector()
     dataset_id = connector.dataset_id(universe=args.universe)
-    req = BarsRequest(symbols=symbols, start=args.start, end=args.end, venue="STOOQ", currency="USD")
+    req = BarsRequest(
+        symbols=symbols, start=args.start, end=args.end, venue="STOOQ", currency="USD"
+    )
 
-    res = ingest_bars_to_lake(connector=connector, dataset_id=dataset_id, req=req, layer=DatasetLayer.CLEAN)
-    print(f"Wrote {res.files_written} parquet partitions for version={res.dataset_version}")
+    res = ingest_bars_to_lake(
+        connector=connector, dataset_id=dataset_id, req=req, layer=DatasetLayer.CLEAN
+    )
+    print(
+        f"Wrote {res.files_written} parquet partitions for version={res.dataset_version}"
+    )
     return 0
 
 

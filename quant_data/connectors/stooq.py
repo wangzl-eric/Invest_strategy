@@ -12,7 +12,12 @@ from typing import Optional
 import pandas as pd
 
 from quant_data.connectors.base import BarsRequest
-from quant_data.spec import DatasetFrequency, DatasetId, MarketDataKind, validate_columns
+from quant_data.spec import (
+    DatasetFrequency,
+    DatasetId,
+    MarketDataKind,
+    validate_columns,
+)
 
 
 @dataclass(frozen=True)
@@ -34,7 +39,9 @@ class StooqBarsConnector:
         frames: list[pd.DataFrame] = []
         for sym in req.symbols:
             stooq_sym = sym.lower()
-            if self.cfg.symbol_suffix and not stooq_sym.endswith(self.cfg.symbol_suffix):
+            if self.cfg.symbol_suffix and not stooq_sym.endswith(
+                self.cfg.symbol_suffix
+            ):
                 stooq_sym = f"{stooq_sym}{self.cfg.symbol_suffix}"
 
             url = f"https://stooq.com/q/d/l/?s={stooq_sym}&i=d"
@@ -60,18 +67,46 @@ class StooqBarsConnector:
 
             # Filter by date range (inclusive)
             start = pd.Timestamp(req.start, tz="UTC")
-            end = pd.Timestamp(req.end, tz="UTC") + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+            end = (
+                pd.Timestamp(req.end, tz="UTC")
+                + pd.Timedelta(days=1)
+                - pd.Timedelta(seconds=1)
+            )
             df = df[(df["timestamp"] >= start) & (df["timestamp"] <= end)]
-            frames.append(df[["timestamp", "symbol", "venue", "currency", "open", "high", "low", "close", "volume", "vwap"]])
+            frames.append(
+                df[
+                    [
+                        "timestamp",
+                        "symbol",
+                        "venue",
+                        "currency",
+                        "open",
+                        "high",
+                        "low",
+                        "close",
+                        "volume",
+                        "vwap",
+                    ]
+                ]
+            )
 
         if not frames:
             return pd.DataFrame()
 
         out = pd.concat(frames, ignore_index=True)
         out = out.sort_values(["symbol", "timestamp"]).reset_index(drop=True)
-        validate_columns(dataset="stooq bars", columns=out.columns, required=("timestamp", "symbol", "open", "high", "low", "close", "volume"))
+        validate_columns(
+            dataset="stooq bars",
+            columns=out.columns,
+            required=("timestamp", "symbol", "open", "high", "low", "close", "volume"),
+        )
         return out
 
     @staticmethod
     def dataset_id(*, universe: str = "us_equities") -> DatasetId:
-        return DatasetId(provider="stooq", kind=MarketDataKind.BARS, universe=universe, frequency=DatasetFrequency.DAY)
+        return DatasetId(
+            provider="stooq",
+            kind=MarketDataKind.BARS,
+            universe=universe,
+            frequency=DatasetFrequency.DAY,
+        )

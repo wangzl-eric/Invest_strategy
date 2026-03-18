@@ -4,10 +4,11 @@ Each function returns a Dash layout fragment that can be placed inside a
 dbc.Col / dbc.Row in app.py.
 """
 
-from dash import html, dcc
 from typing import Optional
+
 import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
+from dash import dcc, html
 
 # ---------------------------------------------------------------------------
 # Shared styling helpers
@@ -16,13 +17,14 @@ import plotly.graph_objs as go
 _CARD_STYLE = "data-card"
 _SECTION_TITLE = "section-title"
 
-GREEN = "#3fb950"
-RED = "#f85149"
-BLUE = "#58a6ff"
-MUTED = "#8b949e"
-TEXT_PRIMARY = "#c9d1d9"
-YELLOW = "#d29922"
-PURPLE = "#a371f7"
+# Professional lightweight palette
+GREEN = "#34d399"
+RED = "#f87171"
+BLUE = "#4da6ff"
+MUTED = "#9094a1"
+TEXT_PRIMARY = "#e4e6eb"
+YELLOW = "#fbbf24"
+PURPLE = "#a78bfa"
 
 # ---------------------------------------------------------------------------
 # Instrument definitions (shown as browser tooltip on hover)
@@ -132,7 +134,20 @@ def _table_row(cells, header=False):
 
 def _data_table(headers, rows):
     """Build a styled html.Table."""
-    header_cells = [(h, {"color": MUTED, "fontWeight": "500", "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "0.5px", "paddingBottom": "0.75rem"}) for h in headers]
+    header_cells = [
+        (
+            h,
+            {
+                "color": MUTED,
+                "fontWeight": "500",
+                "fontSize": "0.75rem",
+                "textTransform": "uppercase",
+                "letterSpacing": "0.5px",
+                "paddingBottom": "0.75rem",
+            },
+        )
+        for h in headers
+    ]
     return html.Table(
         [html.Thead(_table_row(header_cells, header=True)), html.Tbody(rows)],
         style={"width": "100%", "borderCollapse": "collapse", "fontSize": "0.9rem"},
@@ -162,6 +177,7 @@ def _tooltip_name(name: str, fallback: str = "", ticker: str = "") -> html.Span:
 # Sparkline + period-change helpers
 # ---------------------------------------------------------------------------
 
+
 def _build_sparkline(points, width=100, height=28):
     """Tiny line chart from a list of {date, close/value} dicts.
 
@@ -179,7 +195,7 @@ def _build_sparkline(points, width=100, height=28):
 
     # Convert hex to rgba for fillcolor
     def hex_to_rgba(hex_color, alpha=0.1):
-        hex_color = hex_color.lstrip('#')
+        hex_color = hex_color.lstrip("#")
         r = int(hex_color[0:2], 16)
         g = int(hex_color[2:4], 16)
         b = int(hex_color[4:6], 16)
@@ -189,17 +205,21 @@ def _build_sparkline(points, width=100, height=28):
     dates = [p.get("date", "") for p in points if p.get("close") or p.get("value")]
 
     # Create hover text
-    hover_text = [f"Date: {d}<br>Value: {v:.4f}" for d, v in zip(dates[-len(vals):], vals)]
+    hover_text = [
+        f"Date: {d}<br>Value: {v:.4f}" for d, v in zip(dates[-len(vals) :], vals)
+    ]
 
-    fig = go.Figure(go.Scatter(
-        y=vals,
-        mode="lines",
-        line=dict(color=color, width=1.5),
-        fill="tozeroy",
-        fillcolor=hex_to_rgba(color),
-        hoverinfo="text",
-        text=hover_text,
-    ))
+    fig = go.Figure(
+        go.Scatter(
+            y=vals,
+            mode="lines",
+            line=dict(color=color, width=1.5),
+            fill="tozeroy",
+            fillcolor=hex_to_rgba(color),
+            hoverinfo="text",
+            text=hover_text,
+        )
+    )
     fig.update_layout(
         margin=dict(t=0, b=0, l=0, r=0),
         paper_bgcolor="rgba(0,0,0,0)",
@@ -218,7 +238,11 @@ def _build_sparkline(points, width=100, height=28):
             "staticPlot": False,  # Now interactive!
             "scrollZoom": False,
         },
-        style={"height": f"{height}px", "width": f"{width}px", "display": "inline-block"},
+        style={
+            "height": f"{height}px",
+            "width": f"{width}px",
+            "display": "inline-block",
+        },
     )
 
 
@@ -278,6 +302,7 @@ _CHG_COL = {
 # Panel builders
 # ---------------------------------------------------------------------------
 
+
 def build_rates_panel(data: dict, sparklines: Optional[dict] = None) -> html.Div:
     """UST yields, swap rates, swap spreads, asset swap spreads — grouped by category."""
     yf_yields = data.get("yields") or []
@@ -298,23 +323,95 @@ def build_rates_panel(data: dict, sparklines: Optional[dict] = None) -> html.Div
             # Get source - show "IBKR" for IBKR futures, or the actual source
             source = item.get("source", "yfinance")
             source_display = "IBKR" if "ibkr" in source.lower() else source.title()
-            rows.append(_table_row([
-                (_tooltip_name(item.get("name", ticker), ticker=ticker), {}),
-                (item.get("tenor", ""), {"color": MUTED, "textAlign": "center", "fontSize": "0.85rem"}),
-                (_format_price(val, 3), {"color": BLUE, "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-                (_format_change(chg), {"color": _change_color(chg), "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-                (_format_change(w1), {**_CHG_COL, "color": _change_color(w1)}),
-                (_format_change(m1), {**_CHG_COL, "color": _change_color(m1)}),
-                (_build_sparkline(hist), {"textAlign": "center", "padding": "2px 0"}),
-                (item.get("date", ""), {"color": MUTED, "fontSize": "0.8rem", "textAlign": "right"}),
-                (source_display, {"color": "#22c55e" if "IBKR" in source_display else MUTED, "fontSize": "0.75rem", "fontWeight": "600", "textAlign": "right"}),
-            ]))
-        
-        table_content = html.Div([
-            html.Div("Treasury Futures (Real-time)", style={"color": "#22c55e", "fontSize": "0.7rem", "fontWeight": "600", "marginBottom": "0.25rem"}),
-            _data_table(["Instrument", "Tenor", "Yield", "1D", "1W", "1M", "30d", "Date", "Source"], rows),
-        ]) if rows else html.P("No IBKR futures data available", style={"color": MUTED})
-    
+            rows.append(
+                _table_row(
+                    [
+                        (_tooltip_name(item.get("name", ticker), ticker=ticker), {}),
+                        (
+                            item.get("tenor", ""),
+                            {
+                                "color": MUTED,
+                                "textAlign": "center",
+                                "fontSize": "0.85rem",
+                            },
+                        ),
+                        (
+                            _format_price(val, 3),
+                            {
+                                "color": BLUE,
+                                "fontFamily": "'JetBrains Mono', monospace",
+                                "textAlign": "right",
+                            },
+                        ),
+                        (
+                            _format_change(chg),
+                            {
+                                "color": _change_color(chg),
+                                "fontFamily": "'JetBrains Mono', monospace",
+                                "textAlign": "right",
+                            },
+                        ),
+                        (_format_change(w1), {**_CHG_COL, "color": _change_color(w1)}),
+                        (_format_change(m1), {**_CHG_COL, "color": _change_color(m1)}),
+                        (
+                            _build_sparkline(hist),
+                            {"textAlign": "center", "padding": "2px 0"},
+                        ),
+                        (
+                            item.get("date", ""),
+                            {
+                                "color": MUTED,
+                                "fontSize": "0.8rem",
+                                "textAlign": "right",
+                            },
+                        ),
+                        (
+                            source_display,
+                            {
+                                "color": "#22c55e"
+                                if "IBKR" in source_display
+                                else MUTED,
+                                "fontSize": "0.75rem",
+                                "fontWeight": "600",
+                                "textAlign": "right",
+                            },
+                        ),
+                    ]
+                )
+            )
+
+        table_content = (
+            html.Div(
+                [
+                    html.Div(
+                        "Treasury Futures (Real-time)",
+                        style={
+                            "color": "#22c55e",
+                            "fontSize": "0.7rem",
+                            "fontWeight": "600",
+                            "marginBottom": "0.25rem",
+                        },
+                    ),
+                    _data_table(
+                        [
+                            "Instrument",
+                            "Tenor",
+                            "Yield",
+                            "1D",
+                            "1W",
+                            "1M",
+                            "30d",
+                            "Date",
+                            "Source",
+                        ],
+                        rows,
+                    ),
+                ]
+            )
+            if rows
+            else html.P("No IBKR futures data available", style={"color": MUTED})
+        )
+
     # Show FRED data (full curve) - note: FRED has 1-day publishing delay
     elif fred_rates:
         by_cat: dict[str, list] = {}
@@ -338,31 +435,122 @@ def build_rates_panel(data: dict, sparklines: Optional[dict] = None) -> html.Div
                     val_display += " bp"
                 hist = item.get("history") or []
                 w1, m1 = _period_changes(hist, is_yield=True)
-                rows.append(_table_row([
-                    (_tooltip_name(item.get("name", item.get("series", "")), ticker=item.get("series", "")), {}),
-                    (item.get("tenor", ""), {"color": MUTED, "textAlign": "center", "fontSize": "0.85rem"}),
-                    (val_display, {"color": BLUE, "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-                    (_format_change(chg), {"color": _change_color(chg), "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-                    (_format_change(w1), {**_CHG_COL, "color": _change_color(w1)}),
-                    (_format_change(m1), {**_CHG_COL, "color": _change_color(m1)}),
-                    (_build_sparkline(hist), {"textAlign": "center", "padding": "2px 0"}),
-                    (item.get("date", ""), {"color": MUTED, "fontSize": "0.8rem", "textAlign": "right"}),
-                    ("FRED", {"color": "#f59e0b", "fontSize": "0.75rem", "fontWeight": "600", "textAlign": "right"}),
-                ]))
+                rows.append(
+                    _table_row(
+                        [
+                            (
+                                _tooltip_name(
+                                    item.get("name", item.get("series", "")),
+                                    ticker=item.get("series", ""),
+                                ),
+                                {},
+                            ),
+                            (
+                                item.get("tenor", ""),
+                                {
+                                    "color": MUTED,
+                                    "textAlign": "center",
+                                    "fontSize": "0.85rem",
+                                },
+                            ),
+                            (
+                                val_display,
+                                {
+                                    "color": BLUE,
+                                    "fontFamily": "'JetBrains Mono', monospace",
+                                    "textAlign": "right",
+                                },
+                            ),
+                            (
+                                _format_change(chg),
+                                {
+                                    "color": _change_color(chg),
+                                    "fontFamily": "'JetBrains Mono', monospace",
+                                    "textAlign": "right",
+                                },
+                            ),
+                            (
+                                _format_change(w1),
+                                {**_CHG_COL, "color": _change_color(w1)},
+                            ),
+                            (
+                                _format_change(m1),
+                                {**_CHG_COL, "color": _change_color(m1)},
+                            ),
+                            (
+                                _build_sparkline(hist),
+                                {"textAlign": "center", "padding": "2px 0"},
+                            ),
+                            (
+                                item.get("date", ""),
+                                {
+                                    "color": MUTED,
+                                    "fontSize": "0.8rem",
+                                    "textAlign": "right",
+                                },
+                            ),
+                            (
+                                "FRED",
+                                {
+                                    "color": "#f59e0b",
+                                    "fontSize": "0.75rem",
+                                    "fontWeight": "600",
+                                    "textAlign": "right",
+                                },
+                            ),
+                        ]
+                    )
+                )
 
-            sections.append(html.Div([
-                html.Div(cat_label, style={"color": PURPLE, "fontSize": "0.75rem", "fontWeight": "600", "textTransform": "uppercase", "letterSpacing": "0.5px", "padding": "0.5rem 0 0.25rem 0", "borderBottom": f"1px solid {MUTED}33", "marginTop": "0.5rem"}),
-                _data_table(["Instrument", "Tenor", "Value", "1D", "1W", "1M", "30d", "Date", "Source"], rows),
-            ]))
+            sections.append(
+                html.Div(
+                    [
+                        html.Div(
+                            cat_label,
+                            style={
+                                "color": PURPLE,
+                                "fontSize": "0.75rem",
+                                "fontWeight": "600",
+                                "textTransform": "uppercase",
+                                "letterSpacing": "0.5px",
+                                "padding": "0.5rem 0 0.25rem 0",
+                                "borderBottom": f"1px solid {MUTED}33",
+                                "marginTop": "0.5rem",
+                            },
+                        ),
+                        _data_table(
+                            [
+                                "Instrument",
+                                "Tenor",
+                                "Value",
+                                "1D",
+                                "1W",
+                                "1M",
+                                "30d",
+                                "Date",
+                                "Source",
+                            ],
+                            rows,
+                        ),
+                    ]
+                )
+            )
 
-        table_content = html.Div(sections) if sections else html.P("No rates data available", style={"color": MUTED})
+        table_content = (
+            html.Div(sections)
+            if sections
+            else html.P("No rates data available", style={"color": MUTED})
+        )
     else:
         table_content = html.P("No rates data available", style={"color": MUTED})
 
-    return html.Div([
-        html.H5("Rates", className=_SECTION_TITLE),
-        html.Div(table_content, style={"overflowX": "auto"}),
-    ], className=_CARD_STYLE)
+    return html.Div(
+        [
+            html.H5("Rates", className=_SECTION_TITLE),
+            html.Div(table_content, style={"overflowX": "auto"}),
+        ],
+        className=_CARD_STYLE,
+    )
 
 
 def build_fx_panel(data: dict, sparklines: Optional[dict] = None) -> html.Div:
@@ -380,35 +568,83 @@ def build_fx_panel(data: dict, sparklines: Optional[dict] = None) -> html.Div:
         ticker = item.get("ticker", "")
         pts = sparklines.get(ticker, [])
         w1, m1 = _period_changes(pts)
-        rows.append(_table_row([
-            (item.get("pair", ticker), {"color": BLUE, "fontWeight": "600", "fontFamily": "'JetBrains Mono', monospace"}),
-            (_tooltip_name(item.get("name", ""), ticker=ticker), {}),
-            (_format_price(price, 4), {"color": TEXT_PRIMARY, "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-            (_format_change(chg_pct, "%"), {"color": _change_color(chg_pct), "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-            (_format_change(w1, "%"), {**_CHG_COL, "color": _change_color(w1)}),
-            (_format_change(m1, "%"), {**_CHG_COL, "color": _change_color(m1)}),
-            (_build_sparkline(pts), {"textAlign": "center", "padding": "2px 0"}),
-            (item.get("date", ""), {"color": MUTED, "fontSize": "0.8rem", "textAlign": "right"}),
-        ]))
+        rows.append(
+            _table_row(
+                [
+                    (
+                        item.get("pair", ticker),
+                        {
+                            "color": BLUE,
+                            "fontWeight": "600",
+                            "fontFamily": "'JetBrains Mono', monospace",
+                        },
+                    ),
+                    (_tooltip_name(item.get("name", ""), ticker=ticker), {}),
+                    (
+                        _format_price(price, 4),
+                        {
+                            "color": TEXT_PRIMARY,
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                    (
+                        _format_change(chg_pct, "%"),
+                        {
+                            "color": _change_color(chg_pct),
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                    (_format_change(w1, "%"), {**_CHG_COL, "color": _change_color(w1)}),
+                    (_format_change(m1, "%"), {**_CHG_COL, "color": _change_color(m1)}),
+                    (
+                        _build_sparkline(pts),
+                        {"textAlign": "center", "padding": "2px 0"},
+                    ),
+                    (
+                        item.get("date", ""),
+                        {"color": MUTED, "fontSize": "0.8rem", "textAlign": "right"},
+                    ),
+                ]
+            )
+        )
 
     headline = []
     if dxy:
         dxy_chg = dxy.get("change_pct")
         headline = [
-            html.Div([
-                html.Span("DXY ", style={"color": MUTED, "fontSize": "0.85rem"}),
-                _mono(_format_price(dxy.get("price"), 2), BLUE, bold=True),
-                html.Span(f" {_format_change(dxy_chg, '%')}", style={"color": _change_color(dxy_chg), "fontSize": "0.85rem", "marginLeft": "0.5rem"}),
-            ], style={"marginBottom": "0.75rem"}),
+            html.Div(
+                [
+                    html.Span("DXY ", style={"color": MUTED, "fontSize": "0.85rem"}),
+                    _mono(_format_price(dxy.get("price"), 2), BLUE, bold=True),
+                    html.Span(
+                        f" {_format_change(dxy_chg, '%')}",
+                        style={
+                            "color": _change_color(dxy_chg),
+                            "fontSize": "0.85rem",
+                            "marginLeft": "0.5rem",
+                        },
+                    ),
+                ],
+                style={"marginBottom": "0.75rem"},
+            ),
         ]
 
-    table = _data_table(["Pair", "Name", "Spot", "1D%", "1W%", "1M%", "30d", "Date"], rows) if rows else html.P("No FX data available", style={"color": MUTED})
+    table = (
+        _data_table(["Pair", "Name", "Spot", "1D%", "1W%", "1M%", "30d", "Date"], rows)
+        if rows
+        else html.P("No FX data available", style={"color": MUTED})
+    )
 
-    return html.Div([
-        html.H5("Foreign Exchange", className=_SECTION_TITLE),
-        *headline,
-        html.Div(table, style={"overflowX": "auto"}),
-    ], className=_CARD_STYLE)
+    return html.Div(
+        [
+            html.H5("Foreign Exchange", className=_SECTION_TITLE),
+            *headline,
+            html.Div(table, style={"overflowX": "auto"}),
+        ],
+        className=_CARD_STYLE,
+    )
 
 
 def build_equities_panel(data: dict, sparklines: Optional[dict] = None) -> html.Div:
@@ -426,23 +662,59 @@ def build_equities_panel(data: dict, sparklines: Optional[dict] = None) -> html.
         color = YELLOW if is_vix else TEXT_PRIMARY
         pts = sparklines.get(ticker, [])
         w1, m1 = _period_changes(pts)
-        rows.append(_table_row([
-            (_tooltip_name(name, ticker=ticker), {"color": color, "fontWeight": "600"}),
-            (item.get("region", ""), {"color": MUTED, "textAlign": "center"}),
-            (_format_price(price, 2), {"color": TEXT_PRIMARY, "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-            (_format_change(chg_pct, "%"), {"color": _change_color(chg_pct), "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-            (_format_change(w1, "%"), {**_CHG_COL, "color": _change_color(w1)}),
-            (_format_change(m1, "%"), {**_CHG_COL, "color": _change_color(m1)}),
-            (_build_sparkline(pts), {"textAlign": "center", "padding": "2px 0"}),
-            (item.get("date", ""), {"color": MUTED, "fontSize": "0.8rem", "textAlign": "right"}),
-        ]))
+        rows.append(
+            _table_row(
+                [
+                    (
+                        _tooltip_name(name, ticker=ticker),
+                        {"color": color, "fontWeight": "600"},
+                    ),
+                    (item.get("region", ""), {"color": MUTED, "textAlign": "center"}),
+                    (
+                        _format_price(price, 2),
+                        {
+                            "color": TEXT_PRIMARY,
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                    (
+                        _format_change(chg_pct, "%"),
+                        {
+                            "color": _change_color(chg_pct),
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                    (_format_change(w1, "%"), {**_CHG_COL, "color": _change_color(w1)}),
+                    (_format_change(m1, "%"), {**_CHG_COL, "color": _change_color(m1)}),
+                    (
+                        _build_sparkline(pts),
+                        {"textAlign": "center", "padding": "2px 0"},
+                    ),
+                    (
+                        item.get("date", ""),
+                        {"color": MUTED, "fontSize": "0.8rem", "textAlign": "right"},
+                    ),
+                ]
+            )
+        )
 
-    table = _data_table(["Index", "Region", "Level", "1D%", "1W%", "1M%", "30d", "Date"], rows) if rows else html.P("No equities data available", style={"color": MUTED})
+    table = (
+        _data_table(
+            ["Index", "Region", "Level", "1D%", "1W%", "1M%", "30d", "Date"], rows
+        )
+        if rows
+        else html.P("No equities data available", style={"color": MUTED})
+    )
 
-    return html.Div([
-        html.H5("Equities", className=_SECTION_TITLE),
-        html.Div(table, style={"overflowX": "auto"}),
-    ], className=_CARD_STYLE)
+    return html.Div(
+        [
+            html.H5("Equities", className=_SECTION_TITLE),
+            html.Div(table, style={"overflowX": "auto"}),
+        ],
+        className=_CARD_STYLE,
+    )
 
 
 def build_commodities_panel(data: dict, sparklines: Optional[dict] = None) -> html.Div:
@@ -457,23 +729,59 @@ def build_commodities_panel(data: dict, sparklines: Optional[dict] = None) -> ht
         ticker = item.get("ticker", "")
         pts = sparklines.get(ticker, [])
         w1, m1 = _period_changes(pts)
-        rows.append(_table_row([
-            (_tooltip_name(item.get("name", ticker), ticker=ticker), {"fontWeight": "500"}),
-            (item.get("group", ""), {"color": MUTED, "textAlign": "center"}),
-            (f"${_format_price(price, 2)}", {"color": TEXT_PRIMARY, "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-            (_format_change(chg_pct, "%"), {"color": _change_color(chg_pct), "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-            (_format_change(w1, "%"), {**_CHG_COL, "color": _change_color(w1)}),
-            (_format_change(m1, "%"), {**_CHG_COL, "color": _change_color(m1)}),
-            (_build_sparkline(pts), {"textAlign": "center", "padding": "2px 0"}),
-            (item.get("date", ""), {"color": MUTED, "fontSize": "0.8rem", "textAlign": "right"}),
-        ]))
+        rows.append(
+            _table_row(
+                [
+                    (
+                        _tooltip_name(item.get("name", ticker), ticker=ticker),
+                        {"fontWeight": "500"},
+                    ),
+                    (item.get("group", ""), {"color": MUTED, "textAlign": "center"}),
+                    (
+                        f"${_format_price(price, 2)}",
+                        {
+                            "color": TEXT_PRIMARY,
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                    (
+                        _format_change(chg_pct, "%"),
+                        {
+                            "color": _change_color(chg_pct),
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                    (_format_change(w1, "%"), {**_CHG_COL, "color": _change_color(w1)}),
+                    (_format_change(m1, "%"), {**_CHG_COL, "color": _change_color(m1)}),
+                    (
+                        _build_sparkline(pts),
+                        {"textAlign": "center", "padding": "2px 0"},
+                    ),
+                    (
+                        item.get("date", ""),
+                        {"color": MUTED, "fontSize": "0.8rem", "textAlign": "right"},
+                    ),
+                ]
+            )
+        )
 
-    table = _data_table(["Commodity", "Group", "Price", "1D%", "1W%", "1M%", "30d", "Date"], rows) if rows else html.P("No commodities data available", style={"color": MUTED})
+    table = (
+        _data_table(
+            ["Commodity", "Group", "Price", "1D%", "1W%", "1M%", "30d", "Date"], rows
+        )
+        if rows
+        else html.P("No commodities data available", style={"color": MUTED})
+    )
 
-    return html.Div([
-        html.H5("Commodities", className=_SECTION_TITLE),
-        html.Div(table, style={"overflowX": "auto"}),
-    ], className=_CARD_STYLE)
+    return html.Div(
+        [
+            html.H5("Commodities", className=_SECTION_TITLE),
+            html.Div(table, style={"overflowX": "auto"}),
+        ],
+        className=_CARD_STYLE,
+    )
 
 
 def build_macro_panel(data: dict) -> html.Div:
@@ -482,35 +790,78 @@ def build_macro_panel(data: dict) -> html.Div:
     note = data.get("note")
 
     if not indicators and note:
-        return html.Div([
-            html.H5("Macro Pulse", className=_SECTION_TITLE),
-            html.P(note, style={"color": YELLOW, "fontSize": "0.85rem"}),
-        ], className=_CARD_STYLE)
+        return html.Div(
+            [
+                html.H5("Macro Pulse", className=_SECTION_TITLE),
+                html.P(note, style={"color": YELLOW, "fontSize": "0.85rem"}),
+            ],
+            className=_CARD_STYLE,
+        )
 
     rows = []
     for item in indicators:
         val = item.get("value")
         chg = item.get("change")
         unit = item.get("unit", "")
-        rows.append(_table_row([
-            (_tooltip_name(item.get("name", item.get("series", ""))), {}),
-            (f"{_format_price(val, 2)} {unit}", {"color": BLUE, "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-            (_format_change(chg), {"color": _change_color(chg), "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-            (item.get("freq", ""), {"color": MUTED, "textAlign": "center", "fontSize": "0.8rem"}),
-            (item.get("date", ""), {"color": MUTED, "fontSize": "0.8rem", "textAlign": "right"}),
-        ]))
+        rows.append(
+            _table_row(
+                [
+                    (_tooltip_name(item.get("name", item.get("series", ""))), {}),
+                    (
+                        f"{_format_price(val, 2)} {unit}",
+                        {
+                            "color": BLUE,
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                    (
+                        _format_change(chg),
+                        {
+                            "color": _change_color(chg),
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                    (
+                        item.get("freq", ""),
+                        {"color": MUTED, "textAlign": "center", "fontSize": "0.8rem"},
+                    ),
+                    (
+                        item.get("date", ""),
+                        {"color": MUTED, "fontSize": "0.8rem", "textAlign": "right"},
+                    ),
+                ]
+            )
+        )
 
-    table = _data_table(["Indicator", "Value", "Change", "Freq", "As Of"], rows) if rows else html.P("No macro data available", style={"color": MUTED})
+    table = (
+        _data_table(["Indicator", "Value", "Change", "Freq", "As Of"], rows)
+        if rows
+        else html.P("No macro data available", style={"color": MUTED})
+    )
 
     banner = []
     if note:
-        banner = [html.P(note, style={"color": YELLOW, "fontSize": "0.8rem", "marginBottom": "0.75rem"})]
+        banner = [
+            html.P(
+                note,
+                style={
+                    "color": YELLOW,
+                    "fontSize": "0.8rem",
+                    "marginBottom": "0.75rem",
+                },
+            )
+        ]
 
-    return html.Div([
-        html.H5("Macro Pulse", className=_SECTION_TITLE),
-        *banner,
-        html.Div(table, style={"overflowX": "auto"}),
-    ], className=_CARD_STYLE)
+    return html.Div(
+        [
+            html.H5("Macro Pulse", className=_SECTION_TITLE),
+            *banner,
+            html.Div(table, style={"overflowX": "auto"}),
+        ],
+        className=_CARD_STYLE,
+    )
 
 
 def build_what_changed_panel(data: dict) -> html.Div:
@@ -519,19 +870,32 @@ def build_what_changed_panel(data: dict) -> html.Div:
     threshold = data.get("threshold", 1.5)
 
     if not movers:
-        return html.Div([
-            html.H5("What Changed", className=_SECTION_TITLE),
-            html.Div([
-                html.P(
-                    f"No cross-asset moves exceeding {threshold:.1f} sigma today.",
-                    style={"color": MUTED, "textAlign": "center", "padding": "1.5rem 0"},
+        return html.Div(
+            [
+                html.H5("What Changed", className=_SECTION_TITLE),
+                html.Div(
+                    [
+                        html.P(
+                            f"No cross-asset moves exceeding {threshold:.1f} sigma today.",
+                            style={
+                                "color": MUTED,
+                                "textAlign": "center",
+                                "padding": "1.5rem 0",
+                            },
+                        ),
+                        html.P(
+                            "This panel highlights instruments whose daily return exceeds the threshold vs their 20-day realized volatility.",
+                            style={
+                                "color": MUTED,
+                                "fontSize": "0.8rem",
+                                "textAlign": "center",
+                            },
+                        ),
+                    ]
                 ),
-                html.P(
-                    "This panel highlights instruments whose daily return exceeds the threshold vs their 20-day realized volatility.",
-                    style={"color": MUTED, "fontSize": "0.8rem", "textAlign": "center"},
-                ),
-            ]),
-        ], className=_CARD_STYLE)
+            ],
+            className=_CARD_STYLE,
+        )
 
     rows = []
     for item in movers:
@@ -552,37 +916,387 @@ def build_what_changed_panel(data: dict) -> html.Div:
             z_color = _change_color(z)
             z_style = {}
 
-        rows.append(_table_row([
-            (f"{arrow}", {"color": arrow_color, "fontSize": "0.9rem", "textAlign": "center"}),
-            (item.get("name", item.get("ticker", "")), {"color": TEXT_PRIMARY, "fontWeight": "500"}),
-            (item.get("asset_class", ""), {"color": PURPLE, "fontSize": "0.8rem", "textAlign": "center"}),
-            (_format_price(item.get("price"), 2), {"color": TEXT_PRIMARY, "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-            (_format_change(ret_pct, "%"), {"color": _change_color(ret_pct), "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-            (f"{z:.2f}\u03C3" if z is not None else "—", {"color": z_color, "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right", **z_style}),
-        ]))
+        rows.append(
+            _table_row(
+                [
+                    (
+                        f"{arrow}",
+                        {
+                            "color": arrow_color,
+                            "fontSize": "0.9rem",
+                            "textAlign": "center",
+                        },
+                    ),
+                    (
+                        item.get("name", item.get("ticker", "")),
+                        {"color": TEXT_PRIMARY, "fontWeight": "500"},
+                    ),
+                    (
+                        item.get("asset_class", ""),
+                        {"color": PURPLE, "fontSize": "0.8rem", "textAlign": "center"},
+                    ),
+                    (
+                        _format_price(item.get("price"), 2),
+                        {
+                            "color": TEXT_PRIMARY,
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                    (
+                        _format_change(ret_pct, "%"),
+                        {
+                            "color": _change_color(ret_pct),
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                    (
+                        f"{z:.2f}\u03C3" if z is not None else "—",
+                        {
+                            "color": z_color,
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                            **z_style,
+                        },
+                    ),
+                ]
+            )
+        )
 
     table = _data_table(["", "Instrument", "Class", "Price", "Return", "Z-Score"], rows)
 
-    return html.Div([
-        html.H5("What Changed", className=_SECTION_TITLE),
+    return html.Div(
+        [
+            html.H5("What Changed", className=_SECTION_TITLE),
+            html.P(
+                f"Instruments with |z-score| > {threshold:.1f}\u03C3 vs 20-day realized vol, ranked by magnitude",
+                style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "0.75rem"},
+            ),
+            html.Div(table, style={"overflowX": "auto"}),
+        ],
+        className=_CARD_STYLE,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Mover News Summary panel
+# ---------------------------------------------------------------------------
+
+
+def build_mover_news_panel(data: dict) -> html.Div:
+    """Market movers news summary with LLM-generated analysis.
+
+    Shows:
+    - Overall market sentiment
+    - Key themes driving moves
+    - Per-mover summaries with news drivers
+    - Market narrative
+    - Notable patterns
+    """
+    llm_summary = data.get("llm_summary") or {}
+    movers = data.get("movers", [])
+    news_by_ticker = data.get("news_by_ticker", {})
+    error = data.get("error")
+    timestamp = data.get("timestamp", "")
+
+    # Handle error state
+    if error and not llm_summary:
+        return html.Div(
+            [
+                html.H5("Mover News", className=_SECTION_TITLE),
+                html.Div(
+                    [
+                        html.P(
+                            "Unable to load mover news summary.",
+                            style={
+                                "color": RED,
+                                "textAlign": "center",
+                                "padding": "1rem",
+                            },
+                        ),
+                        html.P(
+                            error,
+                            style={
+                                "color": MUTED,
+                                "fontSize": "0.8rem",
+                                "textAlign": "center",
+                            },
+                        ),
+                    ]
+                ),
+            ],
+            className=_CARD_STYLE,
+        )
+
+    # Extract summary data
+    sentiment = llm_summary.get("overall_market_sentiment", "neutral")
+    key_themes = llm_summary.get("key_themes", [])
+    market_narrative = llm_summary.get("market_narrative", "")
+    notable_patterns = llm_summary.get("notable_patterns", [])
+    top_mover_summaries = llm_summary.get("top_mover_summaries", [])
+    confidence = llm_summary.get("confidence", 0)
+
+    # Sentiment badge color
+    sentiment_colors = {
+        "bullish": GREEN,
+        "bearish": RED,
+        "mixed": YELLOW,
+        "neutral": BLUE,
+    }
+    sentiment_color = sentiment_colors.get(sentiment.lower(), BLUE)
+
+    # Build the panel
+    children = [
+        html.H5("Mover News", className=_SECTION_TITLE),
         html.P(
-            f"Instruments with |z-score| > {threshold:.1f}\u03C3 vs 20-day realized vol, ranked by magnitude",
-            style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "0.75rem"},
+            f"AI-powered analysis of today's market movers • Confidence: {confidence:.0%}"
+            if confidence > 0
+            else "AI-powered analysis of today's market movers",
+            style={"color": MUTED, "fontSize": "0.75rem", "marginBottom": "0.75rem"},
         ),
-        html.Div(table, style={"overflowX": "auto"}),
-    ], className=_CARD_STYLE)
+    ]
 
+    # Market sentiment badge
+    if sentiment:
+        children.append(
+            html.Div(
+                [
+                    html.Span(
+                        "Market:",
+                        style={
+                            "color": MUTED,
+                            "fontSize": "0.85rem",
+                            "marginRight": "0.5rem",
+                        },
+                    ),
+                    html.Span(
+                        sentiment.upper(),
+                        style={
+                            "color": sentiment_color,
+                            "fontWeight": "700",
+                            "fontSize": "0.85rem",
+                            "backgroundColor": f"{sentiment_color}20",
+                            "padding": "0.2rem 0.5rem",
+                            "borderRadius": "4px",
+                        },
+                    ),
+                ],
+                style={"marginBottom": "1rem"},
+            )
+        )
 
-# ---------------------------------------------------------------------------
-# Curves chart panel
-# ---------------------------------------------------------------------------
+    # Key themes
+    if key_themes:
+        theme_badges = []
+        for theme in key_themes[:5]:
+            theme_badges.append(
+                html.Span(
+                    theme,
+                    style={
+                        "display": "inline-block",
+                        "backgroundColor": "rgba(77, 166, 255, 0.15)",
+                        "color": BLUE,
+                        "padding": "0.2rem 0.5rem",
+                        "borderRadius": "12px",
+                        "fontSize": "0.75rem",
+                        "marginRight": "0.4rem",
+                        "marginBottom": "0.4rem",
+                    },
+                )
+            )
+        children.append(
+            html.Div(
+                [
+                    html.Span(
+                        "Themes: ",
+                        style={
+                            "color": MUTED,
+                            "fontSize": "0.8rem",
+                            "fontWeight": "500",
+                        },
+                    ),
+                    *theme_badges,
+                ],
+                style={"marginBottom": "1rem"},
+            )
+        )
+
+    # Market narrative
+    if market_narrative:
+        children.append(
+            html.Div(
+                [
+                    html.P(
+                        market_narrative,
+                        style={
+                            "color": TEXT_PRIMARY,
+                            "fontSize": "0.9rem",
+                            "lineHeight": "1.5",
+                            "marginBottom": "0",
+                        },
+                    ),
+                ],
+                style={
+                    "backgroundColor": "rgba(0,0,0,0.2)",
+                    "padding": "0.75rem",
+                    "borderRadius": "6px",
+                    "marginBottom": "1rem",
+                    "borderLeft": f"3px solid {BLUE}",
+                },
+            )
+        )
+
+    # Per-mover summaries
+    if top_mover_summaries:
+        children.append(
+            html.Div(
+                [
+                    html.P(
+                        "Mover Analysis",
+                        style={
+                            "color": MUTED,
+                            "fontSize": "0.8rem",
+                            "fontWeight": "600",
+                            "marginBottom": "0.5rem",
+                        },
+                    ),
+                ]
+            )
+        )
+
+        for mover_info in top_mover_summaries[:5]:
+            ticker = mover_info.get("ticker", "")
+            summary = mover_info.get("summary", "")
+            driver = mover_info.get("driver", "")
+
+            # Find the actual mover data for return info
+            mover_data = next((m for m in movers if m.get("ticker") == ticker), {})
+            ret_pct = mover_data.get("return_pct", 0)
+            direction = mover_data.get("direction", "")
+            arrow = "\u25B2" if direction == "up" else "\u25BC"
+            arrow_color = GREEN if direction == "up" else RED
+
+            children.append(
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Span(
+                                    f"{arrow} {ticker}",
+                                    style={
+                                        "color": arrow_color,
+                                        "fontWeight": "600",
+                                        "fontSize": "0.9rem",
+                                        "marginRight": "0.5rem",
+                                    },
+                                ),
+                                html.Span(
+                                    f"{ret_pct:+.2f}%",
+                                    style={
+                                        "color": arrow_color,
+                                        "fontFamily": "'JetBrains Mono', monospace",
+                                        "fontSize": "0.85rem",
+                                    },
+                                ),
+                            ],
+                            style={"marginBottom": "0.25rem"},
+                        ),
+                        html.P(
+                            summary,
+                            style={
+                                "color": TEXT_PRIMARY,
+                                "fontSize": "0.8rem",
+                                "marginBottom": "0.25rem",
+                            },
+                        ),
+                        html.P(
+                            f"Driver: {driver}" if driver else "",
+                            style={
+                                "color": MUTED,
+                                "fontSize": "0.75rem",
+                                "fontStyle": "italic" if driver else "normal",
+                            },
+                        ),
+                    ],
+                    style={
+                        "backgroundColor": "rgba(0,0,0,0.15)",
+                        "padding": "0.6rem",
+                        "borderRadius": "6px",
+                        "marginBottom": "0.5rem",
+                    },
+                )
+            )
+
+    # Notable patterns
+    if notable_patterns:
+        pattern_items = []
+        for pattern in notable_patterns[:3]:
+            pattern_items.append(
+                html.Li(
+                    pattern,
+                    style={"color": TEXT_PRIMARY, "fontSize": "0.8rem"},
+                )
+            )
+        children.append(
+            html.Div(
+                [
+                    html.P(
+                        "Patterns",
+                        style={
+                            "color": MUTED,
+                            "fontSize": "0.8rem",
+                            "fontWeight": "600",
+                            "marginBottom": "0.25rem",
+                        },
+                    ),
+                    html.Ul(
+                        pattern_items,
+                        style={"marginBottom": "0", "paddingLeft": "1.2rem"},
+                    ),
+                ],
+                style={"marginTop": "0.5rem"},
+            )
+        )
+
+    # Loading/empty state
+    if not llm_summary and not error:
+        children.append(
+            html.Div(
+                [
+                    html.P(
+                        "Loading market analysis...",
+                        style={
+                            "color": MUTED,
+                            "textAlign": "center",
+                            "padding": "1rem",
+                        },
+                    ),
+                    html.P(
+                        "Requires IBKR connection and QWEN_API_KEY configured.",
+                        style={
+                            "color": MUTED,
+                            "fontSize": "0.75rem",
+                            "textAlign": "center",
+                        },
+                    ),
+                ]
+            )
+        )
+
+    return html.Div(children, className=_CARD_STYLE)
+
 
 _CHART_LAYOUT = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
     font=dict(color=TEXT_PRIMARY, family="Inter, sans-serif"),
     legend=dict(
-        orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="right",
+        x=1,
         font=dict(color=TEXT_PRIMARY, size=11),
     ),
     xaxis=dict(gridcolor="rgba(48,54,61,0.5)", tickfont=dict(color=MUTED)),
@@ -607,21 +1321,29 @@ def build_curves_panel(curves: dict) -> html.Div:
     # --- Yield curve + Swap curve overlay ---
     if yc.get("tenors"):
         fig_yc = go.Figure()
-        fig_yc.add_trace(go.Scatter(
-            x=yc["tenors"], y=yc["yields"],
-            mode="lines+markers", name="Treasury Yield Curve",
-            line=dict(color=BLUE, width=2.5),
-            marker=dict(size=6),
-            hovertemplate="%{x}: %{y:.3f}%<extra>Treasury</extra>",
-        ))
+        fig_yc.add_trace(
+            go.Scatter(
+                x=yc["tenors"],
+                y=yc["yields"],
+                mode="lines+markers",
+                name="Treasury Yield Curve",
+                line=dict(color=BLUE, width=2.5),
+                marker=dict(size=6),
+                hovertemplate="%{x}: %{y:.3f}%<extra>Treasury</extra>",
+            )
+        )
         if sc.get("tenors"):
-            fig_yc.add_trace(go.Scatter(
-                x=sc["tenors"], y=sc["rates"],
-                mode="lines+markers", name="USD Swap Curve",
-                line=dict(color=PURPLE, width=2.5, dash="dash"),
-                marker=dict(size=6, symbol="diamond"),
-                hovertemplate="%{x}: %{y:.3f}%<extra>Swap</extra>",
-            ))
+            fig_yc.add_trace(
+                go.Scatter(
+                    x=sc["tenors"],
+                    y=sc["rates"],
+                    mode="lines+markers",
+                    name="USD Swap Curve",
+                    line=dict(color=PURPLE, width=2.5, dash="dash"),
+                    marker=dict(size=6, symbol="diamond"),
+                    hovertemplate="%{x}: %{y:.3f}%<extra>Swap</extra>",
+                )
+            )
         fig_yc.update_layout(
             **_CHART_LAYOUT,
             height=310,
@@ -629,23 +1351,44 @@ def build_curves_panel(curves: dict) -> html.Div:
             yaxis_ticksuffix="%",
         )
         date_label = yc.get("date", "")
-        charts.append(html.Div([
-            html.Div([
-                html.Span("Yield & Swap Curves", style={"fontWeight": "600", "fontSize": "0.95rem"}),
-                html.Span(f"  as of {date_label}" if date_label else "", style={"color": MUTED, "fontSize": "0.8rem", "marginLeft": "0.75rem"}),
-            ], style={"marginBottom": "0.5rem"}),
-            dcc.Graph(figure=fig_yc, config={"displayModeBar": False}),
-        ]))
+        charts.append(
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Span(
+                                "Yield & Swap Curves",
+                                style={"fontWeight": "600", "fontSize": "0.95rem"},
+                            ),
+                            html.Span(
+                                f"  as of {date_label}" if date_label else "",
+                                style={
+                                    "color": MUTED,
+                                    "fontSize": "0.8rem",
+                                    "marginLeft": "0.75rem",
+                                },
+                            ),
+                        ],
+                        style={"marginBottom": "0.5rem"},
+                    ),
+                    dcc.Graph(figure=fig_yc, config={"displayModeBar": False}),
+                ]
+            )
+        )
 
     # --- Swap spread bar chart ---
     if ss.get("tenors"):
         colors = [GREEN if v >= 0 else RED for v in ss["spreads_bp"]]
         fig_ss = go.Figure()
-        fig_ss.add_trace(go.Bar(
-            x=ss["tenors"], y=ss["spreads_bp"],
-            marker_color=colors, name="Swap Spread",
-            hovertemplate="%{x}: %{y:.1f} bp<extra></extra>",
-        ))
+        fig_ss.add_trace(
+            go.Bar(
+                x=ss["tenors"],
+                y=ss["spreads_bp"],
+                marker_color=colors,
+                name="Swap Spread",
+                hovertemplate="%{x}: %{y:.1f} bp<extra></extra>",
+            )
+        )
         fig_ss.add_hline(y=0, line_dash="dot", line_color=MUTED, line_width=1)
         fig_ss.update_layout(
             **_CHART_LAYOUT,
@@ -653,24 +1396,41 @@ def build_curves_panel(curves: dict) -> html.Div:
             yaxis_title="Spread (bp)",
             showlegend=False,
         )
-        charts.append(html.Div([
-            html.Div([
-                html.Span("Swap Spreads", style={"fontWeight": "600", "fontSize": "0.95rem"}),
-                html.Span(" (Swap Rate − Treasury Yield)", style={"color": MUTED, "fontSize": "0.8rem"}),
-            ], style={"marginBottom": "0.5rem"}),
-            dcc.Graph(figure=fig_ss, config={"displayModeBar": False}),
-        ]))
+        charts.append(
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Span(
+                                "Swap Spreads",
+                                style={"fontWeight": "600", "fontSize": "0.95rem"},
+                            ),
+                            html.Span(
+                                " (Swap Rate − Treasury Yield)",
+                                style={"color": MUTED, "fontSize": "0.8rem"},
+                            ),
+                        ],
+                        style={"marginBottom": "0.5rem"},
+                    ),
+                    dcc.Graph(figure=fig_ss, config={"displayModeBar": False}),
+                ]
+            )
+        )
 
     # --- Forward rates ---
     if fwd.get("labels"):
         fig_fwd = go.Figure()
-        fig_fwd.add_trace(go.Scatter(
-            x=fwd["labels"], y=fwd["rates"],
-            mode="lines+markers", name="Implied Forward Rate",
-            line=dict(color=YELLOW, width=2.5),
-            marker=dict(size=6),
-            hovertemplate="%{x}: %{y:.3f}%<extra></extra>",
-        ))
+        fig_fwd.add_trace(
+            go.Scatter(
+                x=fwd["labels"],
+                y=fwd["rates"],
+                mode="lines+markers",
+                name="Implied Forward Rate",
+                line=dict(color=YELLOW, width=2.5),
+                marker=dict(size=6),
+                hovertemplate="%{x}: %{y:.3f}%<extra></extra>",
+            )
+        )
         fig_fwd.update_layout(
             **_CHART_LAYOUT,
             height=260,
@@ -678,18 +1438,32 @@ def build_curves_panel(curves: dict) -> html.Div:
             yaxis_ticksuffix="%",
             showlegend=False,
         )
-        charts.append(html.Div([
-            html.Div("Implied Forward Rates", style={"fontWeight": "600", "fontSize": "0.95rem", "marginBottom": "0.5rem"}),
-            dcc.Graph(figure=fig_fwd, config={"displayModeBar": False}),
-        ]))
+        charts.append(
+            html.Div(
+                [
+                    html.Div(
+                        "Implied Forward Rates",
+                        style={
+                            "fontWeight": "600",
+                            "fontSize": "0.95rem",
+                            "marginBottom": "0.5rem",
+                        },
+                    ),
+                    dcc.Graph(figure=fig_fwd, config={"displayModeBar": False}),
+                ]
+            )
+        )
 
     if not charts:
         return html.Div()
 
-    return html.Div([
-        html.H5("Rate Curves", className=_SECTION_TITLE),
-        html.Div(charts),
-    ], className=_CARD_STYLE)
+    return html.Div(
+        [
+            html.H5("Rate Curves", className=_SECTION_TITLE),
+            html.Div(charts),
+        ],
+        className=_CARD_STYLE,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -720,15 +1494,43 @@ def build_fed_liquidity_panel(data: dict) -> html.Div:
     for item in snapshot:
         val = item.get("value")
         chg = item.get("change")
-        rows.append(_table_row([
-            (_tooltip_name(item.get("name", item.get("series", ""))), {}),
-            (f"{_format_price(val, 3)} T$" if val is not None else "—", {"color": BLUE, "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-            (_format_change(chg, " T$") if chg is not None else "—", {"color": _change_color(chg), "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-            (item.get("freq", ""), {"color": MUTED, "textAlign": "center", "fontSize": "0.8rem"}),
-            (item.get("date", ""), {"color": MUTED, "fontSize": "0.8rem", "textAlign": "right"}),
-        ]))
+        rows.append(
+            _table_row(
+                [
+                    (_tooltip_name(item.get("name", item.get("series", ""))), {}),
+                    (
+                        f"{_format_price(val, 3)} T$" if val is not None else "—",
+                        {
+                            "color": BLUE,
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                    (
+                        _format_change(chg, " T$") if chg is not None else "—",
+                        {
+                            "color": _change_color(chg),
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                    (
+                        item.get("freq", ""),
+                        {"color": MUTED, "textAlign": "center", "fontSize": "0.8rem"},
+                    ),
+                    (
+                        item.get("date", ""),
+                        {"color": MUTED, "fontSize": "0.8rem", "textAlign": "right"},
+                    ),
+                ]
+            )
+        )
 
-    table = _data_table(["Component", "Level (T$)", "Change", "Freq", "As Of"], rows) if rows else html.P("No data", style={"color": MUTED})
+    table = (
+        _data_table(["Component", "Level (T$)", "Change", "Freq", "As Of"], rows)
+        if rows
+        else html.P("No data", style={"color": MUTED})
+    )
 
     # --- Historical chart ---
     charts = []
@@ -748,22 +1550,30 @@ def build_fed_liquidity_panel(data: dict) -> html.Div:
             continue
         dates = [p["date"] for p in pts]
         vals = [p["value"] for p in pts]
-        fig_main.add_trace(go.Scatter(
-            x=dates, y=vals,
-            mode="lines", name=names_map.get(sid, sid),
-            line=dict(color=_FED_SERIES_COLORS.get(sid, MUTED), width=2),
-            hovertemplate=f"<b>{names_map.get(sid, sid)}</b><br>%{{x}}<br>%{{y:.3f}} T$<extra></extra>",
-        ))
+        fig_main.add_trace(
+            go.Scatter(
+                x=dates,
+                y=vals,
+                mode="lines",
+                name=names_map.get(sid, sid),
+                line=dict(color=_FED_SERIES_COLORS.get(sid, MUTED), width=2),
+                hovertemplate=f"<b>{names_map.get(sid, sid)}</b><br>%{{x}}<br>%{{y:.3f}} T$<extra></extra>",
+            )
+        )
 
     if net_liq:
         dates = [p["date"] for p in net_liq]
         vals = [p["value"] for p in net_liq]
-        fig_main.add_trace(go.Scatter(
-            x=dates, y=vals,
-            mode="lines", name="Net Liquidity",
-            line=dict(color=RED, width=2.5, dash="dot"),
-            hovertemplate="<b>Net Liquidity</b><br>%{x}<br>%{y:.3f} T$<extra></extra>",
-        ))
+        fig_main.add_trace(
+            go.Scatter(
+                x=dates,
+                y=vals,
+                mode="lines",
+                name="Net Liquidity",
+                line=dict(color=RED, width=2.5, dash="dot"),
+                hovertemplate="<b>Net Liquidity</b><br>%{x}<br>%{y:.3f} T$<extra></extra>",
+            )
+        )
 
     if fig_main.data:
         fig_main.update_layout(
@@ -773,13 +1583,26 @@ def build_fed_liquidity_panel(data: dict) -> html.Div:
             yaxis_tickprefix="$",
             yaxis_ticksuffix="T",
         )
-        charts.append(html.Div([
-            html.Div([
-                html.Span("Fed Balance Sheet Components", style={"fontWeight": "600", "fontSize": "0.95rem"}),
-                html.Span(" (2-year history)", style={"color": MUTED, "fontSize": "0.8rem"}),
-            ], style={"marginBottom": "0.5rem"}),
-            dcc.Graph(figure=fig_main, config={"displayModeBar": False}),
-        ]))
+        charts.append(
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Span(
+                                "Fed Balance Sheet Components",
+                                style={"fontWeight": "600", "fontSize": "0.95rem"},
+                            ),
+                            html.Span(
+                                " (2-year history)",
+                                style={"color": MUTED, "fontSize": "0.8rem"},
+                            ),
+                        ],
+                        style={"marginBottom": "0.5rem"},
+                    ),
+                    dcc.Graph(figure=fig_main, config={"displayModeBar": False}),
+                ]
+            )
+        )
 
     # SOMA holdings breakdown (Treasuries + MBS)
     fig_soma = go.Figure()
@@ -790,13 +1613,17 @@ def build_fed_liquidity_panel(data: dict) -> html.Div:
             continue
         dates = [p["date"] for p in pts]
         vals = [p["value"] for p in pts]
-        fig_soma.add_trace(go.Scatter(
-            x=dates, y=vals,
-            mode="lines", name=label,
-            line=dict(color=_FED_SERIES_COLORS.get(sid, MUTED), width=2),
-            stackgroup="soma",
-            hovertemplate=f"<b>{label}</b><br>%{{x}}<br>%{{y:.3f}} T$<extra></extra>",
-        ))
+        fig_soma.add_trace(
+            go.Scatter(
+                x=dates,
+                y=vals,
+                mode="lines",
+                name=label,
+                line=dict(color=_FED_SERIES_COLORS.get(sid, MUTED), width=2),
+                stackgroup="soma",
+                hovertemplate=f"<b>{label}</b><br>%{{x}}<br>%{{y:.3f}} T$<extra></extra>",
+            )
+        )
 
     if fig_soma.data:
         fig_soma.update_layout(
@@ -806,28 +1633,45 @@ def build_fed_liquidity_panel(data: dict) -> html.Div:
             yaxis_tickprefix="$",
             yaxis_ticksuffix="T",
         )
-        charts.append(html.Div([
-            html.Div([
-                html.Span("SOMA Holdings", style={"fontWeight": "600", "fontSize": "0.95rem"}),
-                html.Span(" (Treasuries + MBS)", style={"color": MUTED, "fontSize": "0.8rem"}),
-            ], style={"marginBottom": "0.5rem"}),
-            dcc.Graph(figure=fig_soma, config={"displayModeBar": False}),
-        ]))
+        charts.append(
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Span(
+                                "SOMA Holdings",
+                                style={"fontWeight": "600", "fontSize": "0.95rem"},
+                            ),
+                            html.Span(
+                                " (Treasuries + MBS)",
+                                style={"color": MUTED, "fontSize": "0.8rem"},
+                            ),
+                        ],
+                        style={"marginBottom": "0.5rem"},
+                    ),
+                    dcc.Graph(figure=fig_soma, config={"displayModeBar": False}),
+                ]
+            )
+        )
 
-    return html.Div([
-        html.H5("Fed QE / QT Monitor", className=_SECTION_TITLE),
-        html.P(
-            "Net Liquidity = Fed Assets − TGA − RRP  |  Hover instrument names for definitions",
-            style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "0.75rem"},
-        ),
-        html.Div(table, style={"overflowX": "auto", "marginBottom": "1.5rem"}),
-        html.Div(charts),
-    ], className=_CARD_STYLE)
+    return html.Div(
+        [
+            html.H5("Fed QE / QT Monitor", className=_SECTION_TITLE),
+            html.P(
+                "Net Liquidity = Fed Assets − TGA − RRP  |  Hover instrument names for definitions",
+                style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "0.75rem"},
+            ),
+            html.Div(table, style={"overflowX": "auto", "marginBottom": "1.5rem"}),
+            html.Div(charts),
+        ],
+        className=_CARD_STYLE,
+    )
 
 
 # ---------------------------------------------------------------------------
 # Central Bank Meeting Tracker
 # ---------------------------------------------------------------------------
+
 
 def build_cb_meeting_panel(data: dict) -> html.Div:
     """FOMC meeting countdown with policy rates and implied path proxy."""
@@ -847,21 +1691,33 @@ def build_cb_meeting_panel(data: dict) -> html.Div:
     if next_date is not None and days is not None:
         label = fed.get("label", next_date)
         if days == 0:
-            countdown_parts.append(html.Span("Today", style={"color": YELLOW, "fontWeight": "600"}))
+            countdown_parts.append(
+                html.Span("Today", style={"color": YELLOW, "fontWeight": "600"})
+            )
         elif days == 1:
-            countdown_parts.append(html.Span("Tomorrow", style={"color": YELLOW, "fontWeight": "600"}))
+            countdown_parts.append(
+                html.Span("Tomorrow", style={"color": YELLOW, "fontWeight": "600"})
+            )
         elif days < 0:
             countdown_parts.append(html.Span("Past", style={"color": MUTED}))
         else:
-            countdown_parts.append(html.Span(f"{days} days", style={"color": BLUE, "fontWeight": "600"}))
-        countdown_parts.append(html.Span(f" until {label}", style={"color": TEXT_PRIMARY}))
+            countdown_parts.append(
+                html.Span(f"{days} days", style={"color": BLUE, "fontWeight": "600"})
+            )
+        countdown_parts.append(
+            html.Span(f" until {label}", style={"color": TEXT_PRIMARY})
+        )
     elif upcoming:
         # Fallback: use first upcoming
         first = upcoming[0]
         d = first.get("days_until", 0)
         lbl = first.get("label", first.get("date", ""))
-        countdown_parts.append(html.Span(f"{d} days", style={"color": BLUE, "fontWeight": "600"}))
-        countdown_parts.append(html.Span(f" until {lbl}", style={"color": TEXT_PRIMARY}))
+        countdown_parts.append(
+            html.Span(f"{d} days", style={"color": BLUE, "fontWeight": "600"})
+        )
+        countdown_parts.append(
+            html.Span(f" until {lbl}", style={"color": TEXT_PRIMARY})
+        )
 
     # Policy rates table
     rate_rows = []
@@ -872,30 +1728,96 @@ def build_cb_meeting_panel(data: dict) -> html.Div:
     spread = fed.get("two_y_minus_target")
 
     if target is not None:
-        rate_rows.append(_table_row([
-            (_tooltip_name("Fed Funds Target (Upper)"), {}),
-            (f"{target:.2f}%", {"color": BLUE, "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-        ]))
+        rate_rows.append(
+            _table_row(
+                [
+                    (_tooltip_name("Fed Funds Target (Upper)"), {}),
+                    (
+                        f"{target:.2f}%",
+                        {
+                            "color": BLUE,
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                ]
+            )
+        )
     if sofr is not None:
-        rate_rows.append(_table_row([
-            (_tooltip_name("SOFR"), {}),
-            (f"{sofr:.2f}%", {"color": TEXT_PRIMARY, "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-        ]))
+        rate_rows.append(
+            _table_row(
+                [
+                    (_tooltip_name("SOFR"), {}),
+                    (
+                        f"{sofr:.2f}%",
+                        {
+                            "color": TEXT_PRIMARY,
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                ]
+            )
+        )
     if effr is not None:
-        rate_rows.append(_table_row([
-            (html.Span("EFFR", title="Effective Fed Funds Rate — actual trading rate"), {}),
-            (f"{effr:.2f}%", {"color": TEXT_PRIMARY, "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-        ]))
+        rate_rows.append(
+            _table_row(
+                [
+                    (
+                        html.Span(
+                            "EFFR",
+                            title="Effective Fed Funds Rate — actual trading rate",
+                        ),
+                        {},
+                    ),
+                    (
+                        f"{effr:.2f}%",
+                        {
+                            "color": TEXT_PRIMARY,
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                ]
+            )
+        )
     if two_y is not None:
-        rate_rows.append(_table_row([
-            (html.Span("2Y Treasury", title="Proxy for market-implied path over 2Y"), {}),
-            (f"{two_y:.2f}%", {"color": TEXT_PRIMARY, "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-        ]))
+        rate_rows.append(
+            _table_row(
+                [
+                    (
+                        html.Span(
+                            "2Y Treasury", title="Proxy for market-implied path over 2Y"
+                        ),
+                        {},
+                    ),
+                    (
+                        f"{two_y:.2f}%",
+                        {
+                            "color": TEXT_PRIMARY,
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                ]
+            )
+        )
     if spread is not None:
-        rate_rows.append(_table_row([
-            (_tooltip_name("2Y-FF Spread"), {}),
-            (f"{spread:+.2f}%", {"color": _change_color(spread), "fontFamily": "'JetBrains Mono', monospace", "textAlign": "right"}),
-        ]))
+        rate_rows.append(
+            _table_row(
+                [
+                    (_tooltip_name("2Y-FF Spread"), {}),
+                    (
+                        f"{spread:+.2f}%",
+                        {
+                            "color": _change_color(spread),
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                        },
+                    ),
+                ]
+            )
+        )
 
     rate_table = _data_table(["Rate", "Level"], rate_rows) if rate_rows else html.Div()
 
@@ -905,39 +1827,93 @@ def build_cb_meeting_panel(data: dict) -> html.Div:
         d = m.get("days_until", 0)
         lbl = m.get("label", m.get("date", ""))
         sep = " (SEP)" if m.get("has_sep") else ""
-        meeting_list.append(html.Div([
-            html.Span(f"{d}d", style={"color": MUTED, "fontSize": "0.75rem", "minWidth": "28px", "display": "inline-block"}),
-            html.Span(lbl, style={"color": TEXT_PRIMARY, "fontSize": "0.85rem"}),
-        ], style={"display": "flex", "gap": "0.5rem", "marginBottom": "0.25rem"}))
+        meeting_list.append(
+            html.Div(
+                [
+                    html.Span(
+                        f"{d}d",
+                        style={
+                            "color": MUTED,
+                            "fontSize": "0.75rem",
+                            "minWidth": "28px",
+                            "display": "inline-block",
+                        },
+                    ),
+                    html.Span(
+                        lbl, style={"color": TEXT_PRIMARY, "fontSize": "0.85rem"}
+                    ),
+                ],
+                style={"display": "flex", "gap": "0.5rem", "marginBottom": "0.25rem"},
+            )
+        )
 
-    return html.Div([
-        html.H5("Central Bank Meeting Tracker", className=_SECTION_TITLE),
-        html.P(
-            "FOMC countdown | Policy rates | 2Y-FF spread as proxy for implied path. Meeting-specific probabilities require CME Fed Funds futures.",
-            style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "0.75rem"},
-        ),
-        html.Div([
-            html.Div([
-                html.Div([
-                    html.Span("Next FOMC: ", style={"color": MUTED, "fontSize": "0.9rem"}),
-                    *countdown_parts,
-                ], style={"marginBottom": "1rem"}),
-                html.Div(rate_table, style={"overflowX": "auto"}),
-            ], style={"flex": 1, "minWidth": "200px"}),
-            html.Div([
-                html.Span("Upcoming", style={"color": MUTED, "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "0.5px", "marginBottom": "0.5rem", "display": "block"}),
-                html.Div(meeting_list),
-            ], style={"flex": 0, "minWidth": "140px"}),
-        ], style={"display": "flex", "gap": "2rem", "flexWrap": "wrap", "alignItems": "flex-start"}),
-    ], className=_CARD_STYLE)
+    return html.Div(
+        [
+            html.H5("Central Bank Meeting Tracker", className=_SECTION_TITLE),
+            html.P(
+                "FOMC countdown | Policy rates | 2Y-FF spread as proxy for implied path. Meeting-specific probabilities require CME Fed Funds futures.",
+                style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "0.75rem"},
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Span(
+                                        "Next FOMC: ",
+                                        style={"color": MUTED, "fontSize": "0.9rem"},
+                                    ),
+                                    *countdown_parts,
+                                ],
+                                style={"marginBottom": "1rem"},
+                            ),
+                            html.Div(rate_table, style={"overflowX": "auto"}),
+                        ],
+                        style={"flex": 1, "minWidth": "200px"},
+                    ),
+                    html.Div(
+                        [
+                            html.Span(
+                                "Upcoming",
+                                style={
+                                    "color": MUTED,
+                                    "fontSize": "0.75rem",
+                                    "textTransform": "uppercase",
+                                    "letterSpacing": "0.5px",
+                                    "marginBottom": "0.5rem",
+                                    "display": "block",
+                                },
+                            ),
+                            html.Div(meeting_list),
+                        ],
+                        style={"flex": 0, "minWidth": "140px"},
+                    ),
+                ],
+                style={
+                    "display": "flex",
+                    "gap": "2rem",
+                    "flexWrap": "wrap",
+                    "alignItems": "flex-start",
+                },
+            ),
+        ],
+        className=_CARD_STYLE,
+    )
 
 
 # ---------------------------------------------------------------------------
 # Full Markets layout builder
 # ---------------------------------------------------------------------------
 
-def build_markets_layout(overview: dict) -> html.Div:
-    """Assemble the full Markets tab layout from an overview API response."""
+
+def build_markets_layout(overview: dict, mover_news_data: dict = None) -> html.Div:
+    """Assemble the full Markets tab layout from an overview API response.
+
+    Args:
+        overview: The market overview data from /market/overview endpoint
+        mover_news_data: Optional mover news data with LLM summary from /market/mover-news
+    """
     rates_data = overview.get("rates") or {}
     fx_data = overview.get("fx") or {}
     equities_data = overview.get("equities") or {}
@@ -951,60 +1927,231 @@ def build_markets_layout(overview: dict) -> html.Div:
 
     timestamp = overview.get("timestamp", "")
 
-    return html.Div([
-        html.Div([
-            html.Span("Market data as of ", style={"color": MUTED, "fontSize": "0.8rem"}),
-            html.Span(timestamp[:19].replace("T", " ") if timestamp else "—", style={"color": BLUE, "fontSize": "0.8rem"}),
-        ], style={"marginBottom": "1rem", "textAlign": "right"}),
+    # Get data sources from each section
+    fx_source = fx_data.get("source", "—")
+    equities_source = equities_data.get("source", "—")
+    commodities_source = commodities_data.get("source", "—")
+    ibkr_connected = overview.get("ibkr_connected", False)
 
-        # Row 1: What Changed (full width)
-        dbc.Row([
-            dbc.Col(build_what_changed_panel(what_changed_data), xs=12),
-        ], className="mb-3"),
+    # Show warning if IBKR is not connected
+    ibkr_warning = None
+    # Check if we have any live data - if all sources show yfinance and data is empty, IBKR is likely disconnected
+    has_live_data = (
+        fx_source == "IBKR" or equities_source == "IBKR" or commodities_source == "IBKR"
+    )
+    has_any_data = (
+        fx_data.get("pairs")
+        or equities_data.get("indices")
+        or commodities_data.get("commodities")
+    )
 
-        # Row 2: Rates + FX
-        dbc.Row([
-            dbc.Col(build_rates_panel(rates_data, sparklines), xs=12, lg=6),
-            dbc.Col(build_fx_panel(fx_data, sparklines), xs=12, lg=6),
-        ], className="mb-3"),
-
-        # Row 3: Equities + Commodities
-        dbc.Row([
-            dbc.Col(build_equities_panel(equities_data, sparklines), xs=12, lg=6),
-            dbc.Col(build_commodities_panel(commodities_data, sparklines), xs=12, lg=6),
-        ], className="mb-3"),
-
-        # Expandable historical chart container
-        dbc.Row([
-            dbc.Col(
-                dcc.Loading(
-                    html.Div(id="historical-chart-container"),
-                    type="dot",
-                    color=BLUE,
+    if not has_live_data and not has_any_data:
+        ibkr_warning = html.Div(
+            [
+                html.Span("⚠️ ", style={"color": YELLOW}),
+                "IBKR not connected - market data unavailable. ",
+                html.Span(
+                    "Start IB Gateway or TWS to enable live data.",
+                    style={"color": MUTED, "fontSize": "0.8rem"},
                 ),
-                xs=12,
-            ),
-        ], className="mb-3"),
+            ],
+            style={
+                "backgroundColor": "rgba(251, 191, 36, 0.1)",
+                "border": f"1px solid {YELLOW}",
+                "borderRadius": "4px",
+                "padding": "0.5rem 1rem",
+                "marginBottom": "1rem",
+                "color": YELLOW,
+                "fontSize": "0.85rem",
+            },
+        )
 
-        # Row 4: Curves (full width)
-        dbc.Row([
-            dbc.Col(build_curves_panel(curves_data), xs=12),
-        ], className="mb-3") if curves_data else html.Div(),
+    # Build the layout
+    children = [
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Span(
+                            "Market data as of ",
+                            style={"color": MUTED, "fontSize": "0.8rem"},
+                        ),
+                        html.Span(
+                            timestamp[:19].replace("T", " ") if timestamp else "—",
+                            style={
+                                "color": BLUE,
+                                "fontSize": "0.8rem",
+                                "fontWeight": "600",
+                            },
+                        ),
+                    ],
+                    style={"flex": "1", "textAlign": "left"},
+                ),
+                html.Div(
+                    [
+                        html.Span(
+                            "Sources: ", style={"color": MUTED, "fontSize": "0.75rem"}
+                        ),
+                        html.Span(
+                            f"FX: {fx_source}",
+                            style={
+                                "color": GREEN if fx_source == "IBKR" else MUTED,
+                                "fontSize": "0.75rem",
+                                "fontWeight": "500",
+                                "marginRight": "0.75rem",
+                            },
+                        ),
+                        html.Span(
+                            f"Equities: {equities_source}",
+                            style={
+                                "color": GREEN if equities_source == "IBKR" else MUTED,
+                                "fontSize": "0.75rem",
+                                "fontWeight": "500",
+                                "marginRight": "0.75rem",
+                            },
+                        ),
+                        html.Span(
+                            f"Commodities: {commodities_source}",
+                            style={
+                                "color": GREEN
+                                if commodities_source == "IBKR"
+                                else MUTED,
+                                "fontSize": "0.75rem",
+                                "fontWeight": "500",
+                            },
+                        ),
+                    ],
+                    style={
+                        "flex": "1",
+                        "textAlign": "right",
+                        "display": "flex",
+                        "justifyContent": "flex-end",
+                    },
+                ),
+            ],
+            style={
+                "marginBottom": "1rem",
+                "display": "flex",
+                "flexDirection": "row",
+                "alignItems": "center",
+                "gap": "1rem",
+            },
+        ),
+    ]
 
-        # Row 5: Fed QE/QT Monitor (full width)
-        dbc.Row([
-            dbc.Col(build_fed_liquidity_panel(fed_liq_data), xs=12),
-        ], className="mb-3") if fed_liq_data else html.Div(),
+    # Add warning if IBKR not connected
+    if ibkr_warning:
+        children.append(ibkr_warning)
 
-        # Row 5b: Central Bank Meeting Tracker (full width)
-        dbc.Row([
-            dbc.Col(build_cb_meeting_panel(cb_meetings_data), xs=12),
-        ], className="mb-3") if cb_meetings_data else html.Div(),
+    # Row 1: What Changed (full width) + Mover News (side panel)
+    # Show mover news panel if we have data
+    if mover_news_data:
+        children.append(
+            dbc.Row(
+                [
+                    dbc.Col(build_what_changed_panel(what_changed_data), xs=12, lg=7),
+                    dbc.Col(build_mover_news_panel(mover_news_data), xs=12, lg=5),
+                ],
+                className="mb-3",
+            )
+        )
+    else:
+        # Fallback: just show What Changed
+        children.append(
+            dbc.Row(
+                [
+                    dbc.Col(build_what_changed_panel(what_changed_data), xs=12),
+                ],
+                className="mb-3",
+            )
+        )
 
-        # Row 6: Macro Pulse (full width)
-        dbc.Row([
-            dbc.Col(build_macro_panel(macro_data), xs=12),
-        ]),
+    # Row 2: Rates + FX
+    children.append(
+        dbc.Row(
+            [
+                dbc.Col(build_rates_panel(rates_data, sparklines), xs=12, lg=6),
+                dbc.Col(build_fx_panel(fx_data, sparklines), xs=12, lg=6),
+            ],
+            className="mb-3",
+        )
+    )
 
-        dcc.Store(id="selected-instrument-store"),
-    ])
+    # Row 3: Equities + Commodities
+    children.append(
+        dbc.Row(
+            [
+                dbc.Col(build_equities_panel(equities_data, sparklines), xs=12, lg=6),
+                dbc.Col(
+                    build_commodities_panel(commodities_data, sparklines),
+                    xs=12,
+                    lg=6,
+                ),
+            ],
+            className="mb-3",
+        )
+    )
+
+    # Expandable historical chart container
+    children.append(
+        dbc.Row(
+            [
+                dbc.Col(
+                    dcc.Loading(
+                        html.Div(id="historical-chart-container"),
+                        type="dot",
+                        color=BLUE,
+                    ),
+                    xs=12,
+                ),
+            ],
+            className="mb-3",
+        )
+    )
+
+    # Row 4: Curves (full width)
+    if curves_data:
+        children.append(
+            dbc.Row(
+                [
+                    dbc.Col(build_curves_panel(curves_data), xs=12),
+                ],
+                className="mb-3",
+            )
+        )
+
+    # Row 5: Fed QE/QT Monitor (full width)
+    if fed_liq_data:
+        children.append(
+            dbc.Row(
+                [
+                    dbc.Col(build_fed_liquidity_panel(fed_liq_data), xs=12),
+                ],
+                className="mb-3",
+            )
+        )
+
+    # Row 5b: Central Bank Meeting Tracker (full width)
+    if cb_meetings_data:
+        children.append(
+            dbc.Row(
+                [
+                    dbc.Col(build_cb_meeting_panel(cb_meetings_data), xs=12),
+                ],
+                className="mb-3",
+            )
+        )
+
+    # Row 6: Macro Pulse (full width)
+    children.append(
+        dbc.Row(
+            [
+                dbc.Col(build_macro_panel(macro_data), xs=12),
+            ]
+        )
+    )
+
+    # Add store for selected instrument
+    children.append(dcc.Store(id="selected-instrument-store"))
+
+    return html.Div(children)

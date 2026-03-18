@@ -20,14 +20,19 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
-
 QuantMetaBase = declarative_base()
 
 
 class Dataset(QuantMetaBase):
     __tablename__ = "qdata_datasets"
     __table_args__ = (
-        UniqueConstraint("provider", "kind", "universe", "frequency", name="uq_qdata_dataset_identity"),
+        UniqueConstraint(
+            "provider",
+            "kind",
+            "universe",
+            "frequency",
+            name="uq_qdata_dataset_identity",
+        ),
     )
 
     id = Column(Integer, primary_key=True)
@@ -39,7 +44,9 @@ class Dataset(QuantMetaBase):
     description = Column(Text, default="")
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    versions = relationship("DatasetVersion", back_populates="dataset", cascade="all, delete-orphan")
+    versions = relationship(
+        "DatasetVersion", back_populates="dataset", cascade="all, delete-orphan"
+    )
 
 
 class DatasetVersion(QuantMetaBase):
@@ -49,8 +56,12 @@ class DatasetVersion(QuantMetaBase):
     )
 
     id = Column(Integer, primary_key=True)
-    dataset_id = Column(Integer, ForeignKey("qdata_datasets.id"), nullable=False, index=True)
-    version = Column(String, nullable=False, index=True)  # e.g. 2026-01-12T00:00Z or semantic
+    dataset_id = Column(
+        Integer, ForeignKey("qdata_datasets.id"), nullable=False, index=True
+    )
+    version = Column(
+        String, nullable=False, index=True
+    )  # e.g. 2026-01-12T00:00Z or semantic
 
     # Optional range/size metadata (populate when known)
     start_date = Column(String, default="")
@@ -61,14 +72,18 @@ class DatasetVersion(QuantMetaBase):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     dataset = relationship("Dataset", back_populates="versions")
-    runs = relationship("IngestionRun", back_populates="dataset_version", cascade="all, delete-orphan")
+    runs = relationship(
+        "IngestionRun", back_populates="dataset_version", cascade="all, delete-orphan"
+    )
 
 
 class IngestionRun(QuantMetaBase):
     __tablename__ = "qdata_ingestion_runs"
 
     id = Column(Integer, primary_key=True)
-    dataset_version_id = Column(Integer, ForeignKey("qdata_dataset_versions.id"), nullable=False, index=True)
+    dataset_version_id = Column(
+        Integer, ForeignKey("qdata_dataset_versions.id"), nullable=False, index=True
+    )
 
     status = Column(String, nullable=False, default="started")  # started/success/failed
     started_at = Column(DateTime, default=datetime.utcnow, nullable=False)

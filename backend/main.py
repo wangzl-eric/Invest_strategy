@@ -1,48 +1,53 @@
 """FastAPI application entry point."""
 import logging
 from datetime import datetime
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.routes import router
-from backend.api.backtest_routes import router as backtest_router
-from backend.api.auth_routes import router as auth_router
 from backend.api.advanced_analytics_routes import router as advanced_analytics_router
-from backend.api.advanced_analytics_routes_extended import router as advanced_analytics_extended_router
+from backend.api.advanced_analytics_routes_extended import (
+    router as advanced_analytics_extended_router,
+)
 from backend.api.alert_routes import router as alert_router
-from backend.api.reporting_routes import router as reporting_router
-from backend.api.market_routes import router as market_router
+from backend.api.attribution_routes import router as attribution_router
+from backend.api.auth_routes import router as auth_router
+from backend.api.backtest_routes import router as backtest_router
 from backend.api.data_routes import router as data_router
 from backend.api.execution_routes import router as execution_router
+from backend.api.market_routes import router as market_router
+from backend.api.news_routes import router as news_router
+from backend.api.reporting_routes import router as reporting_router
 from backend.api.research_routes import router as research_router
-from backend.broker_interface import broker_manager, IBKRBrokerAdapter
+from backend.api.routes import router
+from backend.broker_interface import IBKRBrokerAdapter, broker_manager
 from backend.ibkr_client import IBKRClient
+
 try:
     from backend.api.websocket_routes import router as websocket_router
 except ImportError:
     websocket_router = None
-from backend.config import settings
-from backend.scheduler import PnLScheduler
-from backend.middleware import MetricsMiddleware
-from backend.rate_limiter import rate_limit_middleware
-from backend.error_tracking import error_tracker
-from backend.tracing import tracing_service
-from backend.realtime_broadcaster import broadcaster
-from backend.alert_engine import alert_engine
-
 # Configure logging
 import os
+
+from backend.alert_engine import alert_engine
+from backend.config import settings
+from backend.error_tracking import error_tracker
+from backend.middleware import MetricsMiddleware
+from backend.rate_limiter import rate_limit_middleware
+from backend.realtime_broadcaster import broadcaster
+from backend.scheduler import PnLScheduler
+from backend.tracing import tracing_service
+
 try:
     from backend.logging_config import setup_logging
+
     use_json_logging = os.getenv("LOG_FORMAT", "").lower() == "json"
-    setup_logging(
-        log_level=settings.app.log_level,
-        use_json=use_json_logging
-    )
+    setup_logging(log_level=settings.app.log_level, use_json=use_json_logging)
 except ImportError:
     logging.basicConfig(
         level=getattr(logging, settings.app.log_level),
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
 logger = logging.getLogger(__name__)
@@ -72,6 +77,7 @@ app.middleware("http")(rate_limit_middleware)
 
 # Initialize error tracking
 import os
+
 sentry_dsn = os.getenv("SENTRY_DSN")
 if sentry_dsn:
     error_tracker.dsn = sentry_dsn
@@ -92,24 +98,43 @@ if tracing_enabled:
 app.include_router(auth_router, prefix="/api/auth", tags=["authentication"])
 app.include_router(router, prefix="/api", tags=["api"])
 app.include_router(backtest_router, prefix="/api", tags=["backtest"])
-app.include_router(advanced_analytics_router, prefix="/api/analytics", tags=["advanced-analytics"])
-app.include_router(advanced_analytics_extended_router, prefix="/api/analytics", tags=["advanced-analytics"])
+app.include_router(
+    advanced_analytics_router, prefix="/api/analytics", tags=["advanced-analytics"]
+)
+app.include_router(
+    advanced_analytics_extended_router,
+    prefix="/api/analytics",
+    tags=["advanced-analytics"],
+)
 app.include_router(alert_router, prefix="/api", tags=["alerts"])
 app.include_router(reporting_router, prefix="/api", tags=["reporting"])
 app.include_router(market_router, prefix="/api", tags=["market-data"])
+app.include_router(news_router, prefix="/api", tags=["news"])
+app.include_router(attribution_router, prefix="/api", tags=["attribution"])
 app.include_router(data_router, prefix="/api", tags=["data-management"])
 app.include_router(execution_router, prefix="/api", tags=["execution"])
 app.include_router(research_router, prefix="/api", tags=["research"])
 if websocket_router:
     app.include_router(websocket_router, prefix="/api", tags=["websocket"])
 
+try:
+    from cerebro.api.cerebro_routes import router as cerebro_router
+
+    app.include_router(cerebro_router, prefix="/api/cerebro", tags=["cerebro"])
+except ImportError:
+    pass
+
+
 # Metrics endpoint
 @app.get("/metrics")
 async def metrics():
     """Prometheus metrics endpoint."""
-    from backend.metrics import get_metrics, get_metrics_content_type
     from fastapi import Response
+
+    from backend.metrics import get_metrics, get_metrics_content_type
+
     return Response(content=get_metrics(), media_type=get_metrics_content_type())
+
 
 # PnL Scheduler - enables automatic Net Liquidation updates
 # Set update_interval_minutes in app_config.yaml (default: 15 minutes)
@@ -121,6 +146,7 @@ def get_pnl_scheduler():
     global pnl_scheduler
     if pnl_scheduler is None:
         from backend.scheduler import PnLScheduler
+
         pnl_scheduler = PnLScheduler()
     return pnl_scheduler
 
@@ -132,7 +158,9 @@ async def startup_event():
     try:
         scheduler = get_pnl_scheduler()
         scheduler.start()
-        logger.info(f"PnL scheduler started (interval: {settings.app.update_interval_minutes} minutes)")
+        logger.info(
+            f"PnL scheduler started (interval: {settings.app.update_interval_minutes} minutes)"
+        )
     except Exception as e:
         logger.warning(f"Failed to start PnL scheduler: {e}")
     # Start real-time broadcaster
@@ -141,6 +169,7 @@ async def startup_event():
     # Start alert evaluation scheduler
     try:
         from backend.alert_scheduler import start_alert_scheduler
+
         start_alert_scheduler()
         logger.info("Alert scheduler started")
     except Exception as e:
@@ -163,6 +192,7 @@ async def shutdown_event():
         scheduler = get_pnl_scheduler()
         if scheduler:
             import asyncio
+
             asyncio.create_task(scheduler.stop())
             logger.info("PnL scheduler stopped")
     except Exception as e:
@@ -173,6 +203,7 @@ async def shutdown_event():
     # Stop alert scheduler
     try:
         from backend.alert_scheduler import stop_alert_scheduler
+
         stop_alert_scheduler()
         logger.info("Alert scheduler stopped")
     except Exception as e:
@@ -182,11 +213,7 @@ async def shutdown_event():
 @app.get("/")
 async def root():
     """Root endpoint."""
-    return {
-        "message": "IBKR Analytics API",
-        "version": "1.0.0",
-        "docs": "/docs"
-    }
+    return {"message": "IBKR Analytics API", "version": "1.0.0", "docs": "/docs"}
 
 
 @app.get("/health")
@@ -205,9 +232,11 @@ async def api_health_check():
 async def ibkr_status_check():
     """IBKR reachability check + data freshness report."""
     import socket
+
     from sqlalchemy import desc, func
+
     from backend.database import engine
-    from backend.models import AccountSnapshot, Position, PnLHistory
+    from backend.models import AccountSnapshot, PnLHistory, Position
 
     host = settings.ibkr.host
     port = settings.ibkr.port
@@ -224,6 +253,7 @@ async def ibkr_status_check():
     freshness = {}
     try:
         from sqlalchemy.orm import Session
+
         with Session(engine) as db:
             for label, model, ts_col in [
                 ("positions", Position, Position.timestamp),
@@ -239,17 +269,25 @@ async def ibkr_status_check():
                         "stale": age_seconds > 3600,
                     }
                 else:
-                    freshness[label] = {"latest": None, "age_seconds": None, "stale": True}
+                    freshness[label] = {
+                        "latest": None,
+                        "age_seconds": None,
+                        "stale": True,
+                    }
     except Exception as e:
         freshness["error"] = str(e)
 
-    any_stale = any(v.get("stale", True) for v in freshness.values() if isinstance(v, dict))
+    any_stale = any(
+        v.get("stale", True) for v in freshness.values() if isinstance(v, dict)
+    )
 
     return {
         "ibkr_reachable": reachable,
         "host": host,
         "port": port,
-        "message": "TWS/Gateway is running" if reachable else "TWS/Gateway is NOT reachable — please start it",
+        "message": "TWS/Gateway is running"
+        if reachable
+        else "TWS/Gateway is NOT reachable — please start it",
         "data_freshness": freshness,
         "any_stale": any_stale,
     }
@@ -258,31 +296,35 @@ async def ibkr_status_check():
 @app.get("/api/health/detailed")
 async def detailed_health_check():
     """Detailed health check with component-level status."""
-    from backend.database import engine
+    import socket
+
     from backend.config import settings
+    from backend.database import engine
     from backend.ibkr_client import IBKRClient
     from backend.scheduler import PnLScheduler
-    import socket
 
     health_status = {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
-        "components": {}
+        "components": {},
     }
 
     # Database health
     try:
         from sqlalchemy import text
+
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         health_status["components"]["database"] = {
             "status": "healthy",
-            "url": settings.database.url.split("@")[-1] if "@" in settings.database.url else "sqlite"
+            "url": settings.database.url.split("@")[-1]
+            if "@" in settings.database.url
+            else "sqlite",
         }
     except Exception as e:
         health_status["components"]["database"] = {
             "status": "unhealthy",
-            "error": str(e)
+            "error": str(e),
         }
         health_status["status"] = "degraded"
 
@@ -303,7 +345,7 @@ async def detailed_health_check():
                 "status": "healthy" if connected else "unhealthy",
                 "host": settings.ibkr.host,
                 "port": settings.ibkr.port,
-                "connected": connected
+                "connected": connected,
             }
             if not connected:
                 health_status["status"] = "degraded"
@@ -312,60 +354,55 @@ async def detailed_health_check():
                 "status": "unhealthy",
                 "host": settings.ibkr.host,
                 "port": settings.ibkr.port,
-                "error": "Port not accessible"
+                "error": "Port not accessible",
             }
             health_status["status"] = "degraded"
     except Exception as e:
-        health_status["components"]["ibkr"] = {
-            "status": "unhealthy",
-            "error": str(e)
-        }
+        health_status["components"]["ibkr"] = {"status": "unhealthy", "error": str(e)}
         health_status["status"] = "degraded"
 
     # Scheduler health
     try:
         scheduler = get_pnl_scheduler()
         health_status["components"]["scheduler"] = {
-            "status": "healthy" if scheduler and scheduler._task and not scheduler._task.done() else "stopped",
+            "status": "healthy"
+            if scheduler and scheduler._task and not scheduler._task.done()
+            else "stopped",
             "update_interval_minutes": settings.app.update_interval_minutes,
         }
     except Exception as e:
-        health_status["components"]["scheduler"] = {
-            "status": "error",
-            "error": str(e)
-        }
+        health_status["components"]["scheduler"] = {"status": "error", "error": str(e)}
 
     # Cache health
     try:
         from backend.cache import cache_manager
+
         health_status["components"]["cache"] = {
             "status": "healthy" if cache_manager.enabled else "disabled",
-            "enabled": cache_manager.enabled
+            "enabled": cache_manager.enabled,
         }
     except Exception as e:
-        health_status["components"]["cache"] = {
-            "status": "unhealthy",
-            "error": str(e)
-        }
+        health_status["components"]["cache"] = {"status": "unhealthy", "error": str(e)}
 
     # Alert system health
     try:
         from backend.alert_scheduler import scheduler as alert_scheduler
+
         health_status["components"]["alerts"] = {
             "status": "healthy" if alert_scheduler.running else "stopped",
-            "running": alert_scheduler.running if hasattr(alert_scheduler, 'running') else False
+            "running": alert_scheduler.running
+            if hasattr(alert_scheduler, "running")
+            else False,
         }
     except Exception as e:
-        health_status["components"]["alerts"] = {
-            "status": "unhealthy",
-            "error": str(e)
-        }
+        health_status["components"]["alerts"] = {"status": "unhealthy", "error": str(e)}
 
     return health_status
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "backend.main:app",
         host="0.0.0.0",

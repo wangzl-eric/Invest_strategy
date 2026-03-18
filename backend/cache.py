@@ -1,14 +1,15 @@
 """Redis caching layer for metrics, market data, and API responses."""
+import hashlib
 import json
 import logging
-import hashlib
-from typing import Optional, Any, Union
 from datetime import timedelta
 from functools import wraps
+from typing import Any, Optional, Union
 
 try:
     import redis
     from redis.exceptions import ConnectionError, TimeoutError
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -34,10 +35,7 @@ class CacheManager:
             else:
                 # Default to localhost
                 self.redis_client = redis.Redis(
-                    host='localhost',
-                    port=6379,
-                    db=0,
-                    decode_responses=True
+                    host="localhost", port=6379, db=0, decode_responses=True
                 )
 
             # Test connection
@@ -174,6 +172,7 @@ def cache_key(*args, **kwargs) -> str:
 
 def cached(ttl: int = 300, key_prefix: str = ""):
     """Decorator to cache function results."""
+
     def decorator(func):
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
@@ -215,6 +214,7 @@ def cached(ttl: int = 300, key_prefix: str = ""):
 
         # Return appropriate wrapper based on function type
         import asyncio
+
         if asyncio.iscoroutinefunction(func):
             return async_wrapper
         else:

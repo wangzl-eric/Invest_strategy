@@ -21,8 +21,9 @@
 | 3 | Vol-Scaled Momentum | Elena | Equity | REJECTED | — | 3 | [L1, L2, L3](#lessons-from-rejections) | `vol_scaled_momentum_2026-03-13_rejected/` |
 | 4 | Yield Curve Steepener/Flattener | Marco | Rates | REJECTED | — | — | — | `yield_curve_2026-03-13_rejected/` |
 | 5 | Commodity Momentum + Inflation | Marco | Commodities | REJECTED | — | — | — | `commodity_momentum_2026-03-13_rejected/` |
-| 6 | FX Carry + Momentum | Marco | FX | CONDITIONAL | 2 | — | — | `fx_carry_2026-03-13_conditional/` |
+| 6 | FX Carry + Momentum | Marco | FX | CONDITIONAL | 1 | — | — | `fx_carry_2026-03-13_conditional/` |
 | 7 | VIX Regime (VRP + Term Structure) | Elena + Marco | Equity/Vol | REJECTED | — | 2 | [L4, L5, L6, L7](#lessons-from-rejections) | `vix_regime_2026-03-15_rejected/` |
+| 8 | Quality + Safe-Haven Overlay | Elena | Equity/Multi-Asset | IN REVIEW | 2 | — | — | `quality_safe_haven_2026-03-17_in_review/` |
 
 All folders under `research/strategies/`.
 
@@ -231,4 +232,43 @@ All critical/high bugs fixed as of 2026-03-13. Tests: `tests/unit/test_bugfixes.
 - Files created: pm_review.md
 - Status: COMPLETE (REJECTED)
 
-*Last updated: 2026-03-15*
+### 2026-03-17 — Goldman Sachs Strategy Ideas Assessment (PM)
+- Assessed 4 strategy ideas from Goldman Sachs Global Strategy Views (16 March 2026)
+- **Strategy 1 (Defensive Sector Rotation):** REJECTED — no sector classification data, requires $5K+/yr Norgate or 6mo valuation pipeline build
+- **Strategy 2 (HALO Factor):** REJECTED — no fundamental data pipeline, factor definition too vague
+- **Strategy 3 (Geographic Rotation):** REJECTED — no international equity data, IBKR account lacks intl permissions
+- **Strategy 4 (Quality + Safe-Haven Overlay):** APPROVED for research (Priority 2) — feasible with ETF proxies (QUAL/USMV + GLD/USO + JPY/CHF FX)
+- Strategy 4 added to pipeline: Elena assigned, data requirements identified (QUAL, USMV, GLD, USO, VIX, HYG, LQD)
+- FX Carry + Momentum priority elevated from P2 → P1 (after Vol-Scaled Momentum rejection)
+- Files created: `research/goldman_sachs_strategy_assessment_2026-03-17.md`
+- Status: COMPLETE
+
+### 2026-03-17 — Quality + Safe-Haven Overlay Equity Quant Assessment (Elena)
+- Completed full equity quant analysis of Goldman Sachs Quality + Safe-Haven strategy
+- **Quality factor validation:** Academically sound (Asness QMJ Sharpe 0.5-0.6, FF5 RMW 3-4% alpha), but post-publication decay significant (expect 2-3% alpha in US large-cap due to QUAL/USMV crowding, $50B+ AUM)
+- **Regime performance:** Quality works in SUSTAINED high-vol + rising-rate regimes (2008 +15% vs SPY, 2022 +8%), NOT all VIX > 20 periods. VIX > 20 trigger too coarse (occurs 30% of time) — recommend VIX > 25 + credit spread widening.
+- **Safe-haven overlay analysis:** JPY/CHF ENHANCE (negative crisis correlation -0.4 to -0.5), Gold CONDITIONAL (regime-dependent, failed in 2022 rate hikes), Oil DILUTES (positive correlation +0.3 to +0.4, NOT a safe-haven). Recommendation: DROP Oil, keep JPY/CHF 15% each.
+- **ETF proxy assessment:** QUAL/USMV acceptable for Phase 1 (fast implementation, no data pipeline), but crowding penalty -1% to -2% alpha. Upgrade to fundamental construction in 6-12mo for fresher signals (+1-2% alpha lift).
+- **Implementation recommendation:** 70% Quality (QUAL or 50/50 QUAL+USMV blend) + 15% JPY + 15% CHF, rebalance monthly. Expected Sharpe 0.5-0.6, max DD -20% to -25% (vs -25% to -30% for Quality alone).
+- **Key risks:** (1) Crowding (QUAL $20B AUM), (2) Short history (14yr, MinBTL borderline 12-18yr), (3) Position-sizing overlay may hurt Sharpe (Lesson L5 — must improve Sharpe +0.15 minimum, not just reduce drawdown), (4) FX carry not captured (spot rates only, missing 2-3% carry income)
+- **4-week research plan:** Week 1 validate Quality factor, Week 2 test safe-haven overlay, Week 3 dynamic trigger logic, Week 4 full 16-cell notebook
+- **Verdict:** APPROVED for research (Priority 2), status changed from PENDING to IN REVIEW
+- Files created: `research/quality_safe_haven_assessment_2026-03-17.md` (12-section equity quant analysis)
+- Files modified: `research/external_ideas.md` (updated Strategy 5.4 with Elena assessment summary), `research/STRATEGY_TRACKER.md` (status update)
+- Status: COMPLETE (assessment), next step: message Cerebro for literature briefing
+
+### 2026-03-18 — Quality + Safe-Haven Overlay Codex GPT-5.4 Audit
+- Codex (GPT-5.4) completed independent audit of strategy entry before adding to research pool
+- **Final recommendation:** REVISE (feasibility 3/5 — research-feasible, not production-ready)
+- **Critical inconsistency identified:** Strategy description says "triggered overlay" but implementation shows static "70/15/15" allocation — these are fundamentally different strategies with different risk/return profiles
+- **Signal quality issues:** (1) HYG-LQD duration mismatch (2.88y vs 8.00y) produces false credit stress signals during rate hikes — recommend OAS-based spread instead, (2) VIX > 25 trigger ambiguous (AND vs OR with credit spread? hysteresis? timing?)
+- **Missing specifications:** (1) FX implementation unspecified (spot, forwards, futures, ETF proxies?), (2) Gold inclusion/exclusion unclear ("optionally Gold"), (3) Rebalancing frequency mismatch (monthly rebalance inconsistent with fast-moving VIX triggers)
+- **Risk factors flagged:** (1) Base currency risk (USD can strengthen in crises, hedge fails), (2) Policy regime risk (BOJ/SNB intervention changes safe-haven behavior), (3) Factor purity confusion (QUAL+USMV blend is quality+minvol, not pure quality), (4) Crowding/valuation (QUAL P/E 27.84x, beta 0.97 — not low-beta defensive), (5) Whipsaw risk (hard VIX threshold, no hysteresis)
+- **Recommended revisions:** (1) Resolve static vs dynamic allocation (recommend static 70/15/15 for Phase 1), (2) Fix credit spread signal (use FRED OAS: BAMLH0A0HYM2 - BAMLC0A0CM), (3) Specify FX implementation (recommend FXY/FXF ETFs for Phase 1), (4) Remove "optionally Gold" ambiguity (exclude for Phase 1), (5) Add hysteresis to trigger (enter VIX > 25, exit VIX < 20 for 5 days)
+- **Agreement with Elena:** Quality factor sound ✅, JPY/CHF genuine safe havens ✅, Oil should be excluded ✅, Crowding risk real ✅, Short history concern ✅
+- **Disagreement with Elena:** (1) Codex recommends VIX > 25 + hysteresis (Elena VIX > 20), (2) Codex flags HYG-LQD duration mismatch (Elena doesn't mention), (3) Codex flags static vs dynamic inconsistency (Elena proposes static as default), (4) Codex treats Sharpe/DD estimates as hypotheses (Elena presents as forecasts)
+- **Next steps:** Revise strategy entry to resolve ambiguities, then proceed to Phase 1 research (4-week plan)
+- Files created: `research/quality_safe_haven_codex_audit_2026-03-18.md` (9-section audit with 6 red flags)
+- Status: COMPLETE (audit), awaiting revisions before Cerebro briefing
+
+*Last updated: 2026-03-18*

@@ -1,7 +1,8 @@
 """Unit tests for portfolio optimizer."""
-import pytest
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
+
 from portfolio.optimizer import (
     OptimizationConfig,
     mean_variance_optimize,
@@ -13,15 +14,13 @@ def has_cvxpy():
     """Check if cvxpy is installed."""
     try:
         import cvxpy
+
         return True
     except ImportError:
         return False
 
 
-skip_if_no_cvxpy = pytest.mark.skipif(
-    not has_cvxpy(),
-    reason="cvxpy not installed"
-)
+skip_if_no_cvxpy = pytest.mark.skipif(not has_cvxpy(), reason="cvxpy not installed")
 
 
 class TestOptimizationConfig:
@@ -44,7 +43,7 @@ class TestOptimizationConfig:
             turnover_aversion=0.1,
             max_weight=0.20,
             min_weight=-0.20,
-            target_gross=1.5
+            target_gross=1.5,
         )
 
         assert cfg.risk_aversion == 2.0
@@ -65,17 +64,16 @@ class TestMeanVarianceOptimize:
 
         # Simple covariance matrix
         cov = pd.DataFrame(
-            [[0.0004, 0.0001, 0.0001],
-             [0.0001, 0.0004, 0.0001],
-             [0.0001, 0.0001, 0.0004]],
+            [
+                [0.0004, 0.0001, 0.0001],
+                [0.0001, 0.0004, 0.0001],
+                [0.0001, 0.0001, 0.0004],
+            ],
             index=assets,
-            columns=assets
+            columns=assets,
         )
 
-        weights = mean_variance_optimize(
-            expected_returns=expected_returns,
-            cov=cov
-        )
+        weights = mean_variance_optimize(expected_returns=expected_returns, cov=cov)
 
         assert isinstance(weights, pd.Series)
         assert len(weights) == 3
@@ -92,11 +90,13 @@ class TestMeanVarianceOptimize:
         assets = ["AAPL", "MSFT", "GOOGL"]
         expected_returns = pd.Series([0.001, 0.0015, 0.0008], index=assets)
         cov = pd.DataFrame(
-            [[0.0004, 0.0001, 0.0001],
-             [0.0001, 0.0004, 0.0001],
-             [0.0001, 0.0001, 0.0004]],
+            [
+                [0.0004, 0.0001, 0.0001],
+                [0.0001, 0.0004, 0.0001],
+                [0.0001, 0.0001, 0.0004],
+            ],
             index=assets,
-            columns=assets
+            columns=assets,
         )
         prev_weights = pd.Series([0.33, 0.33, 0.34], index=assets)
 
@@ -105,7 +105,7 @@ class TestMeanVarianceOptimize:
             expected_returns=expected_returns,
             cov=cov,
             prev_weights=prev_weights,
-            cfg=cfg
+            cfg=cfg,
         )
 
         assert isinstance(weights, pd.Series)
@@ -117,18 +117,18 @@ class TestMeanVarianceOptimize:
         assets = ["AAPL", "MSFT", "GOOGL"]
         expected_returns = pd.Series([0.001, 0.0015, 0.0008], index=assets)
         cov = pd.DataFrame(
-            [[0.0004, 0.0001, 0.0001],
-             [0.0001, 0.0004, 0.0001],
-             [0.0001, 0.0001, 0.0004]],
+            [
+                [0.0004, 0.0001, 0.0001],
+                [0.0001, 0.0004, 0.0001],
+                [0.0001, 0.0001, 0.0004],
+            ],
             index=assets,
-            columns=assets
+            columns=assets,
         )
 
         cfg = OptimizationConfig(target_gross=1.5)
         weights = mean_variance_optimize(
-            expected_returns=expected_returns,
-            cov=cov,
-            cfg=cfg
+            expected_returns=expected_returns, cov=cov, cfg=cfg
         )
 
         assert isinstance(weights, pd.Series)
@@ -151,9 +151,7 @@ class TestWeightsFromAlpha:
         alpha = pd.Series([0.001, 0.0015, 0.0008], index=sample_returns_df.columns)
 
         weights = weights_from_alpha(
-            alpha=alpha,
-            returns=sample_returns_df,
-            cov_method="ledoit_wolf"
+            alpha=alpha, returns=sample_returns_df, cov_method="ledoit_wolf"
         )
 
         assert isinstance(weights, pd.Series)
@@ -166,9 +164,7 @@ class TestWeightsFromAlpha:
         alpha = pd.Series([0.001, 0.0015, 0.0008], index=sample_returns_df.columns)
 
         weights = weights_from_alpha(
-            alpha=alpha,
-            returns=sample_returns_df,
-            cov_method="sample"
+            alpha=alpha, returns=sample_returns_df, cov_method="sample"
         )
 
         assert isinstance(weights, pd.Series)
@@ -181,7 +177,5 @@ class TestWeightsFromAlpha:
 
         with pytest.raises(ValueError, match="Unknown cov_method"):
             weights_from_alpha(
-                alpha=alpha,
-                returns=sample_returns_df,
-                cov_method="invalid_method"
+                alpha=alpha, returns=sample_returns_df, cov_method="invalid_method"
             )

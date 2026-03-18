@@ -1,49 +1,51 @@
 """API routes for advanced analytics: optimization, factor analysis, attribution, Monte Carlo."""
 import logging
 from datetime import datetime, timedelta
-from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import desc
-import pandas as pd
-import numpy as np
+from typing import Any, Dict, List, Optional
 
-from backend.database import get_db
-from backend.models import Position, Trade, PnLHistory, AccountSnapshot
-from backend.api.schemas import (
-    OptimizationResponse,
-    OptimizationWeightsResponse,
-    FactorAnalysisResponse,
-    FactorLoadingResponse,
-    StyleAnalysisResponse,
-    AttributionResponse,
-    MonteCarloResponse,
-    MonteCarloPercentilesResponse,
-)
+import numpy as np
+import pandas as pd
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import desc
+from sqlalchemy.orm import Session
+
 from backend.advanced_analytics import (
-    PortfolioOptimizer,
+    AnomalyDetector,
+    AttributionAnalyzer,
     FactorAnalyzer,
     MonteCarloSimulator,
-    AttributionAnalyzer,
+    PortfolioOptimizer,
     RegimeDetector,
-    AnomalyDetector,
+)
+from backend.api.schemas import (
+    AttributionResponse,
+    FactorAnalysisResponse,
+    FactorLoadingResponse,
+    MonteCarloPercentilesResponse,
+    MonteCarloResponse,
+    OptimizationResponse,
+    OptimizationWeightsResponse,
+    StyleAnalysisResponse,
 )
 from backend.data_processor import DataProcessor
+from backend.database import get_db
+from backend.models import AccountSnapshot, PnLHistory, Position, Trade
 
 # Try to import from portfolio.advanced_analytics if available (for compatibility)
 try:
     from portfolio.advanced_analytics import (
-        markowitz_optimize,
         black_litterman_optimize,
-        risk_parity_optimize,
-        fama_french_analysis,
-        style_analysis,
         factor_attribution,
+        fama_french_analysis,
+        markowitz_optimize,
+        monte_carlo_portfolio_simulation,
+        monte_carlo_simulation,
+        risk_parity_optimize,
         sector_attribution,
         security_attribution,
-        monte_carlo_simulation,
-        monte_carlo_portfolio_simulation,
+        style_analysis,
     )
+
     HAS_PORTFOLIO_MODULE = True
 except ImportError:
     HAS_PORTFOLIO_MODULE = False
@@ -73,8 +75,11 @@ def get_position_returns(
     """
     if db is None:
         from backend.database import get_db_context
+
         with get_db_context() as db_session:
-            return _get_position_returns_impl(account_id, start_date, end_date, db_session)
+            return _get_position_returns_impl(
+                account_id, start_date, end_date, db_session
+            )
     else:
         return _get_position_returns_impl(account_id, start_date, end_date, db)
 
@@ -114,7 +119,7 @@ def _get_position_returns_impl(
 
             returns_data = []
             for i in range(1, len(dates)):
-                prev_date = dates[i-1]
+                prev_date = dates[i - 1]
                 curr_date = dates[i]
 
                 prev_positions = positions_by_date[prev_date]
@@ -127,19 +132,18 @@ def _get_position_returns_impl(
 
                         if prev_price and curr_price and prev_price > 0:
                             ret = (curr_price - prev_price) / prev_price
-                            returns_data.append({
-                                'date': pd.Timestamp(curr_date),
-                                'symbol': symbol,
-                                'return': ret,
-                            })
+                            returns_data.append(
+                                {
+                                    "date": pd.Timestamp(curr_date),
+                                    "symbol": symbol,
+                                    "return": ret,
+                                }
+                            )
 
             if returns_data:
                 returns_df = pd.DataFrame(returns_data)
                 returns_pivot = returns_df.pivot_table(
-                    index='date',
-                    columns='symbol',
-                    values='return',
-                    aggfunc='mean'
+                    index="date", columns="symbol", values="return", aggfunc="mean"
                 )
                 # Forward fill missing values, then fill remaining with 0
                 returns_pivot = returns_pivot.ffill().fillna(0.0)
@@ -159,51 +163,55 @@ def _get_position_returns_impl(
         return pd.DataFrame()
 
     # Group by symbol and calculate approximate returns from price changes
-    trades_df = pd.DataFrame([{
-        'date': t.exec_time,
-        'symbol': t.symbol,
-        'price': t.price,
-        'side': t.side,
-    } for t in trades])
+    trades_df = pd.DataFrame(
+        [
+            {
+                "date": t.exec_time,
+                "symbol": t.symbol,
+                "price": t.price,
+                "side": t.side,
+            }
+            for t in trades
+        ]
+    )
 
     if trades_df.empty:
         return pd.DataFrame()
 
-    trades_df['date'] = pd.to_datetime(trades_df['date'])
-    trades_df = trades_df.sort_values('date')
+    trades_df["date"] = pd.to_datetime(trades_df["date"])
+    trades_df = trades_df.sort_values("date")
 
     # For each symbol, calculate returns from price changes
     returns_data = []
-    for symbol in trades_df['symbol'].unique():
-        symbol_trades = trades_df[trades_df['symbol'] == symbol].sort_values('date')
+    for symbol in trades_df["symbol"].unique():
+        symbol_trades = trades_df[trades_df["symbol"] == symbol].sort_values("date")
         if len(symbol_trades) < 2:
             continue
 
         # Calculate returns from price changes
-        prices = symbol_trades['price'].values
-        dates = symbol_trades['date'].values
+        prices = symbol_trades["price"].values
+        dates = symbol_trades["date"].values
 
         for i in range(1, len(prices)):
-            if prices[i-1] > 0:
-                ret = (prices[i] - prices[i-1]) / prices[i-1]
-                returns_data.append({
-                    'date': dates[i],
-                    'symbol': symbol,
-                    'return': ret,
-                })
+            if prices[i - 1] > 0:
+                ret = (prices[i] - prices[i - 1]) / prices[i - 1]
+                returns_data.append(
+                    {
+                        "date": dates[i],
+                        "symbol": symbol,
+                        "return": ret,
+                    }
+                )
 
     if not returns_data:
         return pd.DataFrame()
 
     returns_df = pd.DataFrame(returns_data)
-    returns_df['date'] = pd.to_datetime(returns_df['date'])
+    returns_df["date"] = pd.to_datetime(returns_df["date"])
 
     # Pivot to get returns by symbol
     returns_pivot = returns_df.pivot_table(
-        index='date',
-        columns='symbol',
-        values='return',
-        aggfunc='mean'
+        index="date", columns="symbol", values="return", aggfunc="mean"
     ).fillna(0.0)
 
     return returns_pivot
@@ -214,9 +222,11 @@ def get_current_positions_with_weights(
     db: Session,
 ) -> pd.Series:
     """Get current portfolio weights from positions."""
-    query = db.query(Position).filter(
-        Position.account_id == account_id
-    ).order_by(desc(Position.timestamp))
+    query = (
+        db.query(Position)
+        .filter(Position.account_id == account_id)
+        .order_by(desc(Position.timestamp))
+    )
 
     positions = query.all()
 
@@ -226,7 +236,10 @@ def get_current_positions_with_weights(
     # Get latest position for each symbol
     latest_positions = {}
     for pos in positions:
-        if pos.symbol not in latest_positions or pos.timestamp > latest_positions[pos.symbol].timestamp:
+        if (
+            pos.symbol not in latest_positions
+            or pos.timestamp > latest_positions[pos.symbol].timestamp
+        ):
             latest_positions[pos.symbol] = pos
 
     # Calculate weights
@@ -247,23 +260,34 @@ def get_current_positions_with_weights(
 # Portfolio Optimization Routes
 # =============================================================================
 
+
 @router.post("/optimization/markowitz", response_model=OptimizationResponse)
 async def optimize_markowitz(
     account_id: Optional[str] = Query(None, description="Account ID"),
     risk_free_rate: float = Query(0.0, description="Risk-free rate"),
-    target_return: Optional[float] = Query(None, description="Target return (for min variance)"),
+    target_return: Optional[float] = Query(
+        None, description="Target return (for min variance)"
+    ),
     max_weight: float = Query(1.0, description="Maximum weight per asset"),
     min_weight: float = Query(0.0, description="Minimum weight per asset"),
     long_only: bool = Query(True, description="Long-only constraint"),
-    start_date: Optional[datetime] = Query(None, description="Start date for returns calculation"),
-    end_date: Optional[datetime] = Query(None, description="End date for returns calculation"),
+    start_date: Optional[datetime] = Query(
+        None, description="Start date for returns calculation"
+    ),
+    end_date: Optional[datetime] = Query(
+        None, description="End date for returns calculation"
+    ),
     db: Session = Depends(get_db),
 ):
     """Markowitz mean-variance portfolio optimization."""
     try:
         if not account_id:
             # Infer from latest snapshot
-            latest = db.query(AccountSnapshot).order_by(desc(AccountSnapshot.timestamp)).first()
+            latest = (
+                db.query(AccountSnapshot)
+                .order_by(desc(AccountSnapshot.timestamp))
+                .first()
+            )
             if latest:
                 account_id = latest.account_id
 
@@ -275,8 +299,7 @@ async def optimize_markowitz(
 
         if returns_df.empty or len(returns_df.columns) == 0:
             raise HTTPException(
-                status_code=400,
-                detail="Insufficient position data for optimization"
+                status_code=400, detail="Insufficient position data for optimization"
             )
 
         # Calculate expected returns and covariance
@@ -299,19 +322,21 @@ async def optimize_markowitz(
             result_dict = optimizer.markowitz_optimization(
                 returns_df,
                 risk_free_rate=risk_free_rate / 252,  # Convert to daily
-                target_return=target_return / 252 if target_return else None
+                target_return=target_return / 252 if target_return else None,
             )
             if "error" in result_dict:
                 raise HTTPException(status_code=400, detail=result_dict["error"])
             # Convert to expected format
             from types import SimpleNamespace
+
             result = SimpleNamespace(
                 weights=result_dict["weights"],
                 expected_return=result_dict["expected_return"] * 252,  # Annualize
-                expected_volatility=result_dict["expected_volatility"] * np.sqrt(252),  # Annualize
+                expected_volatility=result_dict["expected_volatility"]
+                * np.sqrt(252),  # Annualize
                 sharpe_ratio=result_dict["sharpe_ratio"],
                 constraints_satisfied=True,
-                optimization_status="success"
+                optimization_status="success",
             )
 
         weights_list = [
@@ -343,10 +368,18 @@ async def optimize_black_litterman(
     risk_aversion: float = Query(3.0, description="Risk aversion parameter"),
     risk_free_rate: float = Query(0.0, description="Risk-free rate"),
     tau: float = Query(0.05, description="Uncertainty scaling factor"),
-    views: Optional[str] = Query(None, description="JSON dict of {asset: expected_return} views"),
-    view_confidences: Optional[str] = Query(None, description="JSON dict of {asset: confidence}"),
-    start_date: Optional[datetime] = Query(None, description="Start date for returns calculation"),
-    end_date: Optional[datetime] = Query(None, description="End date for returns calculation"),
+    views: Optional[str] = Query(
+        None, description="JSON dict of {asset: expected_return} views"
+    ),
+    view_confidences: Optional[str] = Query(
+        None, description="JSON dict of {asset: confidence}"
+    ),
+    start_date: Optional[datetime] = Query(
+        None, description="Start date for returns calculation"
+    ),
+    end_date: Optional[datetime] = Query(
+        None, description="End date for returns calculation"
+    ),
     db: Session = Depends(get_db),
 ):
     """Black-Litterman portfolio optimization."""
@@ -354,7 +387,11 @@ async def optimize_black_litterman(
         import json
 
         if not account_id:
-            latest = db.query(AccountSnapshot).order_by(desc(AccountSnapshot.timestamp)).first()
+            latest = (
+                db.query(AccountSnapshot)
+                .order_by(desc(AccountSnapshot.timestamp))
+                .first()
+            )
             if latest:
                 account_id = latest.account_id
 
@@ -367,7 +404,7 @@ async def optimize_black_litterman(
         if current_weights.empty:
             raise HTTPException(
                 status_code=400,
-                detail="No current positions found for market equilibrium"
+                detail="No current positions found for market equilibrium",
             )
 
         # Get returns for covariance
@@ -375,8 +412,7 @@ async def optimize_black_litterman(
 
         if returns_df.empty:
             raise HTTPException(
-                status_code=400,
-                detail="Insufficient data for optimization"
+                status_code=400, detail="Insufficient data for optimization"
             )
 
         cov_matrix = returns_df.cov() * 252
@@ -422,15 +458,25 @@ async def optimize_black_litterman(
 @router.post("/optimization/risk-parity", response_model=OptimizationResponse)
 async def optimize_risk_parity(
     account_id: Optional[str] = Query(None, description="Account ID"),
-    target_risk: Optional[float] = Query(None, description="Target portfolio volatility"),
-    start_date: Optional[datetime] = Query(None, description="Start date for returns calculation"),
-    end_date: Optional[datetime] = Query(None, description="End date for returns calculation"),
+    target_risk: Optional[float] = Query(
+        None, description="Target portfolio volatility"
+    ),
+    start_date: Optional[datetime] = Query(
+        None, description="Start date for returns calculation"
+    ),
+    end_date: Optional[datetime] = Query(
+        None, description="End date for returns calculation"
+    ),
     db: Session = Depends(get_db),
 ):
     """Risk parity portfolio optimization (equal risk contribution)."""
     try:
         if not account_id:
-            latest = db.query(AccountSnapshot).order_by(desc(AccountSnapshot.timestamp)).first()
+            latest = (
+                db.query(AccountSnapshot)
+                .order_by(desc(AccountSnapshot.timestamp))
+                .first()
+            )
             if latest:
                 account_id = latest.account_id
 
@@ -442,8 +488,7 @@ async def optimize_risk_parity(
 
         if returns_df.empty:
             raise HTTPException(
-                status_code=400,
-                detail="Insufficient data for optimization"
+                status_code=400, detail="Insufficient data for optimization"
             )
 
         cov_matrix = returns_df.cov() * 252
@@ -481,6 +526,7 @@ async def optimize_risk_parity(
 # Factor Analysis Routes
 # =============================================================================
 
+
 @router.get("/factor-analysis/fama-french", response_model=FactorAnalysisResponse)
 async def analyze_fama_french(
     account_id: Optional[str] = Query(None, description="Account ID"),
@@ -491,7 +537,11 @@ async def analyze_fama_french(
     """Fama-French factor model analysis."""
     try:
         if not account_id:
-            latest = db.query(AccountSnapshot).order_by(desc(AccountSnapshot.timestamp)).first()
+            latest = (
+                db.query(AccountSnapshot)
+                .order_by(desc(AccountSnapshot.timestamp))
+                .first()
+            )
             if latest:
                 account_id = latest.account_id
 
@@ -503,8 +553,7 @@ async def analyze_fama_french(
 
         if returns_df.empty:
             raise HTTPException(
-                status_code=400,
-                detail="Insufficient data for factor analysis"
+                status_code=400, detail="Insufficient data for factor analysis"
             )
 
         # Get market returns (S&P 500 proxy)
@@ -519,13 +568,11 @@ async def analyze_fama_french(
 
         if sp500_df.empty:
             raise HTTPException(
-                status_code=400,
-                detail="Could not fetch market benchmark data"
+                status_code=400, detail="Could not fetch market benchmark data"
             )
 
         market_returns = pd.Series(
-            sp500_df['daily_return'].values,
-            index=pd.to_datetime(sp500_df['date'])
+            sp500_df["daily_return"].values, index=pd.to_datetime(sp500_df["date"])
         )
 
         # Run Fama-French analysis
@@ -542,7 +589,7 @@ async def analyze_fama_french(
                     FactorLoadingResponse(
                         asset=asset,
                         factor=factor,
-                        loading=float(result.factor_loadings.loc[asset, factor])
+                        loading=float(result.factor_loadings.loc[asset, factor]),
                     )
                 )
 
@@ -571,7 +618,11 @@ async def analyze_style(
     """Style analysis (Sharpe style regression)."""
     try:
         if not account_id:
-            latest = db.query(AccountSnapshot).order_by(desc(AccountSnapshot.timestamp)).first()
+            latest = (
+                db.query(AccountSnapshot)
+                .order_by(desc(AccountSnapshot.timestamp))
+                .first()
+            )
             if latest:
                 account_id = latest.account_id
 
@@ -583,13 +634,11 @@ async def analyze_style(
 
         if returns_df.empty:
             raise HTTPException(
-                status_code=400,
-                detail="Insufficient data for style analysis"
+                status_code=400, detail="Insufficient data for style analysis"
             )
 
         portfolio_returns = pd.Series(
-            returns_df['daily_return'].values,
-            index=pd.to_datetime(returns_df['date'])
+            returns_df["daily_return"].values, index=pd.to_datetime(returns_df["date"])
         )
 
         # Get style benchmarks (simplified - use S&P 500 sectors or indices)
@@ -605,18 +654,19 @@ async def analyze_style(
 
         if sp500_df.empty:
             raise HTTPException(
-                status_code=400,
-                detail="Could not fetch benchmark data"
+                status_code=400, detail="Could not fetch benchmark data"
             )
 
         # For now, use S&P 500 as single style benchmark
         # In production, you'd fetch multiple style indices
-        style_benchmarks = pd.DataFrame({
-            'Market': pd.Series(
-                sp500_df['daily_return'].values,
-                index=pd.to_datetime(sp500_df['date'])
-            )
-        })
+        style_benchmarks = pd.DataFrame(
+            {
+                "Market": pd.Series(
+                    sp500_df["daily_return"].values,
+                    index=pd.to_datetime(sp500_df["date"]),
+                )
+            }
+        )
 
         result = style_analysis(
             portfolio_returns=portfolio_returns,
@@ -625,9 +675,9 @@ async def analyze_style(
         )
 
         return StyleAnalysisResponse(
-            style_weights=result['style_weights'].to_dict(),
-            r_squared=result['r_squared'],
-            tracking_error=result['tracking_error'],
+            style_weights=result["style_weights"].to_dict(),
+            r_squared=result["r_squared"],
+            tracking_error=result["tracking_error"],
         )
 
     except HTTPException:
@@ -641,6 +691,7 @@ async def analyze_style(
 # Attribution Analysis Routes
 # =============================================================================
 
+
 @router.get("/attribution/factor", response_model=AttributionResponse)
 async def attribute_factor(
     account_id: Optional[str] = Query(None, description="Account ID"),
@@ -651,7 +702,11 @@ async def attribute_factor(
     """Factor-based performance attribution."""
     try:
         if not account_id:
-            latest = db.query(AccountSnapshot).order_by(desc(AccountSnapshot.timestamp)).first()
+            latest = (
+                db.query(AccountSnapshot)
+                .order_by(desc(AccountSnapshot.timestamp))
+                .first()
+            )
             if latest:
                 account_id = latest.account_id
 
@@ -663,23 +718,18 @@ async def attribute_factor(
 
         if returns_df.empty:
             raise HTTPException(
-                status_code=400,
-                detail="Insufficient data for attribution"
+                status_code=400, detail="Insufficient data for attribution"
             )
 
         portfolio_returns = pd.Series(
-            returns_df['daily_return'].values,
-            index=pd.to_datetime(returns_df['date'])
+            returns_df["daily_return"].values, index=pd.to_datetime(returns_df["date"])
         )
 
         # Get position returns and run Fama-French to get factor loadings
         position_returns = get_position_returns(account_id, start_date, end_date, db)
 
         if position_returns.empty:
-            raise HTTPException(
-                status_code=400,
-                detail="Insufficient position data"
-            )
+            raise HTTPException(status_code=400, detail="Insufficient position data")
 
         # Get market returns
         from backend.benchmark_service import get_sp500_data
@@ -691,8 +741,7 @@ async def attribute_factor(
 
         sp500_df = get_sp500_data(start_date, end_date)
         market_returns = pd.Series(
-            sp500_df['daily_return'].values,
-            index=pd.to_datetime(sp500_df['date'])
+            sp500_df["daily_return"].values, index=pd.to_datetime(sp500_df["date"])
         )
 
         # Run factor analysis
@@ -714,7 +763,9 @@ async def attribute_factor(
 
         return AttributionResponse(
             total_attribution=result.total_attribution,
-            factor_attribution=result.factor_attribution.to_dict() if len(result.factor_attribution) > 0 else None,
+            factor_attribution=result.factor_attribution.to_dict()
+            if len(result.factor_attribution) > 0
+            else None,
             sector_attribution=None,
             region_attribution=None,
             security_attribution=None,
@@ -731,21 +782,30 @@ async def attribute_factor(
 # Monte Carlo Simulation Routes
 # =============================================================================
 
+
 @router.get("/monte-carlo/simple", response_model=MonteCarloResponse)
 async def monte_carlo_simple(
     account_id: Optional[str] = Query(None, description="Account ID"),
     initial_value: Optional[float] = Query(None, description="Initial portfolio value"),
     n_simulations: int = Query(10000, description="Number of simulations"),
     n_periods: int = Query(252, description="Number of periods (days)"),
-    start_date: Optional[datetime] = Query(None, description="Start date for parameter estimation"),
-    end_date: Optional[datetime] = Query(None, description="End date for parameter estimation"),
+    start_date: Optional[datetime] = Query(
+        None, description="Start date for parameter estimation"
+    ),
+    end_date: Optional[datetime] = Query(
+        None, description="End date for parameter estimation"
+    ),
     random_seed: Optional[int] = Query(None, description="Random seed"),
     db: Session = Depends(get_db),
 ):
     """Simple Monte Carlo simulation for portfolio value."""
     try:
         if not account_id:
-            latest = db.query(AccountSnapshot).order_by(desc(AccountSnapshot.timestamp)).first()
+            latest = (
+                db.query(AccountSnapshot)
+                .order_by(desc(AccountSnapshot.timestamp))
+                .first()
+            )
             if latest:
                 account_id = latest.account_id
 
@@ -757,11 +817,10 @@ async def monte_carlo_simple(
 
         if returns_df.empty or len(returns_df) < 10:
             raise HTTPException(
-                status_code=400,
-                detail="Insufficient data for parameter estimation"
+                status_code=400, detail="Insufficient data for parameter estimation"
             )
 
-        returns = returns_df['daily_return'].dropna()
+        returns = returns_df["daily_return"].dropna()
 
         # Estimate parameters
         expected_return = float(returns.mean() * 252)  # Annualized
@@ -769,12 +828,19 @@ async def monte_carlo_simple(
 
         # Get initial value
         if initial_value is None:
-            latest_snapshot = db.query(AccountSnapshot).filter(
-                AccountSnapshot.account_id == account_id
-            ).order_by(desc(AccountSnapshot.timestamp)).first()
+            latest_snapshot = (
+                db.query(AccountSnapshot)
+                .filter(AccountSnapshot.account_id == account_id)
+                .order_by(desc(AccountSnapshot.timestamp))
+                .first()
+            )
 
             if latest_snapshot:
-                initial_value = latest_snapshot.net_liquidation or latest_snapshot.equity or 100000.0
+                initial_value = (
+                    latest_snapshot.net_liquidation
+                    or latest_snapshot.equity
+                    or 100000.0
+                )
             else:
                 initial_value = 100000.0
 
@@ -796,16 +862,21 @@ async def monte_carlo_simple(
                 returns,
                 num_simulations=n_simulations,
                 num_periods=n_periods,
-                initial_value=initial_value
+                initial_value=initial_value,
             )
             if "error" in result_dict:
                 raise HTTPException(status_code=400, detail=result_dict["error"])
             # Convert to expected format
             from types import SimpleNamespace
+
             result = SimpleNamespace(
                 expected_final_value=result_dict["mean_final_value"],
                 percentiles=result_dict["percentiles"],
-                probability_of_loss=float((np.array([result_dict["mean_final_value"]]) < initial_value).mean()) if result_dict["mean_final_value"] < initial_value else 0.0,
+                probability_of_loss=float(
+                    (np.array([result_dict["mean_final_value"]]) < initial_value).mean()
+                )
+                if result_dict["mean_final_value"] < initial_value
+                else 0.0,
                 var_95=result_dict["var_95"],
                 cvar_95=result_dict.get("cvar_95", result_dict["var_95"]),
             )
@@ -834,16 +905,26 @@ async def monte_carlo_portfolio(
     initial_value: Optional[float] = Query(None, description="Initial portfolio value"),
     n_simulations: int = Query(10000, description="Number of simulations"),
     n_periods: int = Query(252, description="Number of periods (days)"),
-    rebalance_frequency: int = Query(21, description="Rebalance frequency (days, 0 = no rebalancing)"),
-    start_date: Optional[datetime] = Query(None, description="Start date for parameter estimation"),
-    end_date: Optional[datetime] = Query(None, description="End date for parameter estimation"),
+    rebalance_frequency: int = Query(
+        21, description="Rebalance frequency (days, 0 = no rebalancing)"
+    ),
+    start_date: Optional[datetime] = Query(
+        None, description="Start date for parameter estimation"
+    ),
+    end_date: Optional[datetime] = Query(
+        None, description="End date for parameter estimation"
+    ),
     random_seed: Optional[int] = Query(None, description="Random seed"),
     db: Session = Depends(get_db),
 ):
     """Multi-asset portfolio Monte Carlo simulation."""
     try:
         if not account_id:
-            latest = db.query(AccountSnapshot).order_by(desc(AccountSnapshot.timestamp)).first()
+            latest = (
+                db.query(AccountSnapshot)
+                .order_by(desc(AccountSnapshot.timestamp))
+                .first()
+            )
             if latest:
                 account_id = latest.account_id
 
@@ -854,27 +935,20 @@ async def monte_carlo_portfolio(
         portfolio_weights = get_current_positions_with_weights(account_id, db)
 
         if portfolio_weights.empty:
-            raise HTTPException(
-                status_code=400,
-                detail="No current positions found"
-            )
+            raise HTTPException(status_code=400, detail="No current positions found")
 
         # Get position returns
         position_returns = get_position_returns(account_id, start_date, end_date, db)
 
         if position_returns.empty:
-            raise HTTPException(
-                status_code=400,
-                detail="Insufficient position data"
-            )
+            raise HTTPException(status_code=400, detail="Insufficient position data")
 
         # Align assets
         common_assets = portfolio_weights.index.intersection(position_returns.columns)
 
         if len(common_assets) == 0:
             raise HTTPException(
-                status_code=400,
-                detail="No common assets between positions and returns"
+                status_code=400, detail="No common assets between positions and returns"
             )
 
         portfolio_weights = portfolio_weights.loc[common_assets]
@@ -888,12 +962,19 @@ async def monte_carlo_portfolio(
 
         # Get initial value
         if initial_value is None:
-            latest_snapshot = db.query(AccountSnapshot).filter(
-                AccountSnapshot.account_id == account_id
-            ).order_by(desc(AccountSnapshot.timestamp)).first()
+            latest_snapshot = (
+                db.query(AccountSnapshot)
+                .filter(AccountSnapshot.account_id == account_id)
+                .order_by(desc(AccountSnapshot.timestamp))
+                .first()
+            )
 
             if latest_snapshot:
-                initial_value = latest_snapshot.net_liquidation or latest_snapshot.equity or 100000.0
+                initial_value = (
+                    latest_snapshot.net_liquidation
+                    or latest_snapshot.equity
+                    or 100000.0
+                )
             else:
                 initial_value = 100000.0
 

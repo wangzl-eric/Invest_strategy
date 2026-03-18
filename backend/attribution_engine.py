@@ -6,12 +6,11 @@ from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
-from backend.config import settings
 from backend.database import SessionLocal
-from backend.llm_client import QwenLLMClient, AttributionExplanation
+from backend.llm_client import QwenLLMClient
 from backend.models import PnLAttribution, PnLHistory
 from backend.news_service import NewsService
-from backtests.strategies import get_signal_metadata, SIGNAL_METADATA
+from backtests.strategies import SIGNAL_METADATA, get_signal_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -139,9 +138,7 @@ class AttributionEngine:
                 narrative = "Parse error"
                 sentiment = "unknown"
 
-            formatted.append(
-                f"- {date}: {sentiment.upper()} - {narrative}..."
-            )
+            formatted.append(f"- {date}: {sentiment.upper()} - {narrative}...")
 
         return "\n".join(formatted)
 
@@ -343,27 +340,31 @@ class AttributionEngine:
 
         # Build explanation JSON
         if explanation:
-            explanation_json = json.dumps({
-                "sentiment": explanation.sentiment,
-                "themes": explanation.themes,
-                "catalysts": explanation.catalysts,
-                "narrative": explanation.narrative,
-                "strategy_specific_impact": explanation.strategy_specific_impact,
-                "confidence": explanation.confidence,
-            })
+            explanation_json = json.dumps(
+                {
+                    "sentiment": explanation.sentiment,
+                    "themes": explanation.themes,
+                    "catalysts": explanation.catalysts,
+                    "narrative": explanation.narrative,
+                    "strategy_specific_impact": explanation.strategy_specific_impact,
+                    "confidence": explanation.confidence,
+                }
+            )
         else:
             explanation_json = "{}"
 
         # Build news articles JSON
-        news_articles_json = json.dumps([
-            {
-                "title": a.get("title", ""),
-                "source": a.get("source", ""),
-                "timestamp": str(a.get("timestamp", "")),
-                "summary": a.get("summary", ""),
-            }
-            for a in news_articles
-        ])
+        news_articles_json = json.dumps(
+            [
+                {
+                    "title": a.get("title", ""),
+                    "source": a.get("source", ""),
+                    "timestamp": str(a.get("timestamp", "")),
+                    "summary": a.get("summary", ""),
+                }
+                for a in news_articles
+            ]
+        )
 
         # Build position impacts JSON
         position_impacts_json = json.dumps(positions or [])
@@ -450,7 +451,9 @@ class AttributionEngine:
                 account_id=account_id,
                 date=date,
                 pnl_change_pct=pnl_data["pnl_change_pct"],  # Would be signal-specific
-                pnl_change_dollar=pnl_data["pnl_change_dollar"],  # Would be signal-specific
+                pnl_change_dollar=pnl_data[
+                    "pnl_change_dollar"
+                ],  # Would be signal-specific
                 previous_pnl=pnl_data["previous_pnl"],
                 current_pnl=pnl_data["current_pnl"],
                 trigger_type="threshold_signal",

@@ -9,17 +9,17 @@ Renders the Data tab in the main dashboard with three sections:
 from datetime import datetime, timedelta
 from typing import Optional
 
-from dash import dcc, html
 import dash_bootstrap_components as dbc
+from dash import dcc, html
 
 # Shared colour tokens (keep in sync with market_panels.py)
-GREEN = "#3fb950"
-RED = "#f85149"
-BLUE = "#58a6ff"
-MUTED = "#8b949e"
-TEXT_PRIMARY = "#c9d1d9"
-YELLOW = "#d29922"
-PURPLE = "#a371f7"
+GREEN = "#34d399"
+RED = "#f87171"
+BLUE = "#4da6ff"
+MUTED = "#9094a1"
+TEXT_PRIMARY = "#e4e6eb"
+YELLOW = "#fbbf24"
+PURPLE = "#a78bfa"
 
 _CARD_STYLE = "data-card"
 _SECTION_TITLE = "section-title"
@@ -109,31 +109,75 @@ def _build_source_status_panel(source_info: dict) -> html.Div:
     badges = []
     for source, info in source_info.items():
         status = info.get("status", "unknown")
-        badges.append(html.Div([
-            html.Span(source.upper(), style={"color": TEXT_PRIMARY, "fontSize": "0.8rem", "fontWeight": "600", "marginRight": "8px"}),
-            _source_status_badge(status),
-        ], style={"display": "inline-block", "marginRight": "16px"}))
+        badges.append(
+            html.Div(
+                [
+                    html.Span(
+                        source.upper(),
+                        style={
+                            "color": TEXT_PRIMARY,
+                            "fontSize": "0.8rem",
+                            "fontWeight": "600",
+                            "marginRight": "8px",
+                        },
+                    ),
+                    _source_status_badge(status),
+                ],
+                style={"display": "inline-block", "marginRight": "16px"},
+            )
+        )
 
-    return html.Div([
-        html.Span("Sources: ", style={"color": MUTED, "fontSize": "0.8rem"}),
-        *badges,
-    ], style={"marginBottom": "1rem", "padding": "0.5rem", "backgroundColor": "#161b22", "borderRadius": "6px"})
+    return html.Div(
+        [
+            html.Span("Sources: ", style={"color": MUTED, "fontSize": "0.8rem"}),
+            *badges,
+        ],
+        style={
+            "marginBottom": "1rem",
+            "padding": "0.5rem",
+            "backgroundColor": "#161b22",
+            "borderRadius": "6px",
+        },
+    )
 
 
 def _build_catalog_table(catalog: dict) -> html.Div:
     """Render a table showing every stored dataset."""
     if not catalog:
-        return html.Div([
-            html.P(
-                "No data stored yet. Use the pull form below or click 'Update All' to populate the data lake.",
-                style={"color": MUTED, "textAlign": "center", "padding": "2rem 0"},
-            ),
-        ])
+        return html.Div(
+            [
+                html.P(
+                    "No data stored yet. Use the pull form below or click 'Update All' to populate the data lake.",
+                    style={"color": MUTED, "textAlign": "center", "padding": "2rem 0"},
+                ),
+            ]
+        )
 
-    header = html.Thead(html.Tr([
-        html.Th(h, style={"color": MUTED, "fontWeight": "500", "fontSize": "0.75rem", "textTransform": "uppercase", "letterSpacing": "0.5px"})
-        for h in ["Dataset", "Source", "Tickers", "Date Range", "Rows", "Size", "Freshness"]
-    ]))
+    header = html.Thead(
+        html.Tr(
+            [
+                html.Th(
+                    h,
+                    style={
+                        "color": MUTED,
+                        "fontWeight": "500",
+                        "fontSize": "0.75rem",
+                        "textTransform": "uppercase",
+                        "letterSpacing": "0.5px",
+                    },
+                )
+                for h in [
+                    "Dataset",
+                    "Source",
+                    "Tickers",
+                    "Date Range",
+                    "Rows",
+                    "Size",
+                    "Freshness",
+                ]
+            ]
+        )
+    )
 
     rows = []
     for key, entry in sorted(catalog.items()):
@@ -146,24 +190,64 @@ def _build_catalog_table(catalog: dict) -> html.Div:
         end_val = entry.get("end_date", "—")
         date_range = f"{start} → {end_val}" if start != "—" else "—"
 
-        rows.append(html.Tr([
-            html.Td(key, style={"color": BLUE, "fontWeight": "600"}),
-            html.Td(entry.get("source", "—"), style={"color": PURPLE, "fontSize": "0.85rem"}),
-            html.Td(
-                ticker_display,
-                style={"color": TEXT_PRIMARY, "fontSize": "0.8rem", "maxWidth": "250px", "overflow": "hidden", "textOverflow": "ellipsis"},
-                title=", ".join(tickers),
-            ),
-            html.Td(date_range, style={"fontFamily": "'JetBrains Mono', monospace", "fontSize": "0.8rem", "color": TEXT_PRIMARY}),
-            html.Td(f"{entry.get('row_count', 0):,}", style={"fontFamily": "'JetBrains Mono', monospace", "textAlign": "right", "color": TEXT_PRIMARY}),
-            html.Td(f"{entry.get('file_size_mb', 0):.1f} MB", style={"fontFamily": "'JetBrains Mono', monospace", "textAlign": "right", "color": MUTED}),
-            html.Td(_freshness_badge(entry.get("last_updated")), style={"textAlign": "center"}),
-        ]))
+        rows.append(
+            html.Tr(
+                [
+                    html.Td(key, style={"color": BLUE, "fontWeight": "600"}),
+                    html.Td(
+                        entry.get("source", "—"),
+                        style={"color": PURPLE, "fontSize": "0.85rem"},
+                    ),
+                    html.Td(
+                        ticker_display,
+                        style={
+                            "color": TEXT_PRIMARY,
+                            "fontSize": "0.8rem",
+                            "maxWidth": "250px",
+                            "overflow": "hidden",
+                            "textOverflow": "ellipsis",
+                        },
+                        title=", ".join(tickers),
+                    ),
+                    html.Td(
+                        date_range,
+                        style={
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "fontSize": "0.8rem",
+                            "color": TEXT_PRIMARY,
+                        },
+                    ),
+                    html.Td(
+                        f"{entry.get('row_count', 0):,}",
+                        style={
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                            "color": TEXT_PRIMARY,
+                        },
+                    ),
+                    html.Td(
+                        f"{entry.get('file_size_mb', 0):.1f} MB",
+                        style={
+                            "fontFamily": "'JetBrains Mono', monospace",
+                            "textAlign": "right",
+                            "color": MUTED,
+                        },
+                    ),
+                    html.Td(
+                        _freshness_badge(entry.get("last_updated")),
+                        style={"textAlign": "center"},
+                    ),
+                ]
+            )
+        )
 
     return html.Div(
         dbc.Table(
             [header, html.Tbody(rows)],
-            bordered=False, dark=True, hover=True, size="sm",
+            bordered=False,
+            dark=True,
+            hover=True,
+            size="sm",
         ),
         style={"overflowX": "auto"},
     )
@@ -174,111 +258,281 @@ def _build_pull_form() -> html.Div:
     today = datetime.utcnow().strftime("%Y-%m-%d")
     two_years_ago = (datetime.utcnow() - timedelta(days=730)).strftime("%Y-%m-%d")
 
-    return html.Div([
-        dbc.Row([
-            dbc.Col([
-                html.Label("Source", style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "4px"}),
-                dcc.Dropdown(
-                    id="data-source-select",
-                    options=_DATA_SOURCE_OPTIONS,
-                    value="auto",
-                    clearable=False,
-                    style={"backgroundColor": "#21262d", "color": TEXT_PRIMARY},
-                ),
-            ], xs=12, md=2),
-            dbc.Col([
-                html.Label("Asset Class / Category", style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "4px"}),
-                dcc.Dropdown(
-                    id="data-asset-select",
-                    options=_YF_ASSET_OPTIONS + _FRED_CATEGORY_OPTIONS,
-                    value="equities",
-                    clearable=False,
-                    style={"backgroundColor": "#21262d", "color": TEXT_PRIMARY},
-                ),
-            ], xs=12, md=2),
-            dbc.Col([
-                html.Label("Tickers (comma-separated)", style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "4px"}),
-                dbc.Input(
-                    id="data-tickers-input",
-                    placeholder="e.g. ^GSPC, ^NDX, AAPL",
-                    value="",
-                    style={"backgroundColor": "#21262d", "color": TEXT_PRIMARY, "border": "1px solid #30363d"},
-                ),
-            ], xs=12, md=3),
-            dbc.Col([
-                html.Label("Start Date", style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "4px"}),
-                dcc.DatePickerSingle(
-                    id="data-start-date",
-                    date=two_years_ago,
-                    display_format="YYYY-MM-DD",
-                    style={"backgroundColor": "#21262d"},
-                ),
-            ], xs=6, md=2),
-            dbc.Col([
-                html.Label("End Date", style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "4px"}),
-                dcc.DatePickerSingle(
-                    id="data-end-date",
-                    date=today,
-                    display_format="YYYY-MM-DD",
-                    style={"backgroundColor": "#21262d"},
-                ),
-            ], xs=6, md=2),
-            dbc.Col([
-                html.Label("\u00A0", style={"display": "block", "fontSize": "0.8rem", "marginBottom": "4px"}),
-                dbc.Button("Pull Data", id="data-pull-btn", color="primary", size="sm", className="w-100"),
-            ], xs=12, md=1),
-        ], className="g-2 align-items-end"),
-        html.Div(id="data-pull-status", style={"marginTop": "0.5rem"}),
-    ])
+    return html.Div(
+        [
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            html.Label(
+                                "Source",
+                                style={
+                                    "color": MUTED,
+                                    "fontSize": "0.8rem",
+                                    "marginBottom": "4px",
+                                },
+                            ),
+                            dcc.Dropdown(
+                                id="data-source-select",
+                                options=_DATA_SOURCE_OPTIONS,
+                                value="auto",
+                                clearable=False,
+                                style={
+                                    "backgroundColor": "#181b1f",
+                                    "color": TEXT_PRIMARY,
+                                },
+                            ),
+                        ],
+                        xs=12,
+                        md=2,
+                    ),
+                    dbc.Col(
+                        [
+                            html.Label(
+                                "Asset Class / Category",
+                                style={
+                                    "color": MUTED,
+                                    "fontSize": "0.8rem",
+                                    "marginBottom": "4px",
+                                },
+                            ),
+                            dcc.Dropdown(
+                                id="data-asset-select",
+                                options=_YF_ASSET_OPTIONS + _FRED_CATEGORY_OPTIONS,
+                                value="equities",
+                                clearable=False,
+                                style={
+                                    "backgroundColor": "#181b1f",
+                                    "color": TEXT_PRIMARY,
+                                },
+                            ),
+                        ],
+                        xs=12,
+                        md=2,
+                    ),
+                    dbc.Col(
+                        [
+                            html.Label(
+                                "Tickers (comma-separated)",
+                                style={
+                                    "color": MUTED,
+                                    "fontSize": "0.8rem",
+                                    "marginBottom": "4px",
+                                },
+                            ),
+                            dbc.Input(
+                                id="data-tickers-input",
+                                placeholder="e.g. ^GSPC, ^NDX, AAPL",
+                                value="",
+                                style={
+                                    "backgroundColor": "#181b1f",
+                                    "color": TEXT_PRIMARY,
+                                    "border": "1px solid #2a2e35",
+                                },
+                            ),
+                        ],
+                        xs=12,
+                        md=3,
+                    ),
+                    dbc.Col(
+                        [
+                            html.Label(
+                                "Start Date",
+                                style={
+                                    "color": MUTED,
+                                    "fontSize": "0.8rem",
+                                    "marginBottom": "4px",
+                                },
+                            ),
+                            dcc.DatePickerSingle(
+                                id="data-start-date",
+                                date=two_years_ago,
+                                display_format="YYYY-MM-DD",
+                                style={"backgroundColor": "#181b1f"},
+                            ),
+                        ],
+                        xs=6,
+                        md=2,
+                    ),
+                    dbc.Col(
+                        [
+                            html.Label(
+                                "End Date",
+                                style={
+                                    "color": MUTED,
+                                    "fontSize": "0.8rem",
+                                    "marginBottom": "4px",
+                                },
+                            ),
+                            dcc.DatePickerSingle(
+                                id="data-end-date",
+                                date=today,
+                                display_format="YYYY-MM-DD",
+                                style={"backgroundColor": "#181b1f"},
+                            ),
+                        ],
+                        xs=6,
+                        md=2,
+                    ),
+                    dbc.Col(
+                        [
+                            html.Label(
+                                "\u00A0",
+                                style={
+                                    "display": "block",
+                                    "fontSize": "0.8rem",
+                                    "marginBottom": "4px",
+                                },
+                            ),
+                            dbc.Button(
+                                "Pull Data",
+                                id="data-pull-btn",
+                                color="primary",
+                                size="sm",
+                                className="w-100",
+                            ),
+                        ],
+                        xs=12,
+                        md=1,
+                    ),
+                ],
+                className="g-2 align-items-end",
+            ),
+            html.Div(id="data-pull-status", style={"marginTop": "0.5rem"}),
+        ]
+    )
 
 
 def _build_preview_form() -> html.Div:
     """Render the data preview / query section."""
-    return html.Div([
-        dbc.Row([
-            dbc.Col([
-                html.Label("Dataset", style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "4px"}),
-                dcc.Dropdown(
-                    id="data-preview-asset",
-                    options=_YF_ASSET_OPTIONS + _FRED_CATEGORY_OPTIONS,
-                    value="equities",
-                    clearable=False,
-                    style={"backgroundColor": "#21262d", "color": TEXT_PRIMARY},
-                ),
-            ], xs=12, md=3),
-            dbc.Col([
-                html.Label("Tickers (optional)", style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "4px"}),
-                dbc.Input(
-                    id="data-preview-tickers",
-                    placeholder="e.g. ^GSPC, ^NDX",
-                    value="",
-                    style={"backgroundColor": "#21262d", "color": TEXT_PRIMARY, "border": "1px solid #30363d"},
-                ),
-            ], xs=12, md=3),
-            dbc.Col([
-                html.Label("Start", style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "4px"}),
-                dcc.DatePickerSingle(id="data-preview-start", date=None, display_format="YYYY-MM-DD"),
-            ], xs=6, md=2),
-            dbc.Col([
-                html.Label("End", style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "4px"}),
-                dcc.DatePickerSingle(id="data-preview-end", date=None, display_format="YYYY-MM-DD"),
-            ], xs=6, md=2),
-            dbc.Col([
-                html.Label("\u00A0", style={"display": "block", "fontSize": "0.8rem", "marginBottom": "4px"}),
-                dbc.Button("Preview", id="data-preview-btn", color="info", size="sm", outline=True, className="w-100"),
-            ], xs=12, md=2),
-        ], className="g-2 align-items-end"),
-        dcc.Loading(
-            html.Div(id="data-preview-container", style={"marginTop": "1rem"}),
-            type="dot",
-            color=BLUE,
-        ),
-    ])
+    return html.Div(
+        [
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            html.Label(
+                                "Dataset",
+                                style={
+                                    "color": MUTED,
+                                    "fontSize": "0.8rem",
+                                    "marginBottom": "4px",
+                                },
+                            ),
+                            dcc.Dropdown(
+                                id="data-preview-asset",
+                                options=_YF_ASSET_OPTIONS + _FRED_CATEGORY_OPTIONS,
+                                value="equities",
+                                clearable=False,
+                                style={
+                                    "backgroundColor": "#181b1f",
+                                    "color": TEXT_PRIMARY,
+                                },
+                            ),
+                        ],
+                        xs=12,
+                        md=3,
+                    ),
+                    dbc.Col(
+                        [
+                            html.Label(
+                                "Tickers (optional)",
+                                style={
+                                    "color": MUTED,
+                                    "fontSize": "0.8rem",
+                                    "marginBottom": "4px",
+                                },
+                            ),
+                            dbc.Input(
+                                id="data-preview-tickers",
+                                placeholder="e.g. ^GSPC, ^NDX",
+                                value="",
+                                style={
+                                    "backgroundColor": "#181b1f",
+                                    "color": TEXT_PRIMARY,
+                                    "border": "1px solid #2a2e35",
+                                },
+                            ),
+                        ],
+                        xs=12,
+                        md=3,
+                    ),
+                    dbc.Col(
+                        [
+                            html.Label(
+                                "Start",
+                                style={
+                                    "color": MUTED,
+                                    "fontSize": "0.8rem",
+                                    "marginBottom": "4px",
+                                },
+                            ),
+                            dcc.DatePickerSingle(
+                                id="data-preview-start",
+                                date=None,
+                                display_format="YYYY-MM-DD",
+                            ),
+                        ],
+                        xs=6,
+                        md=2,
+                    ),
+                    dbc.Col(
+                        [
+                            html.Label(
+                                "End",
+                                style={
+                                    "color": MUTED,
+                                    "fontSize": "0.8rem",
+                                    "marginBottom": "4px",
+                                },
+                            ),
+                            dcc.DatePickerSingle(
+                                id="data-preview-end",
+                                date=None,
+                                display_format="YYYY-MM-DD",
+                            ),
+                        ],
+                        xs=6,
+                        md=2,
+                    ),
+                    dbc.Col(
+                        [
+                            html.Label(
+                                "\u00A0",
+                                style={
+                                    "display": "block",
+                                    "fontSize": "0.8rem",
+                                    "marginBottom": "4px",
+                                },
+                            ),
+                            dbc.Button(
+                                "Preview",
+                                id="data-preview-btn",
+                                color="info",
+                                size="sm",
+                                outline=True,
+                                className="w-100",
+                            ),
+                        ],
+                        xs=12,
+                        md=2,
+                    ),
+                ],
+                className="g-2 align-items-end",
+            ),
+            dcc.Loading(
+                html.Div(id="data-preview-container", style={"marginTop": "1rem"}),
+                type="dot",
+                color=BLUE,
+            ),
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
 # Main layout builder
 # ---------------------------------------------------------------------------
+
 
 def build_data_manager_layout(catalog: dict, source_info: dict = None) -> html.Div:
     """Assemble the full Data Manager tab.
@@ -287,53 +541,93 @@ def build_data_manager_layout(catalog: dict, source_info: dict = None) -> html.D
         catalog: The data catalog dictionary
         source_info: Optional source status information
     """
-    return html.Div([
-        # Header
-        html.Div([
-            html.H4("Data Manager", style={"color": TEXT_PRIMARY, "marginBottom": "0.25rem"}),
-            html.P(
-                "Browse stored market data, trigger new pulls, and preview time series.",
-                style={"color": MUTED, "fontSize": "0.85rem", "marginBottom": "0"},
+    return html.Div(
+        [
+            # Header
+            html.Div(
+                [
+                    html.H4(
+                        "Data Manager",
+                        style={"color": TEXT_PRIMARY, "marginBottom": "0.25rem"},
+                    ),
+                    html.P(
+                        "Browse stored market data, trigger new pulls, and preview time series.",
+                        style={
+                            "color": MUTED,
+                            "fontSize": "0.85rem",
+                            "marginBottom": "0",
+                        },
+                    ),
+                ],
+                style={"marginBottom": "0.5rem"},
             ),
-        ], style={"marginBottom": "0.5rem"}),
-
-        # Source Status Panel
-        _build_source_status_panel(source_info or {}),
-
-        # Section 1: Catalog
-        html.Div([
-            html.Div([
-                html.H5("Data Catalog", className=_SECTION_TITLE, style={"display": "inline-block"}),
-                dbc.Button(
-                    "Update All",
-                    id="data-update-all-btn",
-                    color="success",
-                    size="sm",
-                    outline=True,
-                    style={"float": "right"},
-                ),
-            ], style={"display": "flex", "justifyContent": "space-between", "alignItems": "center"}),
-            html.Div(id="data-update-all-status", style={"marginBottom": "0.5rem"}),
-            _build_catalog_table(catalog),
-        ], className=_CARD_STYLE, style={"marginBottom": "1.5rem"}),
-
-        # Section 2: Pull Data
-        html.Div([
-            html.H5("Pull Data", className=_SECTION_TITLE),
-            html.P(
-                "Download historical data from yfinance, FRED, or IBKR and store in the Parquet data lake.",
-                style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "0.75rem"},
+            # Source Status Panel
+            _build_source_status_panel(source_info or {}),
+            # Section 1: Catalog
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.H5(
+                                "Data Catalog",
+                                className=_SECTION_TITLE,
+                                style={"display": "inline-block"},
+                            ),
+                            dbc.Button(
+                                "Update All",
+                                id="data-update-all-btn",
+                                color="success",
+                                size="sm",
+                                outline=True,
+                                style={"float": "right"},
+                            ),
+                        ],
+                        style={
+                            "display": "flex",
+                            "justifyContent": "space-between",
+                            "alignItems": "center",
+                        },
+                    ),
+                    html.Div(
+                        id="data-update-all-status", style={"marginBottom": "0.5rem"}
+                    ),
+                    _build_catalog_table(catalog),
+                ],
+                className=_CARD_STYLE,
+                style={"marginBottom": "1.5rem"},
             ),
-            _build_pull_form(),
-        ], className=_CARD_STYLE, style={"marginBottom": "1.5rem"}),
-
-        # Section 3: Data Viewer
-        html.Div([
-            html.H5("Data Viewer", className=_SECTION_TITLE),
-            html.P(
-                "Query and visualise stored time series.",
-                style={"color": MUTED, "fontSize": "0.8rem", "marginBottom": "0.75rem"},
+            # Section 2: Pull Data
+            html.Div(
+                [
+                    html.H5("Pull Data", className=_SECTION_TITLE),
+                    html.P(
+                        "Download historical data from yfinance, FRED, or IBKR and store in the Parquet data lake.",
+                        style={
+                            "color": MUTED,
+                            "fontSize": "0.8rem",
+                            "marginBottom": "0.75rem",
+                        },
+                    ),
+                    _build_pull_form(),
+                ],
+                className=_CARD_STYLE,
+                style={"marginBottom": "1.5rem"},
             ),
-            _build_preview_form(),
-        ], className=_CARD_STYLE),
-    ])
+            # Section 3: Data Viewer
+            html.Div(
+                [
+                    html.H5("Data Viewer", className=_SECTION_TITLE),
+                    html.P(
+                        "Query and visualise stored time series.",
+                        style={
+                            "color": MUTED,
+                            "fontSize": "0.8rem",
+                            "marginBottom": "0.75rem",
+                        },
+                    ),
+                    _build_preview_form(),
+                ],
+                className=_CARD_STYLE,
+            ),
+        ]
+    )

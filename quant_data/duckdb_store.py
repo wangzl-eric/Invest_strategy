@@ -31,9 +31,13 @@ def register_parquet_view(
     """Create a view over a parquet glob, e.g. '/path/to/date=*/**/*.parquet'."""
 
     if replace:
-        con.execute(f"CREATE OR REPLACE VIEW {view_name} AS SELECT * FROM read_parquet('{parquet_glob}')")
+        con.execute(
+            f"CREATE OR REPLACE VIEW {view_name} AS SELECT * FROM read_parquet('{parquet_glob}')"
+        )
     else:
-        con.execute(f"CREATE VIEW {view_name} AS SELECT * FROM read_parquet('{parquet_glob}')")
+        con.execute(
+            f"CREATE VIEW {view_name} AS SELECT * FROM read_parquet('{parquet_glob}')"
+        )
 
 
 def vacuum(con: duckdb.DuckDBPyConnection) -> None:

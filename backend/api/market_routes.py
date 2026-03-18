@@ -1,6 +1,7 @@
 """Market data API routes for cross-asset monitoring dashboard."""
 
 import logging
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Query
@@ -51,6 +52,93 @@ async def get_what_changed(
     return market_data_service.get_what_changed(sigma_threshold=sigma)
 
 
+@router.get("/market/mover-news")
+async def get_mover_news(
+    sigma: float = Query(
+        default=1.5,
+        ge=0.5,
+        le=5.0,
+        description="Z-score threshold for identifying movers",
+    ),
+    max_movers: int = Query(
+        default=10, ge=1, le=20, description="Maximum number of movers to analyze"
+    ),
+    max_articles: int = Query(
+        default=3, ge=1, le=10, description="Max news articles per ticker"
+    ),
+):
+    """Fetch news and LLM summary for market movers.
+
+    This endpoint:
+    1. Identifies top movers using z-score vs 20-day realized vol
+    2. Fetches news for each mover via IBKR
+    3. Uses LLM to generate a market summary
+
+    Requires:
+    - IBKR TWS/Gateway running with news subscriptions
+    - QWEN_API_KEY configured in .env for LLM summarization
+    """
+    from backend.mover_news_service import get_mover_news_service
+
+    # First get the movers
+    movers_data = market_data_service.get_what_changed(sigma_threshold=sigma)
+    movers = movers_data.get("movers", [])[:max_movers]
+
+    if not movers:
+        return {
+            "movers": [],
+            "news_by_ticker": {},
+            "llm_summary": None,
+            "timestamp": movers_data.get("timestamp"),
+            "error": "No movers found above threshold",
+        }
+
+    # Get the mover news service and fetch news + summary
+    mover_news_service = get_mover_news_service()
+
+    result = mover_news_service.get_mover_news_sync(
+        movers=movers, max_articles_per_ticker=max_articles
+    )
+
+    return result
+
+
+@router.get("/market/mover-news/refresh")
+async def refresh_mover_news(
+    sigma: float = Query(default=1.5, ge=0.5, le=5.0),
+    max_movers: int = Query(default=10, ge=1, le=20),
+    max_articles: int = Query(default=3, ge=1, le=10),
+):
+    """Force refresh of mover news (bypasses cache).
+
+    Same as /market/mover-news but always fetches fresh data.
+    """
+    from backend.mover_news_service import get_mover_news_service
+
+    # Get movers
+    movers_data = market_data_service.get_what_changed(sigma_threshold=sigma)
+    movers = movers_data.get("movers", [])[:max_movers]
+
+    if not movers:
+        return {
+            "movers": [],
+            "news_by_ticker": {},
+            "llm_summary": None,
+            "error": "No movers found above threshold",
+        }
+
+    # Create fresh service instance to bypass any caching
+    from backend.mover_news_service import MoverNewsService
+
+    mover_news_service = MoverNewsService()
+
+    result = mover_news_service.get_mover_news_sync(
+        movers=movers, max_articles_per_ticker=max_articles
+    )
+
+    return result
+
+
 @router.get("/market/curves")
 async def get_curves():
     """Yield curve, swap curve, swap spread, and forward rates for charting."""
@@ -86,7 +174,9 @@ async def get_sparklines(
 @router.get("/market/historical/{symbol:path}")
 async def get_historical(
     symbol: str,
-    days: int = Query(default=30, ge=1, le=365, description="Number of days of history"),
+    days: int = Query(
+        default=30, ge=1, le=365, description="Number of days of history"
+    ),
 ):
     """Historical daily close prices for sparkline charts."""
     return {"symbol": symbol, "data": market_data_service.get_historical(symbol, days)}
@@ -99,6 +189,7 @@ async def get_historical(
 
 class DataWithFallbackRequest(BaseModel):
     """Request model for data with fallback."""
+
     symbol: str
     asset_class: str
     days: int = 30
@@ -108,9 +199,15 @@ class DataWithFallbackRequest(BaseModel):
 @router.get("/market/data-with-fallback")
 async def get_data_with_fallback(
     symbol: str = Query(..., description="Ticker symbol or FRED series ID"),
-    asset_class: str = Query(..., description="Asset class (equity, fx, rates, macro, commodities)"),
-    days: int = Query(default=30, ge=1, le=365, description="Number of days of history"),
-    preferred_source: Optional[str] = Query(None, description="Preferred data source (yfinance, ibkr, fred, parquet)"),
+    asset_class: str = Query(
+        ..., description="Asset class (equity, fx, rates, macro, commodities)"
+    ),
+    days: int = Query(
+        default=30, ge=1, le=365, description="Number of days of history"
+    ),
+    preferred_source: Optional[str] = Query(
+        None, description="Preferred data source (yfinance, ibkr, fred, parquet)"
+    ),
 ):
     """Fetch data with automatic fallback through available sources.
 
@@ -123,9 +220,7 @@ async def get_data_with_fallback(
     Returns metadata indicating which source was used.
     """
     result = market_data_service.get_data_with_fallback(
-        symbol=symbol,
-        asset_class=asset_class,
-        days=days
+        symbol=symbol, asset_class=asset_class, days=days
     )
 
     # Add request metadata
@@ -148,7 +243,11 @@ async def get_source_status():
 @router.get("/market/data-source-info")
 async def get_data_source_info():
     """Get information about data source priorities and capabilities."""
-    from backend.data_source_manager import data_source_manager, DEFAULT_PRIORITY_ORDER, SOURCE_CAPABILITIES
+    from backend.data_source_manager import (
+        DEFAULT_PRIORITY_ORDER,
+        SOURCE_CAPABILITIES,
+        data_source_manager,
+    )
 
     return {
         "priority_order": {
@@ -156,8 +255,61 @@ async def get_data_source_info():
             for asset_class, sources in DEFAULT_PRIORITY_ORDER.items()
         },
         "capabilities": {
-            source.value: classes
-            for source, classes in SOURCE_CAPABILITIES.items()
+            source.value: classes for source, classes in SOURCE_CAPABILITIES.items()
         },
-        "source_health": data_source_manager.get_source_info()
+        "source_health": data_source_manager.get_source_info(),
     }
+
+
+# ---------------------------------------------------------------------------
+# Token usage tracking endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.get("/llm/usage")
+async def get_llm_usage():
+    """Get token usage statistics for LLM API calls.
+
+    Returns aggregated usage stats including:
+    - Total requests, success/fail counts
+    - Total tokens used (prompt + completion)
+    - Estimated cost breakdown by model
+    - Usage by endpoint
+    - Recent request history
+    """
+    from backend.token_tracker import get_token_tracker
+
+    tracker = get_token_tracker()
+    stats = tracker.get_stats()
+
+    return {
+        "timestamp": datetime.utcnow().isoformat(),
+        "summary": {
+            "total_requests": stats.total_requests,
+            "successful_requests": stats.successful_requests,
+            "failed_requests": stats.failed_requests,
+            "total_prompt_tokens": stats.total_prompt_tokens,
+            "total_completion_tokens": stats.total_completion_tokens,
+            "total_tokens": stats.total_tokens,
+            "total_cost_estimate_usd": round(stats.total_cost_estimate, 4),
+            "last_request_timestamp": (
+                stats.last_request_timestamp.isoformat()
+                if stats.last_request_timestamp
+                else None
+            ),
+        },
+        "by_model": stats.requests_by_model,
+        "by_endpoint": stats.requests_by_endpoint,
+        "recent_requests": tracker.get_recent_records(limit=10),
+    }
+
+
+@router.post("/llm/usage/reset")
+async def reset_llm_usage():
+    """Reset all token usage statistics."""
+    from backend.token_tracker import get_token_tracker
+
+    tracker = get_token_tracker()
+    tracker.reset()
+
+    return {"status": "success", "message": "Token usage statistics reset"}

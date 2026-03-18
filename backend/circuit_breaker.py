@@ -1,9 +1,9 @@
 """Circuit breaker pattern for external service calls."""
 import logging
 import time
-from enum import Enum
-from typing import Callable, Optional, Any
 from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any, Callable, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class CircuitBreaker:
         self,
         failure_threshold: int = 5,
         recovery_timeout: int = 60,
-        expected_exception: type = Exception
+        expected_exception: type = Exception,
     ):
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
@@ -37,14 +37,18 @@ class CircuitBreaker:
         # Check if circuit is open
         if self.state == CircuitState.OPEN:
             if self.last_failure_time:
-                time_since_failure = (datetime.utcnow() - self.last_failure_time).total_seconds()
+                time_since_failure = (
+                    datetime.utcnow() - self.last_failure_time
+                ).total_seconds()
                 if time_since_failure >= self.recovery_timeout:
                     # Try to recover
                     self.state = CircuitState.HALF_OPEN
                     self.success_count = 0
                     logger.info("Circuit breaker entering HALF_OPEN state")
                 else:
-                    raise Exception(f"Circuit breaker is OPEN. Retry after {self.recovery_timeout - int(time_since_failure)} seconds")
+                    raise Exception(
+                        f"Circuit breaker is OPEN. Retry after {self.recovery_timeout - int(time_since_failure)} seconds"
+                    )
             else:
                 raise Exception("Circuit breaker is OPEN")
 
@@ -76,7 +80,9 @@ class CircuitBreaker:
             elif self.failure_count >= self.failure_threshold:
                 # Too many failures, open circuit
                 self.state = CircuitState.OPEN
-                logger.warning(f"Circuit breaker OPEN after {self.failure_count} failures")
+                logger.warning(
+                    f"Circuit breaker OPEN after {self.failure_count} failures"
+                )
 
             raise
 
@@ -91,13 +97,11 @@ class CircuitBreaker:
 
 # Global circuit breakers for different services
 ibkr_circuit_breaker = CircuitBreaker(
-    failure_threshold=5,
-    recovery_timeout=60,
-    expected_exception=Exception
+    failure_threshold=5, recovery_timeout=60, expected_exception=Exception
 )
 
 flex_query_circuit_breaker = CircuitBreaker(
     failure_threshold=3,
     recovery_timeout=300,  # 5 minutes for Flex Query
-    expected_exception=Exception
+    expected_exception=Exception,
 )

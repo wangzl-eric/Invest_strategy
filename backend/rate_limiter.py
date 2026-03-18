@@ -1,9 +1,10 @@
 """Rate limiting middleware for API protection."""
-import time
 import logging
-from typing import Dict, Optional
+import time
 from collections import defaultdict, deque
-from fastapi import Request, HTTPException, status
+from typing import Dict, Optional
+
+from fastapi import HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
@@ -38,10 +39,16 @@ class RateLimiter:
 
         # Check limits
         if len(minute_window) >= self.requests_per_minute:
-            return False, f"Rate limit exceeded: {self.requests_per_minute} requests per minute"
+            return (
+                False,
+                f"Rate limit exceeded: {self.requests_per_minute} requests per minute",
+            )
 
         if len(hour_window) >= self.requests_per_hour:
-            return False, f"Rate limit exceeded: {self.requests_per_hour} requests per hour"
+            return (
+                False,
+                f"Rate limit exceeded: {self.requests_per_hour} requests per hour",
+            )
 
         # Record request
         minute_window.append(now)
@@ -65,7 +72,7 @@ async def rate_limit_middleware(request: Request, call_next):
     if not is_allowed:
         return JSONResponse(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            content={"detail": error_msg, "retry_after": 60}
+            content={"detail": error_msg, "retry_after": 60},
         )
 
     response = await call_next(request)
