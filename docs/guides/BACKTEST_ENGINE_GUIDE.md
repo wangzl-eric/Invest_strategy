@@ -145,7 +145,7 @@ The Sizer does **not** have a `next()` method. It is invoked only when:
 **Default (all-in):** Invest 100% of capital on BUY, 0% on SELL.
 
 ```python
-from backend.backtest_engine import BacktestEngine
+from workstation.backtests.event_driven.backtest_engine import BacktestEngine
 
 engine = BacktestEngine(cash=100000)
 # sizer defaults to AllInSizer(100%) - no need to specify
@@ -186,7 +186,10 @@ Size each trade using past price/volatility data. The Sizer has access to `data.
 **VolatilitySizer** — Risk a fixed % of portfolio per unit of volatility. Higher vol → smaller position.
 
 ```python
-from backend.backtest_engine import BacktestEngine, VolatilitySizer
+from workstation.backtests.event_driven.backtest_engine import (
+    BacktestEngine,
+    VolatilitySizer,
+)
 
 engine = BacktestEngine(
     cash=100000,
@@ -202,7 +205,10 @@ engine = BacktestEngine(
 **HistoricalPercentSizer** — Scale position by volatility ratio. When current vol is lower than reference vol → larger position.
 
 ```python
-from backend.backtest_engine import BacktestEngine, HistoricalPercentSizer
+from workstation.backtests.event_driven.backtest_engine import (
+    BacktestEngine,
+    HistoricalPercentSizer,
+)
 
 engine = BacktestEngine(
     cash=100000,
