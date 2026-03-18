@@ -3,18 +3,24 @@
 This module provides:
 - DuckDB wrapper for fast SQL queries over Parquet data
 - Feature registry with standardized signal definitions
-- Backtesting engine using Backtrader
+- Optional backtesting integrations when installed
 - Experiment tracking integration with MLflow
 """
 
-from backend.research.backtest import BacktestExperiment, EventDrivenBacktest
 from backend.research.duckdb_utils import ResearchDB
 from backend.research.features import FeatureRegistry, compute_features
+
+try:
+    from backend.research.backtest import BacktestExperiment, EventDrivenBacktest
+except ModuleNotFoundError:
+    BacktestExperiment = None
+    EventDrivenBacktest = None
 
 __all__ = [
     "ResearchDB",
     "FeatureRegistry",
     "compute_features",
-    "EventDrivenBacktest",
-    "BacktestExperiment",
 ]
+
+if EventDrivenBacktest is not None:
+    __all__.extend(["EventDrivenBacktest", "BacktestExperiment"])

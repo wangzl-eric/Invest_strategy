@@ -9,10 +9,7 @@ Provides endpoints for:
 """
 
 import logging
-
-# Import from skill (not a package, so need to handle differently)
 import sys
-from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -21,30 +18,68 @@ from fastapi import APIRouter, Body, HTTPException, Query
 
 from backend.config import settings
 from backend.llm_verdict import generate_hybrid_verdict, run_verdict
-from backend.research.backtest import (
-    BacktestConfig,
-    BacktestExperiment,
-    EventDrivenBacktest,
-    run_backtest,
-    run_factor_backtest,
-)
-from backend.research.duckdb_utils import ResearchDB, get_research_db
-from backend.research.features import (
-    FeatureRegistry,
-    compute_features,
-    get_feature_registry,
-)
+from backend.research.duckdb_utils import get_research_db
+from backend.research.features import compute_features, get_feature_registry
 
-# Get the project root (parent of backend)
-project_root = Path(__file__).resolve().parent.parent.parent
+# Get the project root and optional skill path.
+project_root = Path(__file__).resolve().parents[4]
 skill_path = project_root / ".cursor" / "skills" / "quant-backtest-research"
-if str(skill_path) not in sys.path:
+if skill_path.exists() and str(skill_path) not in sys.path:
     sys.path.insert(0, str(skill_path))
-from researcher import BacktestResearcher
+
+try:
+    from backend.research.backtest import (
+        BacktestConfig,
+        run_backtest,
+        run_factor_backtest,
+    )
+except ModuleNotFoundError as exc:
+    BacktestConfig = None
+    run_backtest = None
+    run_factor_backtest = None
+    _BACKTEST_IMPORT_ERROR = exc
+else:
+    _BACKTEST_IMPORT_ERROR = None
+
+try:
+    from researcher import BacktestResearcher
+except ModuleNotFoundError as exc:
+    BacktestResearcher = None
+    _RESEARCHER_IMPORT_ERROR = exc
+else:
+    _RESEARCHER_IMPORT_ERROR = None
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/research", tags=["research"])
+
+
+def _optional_dependency_detail(feature: str, exc: ModuleNotFoundError) -> str:
+    missing_module = getattr(exc, "name", None) or str(exc)
+    return (
+        f"{feature} is unavailable because optional dependency "
+        f"'{missing_module}' could not be imported."
+    )
+
+
+def _require_backtest_support() -> None:
+    if _BACKTEST_IMPORT_ERROR is not None:
+        raise HTTPException(
+            status_code=503,
+            detail=_optional_dependency_detail(
+                "Research backtesting", _BACKTEST_IMPORT_ERROR
+            ),
+        )
+
+
+def _require_researcher_support() -> None:
+    if _RESEARCHER_IMPORT_ERROR is not None:
+        raise HTTPException(
+            status_code=503,
+            detail=_optional_dependency_detail(
+                "Research report analysis", _RESEARCHER_IMPORT_ERROR
+            ),
+        )
 
 
 # ----------------------------------------------------------------------
@@ -267,6 +302,8 @@ async def run_backtest_endpoint(
     - signals: List of {date, signal} records (-1, 0, 1)
     """
     try:
+        _require_backtest_support()
+
         # Convert to DataFrames
         price_df = pd.DataFrame(data)
         if "date" in price_df.columns:
@@ -325,6 +362,8 @@ async def run_factor_backtest_endpoint(
     Ranks securities by factor and goes long top quantile, short bottom quantile.
     """
     try:
+        _require_backtest_support()
+
         # Convert to DataFrame
         df = pd.DataFrame(data)
 
@@ -369,16 +408,11 @@ async def run_backtest_with_mlflow(
 ):
     """Run backtest and log to MLflow."""
     try:
+        _require_backtest_support()
+
         # Run backtest
         result = await run_backtest_endpoint(
-            data, signals, initial_capital, commission, slippage, True
-        )
-
-        # Log to MLflow
-        experiment = BacktestExperiment(experiment_name)
-
-        config = BacktestConfig(
-            initial_capital=initial_capital, commission=commission, slippage=slippage
+            data, signals, initial_capital, commission, slippage
         )
 
         # Create BacktestResult from metrics
@@ -566,16 +600,8 @@ async def generate_verdict_from_report(
     Same as /verdict endpoint - contains rule_based, llm, and final fields.
     """
     try:
-        # Import from skill
-        import sys
-        from pathlib import Path
+        _require_researcher_support()
 
-        backend_dir = Path(__file__).parent
-        skill_path = (
-            backend_dir.parent / ".cursor" / "skills" / "quant-backtest-research"
-        )
-        if str(skill_path) not in sys.path:
-            sys.path.insert(0, str(skill_path))
         from researcher import (
             BacktestReport,
             BetaMetrics,
