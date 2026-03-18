@@ -77,12 +77,8 @@ _ASSET_CLASS_TICKERS = {
 
 # IBKR ticker lists - loaded from config ticker_universe
 try:
-    from config.ticker_universe import (
-        US_LARGE_CAP,
-        US_ETFS,
-        FOREX_MAJOR,
-        FOREX_MINOR,
-    )
+    from config.ticker_universe import FOREX_MAJOR, FOREX_MINOR, US_ETFS, US_LARGE_CAP
+
     _IBKR_ASSET_TICKERS = {
         "ibkr_equities": US_LARGE_CAP + US_ETFS,
         "ibkr_fx": FOREX_MAJOR + FOREX_MINOR,
@@ -93,13 +89,51 @@ except ImportError:
     # Fallback to hardcoded lists if config not available
     _IBKR_ASSET_TICKERS = {
         "ibkr_equities": [
-            "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "BRK.B", "JPM", "JNJ",
-            "V", "PG", "UNH", "HD", "MA", "DIS", "PYPL", "BAC", "ADBE", "NFLX",
-            "CRM", "INTC", "VZ", "T", "PFE", "MRK", "KO", "PEP", "ABT", "TMO",
+            "AAPL",
+            "MSFT",
+            "GOOGL",
+            "AMZN",
+            "NVDA",
+            "META",
+            "TSLA",
+            "BRK.B",
+            "JPM",
+            "JNJ",
+            "V",
+            "PG",
+            "UNH",
+            "HD",
+            "MA",
+            "DIS",
+            "PYPL",
+            "BAC",
+            "ADBE",
+            "NFLX",
+            "CRM",
+            "INTC",
+            "VZ",
+            "T",
+            "PFE",
+            "MRK",
+            "KO",
+            "PEP",
+            "ABT",
+            "TMO",
         ],
         "ibkr_fx": [
-            "EURUSD", "GBPUSD", "USDJPY", "USDCAD", "USDCHF", "AUDUSD", "NZDUSD",
-            "EURGBP", "EURJPY", "GBPJPY", "EURCHF", "AUDJPY", "CADJPY",
+            "EURUSD",
+            "GBPUSD",
+            "USDJPY",
+            "USDCAD",
+            "USDCHF",
+            "AUDUSD",
+            "NZDUSD",
+            "EURGBP",
+            "EURJPY",
+            "GBPJPY",
+            "EURCHF",
+            "AUDJPY",
+            "CADJPY",
         ],
         "ibkr_futures": [],
         "ibkr_options": [],
@@ -115,6 +149,7 @@ _FRED_CATEGORY_SERIES = {
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _ensure_dirs():
     _PRICES_DIR.mkdir(parents=True, exist_ok=True)
@@ -148,7 +183,9 @@ def _append_parquet(filepath: Path, new_df: pd.DataFrame):
     else:
         combined = new_df
 
-    dedup_cols = ["date", "ticker"] if "ticker" in combined.columns else ["date", "series_id"]
+    dedup_cols = (
+        ["date", "ticker"] if "ticker" in combined.columns else ["date", "series_id"]
+    )
     combined = combined.drop_duplicates(subset=dedup_cols, keep="last")
     combined = combined.sort_values("date").reset_index(drop=True)
     filepath.parent.mkdir(parents=True, exist_ok=True)
@@ -195,6 +232,7 @@ def get_job_status(job_id: str) -> Optional[dict]:
 # ---------------------------------------------------------------------------
 # MarketDataStore
 # ---------------------------------------------------------------------------
+
 
 class MarketDataStore:
     """Parquet-backed market data lake."""
@@ -258,15 +296,25 @@ class MarketDataStore:
                     close_val = row.get("Close")
                     if pd.isna(close_val):
                         continue
-                    records.append({
-                        "date": idx.date().isoformat(),
-                        "ticker": ticker,
-                        "open": float(row["Open"]) if pd.notna(row.get("Open")) else None,
-                        "high": float(row["High"]) if pd.notna(row.get("High")) else None,
-                        "low": float(row["Low"]) if pd.notna(row.get("Low")) else None,
-                        "close": float(close_val),
-                        "volume": float(row["Volume"]) if pd.notna(row.get("Volume")) else None,
-                    })
+                    records.append(
+                        {
+                            "date": idx.date().isoformat(),
+                            "ticker": ticker,
+                            "open": float(row["Open"])
+                            if pd.notna(row.get("Open"))
+                            else None,
+                            "high": float(row["High"])
+                            if pd.notna(row.get("High"))
+                            else None,
+                            "low": float(row["Low"])
+                            if pd.notna(row.get("Low"))
+                            else None,
+                            "close": float(close_val),
+                            "volume": float(row["Volume"])
+                            if pd.notna(row.get("Volume"))
+                            else None,
+                        }
+                    )
             except Exception as e:
                 logger.debug(f"Error processing {ticker}: {e}")
 
@@ -303,16 +351,20 @@ class MarketDataStore:
         records = []
         for sid in series_ids:
             try:
-                data = fred.get_series(sid, observation_start=start_date, observation_end=end_date)
+                data = fred.get_series(
+                    sid, observation_start=start_date, observation_end=end_date
+                )
                 if data is None or data.empty:
                     continue
                 data = data.dropna()
                 for idx, val in data.items():
-                    records.append({
-                        "date": idx.date().isoformat(),
-                        "series_id": sid,
-                        "value": float(val),
-                    })
+                    records.append(
+                        {
+                            "date": idx.date().isoformat(),
+                            "series_id": sid,
+                            "value": float(val),
+                        }
+                    )
             except Exception as e:
                 logger.debug(f"FRED fetch error for {sid}: {e}")
 
@@ -334,7 +386,7 @@ class MarketDataStore:
         asset_class: str,
         interval: str = "1 day",
         sec_type: str = "STK",
-        exchange: str = "SMART"
+        exchange: str = "SMART",
     ) -> int:
         """Download OHLCV from IBKR and append to Parquet.
 
@@ -400,7 +452,20 @@ class MarketDataStore:
 
                     # Auto-detect forex
                     ticker_is_fx = False
-                    if asset_class == "ibkr_fx" or "/" in ticker or ticker in ["EURUSD", "GBPUSD", "USDJPY", "USDCAD", "USDCHF", "AUDUSD", "NZDUSD"]:
+                    if (
+                        asset_class == "ibkr_fx"
+                        or "/" in ticker
+                        or ticker
+                        in [
+                            "EURUSD",
+                            "GBPUSD",
+                            "USDJPY",
+                            "USDCAD",
+                            "USDCHF",
+                            "AUDUSD",
+                            "NZDUSD",
+                        ]
+                    ):
                         ticker_sec_type = "CASH"
                         ticker_exchange = "IDEALPRO"
                         ticker_is_fx = True
@@ -416,11 +481,13 @@ class MarketDataStore:
                         symbol=ticker_symbol,
                         sec_type=ticker_sec_type,
                         exchange=ticker_exchange,
-                        currency=None if ticker_is_fx else "USD",  # Forex contract handles its own currency
+                        currency=None
+                        if ticker_is_fx
+                        else "USD",  # Forex contract handles its own currency
                         duration=duration,
                         interval=interval,
                         start_date=start,
-                        end_date=end
+                        end_date=end,
                     )
 
                     if df.empty:
@@ -428,21 +495,33 @@ class MarketDataStore:
                         continue
 
                     for _, row in df.iterrows():
-                        date_val = row['date']
-                        if hasattr(date_val, 'date'):
+                        date_val = row["date"]
+                        if hasattr(date_val, "date"):
                             date_str = date_val.date().isoformat()
                         else:
                             date_str = str(date_val)[:10]
 
-                        records.append({
-                            "date": date_str,
-                            "ticker": ticker,
-                            "open": float(row['open']) if pd.notna(row.get('open')) else None,
-                            "high": float(row['high']) if pd.notna(row.get('high')) else None,
-                            "low": float(row['low']) if pd.notna(row.get('low')) else None,
-                            "close": float(row['close']) if pd.notna(row.get('close')) else None,
-                            "volume": int(row['volume']) if pd.notna(row.get('volume')) else None,
-                        })
+                        records.append(
+                            {
+                                "date": date_str,
+                                "ticker": ticker,
+                                "open": float(row["open"])
+                                if pd.notna(row.get("open"))
+                                else None,
+                                "high": float(row["high"])
+                                if pd.notna(row.get("high"))
+                                else None,
+                                "low": float(row["low"])
+                                if pd.notna(row.get("low"))
+                                else None,
+                                "close": float(row["close"])
+                                if pd.notna(row.get("close"))
+                                else None,
+                                "volume": int(row["volume"])
+                                if pd.notna(row.get("volume"))
+                                else None,
+                            }
+                        )
 
                     logger.info(f"Fetched {len(df)} bars for {ticker}")
 
@@ -459,6 +538,7 @@ class MarketDataStore:
         try:
             # Create a new event loop for this thread
             import nest_asyncio
+
             nest_asyncio.apply()
 
             records = asyncio.run(fetch_all())
@@ -494,7 +574,11 @@ class MarketDataStore:
         end_date: Optional[str] = None,
     ) -> pd.DataFrame:
         """Read stored Parquet data, optionally filtered."""
-        filepath = _YF_ASSET_FILES.get(asset_class) or _FRED_CATEGORY_FILES.get(asset_class) or _IBKR_ASSET_FILES.get(asset_class)
+        filepath = (
+            _YF_ASSET_FILES.get(asset_class)
+            or _FRED_CATEGORY_FILES.get(asset_class)
+            or _IBKR_ASSET_FILES.get(asset_class)
+        )
         if filepath is None or not filepath.exists():
             return pd.DataFrame()
 
@@ -522,7 +606,9 @@ class MarketDataStore:
             enriched[key] = {
                 **entry,
                 "exists": exists,
-                "file_size_mb": round(filepath.stat().st_size / 1e6, 2) if exists else 0,
+                "file_size_mb": round(filepath.stat().st_size / 1e6, 2)
+                if exists
+                else 0,
             }
         return enriched
 
@@ -534,7 +620,9 @@ class MarketDataStore:
         Returns a job_id that can be polled for status.
         """
         job_id = _create_job("update_all")
-        thread = threading.Thread(target=self._run_update_all, args=(job_id,), daemon=True)
+        thread = threading.Thread(
+            target=self._run_update_all, args=(job_id,), daemon=True
+        )
         thread.start()
         return job_id
 

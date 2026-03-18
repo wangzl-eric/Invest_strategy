@@ -4,10 +4,11 @@ import json
 import logging
 import uuid
 from typing import Optional
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 
-from backend.websocket_manager import manager
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+
 from backend.realtime_broadcaster import broadcaster
+from backend.websocket_manager import manager
 
 logger = logging.getLogger(__name__)
 
@@ -52,43 +53,47 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 if action == "subscribe" and channel:
                     await manager.subscribe(connection_id, channel)
-                    await manager.send_personal_message({
-                        "type": "subscription_confirmed",
-                        "channel": channel,
-                        "status": "subscribed"
-                    }, connection_id)
+                    await manager.send_personal_message(
+                        {
+                            "type": "subscription_confirmed",
+                            "channel": channel,
+                            "status": "subscribed",
+                        },
+                        connection_id,
+                    )
 
                 elif action == "unsubscribe" and channel:
                     await manager.unsubscribe(connection_id, channel)
-                    await manager.send_personal_message({
-                        "type": "unsubscription_confirmed",
-                        "channel": channel,
-                        "status": "unsubscribed"
-                    }, connection_id)
+                    await manager.send_personal_message(
+                        {
+                            "type": "unsubscription_confirmed",
+                            "channel": channel,
+                            "status": "unsubscribed",
+                        },
+                        connection_id,
+                    )
 
                 elif action == "ping":
-                    await manager.send_personal_message({
-                        "type": "pong",
-                        "timestamp": asyncio.get_event_loop().time()
-                    }, connection_id)
+                    await manager.send_personal_message(
+                        {"type": "pong", "timestamp": asyncio.get_event_loop().time()},
+                        connection_id,
+                    )
 
                 else:
-                    await manager.send_personal_message({
-                        "type": "error",
-                        "message": f"Unknown action: {action}"
-                    }, connection_id)
+                    await manager.send_personal_message(
+                        {"type": "error", "message": f"Unknown action: {action}"},
+                        connection_id,
+                    )
 
             except json.JSONDecodeError:
-                await manager.send_personal_message({
-                    "type": "error",
-                    "message": "Invalid JSON format"
-                }, connection_id)
+                await manager.send_personal_message(
+                    {"type": "error", "message": "Invalid JSON format"}, connection_id
+                )
             except Exception as e:
                 logger.error(f"Error processing WebSocket message: {e}", exc_info=True)
-                await manager.send_personal_message({
-                    "type": "error",
-                    "message": str(e)
-                }, connection_id)
+                await manager.send_personal_message(
+                    {"type": "error", "message": str(e)}, connection_id
+                )
 
     except WebSocketDisconnect:
         manager.disconnect(connection_id)
@@ -118,12 +123,15 @@ async def websocket_account_endpoint(websocket: WebSocket, account_id: str):
     for channel in channels:
         await manager.subscribe(connection_id, channel)
 
-    await manager.send_personal_message({
-        "type": "connected",
-        "account_id": account_id,
-        "channels": channels,
-        "message": "Subscribed to all account channels"
-    }, connection_id)
+    await manager.send_personal_message(
+        {
+            "type": "connected",
+            "account_id": account_id,
+            "channels": channels,
+            "message": "Subscribed to all account channels",
+        },
+        connection_id,
+    )
 
     try:
         while True:
@@ -135,34 +143,32 @@ async def websocket_account_endpoint(websocket: WebSocket, account_id: str):
                 action = message.get("action")
 
                 if action == "ping":
-                    await manager.send_personal_message({
-                        "type": "pong",
-                        "timestamp": asyncio.get_event_loop().time()
-                    }, connection_id)
+                    await manager.send_personal_message(
+                        {"type": "pong", "timestamp": asyncio.get_event_loop().time()},
+                        connection_id,
+                    )
                 elif action == "request_update":
                     # Trigger manual update
                     await broadcaster.trigger_manual_update(account_id)
-                    await manager.send_personal_message({
-                        "type": "update_triggered",
-                        "account_id": account_id
-                    }, connection_id)
+                    await manager.send_personal_message(
+                        {"type": "update_triggered", "account_id": account_id},
+                        connection_id,
+                    )
                 else:
-                    await manager.send_personal_message({
-                        "type": "error",
-                        "message": f"Unknown action: {action}"
-                    }, connection_id)
+                    await manager.send_personal_message(
+                        {"type": "error", "message": f"Unknown action: {action}"},
+                        connection_id,
+                    )
 
             except json.JSONDecodeError:
-                await manager.send_personal_message({
-                    "type": "error",
-                    "message": "Invalid JSON format"
-                }, connection_id)
+                await manager.send_personal_message(
+                    {"type": "error", "message": "Invalid JSON format"}, connection_id
+                )
             except Exception as e:
                 logger.error(f"Error processing WebSocket message: {e}", exc_info=True)
-                await manager.send_personal_message({
-                    "type": "error",
-                    "message": str(e)
-                }, connection_id)
+                await manager.send_personal_message(
+                    {"type": "error", "message": str(e)}, connection_id
+                )
 
     except WebSocketDisconnect:
         manager.disconnect(connection_id)

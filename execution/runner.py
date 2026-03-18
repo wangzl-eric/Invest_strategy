@@ -17,7 +17,6 @@ from execution.broker import Broker
 from execution.risk import RiskEngine, RiskLimits, RiskState
 from execution.types import Fill, OrderRequest
 
-
 PriceGetter = Callable[[str], float]
 
 
@@ -28,7 +27,14 @@ class RunnerConfig:
 
 
 class ExecutionRunner:
-    def __init__(self, *, broker: Broker, price_getter: PriceGetter, risk_engine: Optional[RiskEngine] = None, cfg: Optional[RunnerConfig] = None):
+    def __init__(
+        self,
+        *,
+        broker: Broker,
+        price_getter: PriceGetter,
+        risk_engine: Optional[RiskEngine] = None,
+        cfg: Optional[RunnerConfig] = None,
+    ):
         self.broker = broker
         self.price_getter = price_getter
         self.risk_engine = risk_engine or RiskEngine(RiskLimits())
@@ -45,13 +51,30 @@ class ExecutionRunner:
                     severity="ERROR",
                     event_type="ORDER_BLOCKED",
                     message=decision.reason,
-                    context={"symbol": o.symbol, "side": o.side, "qty": o.quantity, "price": px, **(decision.context or {})},
+                    context={
+                        "symbol": o.symbol,
+                        "side": o.side,
+                        "qty": o.quantity,
+                        "price": px,
+                        **(decision.context or {}),
+                    },
                 )
-                record_order(mode=self.cfg.mode, account_id=self.cfg.account_id, order=o, status="rejected", error=decision.reason)
+                record_order(
+                    mode=self.cfg.mode,
+                    account_id=self.cfg.account_id,
+                    order=o,
+                    status="rejected",
+                    error=decision.reason,
+                )
                 continue
 
             ext_id = ""
-            order_id = record_order(mode=self.cfg.mode, account_id=self.cfg.account_id, order=o, status="submitted")
+            order_id = record_order(
+                mode=self.cfg.mode,
+                account_id=self.cfg.account_id,
+                order=o,
+                status="submitted",
+            )
             try:
                 ext_id = self.broker.submit_order(o)
             except Exception as e:
@@ -61,18 +84,28 @@ class ExecutionRunner:
                     message=str(e),
                     context={"symbol": o.symbol, "side": o.side, "qty": o.quantity},
                 )
-                record_order(mode=self.cfg.mode, account_id=self.cfg.account_id, order=o, status="rejected", error=str(e))
+                record_order(
+                    mode=self.cfg.mode,
+                    account_id=self.cfg.account_id,
+                    order=o,
+                    status="rejected",
+                    error=str(e),
+                )
                 continue
 
             # Update internal risk state (approximate, since fills may differ)
             notional = float(o.quantity) * px
             self.state.gross_notional += abs(notional)
-            self.state.position_notional[o.symbol] = self.state.position_notional.get(o.symbol, 0.0) + (notional if o.side == "BUY" else -notional)
+            self.state.position_notional[o.symbol] = self.state.position_notional.get(
+                o.symbol, 0.0
+            ) + (notional if o.side == "BUY" else -notional)
 
             order_row_ids.append(order_id)
         return order_row_ids
 
-    def poll_and_record_fills(self, *, order_id_map: Optional[Dict[str, int]] = None) -> list[int]:
+    def poll_and_record_fills(
+        self, *, order_id_map: Optional[Dict[str, int]] = None
+    ) -> list[int]:
         """Poll broker fills and write them to DB. Optionally map exec_id->order_id."""
         fill_row_ids: list[int] = []
         fills: list[Fill] = self.broker.poll_fills()

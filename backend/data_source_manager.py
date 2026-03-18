@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class DataSource(Enum):
     """Available data source types."""
+
     YFINANCE = "yfinance"
     FRED = "fred"
     IBKR = "ibkr"
@@ -27,6 +28,7 @@ class DataSource(Enum):
 
 class SourceStatus(Enum):
     """Health status of a data source."""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNAVAILABLE = "unavailable"
@@ -49,7 +51,15 @@ SOURCE_CAPABILITIES = {
     DataSource.YFINANCE: ["equity", "equity_index", "fx", "commodities", "rates"],
     DataSource.FRED: ["rates", "macro", "fed_liquidity"],
     DataSource.IBKR: ["equity", "fx", "commodities"],
-    DataSource.PARQUET_STORE: ["equity", "equity_index", "fx", "commodities", "rates", "macro", "fed_liquidity"],
+    DataSource.PARQUET_STORE: [
+        "equity",
+        "equity_index",
+        "fx",
+        "commodities",
+        "rates",
+        "macro",
+        "fed_liquidity",
+    ],
 }
 
 
@@ -66,7 +76,10 @@ class SourceHealthTracker:
         """Record a successful call."""
         self._failure_count[source] = 0
         if source not in self._health:
-            self._health[source] = {"status": SourceStatus.HEALTHY, "last_success": time.time()}
+            self._health[source] = {
+                "status": SourceStatus.HEALTHY,
+                "last_success": time.time(),
+            }
         else:
             self._health[source]["status"] = SourceStatus.HEALTHY
             self._health[source]["last_success"] = time.time()
@@ -76,12 +89,17 @@ class SourceHealthTracker:
         self._failure_count[source] = self._failure_count.get(source, 0) + 1
 
         if source not in self._health:
-            self._health[source] = {"status": SourceStatus.UNKNOWN, "last_failure": time.time()}
+            self._health[source] = {
+                "status": SourceStatus.UNKNOWN,
+                "last_failure": time.time(),
+            }
 
         if self._failure_count[source] >= self._failure_threshold:
             self._health[source]["status"] = SourceStatus.UNAVAILABLE
             self._health[source]["failure_time"] = time.time()
-            logger.warning(f"Data source {source.value} marked as unavailable after {self._failure_count[source]} failures")
+            logger.warning(
+                f"Data source {source.value} marked as unavailable after {self._failure_count[source]} failures"
+            )
 
     def get_status(self, source: DataSource) -> SourceStatus:
         """Get current status of a source."""
@@ -123,13 +141,12 @@ class DataSourceManager:
 
     def get_priority_order(self, asset_class: str) -> List[DataSource]:
         """Get the priority order for an asset class."""
-        return self._custom_priorities.get(asset_class, self._priority_order.get(asset_class, [DataSource.YFINANCE]))
+        return self._custom_priorities.get(
+            asset_class, self._priority_order.get(asset_class, [DataSource.YFINANCE])
+        )
 
     def get_best_source(
-        self,
-        asset_class: str,
-        symbol: Optional[str] = None,
-        check_health: bool = True
+        self, asset_class: str, symbol: Optional[str] = None, check_health: bool = True
     ) -> Tuple[DataSource, str]:
         """Get the best available data source for an asset class.
 
@@ -152,7 +169,9 @@ class DataSourceManager:
                 continue
 
             # Check if source can handle this specific symbol
-            if symbol and not self._source_can_handle_symbol(source, symbol, asset_class):
+            if symbol and not self._source_can_handle_symbol(
+                source, symbol, asset_class
+            ):
                 continue
 
             return source, f"Primary source for {asset_class}"
@@ -168,7 +187,9 @@ class DataSourceManager:
 
         return DataSource.NONE, "No available data source"
 
-    def _source_can_handle_symbol(self, source: DataSource, symbol: str, asset_class: str) -> bool:
+    def _source_can_handle_symbol(
+        self, source: DataSource, symbol: str, asset_class: str
+    ) -> bool:
         """Check if a source can handle a specific symbol."""
         # Check symbol-specific limitations
         if source == DataSource.FRED:
@@ -191,7 +212,7 @@ class DataSourceManager:
         asset_class: str,
         symbol: str,
         fetch_funcs: Dict[DataSource, callable],
-        **kwargs
+        **kwargs,
     ) -> Dict[str, Any]:
         """Fetch data with automatic fallback through sources.
 
@@ -225,7 +246,7 @@ class DataSourceManager:
                         "data": data,
                         "source_used": source.value,
                         "fallback_reason": None,
-                        "success": True
+                        "success": True,
                     }
                 else:
                     logger.debug(f"Invalid data from {source.value} for {symbol}")
@@ -240,7 +261,7 @@ class DataSourceManager:
             "data": pd.DataFrame(),
             "source_used": None,
             "fallback_reason": "All data sources failed",
-            "success": False
+            "success": False,
         }
 
     def _is_valid_data(self, data) -> bool:
@@ -278,13 +299,12 @@ def get_best_source(asset_class: str, symbol: Optional[str] = None) -> DataSourc
 
 
 def get_with_fallback(
-    asset_class: str,
-    symbol: str,
-    fetch_funcs: Dict[DataSource, callable],
-    **kwargs
+    asset_class: str, symbol: str, fetch_funcs: Dict[DataSource, callable], **kwargs
 ) -> Dict[str, Any]:
     """Fetch data with automatic fallback."""
-    return data_source_manager.get_with_fallback(asset_class, symbol, fetch_funcs, **kwargs)
+    return data_source_manager.get_with_fallback(
+        asset_class, symbol, fetch_funcs, **kwargs
+    )
 
 
 def record_success(source: DataSource):

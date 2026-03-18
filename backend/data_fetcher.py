@@ -1,13 +1,18 @@
 """Data fetching module to retrieve account data from IBKR and store in database."""
 import logging
 from datetime import datetime
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
+
 from sqlalchemy.orm import Session
 
-from backend.ibkr_client import IBKRClient
 from backend.database import get_db_context
+from backend.ibkr_client import IBKRClient
 from backend.models import (
-    AccountSnapshot, Position, PnLHistory, Trade, PerformanceMetric
+    AccountSnapshot,
+    PerformanceMetric,
+    PnLHistory,
+    Position,
+    Trade,
 )
 
 logger = logging.getLogger(__name__)
@@ -19,7 +24,9 @@ class DataFetcher:
     def __init__(self, ibkr_client: Optional[IBKRClient] = None):
         self.ibkr_client = ibkr_client or IBKRClient()
 
-    def _model_to_dict(self, model_instance, exclude_fields: Optional[List[str]] = None):
+    def _model_to_dict(
+        self, model_instance, exclude_fields: Optional[List[str]] = None
+    ):
         """Convert SQLAlchemy model to dict."""
         exclude_fields = exclude_fields or []
         return {
@@ -29,13 +36,12 @@ class DataFetcher:
         }
 
     async def fetch_and_store_account_snapshot(
-        self,
-        account_id: Optional[str] = None
+        self, account_id: Optional[str] = None
     ) -> AccountSnapshot:
         """Fetch account summary and store as snapshot."""
         try:
             account_summary = await self.ibkr_client.get_account_summary(account_id)
-            account_id = account_id or account_summary.get('AccountId')
+            account_id = account_id or account_summary.get("AccountId")
 
             if not account_id:
                 raise ValueError("Account ID not found")
@@ -44,13 +50,13 @@ class DataFetcher:
                 snapshot = AccountSnapshot(
                     account_id=account_id,
                     timestamp=datetime.utcnow(),
-                    total_cash_value=account_summary.get('TotalCashValue'),
-                    net_liquidation=account_summary.get('NetLiquidation'),
-                    buying_power=account_summary.get('BuyingPower'),
-                    gross_position_value=account_summary.get('GrossPositionValue'),
-                    available_funds=account_summary.get('AvailableFunds'),
-                    excess_liquidity=account_summary.get('ExcessLiquidity'),
-                    equity=account_summary.get('NetLiquidation'),
+                    total_cash_value=account_summary.get("TotalCashValue"),
+                    net_liquidation=account_summary.get("NetLiquidation"),
+                    buying_power=account_summary.get("BuyingPower"),
+                    gross_position_value=account_summary.get("GrossPositionValue"),
+                    available_funds=account_summary.get("AvailableFunds"),
+                    excess_liquidity=account_summary.get("ExcessLiquidity"),
+                    equity=account_summary.get("NetLiquidation"),
                 )
                 db.add(snapshot)
                 db.flush()
@@ -64,8 +70,7 @@ class DataFetcher:
             raise
 
     async def fetch_and_store_positions(
-        self,
-        account_id: Optional[str] = None
+        self, account_id: Optional[str] = None
     ) -> List[Position]:
         """Fetch positions and store in database."""
         try:
@@ -74,23 +79,23 @@ class DataFetcher:
             if not positions_data:
                 return []
 
-            account_id = account_id or positions_data[0].get('account')
+            account_id = account_id or positions_data[0].get("account")
 
             stored_positions = []
             with get_db_context() as db:
                 for pos_data in positions_data:
                     position = Position(
-                        account_id=pos_data.get('account', account_id),
+                        account_id=pos_data.get("account", account_id),
                         timestamp=datetime.utcnow(),
-                        symbol=pos_data['contract']['symbol'],
-                        sec_type=pos_data['contract'].get('secType'),
-                        currency=pos_data['contract'].get('currency'),
-                        exchange=pos_data['contract'].get('exchange'),
-                        quantity=float(pos_data['position']),
-                        avg_cost=pos_data.get('avgCost'),
-                        market_price=pos_data.get('marketPrice'),
-                        market_value=pos_data.get('marketValue'),
-                        unrealized_pnl=pos_data.get('unrealizedPnL'),
+                        symbol=pos_data["contract"]["symbol"],
+                        sec_type=pos_data["contract"].get("secType"),
+                        currency=pos_data["contract"].get("currency"),
+                        exchange=pos_data["contract"].get("exchange"),
+                        quantity=float(pos_data["position"]),
+                        avg_cost=pos_data.get("avgCost"),
+                        market_price=pos_data.get("marketPrice"),
+                        market_value=pos_data.get("marketValue"),
+                        unrealized_pnl=pos_data.get("unrealizedPnL"),
                     )
                     db.add(position)
                     stored_positions.append(position)
@@ -99,17 +104,16 @@ class DataFetcher:
                 # Expunge all positions from session
                 for pos in stored_positions:
                     db.expunge(pos)
-                logger.info(f"Stored {len(stored_positions)} positions for {account_id}")
+                logger.info(
+                    f"Stored {len(stored_positions)} positions for {account_id}"
+                )
                 return stored_positions
 
         except Exception as e:
             logger.error(f"Error fetching/storing positions: {e}")
             raise
 
-    async def fetch_and_store_pnl(
-        self,
-        account_id: Optional[str] = None
-    ) -> PnLHistory:
+    async def fetch_and_store_pnl(self, account_id: Optional[str] = None) -> PnLHistory:
         """Fetch PnL data and store in database."""
         try:
             pnl_data = await self.ibkr_client.get_pnl(account_id)
@@ -128,7 +132,7 @@ class DataFetcher:
                     },
                 },
             )
-            account_id = account_id or pnl_data.get('accountId')
+            account_id = account_id or pnl_data.get("accountId")
 
             if not account_id:
                 raise ValueError("Account ID not found")
@@ -137,11 +141,11 @@ class DataFetcher:
                 pnl_record = PnLHistory(
                     account_id=account_id,
                     date=datetime.utcnow(),
-                    realized_pnl=pnl_data.get('realizedPnL', 0.0),
-                    unrealized_pnl=pnl_data.get('unrealizedPnL', 0.0),
-                    total_pnl=pnl_data.get('totalPnL', 0.0),
-                    net_liquidation=pnl_data.get('netLiquidation'),
-                    total_cash=pnl_data.get('totalCash'),
+                    realized_pnl=pnl_data.get("realizedPnL", 0.0),
+                    unrealized_pnl=pnl_data.get("unrealizedPnL", 0.0),
+                    total_pnl=pnl_data.get("totalPnL", 0.0),
+                    net_liquidation=pnl_data.get("netLiquidation"),
+                    total_cash=pnl_data.get("totalCash"),
                 )
                 db.add(pnl_record)
                 db.flush()
@@ -166,8 +170,7 @@ class DataFetcher:
             raise
 
     async def fetch_and_store_trades(
-        self,
-        account_id: Optional[str] = None
+        self, account_id: Optional[str] = None
     ) -> List[Trade]:
         """Fetch trades and store in database."""
         try:
@@ -180,29 +183,43 @@ class DataFetcher:
             with get_db_context() as db:
                 for trade_data in trades_data:
                     # Check if trade already exists
-                    existing = db.query(Trade).filter(
-                        Trade.exec_id == trade_data['execution']['execId']
-                    ).first()
+                    existing = (
+                        db.query(Trade)
+                        .filter(Trade.exec_id == trade_data["execution"]["execId"])
+                        .first()
+                    )
 
                     if existing:
                         continue
 
-                    exec_time_str = trade_data['execution'].get('time')
-                    exec_time = datetime.fromisoformat(exec_time_str) if exec_time_str else datetime.utcnow()
+                    exec_time_str = trade_data["execution"].get("time")
+                    exec_time = (
+                        datetime.fromisoformat(exec_time_str)
+                        if exec_time_str
+                        else datetime.utcnow()
+                    )
 
                     trade = Trade(
-                        account_id=trade_data.get('account', account_id),
-                        exec_id=trade_data['execution']['execId'],
+                        account_id=trade_data.get("account", account_id),
+                        exec_id=trade_data["execution"]["execId"],
                         exec_time=exec_time,
-                        symbol=trade_data['contract']['symbol'],
-                        sec_type=trade_data['contract'].get('secType'),
-                        currency=trade_data['contract'].get('currency'),
-                        side=trade_data['execution']['side'],
-                        shares=float(trade_data['execution']['shares']),
-                        price=float(trade_data['execution']['price']),
-                        avg_price=float(trade_data['execution'].get('avgPrice', trade_data['execution']['price'])),
-                        cum_qty=float(trade_data['execution'].get('cumQty', trade_data['execution']['shares'])),
-                        commission=float(trade_data.get('commission', 0.0)),
+                        symbol=trade_data["contract"]["symbol"],
+                        sec_type=trade_data["contract"].get("secType"),
+                        currency=trade_data["contract"].get("currency"),
+                        side=trade_data["execution"]["side"],
+                        shares=float(trade_data["execution"]["shares"]),
+                        price=float(trade_data["execution"]["price"]),
+                        avg_price=float(
+                            trade_data["execution"].get(
+                                "avgPrice", trade_data["execution"]["price"]
+                            )
+                        ),
+                        cum_qty=float(
+                            trade_data["execution"].get(
+                                "cumQty", trade_data["execution"]["shares"]
+                            )
+                        ),
+                        commission=float(trade_data.get("commission", 0.0)),
                     )
                     db.add(trade)
                     stored_trades.append(trade)
@@ -218,7 +235,9 @@ class DataFetcher:
             logger.error(f"Error fetching/storing trades: {e}")
             raise
 
-    def _model_to_dict(self, model_instance, exclude_fields: Optional[List[str]] = None):
+    def _model_to_dict(
+        self, model_instance, exclude_fields: Optional[List[str]] = None
+    ):
         """Convert SQLAlchemy model to dict."""
         exclude_fields = exclude_fields or []
         return {
@@ -228,9 +247,7 @@ class DataFetcher:
         }
 
     async def fetch_all(
-        self,
-        account_id: Optional[str] = None,
-        store_pnl: bool = False
+        self, account_id: Optional[str] = None, store_pnl: bool = False
     ) -> Dict[str, Any]:
         """Fetch all account data and optionally store in database.
 
@@ -244,7 +261,9 @@ class DataFetcher:
             # Fetch account summary first to get account_id if not provided
             snapshot = await self.fetch_and_store_account_snapshot(account_id)
             # Extract account_id from snapshot before it becomes detached
-            account_id = snapshot.account_id if hasattr(snapshot, 'account_id') else account_id
+            account_id = (
+                snapshot.account_id if hasattr(snapshot, "account_id") else account_id
+            )
 
             # Fetch other data
             positions = await self.fetch_and_store_positions(account_id)
@@ -256,7 +275,13 @@ class DataFetcher:
                 # Fetch PnL but don't store it
                 pnl_data = await self.ibkr_client.get_pnl(account_id)
                 # Convert to dict format for return (but don't store in DB)
-                pnl = pnl_data if isinstance(pnl_data, dict) else self._model_to_dict(pnl_data) if hasattr(pnl_data, '__dict__') else {}
+                pnl = (
+                    pnl_data
+                    if isinstance(pnl_data, dict)
+                    else self._model_to_dict(pnl_data)
+                    if hasattr(pnl_data, "__dict__")
+                    else {}
+                )
                 logger.info("Fetched PnL for display (not stored in database)")
 
             trades = await self.fetch_and_store_trades(account_id)
@@ -270,11 +295,11 @@ class DataFetcher:
             trades_list = [self._model_to_dict(t) for t in trades]
 
             return {
-                'account_id': account_id,
-                'snapshot': snapshot_dict,
-                'positions': positions_list,
-                'pnl': pnl_dict,
-                'trades': trades_list,
+                "account_id": account_id,
+                "snapshot": snapshot_dict,
+                "positions": positions_list,
+                "pnl": pnl_dict,
+                "trades": trades_list,
             }
 
         except Exception as e:

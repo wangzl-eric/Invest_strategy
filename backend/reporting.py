@@ -1,17 +1,27 @@
 """PDF report generation and scheduled reporting."""
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, Dict, List, Any
 from io import BytesIO
+from typing import Any, Dict, List, Optional
+
 import pandas as pd
 
 try:
     from reportlab.lib import colors
-    from reportlab.lib.pagesizes import letter, A4
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import inch
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
     from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from reportlab.lib.pagesizes import A4, letter
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import inch
+    from reportlab.platypus import (
+        Image,
+        PageBreak,
+        Paragraph,
+        SimpleDocTemplate,
+        Spacer,
+        Table,
+        TableStyle,
+    )
+
     HAS_REPORTLAB = True
 except ImportError:
     HAS_REPORTLAB = False
@@ -37,40 +47,46 @@ class ReportGenerator:
             return
 
         # Title style
-        self.styles.add(ParagraphStyle(
-            name='CustomTitle',
-            parent=self.styles['Heading1'],
-            fontSize=24,
-            textColor=colors.HexColor('#1a1a1a'),
-            spaceAfter=30,
-            alignment=TA_CENTER
-        ))
+        self.styles.add(
+            ParagraphStyle(
+                name="CustomTitle",
+                parent=self.styles["Heading1"],
+                fontSize=24,
+                textColor=colors.HexColor("#1a1a1a"),
+                spaceAfter=30,
+                alignment=TA_CENTER,
+            )
+        )
 
         # Heading style
-        self.styles.add(ParagraphStyle(
-            name='CustomHeading',
-            parent=self.styles['Heading2'],
-            fontSize=16,
-            textColor=colors.HexColor('#2c3e50'),
-            spaceAfter=12,
-            spaceBefore=12
-        ))
+        self.styles.add(
+            ParagraphStyle(
+                name="CustomHeading",
+                parent=self.styles["Heading2"],
+                fontSize=16,
+                textColor=colors.HexColor("#2c3e50"),
+                spaceAfter=12,
+                spaceBefore=12,
+            )
+        )
 
         # Body style
-        self.styles.add(ParagraphStyle(
-            name='CustomBody',
-            parent=self.styles['BodyText'],
-            fontSize=10,
-            textColor=colors.HexColor('#333333'),
-            spaceAfter=6
-        ))
+        self.styles.add(
+            ParagraphStyle(
+                name="CustomBody",
+                parent=self.styles["BodyText"],
+                fontSize=10,
+                textColor=colors.HexColor("#333333"),
+                spaceAfter=6,
+            )
+        )
 
     def generate_performance_report(
         self,
         account_id: str,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
-        include_charts: bool = True
+        include_charts: bool = True,
     ) -> BytesIO:
         """
         Generate a comprehensive performance report PDF.
@@ -85,31 +101,40 @@ class ReportGenerator:
         story = []
 
         # Title
-        story.append(Paragraph("Portfolio Performance Report", self.styles['CustomTitle']))
-        story.append(Spacer(1, 0.2*inch))
+        story.append(
+            Paragraph("Portfolio Performance Report", self.styles["CustomTitle"])
+        )
+        story.append(Spacer(1, 0.2 * inch))
 
         # Report metadata
         metadata = [
             ["Account ID:", account_id],
             ["Report Date:", datetime.now().strftime("%Y-%m-%d %H:%M:%S")],
-            ["Period:", f"{start_date.strftime('%Y-%m-%d') if start_date else 'All'} to {end_date.strftime('%Y-%m-%d') if end_date else 'Latest'}"],
+            [
+                "Period:",
+                f"{start_date.strftime('%Y-%m-%d') if start_date else 'All'} to {end_date.strftime('%Y-%m-%d') if end_date else 'Latest'}",
+            ],
         ]
 
-        metadata_table = Table(metadata, colWidths=[2*inch, 4*inch])
-        metadata_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (0, -1), colors.grey),
-            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black)
-        ]))
+        metadata_table = Table(metadata, colWidths=[2 * inch, 4 * inch])
+        metadata_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (0, -1), colors.grey),
+                    ("TEXTCOLOR", (0, 0), (-1, -1), colors.black),
+                    ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                    ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 10),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
+                    ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                ]
+            )
+        )
         story.append(metadata_table)
-        story.append(Spacer(1, 0.3*inch))
+        story.append(Spacer(1, 0.3 * inch))
 
         # Performance metrics section
-        story.append(Paragraph("Performance Metrics", self.styles['CustomHeading']))
+        story.append(Paragraph("Performance Metrics", self.styles["CustomHeading"]))
 
         # Get metrics (this would call your data processor)
         # For now, placeholder
@@ -122,17 +147,21 @@ class ReportGenerator:
             ["Volatility", "N/A"],
         ]
 
-        metrics_table = Table(metrics_data, colWidths=[3*inch, 3*inch])
-        metrics_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 12),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black)
-        ]))
+        metrics_table = Table(metrics_data, colWidths=[3 * inch, 3 * inch])
+        metrics_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                    ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, 0), 12),
+                    ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                    ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+                    ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                ]
+            )
+        )
         story.append(metrics_table)
         story.append(PageBreak())
 
@@ -145,7 +174,7 @@ class ReportGenerator:
         self,
         account_id: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> BytesIO:
         """Generate a trade history report PDF."""
         if not self.enabled:
@@ -155,13 +184,15 @@ class ReportGenerator:
         doc = SimpleDocTemplate(buffer, pagesize=letter)
         story = []
 
-        story.append(Paragraph("Trade History Report", self.styles['CustomTitle']))
-        story.append(Spacer(1, 0.2*inch))
+        story.append(Paragraph("Trade History Report", self.styles["CustomTitle"]))
+        story.append(Spacer(1, 0.2 * inch))
 
         # Add trade data table
         # This would fetch actual trade data from database
-        story.append(Paragraph("Trade History", self.styles['CustomHeading']))
-        story.append(Paragraph("Trade data would be displayed here.", self.styles['CustomBody']))
+        story.append(Paragraph("Trade History", self.styles["CustomHeading"]))
+        story.append(
+            Paragraph("Trade data would be displayed here.", self.styles["CustomBody"])
+        )
 
         doc.build(story)
         buffer.seek(0)
@@ -178,11 +209,13 @@ class ScheduledReportService:
         self,
         account_id: str,
         recipient_email: str,
-        report_time: str = "09:00"  # Default 9 AM
+        report_time: str = "09:00",  # Default 9 AM
     ):
         """Schedule a daily report to be sent via email."""
         # This would integrate with APScheduler
-        logger.info(f"Scheduled daily report for {account_id} to {recipient_email} at {report_time}")
+        logger.info(
+            f"Scheduled daily report for {account_id} to {recipient_email} at {report_time}"
+        )
         # TODO: Implement actual scheduling
 
     def generate_and_send_report(
@@ -191,7 +224,7 @@ class ScheduledReportService:
         report_type: str,
         recipient_email: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ):
         """Generate a report and send via email."""
         try:

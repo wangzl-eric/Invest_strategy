@@ -2,15 +2,16 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
-from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from typing import Any, Dict, Optional
 
-from backend.database import get_db_context
-from backend.models import Position, PnLHistory, AccountSnapshot, Trade
-from backend.websocket_manager import manager
+from sqlalchemy import desc
+from sqlalchemy.orm import Session
+
 from backend.data_fetcher import DataFetcher
+from backend.database import get_db_context
 from backend.ibkr_client import IBKRClient
+from backend.models import AccountSnapshot, PnLHistory, Position, Trade
+from backend.websocket_manager import manager
 
 logger = logging.getLogger(__name__)
 
@@ -87,9 +88,9 @@ class RealtimeBroadcaster:
         try:
             with get_db_context() as db:
                 # Get latest positions grouped by account_id
-                latest_positions_query = db.query(Position).order_by(
-                    desc(Position.timestamp)
-                ).all()
+                latest_positions_query = (
+                    db.query(Position).order_by(desc(Position.timestamp)).all()
+                )
 
                 # Group by account_id and get latest per symbol
                 positions_by_account: Dict[str, Dict[str, Dict[str, Any]]] = {}
@@ -101,18 +102,23 @@ class RealtimeBroadcaster:
                         positions_by_account[account_id] = {}
 
                     key = f"{account_id}_{symbol}"
-                    if key not in positions_by_account[account_id] or \
-                       pos.timestamp > positions_by_account[account_id][key]['timestamp']:
+                    if (
+                        key not in positions_by_account[account_id]
+                        or pos.timestamp
+                        > positions_by_account[account_id][key]["timestamp"]
+                    ):
                         positions_by_account[account_id][symbol] = {
-                            'symbol': pos.symbol,
-                            'sec_type': pos.sec_type,
-                            'currency': pos.currency,
-                            'quantity': pos.quantity,
-                            'avg_cost': pos.avg_cost,
-                            'market_price': pos.market_price,
-                            'market_value': pos.market_value,
-                            'unrealized_pnl': pos.unrealized_pnl,
-                            'timestamp': pos.timestamp.isoformat() if pos.timestamp else None,
+                            "symbol": pos.symbol,
+                            "sec_type": pos.sec_type,
+                            "currency": pos.currency,
+                            "quantity": pos.quantity,
+                            "avg_cost": pos.avg_cost,
+                            "market_price": pos.market_price,
+                            "market_value": pos.market_value,
+                            "unrealized_pnl": pos.unrealized_pnl,
+                            "timestamp": pos.timestamp.isoformat()
+                            if pos.timestamp
+                            else None,
                         }
 
                 # Compare with last known state and broadcast changes
@@ -125,10 +131,13 @@ class RealtimeBroadcaster:
                     has_changes = False
                     for symbol, pos_data in current_state.items():
                         last_pos = last_state.get(symbol)
-                        if last_pos is None or \
-                           pos_data['quantity'] != last_pos.get('quantity', 0) or \
-                           pos_data['market_price'] != last_pos.get('market_price') or \
-                           pos_data['unrealized_pnl'] != last_pos.get('unrealized_pnl'):
+                        if (
+                            last_pos is None
+                            or pos_data["quantity"] != last_pos.get("quantity", 0)
+                            or pos_data["market_price"] != last_pos.get("market_price")
+                            or pos_data["unrealized_pnl"]
+                            != last_pos.get("unrealized_pnl")
+                        ):
                             has_changes = True
                             break
 
@@ -141,10 +150,10 @@ class RealtimeBroadcaster:
 
                     if has_changes:
                         message = {
-                            'type': 'positions_update',
-                            'account_id': account_id,
-                            'timestamp': datetime.utcnow().isoformat(),
-                            'positions': list(current_state.values()),
+                            "type": "positions_update",
+                            "account_id": account_id,
+                            "timestamp": datetime.utcnow().isoformat(),
+                            "positions": list(current_state.values()),
                         }
                         await manager.broadcast_to_channel(message, channel)
                         self.last_positions[account_id] = current_state
@@ -157,39 +166,43 @@ class RealtimeBroadcaster:
         try:
             with get_db_context() as db:
                 # Get latest P&L for each account
-                latest_pnl_query = db.query(PnLHistory).order_by(
-                    desc(PnLHistory.date)
-                ).all()
+                latest_pnl_query = (
+                    db.query(PnLHistory).order_by(desc(PnLHistory.date)).all()
+                )
 
                 pnl_by_account: Dict[str, Dict[str, Any]] = {}
                 for pnl in latest_pnl_query:
                     account_id = pnl.account_id
                     # Compare datetime objects, not strings
-                    existing_date = pnl_by_account.get(account_id, {}).get('_date_obj')
-                    if account_id not in pnl_by_account or \
-                       (pnl.date and existing_date and pnl.date > existing_date) or \
-                       (pnl.date and not existing_date):
+                    existing_date = pnl_by_account.get(account_id, {}).get("_date_obj")
+                    if (
+                        account_id not in pnl_by_account
+                        or (pnl.date and existing_date and pnl.date > existing_date)
+                        or (pnl.date and not existing_date)
+                    ):
                         pnl_by_account[account_id] = {
-                            '_date_obj': pnl.date,  # Keep datetime for comparison
-                            'date': pnl.date.isoformat() if pnl.date else None,
-                            'realized_pnl': pnl.realized_pnl,
-                            'unrealized_pnl': pnl.unrealized_pnl,
-                            'total_pnl': pnl.total_pnl,
-                            'net_liquidation': pnl.net_liquidation,
-                            'total_cash': pnl.total_cash,
+                            "_date_obj": pnl.date,  # Keep datetime for comparison
+                            "date": pnl.date.isoformat() if pnl.date else None,
+                            "realized_pnl": pnl.realized_pnl,
+                            "unrealized_pnl": pnl.unrealized_pnl,
+                            "total_pnl": pnl.total_pnl,
+                            "net_liquidation": pnl.net_liquidation,
+                            "total_cash": pnl.total_cash,
                         }
 
                 # Broadcast changes
                 for account_id, pnl_data in pnl_by_account.items():
                     channel = f"pnl:{account_id}"
-                    current_total_pnl = pnl_data.get('total_pnl', 0) or 0
+                    current_total_pnl = pnl_data.get("total_pnl", 0) or 0
                     last_total_pnl = self.last_pnl.get(account_id, 0)
 
-                    if abs(current_total_pnl - last_total_pnl) > 0.01:  # Threshold to avoid noise
+                    if (
+                        abs(current_total_pnl - last_total_pnl) > 0.01
+                    ):  # Threshold to avoid noise
                         message = {
-                            'type': 'pnl_update',
-                            'account_id': account_id,
-                            'timestamp': datetime.utcnow().isoformat(),
+                            "type": "pnl_update",
+                            "account_id": account_id,
+                            "timestamp": datetime.utcnow().isoformat(),
                             **pnl_data,
                         }
                         await manager.broadcast_to_channel(message, channel)
@@ -203,42 +216,54 @@ class RealtimeBroadcaster:
         try:
             with get_db_context() as db:
                 # Get latest account snapshots
-                latest_snapshots_query = db.query(AccountSnapshot).order_by(
-                    desc(AccountSnapshot.timestamp)
-                ).all()
+                latest_snapshots_query = (
+                    db.query(AccountSnapshot)
+                    .order_by(desc(AccountSnapshot.timestamp))
+                    .all()
+                )
 
                 snapshots_by_account: Dict[str, Dict[str, Any]] = {}
                 for snapshot in latest_snapshots_query:
                     account_id = snapshot.account_id
                     # Compare datetime objects, not strings
-                    existing_timestamp = snapshots_by_account.get(account_id, {}).get('_timestamp_obj')
-                    if account_id not in snapshots_by_account or \
-                       (snapshot.timestamp and existing_timestamp and snapshot.timestamp > existing_timestamp) or \
-                       (snapshot.timestamp and not existing_timestamp):
+                    existing_timestamp = snapshots_by_account.get(account_id, {}).get(
+                        "_timestamp_obj"
+                    )
+                    if (
+                        account_id not in snapshots_by_account
+                        or (
+                            snapshot.timestamp
+                            and existing_timestamp
+                            and snapshot.timestamp > existing_timestamp
+                        )
+                        or (snapshot.timestamp and not existing_timestamp)
+                    ):
                         snapshots_by_account[account_id] = {
-                            '_timestamp_obj': snapshot.timestamp,  # Keep datetime for comparison
-                            'timestamp': snapshot.timestamp.isoformat() if snapshot.timestamp else None,
-                            'net_liquidation': snapshot.net_liquidation,
-                            'total_cash_value': snapshot.total_cash_value,
-                            'buying_power': snapshot.buying_power,
-                            'gross_position_value': snapshot.gross_position_value,
-                            'available_funds': snapshot.available_funds,
-                            'excess_liquidity': snapshot.excess_liquidity,
-                            'equity': snapshot.equity,
+                            "_timestamp_obj": snapshot.timestamp,  # Keep datetime for comparison
+                            "timestamp": snapshot.timestamp.isoformat()
+                            if snapshot.timestamp
+                            else None,
+                            "net_liquidation": snapshot.net_liquidation,
+                            "total_cash_value": snapshot.total_cash_value,
+                            "buying_power": snapshot.buying_power,
+                            "gross_position_value": snapshot.gross_position_value,
+                            "available_funds": snapshot.available_funds,
+                            "excess_liquidity": snapshot.excess_liquidity,
+                            "equity": snapshot.equity,
                         }
 
                 # Broadcast changes
                 for account_id, snapshot_data in snapshots_by_account.items():
                     channel = f"account:{account_id}"
-                    current_net_liq = snapshot_data.get('net_liquidation', 0) or 0
+                    current_net_liq = snapshot_data.get("net_liquidation", 0) or 0
                     last_snapshot = self.last_account_snapshot.get(account_id, {})
-                    last_net_liq = last_snapshot.get('net_liquidation', 0) or 0
+                    last_net_liq = last_snapshot.get("net_liquidation", 0) or 0
 
                     if abs(current_net_liq - last_net_liq) > 0.01:  # Threshold
                         message = {
-                            'type': 'account_update',
-                            'account_id': account_id,
-                            'timestamp': datetime.utcnow().isoformat(),
+                            "type": "account_update",
+                            "account_id": account_id,
+                            "timestamp": datetime.utcnow().isoformat(),
                             **snapshot_data,
                         }
                         await manager.broadcast_to_channel(message, channel)

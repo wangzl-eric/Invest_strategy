@@ -1,16 +1,23 @@
 """API route handlers."""
 import io
-import os
 import logging
+import os
 from datetime import datetime, timedelta
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
-from sqlalchemy import desc
 
-from backend.database import get_db
-from backend.models import (
-    AccountSnapshot, Position, PnLHistory, Trade, PerformanceMetric
+import numpy as np
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
+from sqlalchemy import desc
+from sqlalchemy.orm import Session
+
+from backend.api.schemas import (
+    AccountSummaryResponse,
+    PerformanceMetricResponse,
+    PnLResponse,
+    PnLTimeSeriesPoint,
+    PositionResponse,
+    TradeResponse,
 )
 from backend.auth import (
     get_current_user_or_api_key,
@@ -18,35 +25,33 @@ from backend.auth import (
     get_user_primary_account,
     require_role,
 )
-from backend.api.schemas import (
-    AccountSummaryResponse,
-    PositionResponse,
-    PnLResponse,
-    TradeResponse,
-    PerformanceMetricResponse,
-    PnLTimeSeriesPoint,
-)
+from backend.cache import cache_manager, cached
+from backend.config import settings
 from backend.data_fetcher import DataFetcher
 from backend.data_processor import DataProcessor
-from backend.cache import cache_manager, cached
-import numpy as np
-from backend.ibkr_client import IBKRClient
-from backend.config import settings
-from backend.flex_query_client import FlexQueryClient, FlexQueryError
-from backend.flex_importer import (
-    import_flex_query_result,
-    import_trades_from_flex,
-    import_mark_to_market_performance_csv,
-)
-from backend.db_utils import import_trades_from_flex_result, import_all_flex_data
+from backend.database import get_db
+from backend.db_utils import import_all_flex_data, import_trades_from_flex_result
 from backend.export import (
-    export_trades_excel,
+    export_combined_report,
     export_performance_excel,
     export_pnl_excel,
-    export_combined_report,
-    get_export_filename
+    export_trades_excel,
+    get_export_filename,
 )
-from fastapi.responses import StreamingResponse
+from backend.flex_importer import (
+    import_flex_query_result,
+    import_mark_to_market_performance_csv,
+    import_trades_from_flex,
+)
+from backend.flex_query_client import FlexQueryClient, FlexQueryError
+from backend.ibkr_client import IBKRClient
+from backend.models import (
+    AccountSnapshot,
+    PerformanceMetric,
+    PnLHistory,
+    Position,
+    Trade,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +76,7 @@ def model_to_dict(model_instance, exclude_fields: Optional[List[str]] = None):
 async def get_account_summary(
     account_id: Optional[str] = Query(None, description="Account ID"),
     current_user: Optional = Depends(get_current_user_or_api_key),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Get latest account summary."""
     try:
@@ -85,12 +90,16 @@ async def get_account_summary(
                 if account_id not in user_account_ids:
                     raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Access denied to this account"
+                        detail="Access denied to this account",
                     )
             else:
                 # Use primary account or first account
                 primary = get_user_primary_account(current_user, db)
-                account_id = primary.account_id if primary else (user_account_ids[0] if user_account_ids else None)
+                account_id = (
+                    primary.account_id
+                    if primary
+                    else (user_account_ids[0] if user_account_ids else None)
+                )
 
         query = db.query(AccountSnapshot).order_by(desc(AccountSnapshot.timestamp))
 
@@ -114,7 +123,7 @@ async def get_account_summary(
 @router.get("/positions", response_model=List[PositionResponse])
 async def get_positions(
     account_id: Optional[str] = Query(None, description="Account ID"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Get current positions."""
     try:
@@ -130,7 +139,10 @@ async def get_positions(
         latest_positions = {}
         for pos in positions:
             key = f"{pos.account_id}_{pos.symbol}"
-            if key not in latest_positions or pos.timestamp > latest_positions[key].timestamp:
+            if (
+                key not in latest_positions
+                or pos.timestamp > latest_positions[key].timestamp
+            ):
                 latest_positions[key] = pos
 
         result = list(latest_positions.values())
@@ -148,7 +160,7 @@ async def get_pnl(
     start_date: Optional[datetime] = Query(None, description="Start date"),
     end_date: Optional[datetime] = Query(None, description="End date"),
     limit: int = Query(100, description="Maximum number of records"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Get PnL history."""
     try:
@@ -283,7 +295,7 @@ async def get_performance(
     start_date: Optional[datetime] = Query(None, description="Start date"),
     end_date: Optional[datetime] = Query(None, description="End date"),
     limit: int = Query(100, description="Maximum number of records"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Get performance metrics."""
     try:
@@ -312,7 +324,7 @@ async def get_trades(
     start_date: Optional[datetime] = Query(None, description="Start date"),
     end_date: Optional[datetime] = Query(None, description="End date"),
     limit: int = Query(100, description="Maximum number of records"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Get trade history."""
     try:
@@ -339,13 +351,22 @@ async def get_trades(
 @router.post("/fetch-data")
 async def fetch_data_now(
     account_id: Optional[str] = Query(None, description="Account ID to fetch data for"),
-    store_pnl: bool = Query(False, description="If True, store PnL records in database. If False, fetch but don't store (for display only)")
+    store_pnl: bool = Query(
+        False,
+        description="If True, store PnL records in database. If False, fetch but don't store (for display only)",
+    ),
 ):
     """Manually trigger data fetch from IBKR. By default, fetches fresh data but doesn't store PnL records."""
     try:
         if not account_id:
-            account_id = os.getenv('IBKR_ACCOUNT_ID', '') or getattr(settings.ibkr, 'account_id', '') or None
-        logger.info(f"Manual data fetch triggered for account: {account_id} (store_pnl={store_pnl})")
+            account_id = (
+                os.getenv("IBKR_ACCOUNT_ID", "")
+                or getattr(settings.ibkr, "account_id", "")
+                or None
+            )
+        logger.info(
+            f"Manual data fetch triggered for account: {account_id} (store_pnl={store_pnl})"
+        )
 
         # Create IBKR client and data fetcher
         ibkr_client = IBKRClient()
@@ -354,6 +375,7 @@ async def fetch_data_now(
         # Connect to IBKR
         if not await ibkr_client.connect():
             import socket
+
             # Check if port is accessible
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(1)
@@ -371,7 +393,7 @@ async def fetch_data_now(
                     f"4. Set Socket port to {settings.ibkr.port} (7497 for paper, 7496 for live)\n"
                     f"5. Add '127.0.0.1' to 'Trusted IPs'\n"
                     f"6. Restart TWS/Gateway after changing settings\n"
-                    f"7. Run 'python test_ibkr_connection.py' for detailed diagnostics"
+                    f"7. Run 'python scripts/test_ibkr_connection.py' for detailed diagnostics"
                 )
             else:
                 detail = (
@@ -381,7 +403,7 @@ async def fetch_data_now(
                     f"1. API might not be enabled in TWS/Gateway\n"
                     f"2. '127.0.0.1' might not be in Trusted IPs\n"
                     f"3. TWS/Gateway needs to be restarted after enabling API\n"
-                    f"4. Run 'python test_ibkr_connection.py' for detailed diagnostics"
+                    f"4. Run 'python scripts/test_ibkr_connection.py' for detailed diagnostics"
                 )
 
             raise HTTPException(status_code=503, detail=detail)
@@ -392,13 +414,17 @@ async def fetch_data_now(
         # Disconnect
         await ibkr_client.disconnect()
 
-        message = "Data fetched successfully" if not store_pnl else "Data fetched and stored successfully"
+        message = (
+            "Data fetched successfully"
+            if not store_pnl
+            else "Data fetched and stored successfully"
+        )
         return {
             "status": "success",
             "message": message,
-            "account_id": result['account_id'],
-            "positions_count": len(result['positions']),
-            "trades_count": len(result['trades']),
+            "account_id": result["account_id"],
+            "positions_count": len(result["positions"]),
+            "trades_count": len(result["trades"]),
             "pnl_fetched": True,
             "pnl_stored": store_pnl,
         }
@@ -413,6 +439,7 @@ async def fetch_data_now(
 # =============================================================================
 # Flex Query Endpoints
 # =============================================================================
+
 
 @router.get("/flex-query/status")
 async def get_flex_query_status():
@@ -434,9 +461,10 @@ async def get_flex_query_status():
             for q in queries
         ],
         "message": (
-            f"Flex Query is configured with {len(queries)} report(s)" if is_configured
+            f"Flex Query is configured with {len(queries)} report(s)"
+            if is_configured
             else "Flex Query not configured. Please set token and queries in config/app_config.yaml"
-        )
+        ),
     }
 
 
@@ -444,7 +472,7 @@ async def get_flex_query_status():
 async def fetch_all_flex_query_reports(
     auto_import: bool = Query(
         True,
-        description="Automatically import new trades to database (deduplicates existing records)"
+        description="Automatically import new trades to database (deduplicates existing records)",
     )
 ):
     """Fetch ALL configured Flex Query reports at once.
@@ -464,14 +492,14 @@ async def fetch_all_flex_query_reports(
             logger.warning("Flex Query fetch rejected: token not configured")
             raise HTTPException(
                 status_code=400,
-                detail="Flex Web Service token not configured in config/app_config.yaml"
+                detail="Flex Web Service token not configured in config/app_config.yaml",
             )
 
         if not queries:
             logger.warning("Flex Query fetch rejected: no queries configured")
             raise HTTPException(
                 status_code=400,
-                detail="No Flex Queries configured. Add queries to flex_query.queries in config/app_config.yaml"
+                detail="No Flex Queries configured. Add queries to flex_query.queries in config/app_config.yaml",
             )
 
         logger.info(f"Fetching {len(queries)} Flex Query reports...")
@@ -484,13 +512,15 @@ async def fetch_all_flex_query_reports(
 
         for query in queries:
             try:
-                logger.info(f"Fetching '{query.name}' (ID: {query.id}, Type: {query.type})")
+                logger.info(
+                    f"Fetching '{query.name}' (ID: {query.id}, Type: {query.type})"
+                )
 
                 result = await client.fetch_statement(
                     query_id=query.id,
                     query_name=query.name,
                     query_type=query.type,
-                    save_raw=True
+                    save_raw=True,
                 )
 
                 # Auto-import ALL data to database (trades, positions, PnL, snapshots)
@@ -509,11 +539,14 @@ async def fetch_all_flex_query_reports(
                     csv_file_path = None
 
                     # Check if saved file is CSV
-                    if result.saved_file_path and str(result.saved_file_path).endswith(".csv"):
+                    if result.saved_file_path and str(result.saved_file_path).endswith(
+                        ".csv"
+                    ):
                         csv_file_path = result.saved_file_path
                     # Fallback: If XML was returned but CSV might exist, check the directory
                     elif query.type == "mark-to-market" and result.saved_file_path:
                         from pathlib import Path
+
                         saved_path = Path(result.saved_file_path)
                         # Look for CSV files in the same directory with similar name (performance*.csv)
                         # Try multiple patterns to find CSV files
@@ -530,72 +563,106 @@ async def fetch_all_flex_query_reports(
 
                         if csv_files:
                             # Use the most recent CSV file
-                            csv_file_path = str(max(csv_files, key=lambda p: p.stat().st_mtime))
-                            logger.info(f"Found CSV file in directory (fallback): {csv_file_path}")
+                            csv_file_path = str(
+                                max(csv_files, key=lambda p: p.stat().st_mtime)
+                            )
+                            logger.info(
+                                f"Found CSV file in directory (fallback): {csv_file_path}"
+                            )
                             # Update result.saved_file_path to point to CSV for consistency
                             result.saved_file_path = csv_file_path
 
                     if csv_file_path and query.type == "mark-to-market":
-                        logger.info(f"Importing mark-to-market daily series from CSV: {csv_file_path}")
+                        logger.info(
+                            f"Importing mark-to-market daily series from CSV: {csv_file_path}"
+                        )
                         perf_stats = import_mark_to_market_performance_csv(
                             csv_file_path,
                             account_id=result.account_id or None,
                         )
                         # Count as imported/updated/skipped under pnl
-                        import_stats["pnl"]["imported"] += int(perf_stats.get("imported", 0))
-                        import_stats["pnl"]["skipped"] += int(perf_stats.get("skipped", 0))
+                        import_stats["pnl"]["imported"] += int(
+                            perf_stats.get("imported", 0)
+                        )
+                        import_stats["pnl"]["skipped"] += int(
+                            perf_stats.get("skipped", 0)
+                        )
                         # treat updates as "imported" for summary purposes
-                        import_stats["pnl"]["imported"] += int(perf_stats.get("updated", 0))
-                        import_stats["total_imported"] += int(perf_stats.get("imported", 0)) + int(perf_stats.get("updated", 0))
-                        import_stats["total_skipped"] += int(perf_stats.get("skipped", 0))
-                        total_imported += int(perf_stats.get("imported", 0)) + int(perf_stats.get("updated", 0))
+                        import_stats["pnl"]["imported"] += int(
+                            perf_stats.get("updated", 0)
+                        )
+                        import_stats["total_imported"] += int(
+                            perf_stats.get("imported", 0)
+                        ) + int(perf_stats.get("updated", 0))
+                        import_stats["total_skipped"] += int(
+                            perf_stats.get("skipped", 0)
+                        )
+                        total_imported += int(perf_stats.get("imported", 0)) + int(
+                            perf_stats.get("updated", 0)
+                        )
                         total_skipped += int(perf_stats.get("skipped", 0))
                     else:
-                        logger.info(f"Auto-importing all data from '{query.name}' to database...")
+                        logger.info(
+                            f"Auto-importing all data from '{query.name}' to database..."
+                        )
                         full_import_stats = import_all_flex_data(result)
                         import_stats = full_import_stats.get("stats", import_stats)
-                        import_stats["total_imported"] = full_import_stats.get("total_imported", 0)
-                        import_stats["total_skipped"] = full_import_stats.get("total_skipped", 0)
+                        import_stats["total_imported"] = full_import_stats.get(
+                            "total_imported", 0
+                        )
+                        import_stats["total_skipped"] = full_import_stats.get(
+                            "total_skipped", 0
+                        )
                         total_imported += import_stats["total_imported"]
                         total_skipped += import_stats["total_skipped"]
 
-                results.append({
-                    "query_id": query.id,
-                    "query_name": query.name,
-                    "query_type": query.type,
-                    "status": "success",
-                    "account_id": result.account_id,
-                    "from_date": result.from_date.isoformat() if result.from_date else None,
-                    "to_date": result.to_date.isoformat() if result.to_date else None,
-                    "trades_count": len(result.trades),
-                    "positions_count": len(result.positions),
-                    "saved_to": result.saved_file_path,
-                    "db_import": {
-                        "trades": import_stats["trades"],
-                        "positions": import_stats["positions"],
-                        "pnl": import_stats["pnl"],
-                        "account_snapshots": import_stats["account_snapshots"],
-                        "total_imported": import_stats["total_imported"],
-                        "total_skipped": import_stats["total_skipped"],
-                    },
-                })
+                results.append(
+                    {
+                        "query_id": query.id,
+                        "query_name": query.name,
+                        "query_type": query.type,
+                        "status": "success",
+                        "account_id": result.account_id,
+                        "from_date": result.from_date.isoformat()
+                        if result.from_date
+                        else None,
+                        "to_date": result.to_date.isoformat()
+                        if result.to_date
+                        else None,
+                        "trades_count": len(result.trades),
+                        "positions_count": len(result.positions),
+                        "saved_to": result.saved_file_path,
+                        "db_import": {
+                            "trades": import_stats["trades"],
+                            "positions": import_stats["positions"],
+                            "pnl": import_stats["pnl"],
+                            "account_snapshots": import_stats["account_snapshots"],
+                            "total_imported": import_stats["total_imported"],
+                            "total_skipped": import_stats["total_skipped"],
+                        },
+                    }
+                )
 
             except FlexQueryError as e:
                 logger.error(f"Error fetching '{query.name}': {e.message}")
-                errors.append({
-                    "query_id": query.id,
-                    "query_name": query.name,
-                    "status": "error",
-                    "error": e.message,
-                })
+                errors.append(
+                    {
+                        "query_id": query.id,
+                        "query_name": query.name,
+                        "status": "error",
+                        "error": e.message,
+                    }
+                )
             except Exception as e:
                 logger.error(f"Unexpected error fetching '{query.name}': {e}")
-                errors.append({
-                    "query_id": query.id,
-                    "query_name": query.name,
-                    "status": "error",
-                    "error": str(e),
-                })
+                errors.append(
+                    {
+                        "query_id": query.id,
+                        "query_name": query.name,
+                        "status": "error",
+                        "error": str(e),
+                    }
+                )
 
         return {
             "status": "completed",
@@ -623,13 +690,11 @@ async def fetch_all_flex_query_reports(
 @router.post("/flex-query/fetch-trades")
 async def fetch_trades_from_flex_query(
     query_id: Optional[str] = Query(
-        None,
-        description="Flex Query ID (uses config trade_query_id if not provided)"
+        None, description="Flex Query ID (uses config trade_query_id if not provided)"
     ),
     token: Optional[str] = Query(
-        None,
-        description="Flex Web Service token (uses config token if not provided)"
-    )
+        None, description="Flex Web Service token (uses config token if not provided)"
+    ),
 ):
     """Fetch historical trade data from IBKR Flex Query Web Service.
 
@@ -645,7 +710,11 @@ async def fetch_trades_from_flex_query(
     try:
         # Use provided values or fall back to config
         flex_token = token or settings.flex_query.token
-        flex_query_id = query_id or settings.flex_query.trade_query_id or settings.flex_query.activity_query_id
+        flex_query_id = (
+            query_id
+            or settings.flex_query.trade_query_id
+            or settings.flex_query.activity_query_id
+        )
 
         if not flex_token:
             logger.warning("Flex Query fetch-trades rejected: token not configured")
@@ -658,7 +727,7 @@ async def fetch_trades_from_flex_query(
                     "2. Go to: Performance & Reports → Flex Queries\n"
                     "3. Click 'Configure Flex Web Service'\n"
                     "4. Generate a token and add it to config/app_config.yaml"
-                )
+                ),
             )
 
         if not flex_query_id:
@@ -672,7 +741,7 @@ async def fetch_trades_from_flex_query(
                     "2. Go to: Performance & Reports → Flex Queries → Activity Flex Query\n"
                     "3. Create a new query with 'Trades' section enabled\n"
                     "4. Note the Query ID and add it to config/app_config.yaml"
-                )
+                ),
             )
 
         logger.info(f"Fetching trades from Flex Query ID: {flex_query_id}")
@@ -695,10 +764,7 @@ async def fetch_trades_from_flex_query(
 
     except FlexQueryError as e:
         logger.error(f"Flex Query error: {e.message}")
-        raise HTTPException(
-            status_code=502,
-            detail=f"Flex Query error: {e.message}"
-        )
+        raise HTTPException(status_code=502, detail=f"Flex Query error: {e.message}")
     except HTTPException:
         raise
     except Exception as e:
@@ -710,7 +776,7 @@ async def fetch_trades_from_flex_query(
 async def get_flex_portfolio_summary(
     query_id: Optional[str] = Query(
         None,
-        description="Flex Query ID (uses config activity_query_id if not provided)"
+        description="Flex Query ID (uses config activity_query_id if not provided)",
     )
 ):
     """Get real-time portfolio summary from Flex Query.
@@ -720,13 +786,19 @@ async def get_flex_portfolio_summary(
     """
     try:
         flex_token = settings.flex_query.token
-        flex_query_id = query_id or settings.flex_query.activity_query_id or settings.flex_query.trade_query_id
+        flex_query_id = (
+            query_id
+            or settings.flex_query.activity_query_id
+            or settings.flex_query.trade_query_id
+        )
 
         if not flex_token or not flex_query_id:
-            logger.warning("Flex Query portfolio-summary rejected: token or query_id not configured")
+            logger.warning(
+                "Flex Query portfolio-summary rejected: token or query_id not configured"
+            )
             raise HTTPException(
                 status_code=400,
-                detail="Flex Query not configured. Set token and query_id in config/app_config.yaml"
+                detail="Flex Query not configured. Set token and query_id in config/app_config.yaml",
             )
 
         logger.info(f"Fetching portfolio summary from Flex Query ID: {flex_query_id}")
@@ -737,27 +809,31 @@ async def get_flex_portfolio_summary(
         # Parse positions by asset class
         positions_by_class = {}
         for pos in result.positions:
-            asset_class = pos.sec_type or 'OTHER'
+            asset_class = pos.sec_type or "OTHER"
             if asset_class not in positions_by_class:
                 positions_by_class[asset_class] = []
-            positions_by_class[asset_class].append({
-                'symbol': pos.symbol,
-                'description': pos.description,
-                'quantity': pos.quantity,
-                'market_price': pos.market_price,
-                'market_value': pos.market_value,
-                'cost_basis': pos.cost_basis_money,
-                'unrealized_pnl': pos.unrealized_pnl,
-                'realized_pnl': pos.realized_pnl,
-                'currency': pos.currency,
-            })
+            positions_by_class[asset_class].append(
+                {
+                    "symbol": pos.symbol,
+                    "description": pos.description,
+                    "quantity": pos.quantity,
+                    "market_price": pos.market_price,
+                    "market_value": pos.market_value,
+                    "cost_basis": pos.cost_basis_money,
+                    "unrealized_pnl": pos.unrealized_pnl,
+                    "realized_pnl": pos.realized_pnl,
+                    "currency": pos.currency,
+                }
+            )
 
         return {
             "status": "success",
             "account_id": result.account_id,
             "from_date": result.from_date.isoformat() if result.from_date else None,
             "to_date": result.to_date.isoformat() if result.to_date else None,
-            "generated_at": result.generated_at.isoformat() if result.generated_at else None,
+            "generated_at": result.generated_at.isoformat()
+            if result.generated_at
+            else None,
             "summary": {
                 "net_liquidation": result.net_liquidation,
                 "total_cash": result.total_cash,
@@ -767,28 +843,30 @@ async def get_flex_portfolio_summary(
             "positions_by_class": positions_by_class,
             "positions": [
                 {
-                    'symbol': pos.symbol,
-                    'description': pos.description,
-                    'sec_type': pos.sec_type,
-                    'quantity': pos.quantity,
-                    'market_price': pos.market_price,
-                    'market_value': pos.market_value,
-                    'cost_basis': pos.cost_basis_money,
-                    'unrealized_pnl': pos.unrealized_pnl,
-                    'realized_pnl': pos.realized_pnl,
-                    'currency': pos.currency,
+                    "symbol": pos.symbol,
+                    "description": pos.description,
+                    "sec_type": pos.sec_type,
+                    "quantity": pos.quantity,
+                    "market_price": pos.market_price,
+                    "market_value": pos.market_value,
+                    "cost_basis": pos.cost_basis_money,
+                    "unrealized_pnl": pos.unrealized_pnl,
+                    "realized_pnl": pos.realized_pnl,
+                    "currency": pos.currency,
                 }
                 for pos in result.positions
             ],
             "recent_trades": [
                 {
-                    'symbol': trade.symbol,
-                    'side': trade.side,
-                    'quantity': trade.quantity,
-                    'price': trade.price,
-                    'trade_date': trade.trade_date.isoformat() if trade.trade_date else None,
-                    'commission': trade.commission,
-                    'realized_pnl': trade.realized_pnl,
+                    "symbol": trade.symbol,
+                    "side": trade.side,
+                    "quantity": trade.quantity,
+                    "price": trade.price,
+                    "trade_date": trade.trade_date.isoformat()
+                    if trade.trade_date
+                    else None,
+                    "commission": trade.commission,
+                    "realized_pnl": trade.realized_pnl,
                 }
                 for trade in result.trades[:20]  # Last 20 trades
             ],
@@ -809,12 +887,11 @@ async def get_flex_portfolio_summary(
 async def fetch_all_from_flex_query(
     query_id: Optional[str] = Query(
         None,
-        description="Flex Query ID (uses config activity_query_id if not provided)"
+        description="Flex Query ID (uses config activity_query_id if not provided)",
     ),
     token: Optional[str] = Query(
-        None,
-        description="Flex Web Service token (uses config token if not provided)"
-    )
+        None, description="Flex Web Service token (uses config token if not provided)"
+    ),
 ):
     """Fetch all available data from IBKR Flex Query (trades, positions, cash transactions).
 
@@ -823,13 +900,19 @@ async def fetch_all_from_flex_query(
     """
     try:
         flex_token = token or settings.flex_query.token
-        flex_query_id = query_id or settings.flex_query.activity_query_id or settings.flex_query.trade_query_id
+        flex_query_id = (
+            query_id
+            or settings.flex_query.activity_query_id
+            or settings.flex_query.trade_query_id
+        )
 
         if not flex_token or not flex_query_id:
-            logger.warning("Flex Query fetch-all rejected: token or query_id not configured")
+            logger.warning(
+                "Flex Query fetch-all rejected: token or query_id not configured"
+            )
             raise HTTPException(
                 status_code=400,
-                detail="Flex Query not configured. Set token and query_id in config or pass as parameters."
+                detail="Flex Query not configured. Set token and query_id in config or pass as parameters.",
             )
 
         logger.info(f"Fetching all data from Flex Query ID: {flex_query_id}")
@@ -868,39 +951,45 @@ async def fetch_all_from_flex_query(
 # Risk Analytics Endpoints
 # =============================================================================
 
+
 @router.get("/risk/metrics")
 async def get_risk_metrics(
     account_id: Optional[str] = Query(None, description="Account ID"),
-    confidence_level: float = Query(0.95, ge=0.0, le=1.0, description="Confidence level for VaR/CVaR"),
-    start_date: Optional[datetime] = Query(None, description="Start date for returns calculation"),
-    end_date: Optional[datetime] = Query(None, description="End date for returns calculation"),
+    confidence_level: float = Query(
+        0.95, ge=0.0, le=1.0, description="Confidence level for VaR/CVaR"
+    ),
+    start_date: Optional[datetime] = Query(
+        None, description="Start date for returns calculation"
+    ),
+    end_date: Optional[datetime] = Query(
+        None, description="End date for returns calculation"
+    ),
 ):
     """Get comprehensive risk metrics including VaR, CVaR, beta, and more."""
     try:
         from portfolio.risk_analytics import portfolio_metrics
 
         # Get returns data
-        returns_df = data_processor.calculate_daily_returns(account_id, start_date, end_date)
+        returns_df = data_processor.calculate_daily_returns(
+            account_id, start_date, end_date
+        )
 
         if returns_df.empty or len(returns_df) < 2:
             raise HTTPException(
-                status_code=400,
-                detail="Insufficient data for risk metrics calculation"
+                status_code=400, detail="Insufficient data for risk metrics calculation"
             )
 
-        returns = returns_df['daily_return'].dropna()
+        returns = returns_df["daily_return"].dropna()
 
         # Calculate risk metrics (without benchmark for now)
         metrics = portfolio_metrics(
-            returns=returns,
-            confidence_level=confidence_level,
-            benchmark_returns=None
+            returns=returns, confidence_level=confidence_level, benchmark_returns=None
         )
 
         # Add additional metrics
         if len(returns) > 0:
-            metrics['volatility'] = float(returns.std() * np.sqrt(252))  # Annualized
-            metrics['mean_return'] = float(returns.mean())
+            metrics["volatility"] = float(returns.std() * np.sqrt(252))  # Annualized
+            metrics["mean_return"] = float(returns.mean())
 
         return {
             "account_id": account_id,
@@ -909,8 +998,8 @@ async def get_risk_metrics(
             "period": {
                 "start_date": start_date.isoformat() if start_date else None,
                 "end_date": end_date.isoformat() if end_date else None,
-                "data_points": len(returns)
-            }
+                "data_points": len(returns),
+            },
         }
 
     except HTTPException:
@@ -923,8 +1012,14 @@ async def get_risk_metrics(
 @router.get("/risk/var")
 async def get_var(
     account_id: Optional[str] = Query(None, description="Account ID"),
-    confidence_level: float = Query(0.95, ge=0.0, le=1.0, description="Confidence level"),
-    method: str = Query("historical", regex="^(historical|parametric)$", description="VaR calculation method"),
+    confidence_level: float = Query(
+        0.95, ge=0.0, le=1.0, description="Confidence level"
+    ),
+    method: str = Query(
+        "historical",
+        regex="^(historical|parametric)$",
+        description="VaR calculation method",
+    ),
 ):
     """Calculate Value at Risk (VaR) for the portfolio."""
     try:
@@ -934,11 +1029,10 @@ async def get_var(
 
         if returns_df.empty or len(returns_df) < 2:
             raise HTTPException(
-                status_code=400,
-                detail="Insufficient data for VaR calculation"
+                status_code=400, detail="Insufficient data for VaR calculation"
             )
 
-        returns = returns_df['daily_return'].dropna()
+        returns = returns_df["daily_return"].dropna()
 
         if method == "historical":
             var = historical_var(returns, confidence_level)
@@ -950,7 +1044,7 @@ async def get_var(
             "var": var,
             "confidence_level": confidence_level,
             "method": method,
-            "var_percent": var * 100 if var != 0 else 0.0
+            "var_percent": var * 100 if var != 0 else 0.0,
         }
 
     except HTTPException:
@@ -963,7 +1057,9 @@ async def get_var(
 @router.get("/risk/cvar")
 async def get_cvar(
     account_id: Optional[str] = Query(None, description="Account ID"),
-    confidence_level: float = Query(0.95, ge=0.0, le=1.0, description="Confidence level"),
+    confidence_level: float = Query(
+        0.95, ge=0.0, le=1.0, description="Confidence level"
+    ),
 ):
     """Calculate Conditional VaR (CVaR) / Expected Shortfall."""
     try:
@@ -973,18 +1069,17 @@ async def get_cvar(
 
         if returns_df.empty or len(returns_df) < 2:
             raise HTTPException(
-                status_code=400,
-                detail="Insufficient data for CVaR calculation"
+                status_code=400, detail="Insufficient data for CVaR calculation"
             )
 
-        returns = returns_df['daily_return'].dropna()
+        returns = returns_df["daily_return"].dropna()
         cvar = conditional_var(returns, confidence_level)
 
         return {
             "account_id": account_id,
             "cvar": cvar,
             "confidence_level": confidence_level,
-            "cvar_percent": cvar * 100 if cvar != 0 else 0.0
+            "cvar_percent": cvar * 100 if cvar != 0 else 0.0,
         }
 
     except HTTPException:
@@ -997,7 +1092,10 @@ async def get_cvar(
 @router.get("/risk/stress-test")
 async def get_stress_test(
     account_id: Optional[str] = Query(None, description="Account ID"),
-    scenarios: Optional[str] = Query(None, description="Comma-separated list of shock percentages (e.g., -0.05,-0.10)"),
+    scenarios: Optional[str] = Query(
+        None,
+        description="Comma-separated list of shock percentages (e.g., -0.05,-0.10)",
+    ),
 ):
     """Perform stress testing with various shock scenarios."""
     try:
@@ -1007,15 +1105,14 @@ async def get_stress_test(
 
         if returns_df.empty or len(returns_df) < 2:
             raise HTTPException(
-                status_code=400,
-                detail="Insufficient data for stress testing"
+                status_code=400, detail="Insufficient data for stress testing"
             )
 
-        returns = returns_df['daily_return'].dropna()
+        returns = returns_df["daily_return"].dropna()
 
         # Parse scenarios
         if scenarios:
-            scenario_list = [float(s.strip()) for s in scenarios.split(',')]
+            scenario_list = [float(s.strip()) for s in scenarios.split(",")]
         else:
             scenario_list = [-0.01, -0.05, -0.10, -0.20]  # Default scenarios
 
@@ -1029,7 +1126,7 @@ async def get_stress_test(
         return {
             "account_id": account_id,
             "scenarios": results,
-            "data_points": len(returns)
+            "data_points": len(returns),
         }
 
     except HTTPException:
@@ -1042,6 +1139,7 @@ async def get_stress_test(
 # =============================================================================
 # Export Endpoints
 # =============================================================================
+
 
 @router.get("/export/trades")
 async def export_trades(
@@ -1057,7 +1155,7 @@ async def export_trades(
         return StreamingResponse(
             io.BytesIO(data),
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
         )
     except HTTPException:
         raise
@@ -1080,7 +1178,7 @@ async def export_performance(
         return StreamingResponse(
             io.BytesIO(data),
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
         )
     except HTTPException:
         raise
@@ -1103,7 +1201,7 @@ async def export_pnl(
         return StreamingResponse(
             io.BytesIO(data),
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
         )
     except HTTPException:
         raise
@@ -1126,7 +1224,7 @@ async def export_report(
         return StreamingResponse(
             io.BytesIO(data),
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
         )
     except Exception as e:
         logger.error(f"Error exporting report: {e}")
@@ -1137,14 +1235,17 @@ async def export_report(
 # Performance Analytics Endpoints
 # =============================================================================
 
+
 @router.get("/performance/analytics")
 async def get_performance_analytics(
     account_id: Optional[str] = Query(None, description="Account ID"),
     start_date: Optional[datetime] = Query(None, description="Start date"),
     end_date: Optional[datetime] = Query(None, description="End date"),
-    include_benchmark: bool = Query(True, description="Include S&P 500 benchmark comparison"),
+    include_benchmark: bool = Query(
+        True, description="Include S&P 500 benchmark comparison"
+    ),
     rolling_window: int = Query(30, description="Rolling window for metrics (days)"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Get comprehensive performance analytics including returns, metrics, and benchmark comparison."""
     # Try to get from cache first
@@ -1153,21 +1254,22 @@ async def get_performance_analytics(
     if cached_result is not None:
         return cached_result
 
-    from backend.benchmark_service import (
-        get_benchmark_comparison,
-        calculate_rolling_metrics,
-        get_returns_distribution
-    )
+    import pandas as pd
+
     from backend.api.schemas import (
+        BenchmarkComparisonResponse,
+        BenchmarkTimeSeriesData,
+        DistributionStatistics,
+        HistogramData,
         PerformanceAnalyticsResponse,
         ReturnsDistributionResponse,
         RollingMetricsResponse,
-        BenchmarkComparisonResponse,
-        BenchmarkTimeSeriesData,
-        HistogramData,
-        DistributionStatistics,
     )
-    import pandas as pd
+    from backend.benchmark_service import (
+        calculate_rolling_metrics,
+        get_benchmark_comparison,
+        get_returns_distribution,
+    )
 
     try:
         # Get account_id if not provided
@@ -1183,13 +1285,15 @@ async def get_performance_analytics(
         if not account_id:
             raise HTTPException(
                 status_code=400,
-                detail="account_id is required and could not be inferred from data"
+                detail="account_id is required and could not be inferred from data",
             )
 
         # Get PnL history from database
-        query = db.query(PnLHistory).filter(
-            PnLHistory.account_id == account_id
-        ).order_by(PnLHistory.date)
+        query = (
+            db.query(PnLHistory)
+            .filter(PnLHistory.account_id == account_id)
+            .order_by(PnLHistory.date)
+        )
 
         if start_date:
             query = query.filter(PnLHistory.date >= start_date)
@@ -1202,43 +1306,50 @@ async def get_performance_analytics(
             return PerformanceAnalyticsResponse(
                 account_id=account_id,
                 data_points=len(pnl_records),
-                error="Insufficient data for analytics calculation"
+                error="Insufficient data for analytics calculation",
             )
 
         # Build DataFrame from PnL history
-        df = pd.DataFrame([{
-            'date': r.date,
-            'net_liquidation': r.net_liquidation or 0,
-            'total_pnl': r.total_pnl or 0,
-            'realized_pnl': r.realized_pnl or 0,
-            'unrealized_pnl': r.unrealized_pnl or 0,
-            'total_cash': r.total_cash,
-        } for r in pnl_records])
+        df = pd.DataFrame(
+            [
+                {
+                    "date": r.date,
+                    "net_liquidation": r.net_liquidation or 0,
+                    "total_pnl": r.total_pnl or 0,
+                    "realized_pnl": r.realized_pnl or 0,
+                    "unrealized_pnl": r.unrealized_pnl or 0,
+                    "total_cash": r.total_cash,
+                }
+                for r in pnl_records
+            ]
+        )
 
-        df['date'] = pd.to_datetime(df['date'])
-        df = df.sort_values('date')
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.sort_values("date")
         # Deduplicate to one record per calendar date (keep last intraday entry)
-        df['cal_date'] = df['date'].dt.date
-        df = df.drop_duplicates(subset=['cal_date'], keep='last')
-        df['date'] = pd.to_datetime(df['cal_date'])
-        df = df.drop(columns=['cal_date'])
-        df = df.set_index('date')
+        df["cal_date"] = df["date"].dt.date
+        df = df.drop_duplicates(subset=["cal_date"], keep="last")
+        df["date"] = pd.to_datetime(df["cal_date"])
+        df = df.drop(columns=["cal_date"])
+        df = df.set_index("date")
 
         # Cash-flow-adjusted daily return:
         # Flex records (total_cash IS NULL): total_pnl is the day's investment
         # P&L (realized + unrealized + dividends), excludes cash deposits.
         # Live-API records (total_cash set): total_pnl is cumulative all-time,
         # so fall back to NAV pct_change.
-        prev_nav = df['net_liquidation'].shift(1)
-        is_flex = df['total_cash'].isna()
-        pnl_return = df['total_pnl'] / prev_nav
-        nav_return = df['net_liquidation'].pct_change()
+        prev_nav = df["net_liquidation"].shift(1)
+        is_flex = df["total_cash"].isna()
+        pnl_return = df["total_pnl"] / prev_nav
+        nav_return = df["net_liquidation"].pct_change()
 
-        df['daily_return'] = nav_return
-        df.loc[is_flex, 'daily_return'] = pnl_return[is_flex]
-        logger.info("Calculated cash-flow-adjusted daily returns (PnL-based for Flex, NAV-based for live)")
+        df["daily_return"] = nav_return
+        df.loc[is_flex, "daily_return"] = pnl_return[is_flex]
+        logger.info(
+            "Calculated cash-flow-adjusted daily returns (PnL-based for Flex, NAV-based for live)"
+        )
 
-        df = df.dropna(subset=['daily_return'])
+        df = df.dropna(subset=["daily_return"])
 
         if len(df) < 2:
             return PerformanceAnalyticsResponse(
@@ -1246,21 +1357,31 @@ async def get_performance_analytics(
                 data_points=len(df),
             )
 
-        returns = df['daily_return']
+        returns = df["daily_return"]
 
         # Always compute cumulative return fresh from daily returns
         cumulative = (1 + returns).cumprod()
         total_return = float(cumulative.iloc[-1] - 1) if len(cumulative) > 0 else 0.0
 
         days = (df.index[-1] - df.index[0]).days
-        annualized_return = float((1 + total_return) ** (365 / max(days, 1)) - 1) if days > 0 else 0
+        annualized_return = (
+            float((1 + total_return) ** (365 / max(days, 1)) - 1) if days > 0 else 0
+        )
         volatility = float(returns.std() * np.sqrt(252))
-        sharpe = float(np.sqrt(252) * returns.mean() / returns.std()) if returns.std() > 0 else 0
+        sharpe = (
+            float(np.sqrt(252) * returns.mean() / returns.std())
+            if returns.std() > 0
+            else 0
+        )
 
         # Sortino ratio
         downside_returns = returns[returns < 0]
         downside_std = downside_returns.std() if len(downside_returns) > 0 else 0
-        sortino = float(np.sqrt(252) * returns.mean() / downside_std) if downside_std > 0 else 0
+        sortino = (
+            float(np.sqrt(252) * returns.mean() / downside_std)
+            if downside_std > 0
+            else 0
+        )
 
         # Max drawdown
         running_max = cumulative.cummax()
@@ -1268,36 +1389,44 @@ async def get_performance_analytics(
         max_drawdown = float(drawdown.min())
 
         # Calmar ratio
-        calmar = float(annualized_return / abs(max_drawdown)) if max_drawdown != 0 else 0
+        calmar = (
+            float(annualized_return / abs(max_drawdown)) if max_drawdown != 0 else 0
+        )
 
         # Build returns series for frontend
         cum_returns = cumulative - 1  # convert growth factor to return
         returns_series = []
         for idx, row in df.iterrows():
-            returns_series.append({
-                'date': idx.strftime('%Y-%m-%d'),
-                'daily_return': float(row['daily_return']) if not pd.isna(row['daily_return']) else 0,
-                'cumulative_return': float(cum_returns.loc[idx]),
-            })
+            returns_series.append(
+                {
+                    "date": idx.strftime("%Y-%m-%d"),
+                    "daily_return": float(row["daily_return"])
+                    if not pd.isna(row["daily_return"])
+                    else 0,
+                    "cumulative_return": float(cum_returns.loc[idx]),
+                }
+            )
 
         # Build equity series
         equity_series = []
         for idx, row in df.iterrows():
-            equity_series.append({
-                'date': idx.strftime('%Y-%m-%d'),
-                'net_liquidation': float(row['net_liquidation']),
-                'total_pnl': float(row['total_pnl']),
-            })
+            equity_series.append(
+                {
+                    "date": idx.strftime("%Y-%m-%d"),
+                    "net_liquidation": float(row["net_liquidation"]),
+                    "total_pnl": float(row["total_pnl"]),
+                }
+            )
 
         # Get distribution
         dist_data = get_returns_distribution(returns)
         distribution = ReturnsDistributionResponse(
             histogram=HistogramData(
-                bins=dist_data['histogram']['bins'],
-                counts=dist_data['histogram']['counts']
+                bins=dist_data["histogram"]["bins"],
+                counts=dist_data["histogram"]["counts"],
             ),
-            statistics=DistributionStatistics(**dist_data['statistics']),
-            percentiles=dist_data['percentiles']
+            statistics=DistributionStatistics(**dist_data["statistics"]),
+            percentiles=dist_data["percentiles"],
         )
 
         # Get rolling metrics
@@ -1310,34 +1439,44 @@ async def get_performance_analytics(
             benchmark_data = get_benchmark_comparison(
                 returns,
                 start_date=df.index[0].to_pydatetime(),
-                end_date=df.index[-1].to_pydatetime()
+                end_date=df.index[-1].to_pydatetime(),
             )
 
-            if 'error' not in benchmark_data or benchmark_data.get('time_series'):
-                time_series_data = benchmark_data.get('time_series', {})
+            if "error" not in benchmark_data or benchmark_data.get("time_series"):
+                time_series_data = benchmark_data.get("time_series", {})
                 benchmark_comparison = BenchmarkComparisonResponse(
-                    portfolio_sharpe=benchmark_data.get('portfolio_sharpe'),
-                    benchmark_sharpe=benchmark_data.get('benchmark_sharpe'),
-                    beta=benchmark_data.get('beta'),
-                    alpha=benchmark_data.get('alpha'),
-                    information_ratio=benchmark_data.get('information_ratio'),
-                    tracking_error=benchmark_data.get('tracking_error'),
-                    correlation=benchmark_data.get('correlation'),
-                    data_points=benchmark_data.get('data_points', 0),
-                    portfolio_cumulative_return=benchmark_data.get('portfolio_cumulative_return'),
-                    benchmark_cumulative_return=benchmark_data.get('benchmark_cumulative_return'),
+                    portfolio_sharpe=benchmark_data.get("portfolio_sharpe"),
+                    benchmark_sharpe=benchmark_data.get("benchmark_sharpe"),
+                    beta=benchmark_data.get("beta"),
+                    alpha=benchmark_data.get("alpha"),
+                    information_ratio=benchmark_data.get("information_ratio"),
+                    tracking_error=benchmark_data.get("tracking_error"),
+                    correlation=benchmark_data.get("correlation"),
+                    data_points=benchmark_data.get("data_points", 0),
+                    portfolio_cumulative_return=benchmark_data.get(
+                        "portfolio_cumulative_return"
+                    ),
+                    benchmark_cumulative_return=benchmark_data.get(
+                        "benchmark_cumulative_return"
+                    ),
                     time_series=BenchmarkTimeSeriesData(
-                        dates=time_series_data.get('dates', []),
-                        portfolio_cumulative=time_series_data.get('portfolio_cumulative', []),
-                        benchmark_cumulative=time_series_data.get('benchmark_cumulative', []),
-                    ) if time_series_data else None,
-                    error=benchmark_data.get('error'),
+                        dates=time_series_data.get("dates", []),
+                        portfolio_cumulative=time_series_data.get(
+                            "portfolio_cumulative", []
+                        ),
+                        benchmark_cumulative=time_series_data.get(
+                            "benchmark_cumulative", []
+                        ),
+                    )
+                    if time_series_data
+                    else None,
+                    error=benchmark_data.get("error"),
                 )
 
         result = PerformanceAnalyticsResponse(
             account_id=account_id,
-            period_start=df.index[0].strftime('%Y-%m-%d'),
-            period_end=df.index[-1].strftime('%Y-%m-%d'),
+            period_start=df.index[0].strftime("%Y-%m-%d"),
+            period_end=df.index[-1].strftime("%Y-%m-%d"),
             data_points=len(df),
             total_return=total_return,
             annualized_return=annualized_return,
@@ -1372,11 +1511,13 @@ async def get_performance_analytics(
 async def get_sp500_benchmark(
     start_date: Optional[datetime] = Query(None, description="Start date"),
     end_date: Optional[datetime] = Query(None, description="End date"),
-    days: int = Query(365, description="Number of days of data (if dates not specified)"),
+    days: int = Query(
+        365, description="Number of days of data (if dates not specified)"
+    ),
 ):
     """Get S&P 500 benchmark data for comparison charts."""
+    from backend.api.schemas import SP500DataPoint, SP500DataResponse
     from backend.benchmark_service import get_sp500_data
-    from backend.api.schemas import SP500DataResponse, SP500DataPoint
 
     try:
         # Set default date range
@@ -1391,31 +1532,43 @@ async def get_sp500_benchmark(
         if df.empty:
             return SP500DataResponse(
                 data=[],
-                start_date=start_date.strftime('%Y-%m-%d'),
-                end_date=end_date.strftime('%Y-%m-%d'),
+                start_date=start_date.strftime("%Y-%m-%d"),
+                end_date=end_date.strftime("%Y-%m-%d"),
             )
 
         # Build response
         data_points = []
         for _, row in df.iterrows():
-            data_points.append(SP500DataPoint(
-                date=row['date'].strftime('%Y-%m-%d'),
-                close=float(row['close']),
-                daily_return=float(row['daily_return']) if not pd.isna(row['daily_return']) else None,
-                cumulative_return=float(row['cumulative_return']) if not pd.isna(row['cumulative_return']) else None,
-            ))
+            data_points.append(
+                SP500DataPoint(
+                    date=row["date"].strftime("%Y-%m-%d"),
+                    close=float(row["close"]),
+                    daily_return=float(row["daily_return"])
+                    if not pd.isna(row["daily_return"])
+                    else None,
+                    cumulative_return=float(row["cumulative_return"])
+                    if not pd.isna(row["cumulative_return"])
+                    else None,
+                )
+            )
 
         # Calculate total and annualized return
-        total_return = float(df['cumulative_return'].iloc[-1]) if len(df) > 0 else None
-        days_in_data = (df['date'].iloc[-1] - df['date'].iloc[0]).days if len(df) > 1 else 0
-        annualized_return = float((1 + total_return) ** (365 / max(days_in_data, 1)) - 1) if total_return and days_in_data > 0 else None
+        total_return = float(df["cumulative_return"].iloc[-1]) if len(df) > 0 else None
+        days_in_data = (
+            (df["date"].iloc[-1] - df["date"].iloc[0]).days if len(df) > 1 else 0
+        )
+        annualized_return = (
+            float((1 + total_return) ** (365 / max(days_in_data, 1)) - 1)
+            if total_return and days_in_data > 0
+            else None
+        )
 
         return SP500DataResponse(
             symbol="^GSPC",
             name="S&P 500",
             data=data_points,
-            start_date=df['date'].iloc[0].strftime('%Y-%m-%d') if len(df) > 0 else None,
-            end_date=df['date'].iloc[-1].strftime('%Y-%m-%d') if len(df) > 0 else None,
+            start_date=df["date"].iloc[0].strftime("%Y-%m-%d") if len(df) > 0 else None,
+            end_date=df["date"].iloc[-1].strftime("%Y-%m-%d") if len(df) > 0 else None,
             total_return=total_return,
             annualized_return=annualized_return,
         )

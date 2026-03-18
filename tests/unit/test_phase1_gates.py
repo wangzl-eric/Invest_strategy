@@ -30,6 +30,16 @@ import pytest
 # ---------------------------------------------------------------------------
 
 
+def has_exchange_calendars() -> bool:
+    """Check if exchange_calendars is installed."""
+    try:
+        import exchange_calendars  # noqa: F401
+
+        return True
+    except ImportError:
+        return False
+
+
 def make_prices(n: int = 1500, seed: int = 42, tickers=None):
     """Synthetic OHLCV price data."""
     rng = np.random.RandomState(seed)
@@ -350,6 +360,10 @@ class TestGate10CostModelIntegration:
 
 
 class TestGate11CalendarAlignment:
+    @pytest.mark.skipif(
+        not has_exchange_calendars(),
+        reason="exchange_calendars not installed",
+    )
     def test_align_to_trading_days_removes_weekends(self):
         """Gate 11: align_to_trading_days() removes Saturday/Sunday rows."""
         from backtests.calendar import align_to_trading_days
@@ -366,6 +380,10 @@ class TestGate11CalendarAlignment:
         ), "Calendar alignment must remove weekends"
         assert len(aligned) < len(df), "Aligned data must be shorter than raw data"
 
+    @pytest.mark.skipif(
+        not has_exchange_calendars(),
+        reason="exchange_calendars not installed",
+    )
     def test_get_trading_days_returns_business_days(self):
         """Gate 11: get_trading_days() returns only NYSE trading sessions."""
         from backtests.calendar import get_trading_days

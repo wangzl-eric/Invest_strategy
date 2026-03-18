@@ -1,14 +1,15 @@
 """Data processor for calculating performance metrics."""
 import logging
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
-import pandas as pd
+from typing import Any, Dict, List, Optional
+
 import numpy as np
+import pandas as pd
+from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
 
 from backend.database import get_db_context
-from backend.models import PnLHistory, Trade, PerformanceMetric, AccountSnapshot
+from backend.models import AccountSnapshot, PerformanceMetric, PnLHistory, Trade
 
 logger = logging.getLogger(__name__)
 
@@ -20,13 +21,15 @@ class DataProcessor:
         self,
         account_id: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> pd.DataFrame:
         """Calculate daily returns from account snapshots."""
         with get_db_context() as db:
-            query = db.query(AccountSnapshot).filter(
-                AccountSnapshot.account_id == account_id
-            ).order_by(AccountSnapshot.timestamp)
+            query = (
+                db.query(AccountSnapshot)
+                .filter(AccountSnapshot.account_id == account_id)
+                .order_by(AccountSnapshot.timestamp)
+            )
 
             if start_date:
                 query = query.filter(AccountSnapshot.timestamp >= start_date)
@@ -40,23 +43,23 @@ class DataProcessor:
 
             data = []
             for snapshot in snapshots:
-                data.append({
-                    'date': snapshot.timestamp,
-                    'equity': snapshot.equity or snapshot.net_liquidation or 0.0,
-                })
+                data.append(
+                    {
+                        "date": snapshot.timestamp,
+                        "equity": snapshot.equity or snapshot.net_liquidation or 0.0,
+                    }
+                )
 
             df = pd.DataFrame(data)
-            df['date'] = pd.to_datetime(df['date'])
-            df = df.sort_values('date')
-            df['daily_return'] = df['equity'].pct_change()
-            df['cumulative_return'] = (1 + df['daily_return']).cumprod() - 1
+            df["date"] = pd.to_datetime(df["date"])
+            df = df.sort_values("date")
+            df["daily_return"] = df["equity"].pct_change()
+            df["cumulative_return"] = (1 + df["daily_return"]).cumprod() - 1
 
             return df
 
     def calculate_sharpe_ratio(
-        self,
-        returns: pd.Series,
-        risk_free_rate: float = 0.0
+        self, returns: pd.Series, risk_free_rate: float = 0.0
     ) -> float:
         """Calculate Sharpe ratio."""
         if len(returns) < 2:
@@ -75,9 +78,7 @@ class DataProcessor:
         return float(sharpe) if not (np.isnan(sharpe) or np.isinf(sharpe)) else 0.0
 
     def calculate_sortino_ratio(
-        self,
-        returns: pd.Series,
-        risk_free_rate: float = 0.0
+        self, returns: pd.Series, risk_free_rate: float = 0.0
     ) -> float:
         """Calculate Sortino ratio (downside deviation only)."""
         if len(returns) < 2:
@@ -138,7 +139,7 @@ class DataProcessor:
         self,
         account_id: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> Dict[str, Any]:
         """Calculate trade statistics."""
         with get_db_context() as db:
@@ -153,13 +154,13 @@ class DataProcessor:
 
             if not trades:
                 return {
-                    'total_trades': 0,
-                    'winning_trades': 0,
-                    'losing_trades': 0,
-                    'win_rate': 0.0,
-                    'avg_win': 0.0,
-                    'avg_loss': 0.0,
-                    'profit_factor': 0.0,
+                    "total_trades": 0,
+                    "winning_trades": 0,
+                    "losing_trades": 0,
+                    "win_rate": 0.0,
+                    "avg_win": 0.0,
+                    "avg_loss": 0.0,
+                    "profit_factor": 0.0,
                 }
 
             # Group trades by symbol and calculate PnL per trade
@@ -172,25 +173,23 @@ class DataProcessor:
 
             # For now, return basic statistics
             total_trades = len(trades)
-            buy_trades = [t for t in trades if getattr(t, 'side', None) == 'BUY']
-            sell_trades = [t for t in trades if getattr(t, 'side', None) == 'SELL']
+            buy_trades = [t for t in trades if getattr(t, "side", None) == "BUY"]
+            sell_trades = [t for t in trades if getattr(t, "side", None) == "SELL"]
 
             return {
-                'total_trades': total_trades,
-                'buy_trades': len(buy_trades),
-                'sell_trades': len(sell_trades),
-                'winning_trades': 0,  # Would need position tracking
-                'losing_trades': 0,
-                'win_rate': 0.0,
-                'avg_win': 0.0,
-                'avg_loss': 0.0,
-                'profit_factor': 0.0,
+                "total_trades": total_trades,
+                "buy_trades": len(buy_trades),
+                "sell_trades": len(sell_trades),
+                "winning_trades": 0,  # Would need position tracking
+                "losing_trades": 0,
+                "win_rate": 0.0,
+                "avg_win": 0.0,
+                "avg_loss": 0.0,
+                "profit_factor": 0.0,
             }
 
     def calculate_performance_metrics(
-        self,
-        account_id: str,
-        date: Optional[datetime] = None
+        self, account_id: str, date: Optional[datetime] = None
     ) -> PerformanceMetric:
         """Calculate and store performance metrics for a given date."""
         if date is None:
@@ -204,7 +203,9 @@ class DataProcessor:
         returns_df = self.calculate_daily_returns(account_id, start_date, end_date)
 
         if returns_df.empty or len(returns_df) < 2:
-            logger.warning(f"Insufficient data for performance metrics for {account_id}")
+            logger.warning(
+                f"Insufficient data for performance metrics for {account_id}"
+            )
             # Return a default PerformanceMetric object to satisfy type checking
             return PerformanceMetric(
                 account_id=account_id,
@@ -223,9 +224,11 @@ class DataProcessor:
                 profit_factor=0.0,
             )
 
-        daily_returns = returns_df['daily_return'].dropna()
-        cumulative_return = returns_df['cumulative_return'].iloc[-1] if len(returns_df) > 0 else 0.0
-        equity = returns_df['equity']
+        daily_returns = returns_df["daily_return"].dropna()
+        cumulative_return = (
+            returns_df["cumulative_return"].iloc[-1] if len(returns_df) > 0 else 0.0
+        )
+        equity = returns_df["equity"]
 
         # Ensure we have valid Series for calculations
         if not isinstance(daily_returns, pd.Series):
@@ -262,17 +265,19 @@ class DataProcessor:
                 account_id=account_id,
                 date=date,
                 daily_return=daily_return,
-                cumulative_return=float(cumulative_return) if cumulative_return is not None else 0.0,
+                cumulative_return=float(cumulative_return)
+                if cumulative_return is not None
+                else 0.0,
                 sharpe_ratio=float(sharpe) if sharpe is not None else 0.0,
                 sortino_ratio=float(sortino) if sortino is not None else 0.0,
                 max_drawdown=float(max_drawdown) if max_drawdown is not None else 0.0,
-                total_trades=trade_stats.get('total_trades', 0),
-                winning_trades=trade_stats.get('winning_trades', 0),
-                losing_trades=trade_stats.get('losing_trades', 0),
-                win_rate=float(trade_stats.get('win_rate', 0.0)),
-                avg_win=float(trade_stats.get('avg_win', 0.0)),
-                avg_loss=float(trade_stats.get('avg_loss', 0.0)),
-                profit_factor=float(trade_stats.get('profit_factor', 0.0)),
+                total_trades=trade_stats.get("total_trades", 0),
+                winning_trades=trade_stats.get("winning_trades", 0),
+                losing_trades=trade_stats.get("losing_trades", 0),
+                win_rate=float(trade_stats.get("win_rate", 0.0)),
+                avg_win=float(trade_stats.get("avg_win", 0.0)),
+                avg_loss=float(trade_stats.get("avg_loss", 0.0)),
+                profit_factor=float(trade_stats.get("profit_factor", 0.0)),
             )
             db.add(metric)
             db.flush()
@@ -283,13 +288,15 @@ class DataProcessor:
         self,
         account_id: str,
         start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
     ) -> pd.DataFrame:
         """Get PnL history as DataFrame."""
         with get_db_context() as db:
-            query = db.query(PnLHistory).filter(
-                PnLHistory.account_id == account_id
-            ).order_by(PnLHistory.date)
+            query = (
+                db.query(PnLHistory)
+                .filter(PnLHistory.account_id == account_id)
+                .order_by(PnLHistory.date)
+            )
 
             if start_date:
                 query = query.filter(PnLHistory.date >= start_date)
@@ -303,14 +310,16 @@ class DataProcessor:
 
             data = []
             for record in pnl_records:
-                data.append({
-                    'date': record.date,
-                    'realized_pnl': record.realized_pnl,
-                    'unrealized_pnl': record.unrealized_pnl,
-                    'total_pnl': record.total_pnl,
-                    'net_liquidation': record.net_liquidation,
-                    'total_cash': record.total_cash,
-                })
+                data.append(
+                    {
+                        "date": record.date,
+                        "realized_pnl": record.realized_pnl,
+                        "unrealized_pnl": record.unrealized_pnl,
+                        "total_pnl": record.total_pnl,
+                        "net_liquidation": record.net_liquidation,
+                        "total_cash": record.total_cash,
+                    }
+                )
 
             return pd.DataFrame(data)
 
@@ -401,14 +410,22 @@ class DataProcessor:
         if df.empty or len(df) < 2:
             return pd.DataFrame()
 
-        df['date'] = pd.to_datetime(df['date'])
-        df = df.sort_values('date').drop_duplicates(subset=['date'], keep='last')
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.sort_values("date").drop_duplicates(subset=["date"], keep="last")
 
         # Calculate returns from net_liquidation
-        df['daily_return'] = df['net_liquidation'].pct_change()
-        df['cumulative_return'] = (1 + df['daily_return']).cumprod() - 1
+        df["daily_return"] = df["net_liquidation"].pct_change()
+        df["cumulative_return"] = (1 + df["daily_return"]).cumprod() - 1
 
-        return df[['date', 'daily_return', 'cumulative_return', 'net_liquidation', 'total_pnl']].dropna()
+        return df[
+            [
+                "date",
+                "daily_return",
+                "cumulative_return",
+                "net_liquidation",
+                "total_pnl",
+            ]
+        ].dropna()
 
     def get_comprehensive_metrics(
         self,
@@ -434,24 +451,26 @@ class DataProcessor:
 
         if df.empty or len(df) < 2:
             return {
-                'total_return': 0.0,
-                'annualized_return': 0.0,
-                'volatility': 0.0,
-                'sharpe_ratio': 0.0,
-                'sortino_ratio': 0.0,
-                'max_drawdown': 0.0,
-                'calmar_ratio': 0.0,
-                'var_95': 0.0,
-                'cvar_95': 0.0,
-                'data_points': len(df),
+                "total_return": 0.0,
+                "annualized_return": 0.0,
+                "volatility": 0.0,
+                "sharpe_ratio": 0.0,
+                "sortino_ratio": 0.0,
+                "max_drawdown": 0.0,
+                "calmar_ratio": 0.0,
+                "var_95": 0.0,
+                "cvar_95": 0.0,
+                "data_points": len(df),
             }
 
-        returns = df['daily_return'].dropna()
+        returns = df["daily_return"].dropna()
 
         # Total and annualized return
         total_return = float((1 + returns).prod() - 1)
-        days = (df['date'].iloc[-1] - df['date'].iloc[0]).days
-        annualized_return = float((1 + total_return) ** (365 / max(days, 1)) - 1) if days > 0 else 0
+        days = (df["date"].iloc[-1] - df["date"].iloc[0]).days
+        annualized_return = (
+            float((1 + total_return) ** (365 / max(days, 1)) - 1) if days > 0 else 0
+        )
 
         # Volatility
         volatility = float(returns.std() * np.sqrt(252))
@@ -463,26 +482,32 @@ class DataProcessor:
         sortino = self.calculate_sortino_ratio(returns)
 
         # Max drawdown
-        max_drawdown = self.calculate_max_drawdown(df['net_liquidation'])
+        max_drawdown = self.calculate_max_drawdown(df["net_liquidation"])
 
         # Calmar ratio
-        calmar = float(annualized_return / abs(max_drawdown)) if max_drawdown != 0 else 0
+        calmar = (
+            float(annualized_return / abs(max_drawdown)) if max_drawdown != 0 else 0
+        )
 
         # VaR and CVaR
         var_95 = float(np.percentile(returns, 5))
-        cvar_95 = float(returns[returns <= var_95].mean()) if len(returns[returns <= var_95]) > 0 else var_95
+        cvar_95 = (
+            float(returns[returns <= var_95].mean())
+            if len(returns[returns <= var_95]) > 0
+            else var_95
+        )
 
         return {
-            'total_return': total_return,
-            'annualized_return': annualized_return,
-            'volatility': volatility,
-            'sharpe_ratio': sharpe,
-            'sortino_ratio': sortino,
-            'max_drawdown': max_drawdown,
-            'calmar_ratio': calmar,
-            'var_95': var_95,
-            'cvar_95': cvar_95,
-            'data_points': len(df),
-            'period_start': df['date'].iloc[0].strftime('%Y-%m-%d'),
-            'period_end': df['date'].iloc[-1].strftime('%Y-%m-%d'),
+            "total_return": total_return,
+            "annualized_return": annualized_return,
+            "volatility": volatility,
+            "sharpe_ratio": sharpe,
+            "sortino_ratio": sortino,
+            "max_drawdown": max_drawdown,
+            "calmar_ratio": calmar,
+            "var_95": var_95,
+            "cvar_95": cvar_95,
+            "data_points": len(df),
+            "period_start": df["date"].iloc[0].strftime("%Y-%m-%d"),
+            "period_end": df["date"].iloc[-1].strftime("%Y-%m-%d"),
         }

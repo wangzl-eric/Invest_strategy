@@ -15,9 +15,11 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+from sqlalchemy import text
+
 from backend.database import get_db_context
 from backend.models import PnLHistory
-from sqlalchemy import text
+
 
 def migrate_pnl_history_table():
     """Add daily_return and cumulative_return columns to pnl_history table."""
@@ -34,8 +36,8 @@ def migrate_pnl_history_table():
         result = db.execute(text("PRAGMA table_info(pnl_history)"))
         columns = [row[1] for row in result.fetchall()]
 
-        has_daily_return = 'daily_return' in columns
-        has_cumulative_return = 'cumulative_return' in columns
+        has_daily_return = "daily_return" in columns
+        has_cumulative_return = "cumulative_return" in columns
 
         if has_daily_return and has_cumulative_return:
             print("✓ Columns daily_return and cumulative_return already exist")
@@ -49,7 +51,9 @@ def migrate_pnl_history_table():
 
         if not has_cumulative_return:
             print("Adding cumulative_return column...")
-            db.execute(text("ALTER TABLE pnl_history ADD COLUMN cumulative_return FLOAT"))
+            db.execute(
+                text("ALTER TABLE pnl_history ADD COLUMN cumulative_return FLOAT")
+            )
             print("✓ Added cumulative_return column")
 
         db.commit()
@@ -59,7 +63,7 @@ def migrate_pnl_history_table():
         result = db.execute(text("PRAGMA table_info(pnl_history)"))
         columns = [row[1] for row in result.fetchall()]
 
-        if 'mtm' not in columns:
+        if "mtm" not in columns:
             print("Adding mtm column...")
             db.execute(text("ALTER TABLE pnl_history ADD COLUMN mtm FLOAT DEFAULT 0.0"))
             db.commit()
@@ -87,6 +91,7 @@ def migrate_pnl_history_table():
 
         return True
 
+
 if __name__ == "__main__":
     try:
         success = migrate_pnl_history_table()
@@ -94,5 +99,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"✗ Migration failed: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

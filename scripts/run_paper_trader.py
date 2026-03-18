@@ -31,7 +31,13 @@ def parse_orders(s: str) -> list[OrderRequest]:
         if not part:
             continue
         sym, side, qty = part.split(":")
-        orders.append(OrderRequest(symbol=sym.strip().upper(), side=side.strip().upper(), quantity=float(qty)))
+        orders.append(
+            OrderRequest(
+                symbol=sym.strip().upper(),
+                side=side.strip().upper(),
+                quantity=float(qty),
+            )
+        )
     return orders
 
 
@@ -49,7 +55,9 @@ def parse_prices(s: str) -> dict[str, float]:
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("--orders", required=True, help="Comma-separated orders: SYM:BUY|SELL:QTY")
+    p.add_argument(
+        "--orders", required=True, help="Comma-separated orders: SYM:BUY|SELL:QTY"
+    )
     p.add_argument("--prices", required=True, help="Comma-separated prices: SYM=PX")
     args = p.parse_args()
 
@@ -57,7 +65,11 @@ def main() -> int:
     market = SimMarket(last_prices=prices)
     broker = SimBrokerImpl(market)
 
-    runner = ExecutionRunner(broker=broker, price_getter=lambda sym: market.get_price(sym) or 0.0, cfg=RunnerConfig(mode="sim"))
+    runner = ExecutionRunner(
+        broker=broker,
+        price_getter=lambda sym: market.get_price(sym) or 0.0,
+        cfg=RunnerConfig(mode="sim"),
+    )
     runner.submit_orders(parse_orders(args.orders))
     runner.poll_and_record_fills()
     print("Submitted orders and recorded fills to DB.")

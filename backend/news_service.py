@@ -8,12 +8,11 @@ Reference: https://www.interactivebrokers.com/en/trading/ib-api.php
 """
 
 import logging
-from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from backend.ibkr_client import IBKRClient, NEWS_PROVIDERS
+from backend.ibkr_client import NEWS_PROVIDERS, IBKRClient
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +117,7 @@ class NewsService:
             List of news articles
         """
         # Extract currencies from pair
-        base = pair[:3]
+        pair[:3]  # base currency (e.g., EUR from EURUSD)
         quote = pair[3:] if len(pair) > 3 else "USD"
 
         return await self.ib_client.get_news_articles(

@@ -1,9 +1,10 @@
 """API routes for backtesting functionality."""
 import logging
-from typing import Optional, Dict, Any
-from fastapi import APIRouter, HTTPException, Query, Body
-from pydantic import BaseModel
+from typing import Any, Dict, Optional
+
 import pandas as pd
+from fastapi import APIRouter, Body, HTTPException, Query
+from pydantic import BaseModel
 
 # Note: Vectorized backtest has been deprecated. Use BacktestEngine with Backtrader.
 from portfolio.blend import Signal, blend_signals
@@ -15,6 +16,7 @@ router = APIRouter()
 
 class BacktestRequest(BaseModel):
     """Request model for backtest endpoint."""
+
     strategy_name: str
     start_date: Optional[str] = None
     end_date: Optional[str] = None
@@ -24,6 +26,7 @@ class BacktestRequest(BaseModel):
 
 class SimpleMomentumStrategy:
     """Simple momentum strategy for testing."""
+
     name = "simple_momentum"
 
     def __init__(self, lookback: int = 60):
@@ -60,7 +63,7 @@ async def run_backtest(request: BacktestRequest = Body(...)):
             "strategy": request.strategy_name,
             "parameters": request.parameters,
             "note": "This endpoint requires historical data from the data lake. "
-                    "Use research/experiments/run_example_momentum.py for full backtesting."
+            "Use research/experiments/run_example_momentum.py for full backtesting.",
         }
 
     except Exception as e:
@@ -77,8 +80,12 @@ async def list_backtest_strategies():
                 "name": "simple_momentum",
                 "description": "Simple momentum strategy",
                 "parameters": {
-                    "lookback": {"type": "int", "default": 60, "description": "Lookback period in days"}
-                }
+                    "lookback": {
+                        "type": "int",
+                        "default": 60,
+                        "description": "Lookback period in days",
+                    }
+                },
             }
         ]
     }

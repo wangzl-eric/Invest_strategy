@@ -37,7 +37,9 @@ def _extract_series(results: dict, chart_name: str, series_name: str) -> pd.Data
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("--input", required=True, help="Path to *-summary.json or full backtest JSON")
+    p.add_argument(
+        "--input", required=True, help="Path to *-summary.json or full backtest JSON"
+    )
     p.add_argument("--outdir", required=True, help="Output directory for images")
     args = p.parse_args()
 

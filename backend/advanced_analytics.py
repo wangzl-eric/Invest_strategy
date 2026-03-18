@@ -1,9 +1,10 @@
 """Advanced analytics including ML models, factor analysis, and Monte Carlo simulations."""
 import logging
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Tuple
-from datetime import datetime, timedelta
 import scipy.optimize as sco
 from scipy import stats
 
@@ -17,7 +18,7 @@ class PortfolioOptimizer:
     def markowitz_optimization(
         returns: pd.DataFrame,
         risk_free_rate: float = 0.0,
-        target_return: Optional[float] = None
+        target_return: Optional[float] = None,
     ) -> Dict:
         """
         Markowitz mean-variance optimization.
@@ -33,11 +34,18 @@ class PortfolioOptimizer:
             def negative_sharpe(weights):
                 portfolio_return = np.dot(weights, mean_returns)
                 portfolio_std = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
-                sharpe = (portfolio_return - risk_free_rate) / portfolio_std if portfolio_std > 0 else 0
+                sharpe = (
+                    (portfolio_return - risk_free_rate) / portfolio_std
+                    if portfolio_std > 0
+                    else 0
+                )
                 return -sharpe
 
             # Constraints
-            constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})  # Weights sum to 1
+            constraints = {
+                "type": "eq",
+                "fun": lambda x: np.sum(x) - 1,
+            }  # Weights sum to 1
 
             # Bounds: weights between 0 and 1 (long-only)
             bounds = tuple((0, 1) for _ in range(n_assets))
@@ -49,9 +57,9 @@ class PortfolioOptimizer:
             result = sco.minimize(
                 negative_sharpe,
                 initial_weights,
-                method='SLSQP',
+                method="SLSQP",
                 bounds=bounds,
-                constraints=constraints
+                constraints=constraints,
             )
 
             if not result.success:
@@ -60,15 +68,21 @@ class PortfolioOptimizer:
 
             optimal_weights = result.x
             portfolio_return = np.dot(optimal_weights, mean_returns)
-            portfolio_std = np.sqrt(np.dot(optimal_weights.T, np.dot(cov_matrix, optimal_weights)))
-            sharpe = (portfolio_return - risk_free_rate) / portfolio_std if portfolio_std > 0 else 0
+            portfolio_std = np.sqrt(
+                np.dot(optimal_weights.T, np.dot(cov_matrix, optimal_weights))
+            )
+            sharpe = (
+                (portfolio_return - risk_free_rate) / portfolio_std
+                if portfolio_std > 0
+                else 0
+            )
 
             return {
                 "weights": dict(zip(returns.columns, optimal_weights)),
                 "expected_return": float(portfolio_return),
                 "expected_volatility": float(portfolio_std),
                 "sharpe_ratio": float(sharpe),
-                "method": "markowitz"
+                "method": "markowitz",
             }
         except Exception as e:
             logger.error(f"Error in Markowitz optimization: {e}", exc_info=True)
@@ -85,7 +99,11 @@ class PortfolioOptimizer:
 
             def risk_contribution(weights):
                 portfolio_vol = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
-                marginal_contrib = np.dot(cov_matrix, weights) / portfolio_vol if portfolio_vol > 0 else np.zeros(n_assets)
+                marginal_contrib = (
+                    np.dot(cov_matrix, weights) / portfolio_vol
+                    if portfolio_vol > 0
+                    else np.zeros(n_assets)
+                )
                 contrib = weights * marginal_contrib
                 return contrib
 
@@ -95,16 +113,16 @@ class PortfolioOptimizer:
                 target_contrib = np.ones(n_assets) / n_assets
                 return np.sum((contrib - target_contrib) ** 2)
 
-            constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
+            constraints = {"type": "eq", "fun": lambda x: np.sum(x) - 1}
             bounds = tuple((0, 1) for _ in range(n_assets))
             initial_weights = np.array([1.0 / n_assets] * n_assets)
 
             result = sco.minimize(
                 objective,
                 initial_weights,
-                method='SLSQP',
+                method="SLSQP",
                 bounds=bounds,
-                constraints=constraints
+                constraints=constraints,
             )
 
             if not result.success:
@@ -112,13 +130,15 @@ class PortfolioOptimizer:
 
             optimal_weights = result.x
             portfolio_return = np.dot(optimal_weights, returns.mean())
-            portfolio_std = np.sqrt(np.dot(optimal_weights.T, np.dot(cov_matrix, optimal_weights)))
+            portfolio_std = np.sqrt(
+                np.dot(optimal_weights.T, np.dot(cov_matrix, optimal_weights))
+            )
 
             return {
                 "weights": dict(zip(returns.columns, optimal_weights)),
                 "expected_return": float(portfolio_return),
                 "expected_volatility": float(portfolio_std),
-                "method": "risk_parity"
+                "method": "risk_parity",
             }
         except Exception as e:
             logger.error(f"Error in risk parity optimization: {e}", exc_info=True)
@@ -132,7 +152,7 @@ class FactorAnalyzer:
     def fama_french_analysis(
         portfolio_returns: pd.Series,
         market_returns: pd.Series,
-        risk_free_rate: pd.Series
+        risk_free_rate: pd.Series,
     ) -> Dict:
         """
         Fama-French three-factor model analysis.
@@ -175,8 +195,7 @@ class FactorAnalyzer:
 
     @staticmethod
     def style_analysis(
-        portfolio_returns: pd.Series,
-        style_returns: pd.DataFrame
+        portfolio_returns: pd.Series, style_returns: pd.DataFrame
     ) -> Dict:
         """
         Style analysis - determine portfolio style based on factor returns.
@@ -193,16 +212,16 @@ class FactorAnalyzer:
                 portfolio_pred = np.dot(style_returns.values, weights)
                 return np.sum((portfolio_returns.values - portfolio_pred) ** 2)
 
-            constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
+            constraints = {"type": "eq", "fun": lambda x: np.sum(x) - 1}
             bounds = tuple((0, 1) for _ in range(n_styles))
             initial_weights = np.array([1.0 / n_styles] * n_styles)
 
             result = sco.minimize(
                 objective,
                 initial_weights,
-                method='SLSQP',
+                method="SLSQP",
                 bounds=bounds,
-                constraints=constraints
+                constraints=constraints,
             )
 
             if not result.success:
@@ -214,7 +233,7 @@ class FactorAnalyzer:
             return {
                 "style_weights": dict(zip(style_returns.columns, style_weights)),
                 "tracking_error": float(tracking_error),
-                "r_squared": float(1 - (result.fun / np.var(portfolio_returns.values)))
+                "r_squared": float(1 - (result.fun / np.var(portfolio_returns.values))),
             }
         except Exception as e:
             logger.error(f"Error in style analysis: {e}", exc_info=True)
@@ -229,7 +248,7 @@ class MonteCarloSimulator:
         historical_returns: pd.Series,
         num_simulations: int = 10000,
         num_periods: int = 252,
-        initial_value: float = 100000
+        initial_value: float = 100000,
     ) -> Dict:
         """
         Monte Carlo simulation of portfolio returns.
@@ -242,9 +261,7 @@ class MonteCarloSimulator:
 
             # Generate random returns
             random_returns = np.random.normal(
-                mean_return,
-                std_return,
-                (num_simulations, num_periods)
+                mean_return, std_return, (num_simulations, num_periods)
             )
 
             # Calculate cumulative returns
@@ -274,7 +291,7 @@ class MonteCarloSimulator:
                     "p99": float(np.percentile(final_values, 99)),
                 },
                 "num_simulations": num_simulations,
-                "num_periods": num_periods
+                "num_periods": num_periods,
             }
         except Exception as e:
             logger.error(f"Error in Monte Carlo simulation: {e}", exc_info=True)
@@ -282,8 +299,7 @@ class MonteCarloSimulator:
 
     @staticmethod
     def stress_test(
-        portfolio_returns: pd.Series,
-        stress_scenarios: List[Dict[str, float]]
+        portfolio_returns: pd.Series, stress_scenarios: List[Dict[str, float]]
     ) -> Dict:
         """
         Stress testing with historical or hypothetical scenarios.
@@ -310,7 +326,7 @@ class MonteCarloSimulator:
                     "final_value": float(final_value),
                     "return_impact": float(shocked_returns.mean() * 252),
                     "volatility_impact": float(shocked_volatility * np.sqrt(252)),
-                    "drawdown_estimate": float(abs(market_shock))
+                    "drawdown_estimate": float(abs(market_shock)),
                 }
 
             return results
@@ -324,8 +340,7 @@ class AttributionAnalyzer:
 
     @staticmethod
     def sector_attribution(
-        positions: pd.DataFrame,
-        sector_returns: pd.DataFrame
+        positions: pd.DataFrame, sector_returns: pd.DataFrame
     ) -> Dict:
         """
         Analyze performance attribution by sector.
@@ -335,7 +350,7 @@ class AttributionAnalyzer:
         """
         try:
             # Group positions by sector
-            sector_allocation = positions.groupby('sector')['market_value'].sum()
+            sector_allocation = positions.groupby("sector")["market_value"].sum()
             total_value = sector_allocation.sum()
             sector_weights = sector_allocation / total_value
 
@@ -348,13 +363,15 @@ class AttributionAnalyzer:
                     sector_contributions[sector] = {
                         "weight": float(weight),
                         "return": float(sector_return),
-                        "contribution": float(contribution)
+                        "contribution": float(contribution),
                     }
 
             return {
                 "sector_allocations": dict(sector_weights),
                 "sector_contributions": sector_contributions,
-                "total_attributed": sum(c["contribution"] for c in sector_contributions.values())
+                "total_attributed": sum(
+                    c["contribution"] for c in sector_contributions.values()
+                ),
             }
         except Exception as e:
             logger.error(f"Error in sector attribution: {e}", exc_info=True)
@@ -362,8 +379,7 @@ class AttributionAnalyzer:
 
     @staticmethod
     def factor_attribution(
-        portfolio_returns: pd.Series,
-        factor_returns: pd.DataFrame
+        portfolio_returns: pd.Series, factor_returns: pd.DataFrame
     ) -> Dict:
         """
         Factor-based performance attribution.
@@ -386,17 +402,21 @@ class AttributionAnalyzer:
             # Calculate factor contributions
             factor_contributions = {}
             for i, factor_name in enumerate(factor_returns.columns):
-                factor_contribution = factor_loadings[i] * factor_returns[factor_name].mean()
+                factor_contribution = (
+                    factor_loadings[i] * factor_returns[factor_name].mean()
+                )
                 factor_contributions[factor_name] = {
                     "loading": float(factor_loadings[i]),
-                    "contribution": float(factor_contribution)
+                    "contribution": float(factor_contribution),
                 }
 
             return {
                 "alpha": float(alpha),
                 "alpha_annualized": float(alpha * 252),
                 "factor_contributions": factor_contributions,
-                "total_factor_contribution": sum(c["contribution"] for c in factor_contributions.values())
+                "total_factor_contribution": sum(
+                    c["contribution"] for c in factor_contributions.values()
+                ),
             }
         except Exception as e:
             logger.error(f"Error in factor attribution: {e}", exc_info=True)
@@ -407,10 +427,7 @@ class RegimeDetector:
     """Detect market regimes (bull/bear markets)."""
 
     @staticmethod
-    def detect_regime(
-        returns: pd.Series,
-        lookback_window: int = 60
-    ) -> Dict:
+    def detect_regime(returns: pd.Series, lookback_window: int = 60) -> Dict:
         """
         Detect current market regime based on recent returns.
 
@@ -433,7 +450,9 @@ class RegimeDetector:
                 "regime": regime,
                 "mean_return": float(mean_return),
                 "volatility": float(volatility),
-                "confidence": float(abs(mean_return) / volatility) if volatility > 0 else 0
+                "confidence": float(abs(mean_return) / volatility)
+                if volatility > 0
+                else 0,
             }
         except Exception as e:
             logger.error(f"Error in regime detection: {e}", exc_info=True)
@@ -444,10 +463,7 @@ class AnomalyDetector:
     """Detect anomalies in trading patterns."""
 
     @staticmethod
-    def detect_anomalies(
-        returns: pd.Series,
-        threshold_sigma: float = 3.0
-    ) -> Dict:
+    def detect_anomalies(returns: pd.Series, threshold_sigma: float = 3.0) -> Dict:
         """
         Detect anomalous returns using statistical methods.
 
@@ -458,7 +474,11 @@ class AnomalyDetector:
             std_return = returns.std()
 
             # Z-scores
-            z_scores = (returns - mean_return) / std_return if std_return > 0 else pd.Series([0] * len(returns))
+            z_scores = (
+                (returns - mean_return) / std_return
+                if std_return > 0
+                else pd.Series([0] * len(returns))
+            )
 
             # Find anomalies
             anomalies = abs(z_scores) > threshold_sigma
@@ -471,7 +491,7 @@ class AnomalyDetector:
                 "anomaly_values": [float(v) for v in anomaly_values],
                 "threshold_sigma": threshold_sigma,
                 "mean": float(mean_return),
-                "std": float(std_return)
+                "std": float(std_return),
             }
         except Exception as e:
             logger.error(f"Error in anomaly detection: {e}", exc_info=True)

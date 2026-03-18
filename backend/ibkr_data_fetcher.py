@@ -24,56 +24,108 @@ Usage:
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
 from pathlib import Path
+from typing import Dict, List, Optional
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
 # Default ticker lists
 DEFAULT_US_EQUITIES = [
     # Large Cap Tech
-    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA",
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "AMZN",
+    "NVDA",
+    "META",
+    "TSLA",
     # Financials
-    "JPM", "BAC", "WFC", "GS", "MS",
+    "JPM",
+    "BAC",
+    "WFC",
+    "GS",
+    "MS",
     # Healthcare
-    "JNJ", "UNH", "PFE", "MRK", "ABT",
+    "JNJ",
+    "UNH",
+    "PFE",
+    "MRK",
+    "ABT",
     # Consumer
-    "PG", "KO", "PEP", "COST", "WMT",
+    "PG",
+    "KO",
+    "PEP",
+    "COST",
+    "WMT",
     # Energy
-    "XOM", "CVX", "COP",
+    "XOM",
+    "CVX",
+    "COP",
     # Industrials
-    "BA", "CAT", "GE", "MMM",
+    "BA",
+    "CAT",
+    "GE",
+    "MMM",
     # More Tech
-    "NFLX", "ADBE", "CRM", "ORCL", "INTC",
+    "NFLX",
+    "ADBE",
+    "CRM",
+    "ORCL",
+    "INTC",
     # ETFs
-    "SPY", "QQQ", "IWM", "DIA",
+    "SPY",
+    "QQQ",
+    "IWM",
+    "DIA",
 ]
 
 DEFAULT_FOREX_PAIRS = [
     # Major pairs
-    "EURUSD", "GBPUSD", "USDJPY", "USDCAD", "USDCHF", "AUDUSD", "NZDUSD",
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "USDCAD",
+    "USDCHF",
+    "AUDUSD",
+    "NZDUSD",
     # Minor pairs
-    "EURGBP", "EURJPY", "GBPJPY", "EURCHF", "AUDJPY", "CADJPY",
+    "EURGBP",
+    "EURJPY",
+    "GBPJPY",
+    "EURCHF",
+    "AUDJPY",
+    "CADJPY",
 ]
 
 DEFAULT_FUTURES = [
     # Equity Index
-    "ES", "NQ", "YM", "RTY",
+    "ES",
+    "NQ",
+    "YM",
+    "RTY",
     # Energy
-    "CL", "BZ", "NG",
+    "CL",
+    "BZ",
+    "NG",
     # Metals
-    "GC", "SI", "HG",
+    "GC",
+    "SI",
+    "HG",
     # Bonds
-    "ZB", "ZN", "ZF", "ZT",
+    "ZB",
+    "ZN",
+    "ZF",
+    "ZT",
 ]
 
 
 # ---------------------------------------------------------------------------
 # IBKR Client Wrapper
 # ---------------------------------------------------------------------------
+
 
 class IBKRDataFetcher:
     """Wrapper for fetching data from IBKR."""
@@ -84,6 +136,7 @@ class IBKRDataFetcher:
     async def _get_client(self):
         if self._client is None:
             from backend.ibkr_client import IBKRClient
+
             self._client = IBKRClient()
         return self._client
 
@@ -92,7 +145,7 @@ class IBKRDataFetcher:
         symbols: List[str],
         duration: str = "1 Y",
         interval: str = "1 day",
-        exchange: str = "SMART"
+        exchange: str = "SMART",
     ) -> Dict[str, pd.DataFrame]:
         """Fetch equity data.
 
@@ -119,7 +172,7 @@ class IBKRDataFetcher:
                     sec_type="STK",
                     exchange=exchange,
                     duration=duration,
-                    interval=interval
+                    interval=interval,
                 )
 
                 if not df.empty:
@@ -137,10 +190,7 @@ class IBKRDataFetcher:
         return results
 
     async def fetch_forex(
-        self,
-        pairs: List[str],
-        duration: str = "1 Y",
-        interval: str = "1 day"
+        self, pairs: List[str], duration: str = "1 Y", interval: str = "1 day"
     ) -> Dict[str, pd.DataFrame]:
         """Fetch forex data.
 
@@ -166,7 +216,7 @@ class IBKRDataFetcher:
                     sec_type="CASH",
                     exchange="IDEALPRO",
                     duration=duration,
-                    interval=interval
+                    interval=interval,
                 )
 
                 if not df.empty:
@@ -185,7 +235,7 @@ class IBKRDataFetcher:
         symbols: List[str],
         duration: str = "1 Y",
         interval: str = "1 day",
-        exchange: str = "CME"
+        exchange: str = "CME",
     ) -> Dict[str, pd.DataFrame]:
         """Fetch futures data.
 
@@ -212,7 +262,7 @@ class IBKRDataFetcher:
                     sec_type="FUT",
                     exchange=exchange,
                     duration=duration,
-                    interval=interval
+                    interval=interval,
                 )
 
                 if not df.empty:
@@ -227,9 +277,7 @@ class IBKRDataFetcher:
         return results
 
     async def fetch_options_chain(
-        self,
-        underlying: str,
-        exchange: str = "SMART"
+        self, underlying: str, exchange: str = "SMART"
     ) -> Dict:
         """Fetch options chain for an underlying.
 
@@ -258,11 +306,12 @@ class IBKRDataFetcher:
 # Convenience Functions
 # ---------------------------------------------------------------------------
 
+
 async def fetch_equities(
     symbols: List[str],
     duration: str = "1 Y",
     interval: str = "1 day",
-    exchange: str = "SMART"
+    exchange: str = "SMART",
 ) -> Dict[str, pd.DataFrame]:
     """Fetch equity data from IBKR.
 
@@ -276,9 +325,7 @@ async def fetch_equities(
 
 
 async def fetch_forex(
-    pairs: List[str],
-    duration: str = "1 Y",
-    interval: str = "1 day"
+    pairs: List[str], duration: str = "1 Y", interval: str = "1 day"
 ) -> Dict[str, pd.DataFrame]:
     """Fetch forex data from IBKR.
 
@@ -295,7 +342,7 @@ async def fetch_futures(
     symbols: List[str],
     duration: str = "1 Y",
     interval: str = "1 day",
-    exchange: str = "CME"
+    exchange: str = "CME",
 ) -> Dict[str, pd.DataFrame]:
     """Fetch futures data from IBKR.
 
@@ -308,10 +355,7 @@ async def fetch_futures(
         await fetcher.disconnect()
 
 
-async def fetch_options_chain(
-    underlying: str,
-    exchange: str = "SMART"
-) -> Dict:
+async def fetch_options_chain(underlying: str, exchange: str = "SMART") -> Dict:
     """Fetch options chain from IBKR."""
     fetcher = IBKRDataFetcher()
     try:
@@ -324,7 +368,7 @@ async def batch_fetch(
     asset_class: str,
     symbols: Optional[List[str]] = None,
     duration: str = "1 Y",
-    interval: str = "1 day"
+    interval: str = "1 day",
 ) -> Dict[str, pd.DataFrame]:
     """Batch fetch data for an asset class.
 
@@ -362,6 +406,7 @@ async def batch_fetch(
 # Data Validation
 # ---------------------------------------------------------------------------
 
+
 class DataQualityReport:
     """Data quality report for a DataFrame."""
 
@@ -384,70 +429,85 @@ class DataQualityReport:
             "rows": len(self.df),
             "columns": list(self.df.columns),
             "date_range": {
-                "start": str(self.df['date'].min()) if 'date' in self.df.columns else None,
-                "end": str(self.df['date'].max()) if 'date' in self.df.columns else None,
-            }
+                "start": str(self.df["date"].min())
+                if "date" in self.df.columns
+                else None,
+                "end": str(self.df["date"].max())
+                if "date" in self.df.columns
+                else None,
+            },
         }
 
         # Check for required columns
-        required = ['date', 'open', 'high', 'low', 'close']
+        required = ["date", "open", "high", "low", "close"]
         for col in required:
             if col not in self.df.columns:
                 self.issues.append(f"Missing required column: {col}")
 
-        if 'date' not in self.df.columns:
+        if "date" not in self.df.columns:
             return
 
         # Check for missing values
-        for col in ['open', 'high', 'low', 'close', 'volume']:
+        for col in ["open", "high", "low", "close", "volume"]:
             if col in self.df.columns:
                 missing = self.df[col].isna().sum()
                 if missing > 0:
                     pct = (missing / len(self.df)) * 100
                     if pct > 10:
-                        self.issues.append(f"Column '{col}' has {missing} missing values ({pct:.1f}%)")
+                        self.issues.append(
+                            f"Column '{col}' has {missing} missing values ({pct:.1f}%)"
+                        )
                     else:
-                        self.warnings.append(f"Column '{col}' has {missing} missing values ({pct:.1f}%)")
+                        self.warnings.append(
+                            f"Column '{col}' has {missing} missing values ({pct:.1f}%)"
+                        )
 
         # Check for negative prices
-        for col in ['open', 'high', 'low', 'close']:
+        for col in ["open", "high", "low", "close"]:
             if col in self.df.columns:
                 neg_count = (self.df[col] < 0).sum()
                 if neg_count > 0:
-                    self.issues.append(f"Column '{col}' has {neg_count} negative values")
+                    self.issues.append(
+                        f"Column '{col}' has {neg_count} negative values"
+                    )
 
         # Check for negative volume
-        if 'volume' in self.df.columns:
-            neg_vol = (self.df['volume'] < 0).sum()
+        if "volume" in self.df.columns:
+            neg_vol = (self.df["volume"] < 0).sum()
             if neg_vol > 0:
                 self.issues.append(f"Column 'volume' has {neg_vol} negative values")
 
         # Check for high/low sanity
-        if all(col in self.df.columns for col in ['high', 'low', 'open', 'close']):
-            invalid_hl = ((self.df['high'] < self.df['low'])).sum()
+        if all(col in self.df.columns for col in ["high", "low", "open", "close"]):
+            invalid_hl = ((self.df["high"] < self.df["low"])).sum()
             if invalid_hl > 0:
                 self.issues.append(f"High < Low in {invalid_hl} rows")
 
-            invalid_h = ((self.df['high'] < self.df['open']) | (self.df['high'] < self.df['close'])).sum()
+            invalid_h = (
+                (self.df["high"] < self.df["open"])
+                | (self.df["high"] < self.df["close"])
+            ).sum()
             if invalid_h > 0:
                 self.warnings.append(f"High < Open or Close in {invalid_h} rows")
 
-            invalid_l = ((self.df['low'] > self.df['open']) | (self.df['low'] > self.df['close'])).sum()
+            invalid_l = (
+                (self.df["low"] > self.df["open"]) | (self.df["low"] > self.df["close"])
+            ).sum()
             if invalid_l > 0:
                 self.warnings.append(f"Low > Open or Close in {invalid_l} rows")
 
         # Check for gaps in data
-        if 'date' in self.df.columns:
-            dates = pd.to_datetime(self.df['date'])
+        if "date" in self.df.columns:
+            dates = pd.to_datetime(self.df["date"])
             date_diff = dates.diff().max()
-            if date_diff and hasattr(date_diff, 'days'):
+            if date_diff and hasattr(date_diff, "days"):
                 max_gap = date_diff.days
                 if max_gap > 7:
                     self.warnings.append(f"Maximum gap in data: {max_gap} days")
 
         # Check for duplicates
-        if 'date' in self.df.columns and 'ticker' in self.df.columns:
-            dups = self.df.duplicated(subset=['date', 'ticker']).sum()
+        if "date" in self.df.columns and "ticker" in self.df.columns:
+            dups = self.df.duplicated(subset=["date", "ticker"]).sum()
             if dups > 0:
                 self.warnings.append(f"Found {dups} duplicate date/ticker combinations")
 
@@ -461,7 +521,7 @@ class DataQualityReport:
             "valid": self.is_valid(),
             "issues": self.issues,
             "warnings": self.warnings,
-            "stats": self.stats
+            "stats": self.stats,
         }
 
 
@@ -495,16 +555,16 @@ def validate_and_clean(df: pd.DataFrame) -> pd.DataFrame:
     cleaned = df.copy()
 
     # Remove rows with all NaN OHLC
-    if all(col in cleaned.columns for col in ['open', 'high', 'low', 'close']):
-        cleaned = cleaned.dropna(subset=['open', 'high', 'low', 'close'], how='all')
+    if all(col in cleaned.columns for col in ["open", "high", "low", "close"]):
+        cleaned = cleaned.dropna(subset=["open", "high", "low", "close"], how="all")
 
     # Remove duplicates
-    if 'date' in cleaned.columns and 'ticker' in cleaned.columns:
-        cleaned = cleaned.drop_duplicates(subset=['date', 'ticker'], keep='last')
+    if "date" in cleaned.columns and "ticker" in cleaned.columns:
+        cleaned = cleaned.drop_duplicates(subset=["date", "ticker"], keep="last")
 
     # Sort by date
-    if 'date' in cleaned.columns:
-        cleaned = cleaned.sort_values('date').reset_index(drop=True)
+    if "date" in cleaned.columns:
+        cleaned = cleaned.sort_values("date").reset_index(drop=True)
 
     return cleaned
 
@@ -513,10 +573,8 @@ def validate_and_clean(df: pd.DataFrame) -> pd.DataFrame:
 # Incremental Updates
 # ---------------------------------------------------------------------------
 
-def get_last_date_for_ticker(
-    parquet_path: Path,
-    ticker: str
-) -> Optional[datetime]:
+
+def get_last_date_for_ticker(parquet_path: Path, ticker: str) -> Optional[datetime]:
     """Get the last date for a specific ticker in a parquet file.
 
     Args:
@@ -531,10 +589,10 @@ def get_last_date_for_ticker(
 
     try:
         df = pd.read_parquet(parquet_path)
-        if 'ticker' in df.columns and 'date' in df.columns:
-            ticker_data = df[df['ticker'] == ticker]
+        if "ticker" in df.columns and "date" in df.columns:
+            ticker_data = df[df["ticker"] == ticker]
             if not ticker_data.empty:
-                last_date = ticker_data['date'].max()
+                last_date = ticker_data["date"].max()
                 return pd.to_datetime(last_date)
     except Exception as e:
         logger.error(f"Error reading parquet: {e}")
@@ -545,6 +603,7 @@ def get_last_date_for_ticker(
 def get_ibkr_data_path(asset_class: str) -> Path:
     """Get the parquet file path for an IBKR asset class."""
     from backend.market_data_store import _IBKR_ASSET_FILES
+
     return _IBKR_ASSET_FILES.get(asset_class)
 
 
@@ -552,7 +611,7 @@ async def incremental_update(
     asset_class: str,
     symbols: Optional[List[str]] = None,
     interval: str = "1 day",
-    force_refresh: bool = False
+    force_refresh: bool = False,
 ) -> Dict[str, int]:
     """Incrementally update data for an asset class.
 
@@ -634,7 +693,7 @@ async def incremental_update(
         if not force_refresh:
             last_date = get_last_date_for_ticker(parquet_path, symbol)
             if last_date:
-                df = df[pd.to_datetime(df['date']) > last_date]
+                df = df[pd.to_datetime(df["date"]) > last_date]
 
         new_rows[symbol] = len(df)
 
@@ -644,8 +703,10 @@ async def incremental_update(
             if parquet_path.exists():
                 existing = pd.read_parquet(parquet_path)
                 combined = pd.concat([existing, df], ignore_index=True)
-                combined = combined.drop_duplicates(subset=['date', 'ticker'], keep='last')
-                combined = combined.sort_values('date').reset_index(drop=True)
+                combined = combined.drop_duplicates(
+                    subset=["date", "ticker"], keep="last"
+                )
+                combined = combined.sort_values("date").reset_index(drop=True)
                 combined.to_parquet(parquet_path, index=False)
             else:
                 df.to_parquet(parquet_path, index=False)
@@ -657,10 +718,9 @@ async def incremental_update(
 # Sync wrapper (for non-async use)
 # ---------------------------------------------------------------------------
 
+
 def fetch_equities_sync(
-    symbols: List[str],
-    duration: str = "1 Y",
-    interval: str = "1 day"
+    symbols: List[str], duration: str = "1 Y", interval: str = "1 day"
 ) -> Dict[str, pd.DataFrame]:
     """Synchronous version of fetch_equities."""
     try:
@@ -674,9 +734,7 @@ def fetch_equities_sync(
 
 
 def fetch_forex_sync(
-    pairs: List[str],
-    duration: str = "1 Y",
-    interval: str = "1 day"
+    pairs: List[str], duration: str = "1 Y", interval: str = "1 day"
 ) -> Dict[str, pd.DataFrame]:
     """Synchronous version of fetch_forex."""
     try:
@@ -699,7 +757,9 @@ if __name__ == "__main__":
 
     async def main():
         if len(sys.argv) < 3:
-            print("Usage: python -m backend.ibkr_data_fetcher <equities|forex|futures> <duration>")
+            print(
+                "Usage: python -m backend.ibkr_data_fetcher <equities|forex|futures> <duration>"
+            )
             print("Example: python -m backend.ibkr_data_fetcher equities '1 Y'")
             sys.exit(1)
 

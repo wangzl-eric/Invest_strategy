@@ -2,12 +2,13 @@
 import json
 import logging
 import smtplib
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from typing import Optional
+
 import aiohttp
 
-from backend.models import AlertChannel, Alert, AlertRule
+from backend.models import Alert, AlertChannel, AlertRule
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,9 @@ logger = logging.getLogger(__name__)
 class NotificationService:
     """Handles sending notifications via various channels."""
 
-    async def send_notification(self, channel: AlertChannel, alert: Alert, rule: AlertRule):
+    async def send_notification(
+        self, channel: AlertChannel, alert: Alert, rule: AlertRule
+    ):
         """Send a notification via the specified channel."""
         try:
             config = json.loads(channel.config_json)
@@ -23,6 +26,7 @@ class NotificationService:
             if channel.channel_type == "EMAIL":
                 # Run email in thread pool since it's synchronous
                 import asyncio
+
                 await asyncio.get_event_loop().run_in_executor(
                     None, self._send_email, channel, alert, rule, config
                 )
@@ -39,10 +43,15 @@ class NotificationService:
             else:
                 logger.warning(f"Unknown channel type: {channel.channel_type}")
         except Exception as e:
-            logger.error(f"Error sending notification via {channel.channel_type}: {e}", exc_info=True)
+            logger.error(
+                f"Error sending notification via {channel.channel_type}: {e}",
+                exc_info=True,
+            )
             raise
 
-    def _send_email(self, channel: AlertChannel, alert: Alert, rule: AlertRule, config: dict):
+    def _send_email(
+        self, channel: AlertChannel, alert: Alert, rule: AlertRule, config: dict
+    ):
         """Send email notification."""
         to_email = config.get("to")
         smtp_server = config.get("smtp_server", "smtp.gmail.com")
@@ -55,9 +64,9 @@ class NotificationService:
             raise ValueError("Email 'to' address not configured")
 
         msg = MIMEMultipart()
-        msg['From'] = from_email
-        msg['To'] = to_email
-        msg['Subject'] = f"Alert: {rule.name} - {alert.severity}"
+        msg["From"] = from_email
+        msg["To"] = to_email
+        msg["Subject"] = f"Alert: {rule.name} - {alert.severity}"
 
         body = f"""
         Alert: {rule.name}
@@ -69,7 +78,7 @@ class NotificationService:
         Time: {alert.created_at}
         """
 
-        msg.attach(MIMEText(body, 'plain'))
+        msg.attach(MIMEText(body, "plain"))
 
         try:
             server = smtplib.SMTP(smtp_server, smtp_port)
@@ -83,7 +92,9 @@ class NotificationService:
             logger.error(f"Error sending email: {e}")
             raise
 
-    async def _send_sms(self, channel: AlertChannel, alert: Alert, rule: AlertRule, config: dict):
+    async def _send_sms(
+        self, channel: AlertChannel, alert: Alert, rule: AlertRule, config: dict
+    ):
         """Send SMS via Twilio."""
         phone_number = config.get("phone_number")
         account_sid = config.get("twilio_account_sid")
@@ -95,15 +106,14 @@ class NotificationService:
 
         try:
             from twilio.rest import Client
+
             client = Client(account_sid, auth_token)
 
-            message = f"Alert: {rule.name}\n{alert.message}\nAccount: {alert.account_id}"
-
-            client.messages.create(
-                body=message,
-                from_=from_number,
-                to=phone_number
+            message = (
+                f"Alert: {rule.name}\n{alert.message}\nAccount: {alert.account_id}"
             )
+
+            client.messages.create(body=message, from_=from_number, to=phone_number)
             logger.info(f"SMS sent to {phone_number}")
         except ImportError:
             logger.error("Twilio library not installed")
@@ -112,7 +122,9 @@ class NotificationService:
             logger.error(f"Error sending SMS: {e}")
             raise
 
-    async def _send_slack(self, channel: AlertChannel, alert: Alert, rule: AlertRule, config: dict):
+    async def _send_slack(
+        self, channel: AlertChannel, alert: Alert, rule: AlertRule, config: dict
+    ):
         """Send Slack webhook notification."""
         webhook_url = config.get("webhook_url")
 
@@ -124,10 +136,7 @@ class NotificationService:
             "blocks": [
                 {
                     "type": "header",
-                    "text": {
-                        "type": "plain_text",
-                        "text": f"Alert: {rule.name}"
-                    }
+                    "text": {"type": "plain_text", "text": f"Alert: {rule.name}"},
                 },
                 {
                     "type": "section",
@@ -135,10 +144,10 @@ class NotificationService:
                         {"type": "mrkdwn", "text": f"*Severity:*\n{alert.severity}"},
                         {"type": "mrkdwn", "text": f"*Account:*\n{alert.account_id}"},
                         {"type": "mrkdwn", "text": f"*Message:*\n{alert.message}"},
-                        {"type": "mrkdwn", "text": f"*Time:*\n{alert.created_at}"}
-                    ]
-                }
-            ]
+                        {"type": "mrkdwn", "text": f"*Time:*\n{alert.created_at}"},
+                    ],
+                },
+            ],
         }
 
         async with aiohttp.ClientSession() as session:
@@ -147,7 +156,9 @@ class NotificationService:
                     raise Exception(f"Slack webhook returned {response.status}")
                 logger.info("Slack notification sent")
 
-    async def _send_teams(self, channel: AlertChannel, alert: Alert, rule: AlertRule, config: dict):
+    async def _send_teams(
+        self, channel: AlertChannel, alert: Alert, rule: AlertRule, config: dict
+    ):
         """Send Microsoft Teams webhook notification."""
         webhook_url = config.get("webhook_url")
 
@@ -158,7 +169,9 @@ class NotificationService:
             "@type": "MessageCard",
             "@context": "https://schema.org/extensions",
             "summary": f"Alert: {rule.name}",
-            "themeColor": "FF0000" if alert.severity in ["ERROR", "CRITICAL"] else "FFA500",
+            "themeColor": "FF0000"
+            if alert.severity in ["ERROR", "CRITICAL"]
+            else "FFA500",
             "title": f"Alert: {rule.name}",
             "sections": [
                 {
@@ -167,10 +180,10 @@ class NotificationService:
                         {"name": "Severity", "value": alert.severity},
                         {"name": "Account", "value": alert.account_id},
                         {"name": "Message", "value": alert.message},
-                        {"name": "Time", "value": str(alert.created_at)}
-                    ]
+                        {"name": "Time", "value": str(alert.created_at)},
+                    ],
                 }
-            ]
+            ],
         }
 
         async with aiohttp.ClientSession() as session:
@@ -179,7 +192,9 @@ class NotificationService:
                     raise Exception(f"Teams webhook returned {response.status}")
                 logger.info("Teams notification sent")
 
-    async def _send_webhook(self, channel: AlertChannel, alert: Alert, rule: AlertRule, config: dict):
+    async def _send_webhook(
+        self, channel: AlertChannel, alert: Alert, rule: AlertRule, config: dict
+    ):
         """Send generic webhook notification."""
         url = config.get("url")
         method = config.get("method", "POST")
@@ -195,16 +210,20 @@ class NotificationService:
             "severity": alert.severity,
             "message": alert.message,
             "created_at": alert.created_at.isoformat(),
-            "context": json.loads(alert.context_json) if alert.context_json else {}
+            "context": json.loads(alert.context_json) if alert.context_json else {},
         }
 
         async with aiohttp.ClientSession() as session:
-            async with session.request(method, url, json=payload, headers=headers) as response:
+            async with session.request(
+                method, url, json=payload, headers=headers
+            ) as response:
                 if response.status not in [200, 201, 204]:
                     raise Exception(f"Webhook returned {response.status}")
                 logger.info(f"Webhook notification sent to {url}")
 
-    async def _send_push(self, channel: AlertChannel, alert: Alert, rule: AlertRule, config: dict):
+    async def _send_push(
+        self, channel: AlertChannel, alert: Alert, rule: AlertRule, config: dict
+    ):
         """Send push notification (web push)."""
         # This would require web push library and service worker setup
         # For now, just log

@@ -1,14 +1,20 @@
 """Unit tests for portfolio/optimizer.py."""
-import pytest
-import pandas as pd
 import numpy as np
-from portfolio.optimizer import mean_variance_optimize, weights_from_alpha, OptimizationConfig
+import pandas as pd
+import pytest
+
+from portfolio.optimizer import (
+    OptimizationConfig,
+    mean_variance_optimize,
+    weights_from_alpha,
+)
 
 
 def has_cvxpy():
     """Check if cvxpy is installed."""
     try:
         import cvxpy
+
         return True
     except ImportError:
         return False
@@ -21,22 +27,21 @@ class TestMeanVarianceOptimize:
     @pytest.mark.skipif(not has_cvxpy(), reason="cvxpy not installed")
     def test_mean_variance_optimize_basic(self):
         """Test basic mean-variance optimization."""
-        assets = ['AAPL', 'GOOGL', 'MSFT']
+        assets = ["AAPL", "GOOGL", "MSFT"]
         expected_returns = pd.Series([0.001, 0.0008, 0.0012], index=assets)
 
         # Create a simple covariance matrix
         cov = pd.DataFrame(
-            [[0.0004, 0.0002, 0.0001],
-             [0.0002, 0.0005, 0.00015],
-             [0.0001, 0.00015, 0.0003]],
+            [
+                [0.0004, 0.0002, 0.0001],
+                [0.0002, 0.0005, 0.00015],
+                [0.0001, 0.00015, 0.0003],
+            ],
             index=assets,
-            columns=assets
+            columns=assets,
         )
 
-        weights = mean_variance_optimize(
-            expected_returns=expected_returns,
-            cov=cov
-        )
+        weights = mean_variance_optimize(expected_returns=expected_returns, cov=cov)
 
         assert isinstance(weights, pd.Series)
         assert len(weights) == 3
@@ -51,19 +56,13 @@ class TestMeanVarianceOptimize:
     @pytest.mark.skipif(not has_cvxpy(), reason="cvxpy not installed")
     def test_mean_variance_optimize_with_prev_weights(self):
         """Test optimization with previous weights (turnover penalty)."""
-        assets = ['AAPL', 'GOOGL', 'MSFT']
+        assets = ["AAPL", "GOOGL", "MSFT"]
         expected_returns = pd.Series([0.001, 0.0008, 0.0012], index=assets)
-        cov = pd.DataFrame(
-            np.eye(3) * 0.0004,
-            index=assets,
-            columns=assets
-        )
+        cov = pd.DataFrame(np.eye(3) * 0.0004, index=assets, columns=assets)
         prev_weights = pd.Series([0.05, 0.03, 0.02], index=assets)
 
         weights = mean_variance_optimize(
-            expected_returns=expected_returns,
-            cov=cov,
-            prev_weights=prev_weights
+            expected_returns=expected_returns, cov=cov, prev_weights=prev_weights
         )
 
         assert isinstance(weights, pd.Series)
@@ -73,25 +72,16 @@ class TestMeanVarianceOptimize:
     @pytest.mark.skipif(not has_cvxpy(), reason="cvxpy not installed")
     def test_mean_variance_optimize_with_custom_config(self):
         """Test optimization with custom configuration."""
-        assets = ['AAPL', 'GOOGL']
+        assets = ["AAPL", "GOOGL"]
         expected_returns = pd.Series([0.001, 0.0008], index=assets)
         cov = pd.DataFrame(
-            [[0.0004, 0.0002],
-             [0.0002, 0.0005]],
-            index=assets,
-            columns=assets
+            [[0.0004, 0.0002], [0.0002, 0.0005]], index=assets, columns=assets
         )
 
-        cfg = OptimizationConfig(
-            max_weight=0.2,
-            min_weight=-0.05,
-            risk_aversion=2.0
-        )
+        cfg = OptimizationConfig(max_weight=0.2, min_weight=-0.05, risk_aversion=2.0)
 
         weights = mean_variance_optimize(
-            expected_returns=expected_returns,
-            cov=cov,
-            cfg=cfg
+            expected_returns=expected_returns, cov=cov, cfg=cfg
         )
 
         assert abs(weights.sum() - 1.0) < 1e-6
@@ -102,20 +92,14 @@ class TestMeanVarianceOptimize:
     @pytest.mark.skipif(not has_cvxpy(), reason="cvxpy not installed")
     def test_mean_variance_optimize_with_gross_constraint(self):
         """Test optimization with gross notional constraint."""
-        assets = ['AAPL', 'GOOGL', 'MSFT']
+        assets = ["AAPL", "GOOGL", "MSFT"]
         expected_returns = pd.Series([0.001, 0.0008, 0.0012], index=assets)
-        cov = pd.DataFrame(
-            np.eye(3) * 0.0004,
-            index=assets,
-            columns=assets
-        )
+        cov = pd.DataFrame(np.eye(3) * 0.0004, index=assets, columns=assets)
 
         cfg = OptimizationConfig(target_gross=1.5)  # 150% gross exposure
 
         weights = mean_variance_optimize(
-            expected_returns=expected_returns,
-            cov=cov,
-            cfg=cfg
+            expected_returns=expected_returns, cov=cov, cfg=cfg
         )
 
         # Gross notional should be <= 1.5
@@ -134,9 +118,7 @@ class TestWeightsFromAlpha:
         alpha = pd.Series([0.5, 0.3, -0.2, 0.1], index=assets)
 
         weights = weights_from_alpha(
-            alpha=alpha,
-            returns=sample_returns_data,
-            cov_method='sample'
+            alpha=alpha, returns=sample_returns_data, cov_method="sample"
         )
 
         assert isinstance(weights, pd.Series)
@@ -151,9 +133,7 @@ class TestWeightsFromAlpha:
         alpha = pd.Series([0.5, 0.3, -0.2, 0.1], index=assets)
 
         weights = weights_from_alpha(
-            alpha=alpha,
-            returns=sample_returns_data,
-            cov_method='ledoit_wolf'
+            alpha=alpha, returns=sample_returns_data, cov_method="ledoit_wolf"
         )
 
         assert isinstance(weights, pd.Series)
@@ -166,7 +146,5 @@ class TestWeightsFromAlpha:
 
         with pytest.raises(ValueError, match="Unknown cov_method"):
             weights_from_alpha(
-                alpha=alpha,
-                returns=sample_returns_data,
-                cov_method='invalid_method'
+                alpha=alpha, returns=sample_returns_data, cov_method="invalid_method"
             )

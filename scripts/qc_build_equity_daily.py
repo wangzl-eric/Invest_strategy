@@ -43,7 +43,11 @@ def build_equity_daily(
 ) -> None:
     symbol = symbol.upper()
     connector = StooqBarsConnector()
-    df = connector.fetch_bars(BarsRequest(symbols=[symbol], start=start, end=end, venue="STOOQ", currency="USD"))
+    df = connector.fetch_bars(
+        BarsRequest(
+            symbols=[symbol], start=start, end=end, venue="STOOQ", currency="USD"
+        )
+    )
     if df.empty:
         raise SystemExit(f"No data returned for {symbol} {start}..{end}")
 
@@ -111,7 +115,9 @@ def main() -> int:
     p.add_argument("--end", required=True, help="YYYY-MM-DD")
     args = p.parse_args()
 
-    build_equity_daily(out_data_root=Path(args.out), symbol=args.symbol, start=args.start, end=args.end)
+    build_equity_daily(
+        out_data_root=Path(args.out), symbol=args.symbol, start=args.start, end=args.end
+    )
     return 0
 
 

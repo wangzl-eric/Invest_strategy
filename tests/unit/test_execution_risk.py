@@ -1,7 +1,9 @@
 """Unit tests for execution/risk.py."""
-import pytest
 import os
-from execution.risk import RiskEngine, RiskLimits, RiskState, RiskDecision
+
+import pytest
+
+from execution.risk import RiskDecision, RiskEngine, RiskLimits, RiskState
 from execution.types import OrderRequest
 
 
@@ -28,8 +30,7 @@ class TestRiskEngine:
     def test_risk_engine_custom_limits(self):
         """Test RiskEngine with custom limits."""
         limits = RiskLimits(
-            max_position_notional=100_000.0,
-            max_gross_notional=500_000.0
+            max_position_notional=100_000.0, max_gross_notional=500_000.0
         )
         engine = RiskEngine(limits=limits)
         assert engine.limits.max_position_notional == 100_000.0
@@ -39,14 +40,10 @@ class TestRiskEngine:
         engine = RiskEngine()
         state = RiskState(
             gross_notional=100_000.0,
-            position_notional={'AAPL': 20_000.0},
-            daily_pnl=100.0
+            position_notional={"AAPL": 20_000.0},
+            daily_pnl=100.0,
         )
-        order = OrderRequest(
-            symbol='GOOGL',
-            side='BUY',
-            quantity=100.0
-        )
+        order = OrderRequest(symbol="GOOGL", side="BUY", quantity=100.0)
         price = 150.0
 
         decision = engine.check_order(state=state, order=order, price=price)
@@ -56,49 +53,47 @@ class TestRiskEngine:
 
     def test_check_order_kill_switch(self, monkeypatch):
         """Test order check when kill switch is enabled."""
-        monkeypatch.setenv('KILL_SWITCH', 'true')
+        monkeypatch.setenv("KILL_SWITCH", "true")
 
         engine = RiskEngine()
         state = RiskState()
-        order = OrderRequest(symbol='AAPL', side='BUY', quantity=100.0)
+        order = OrderRequest(symbol="AAPL", side="BUY", quantity=100.0)
 
         decision = engine.check_order(state=state, order=order, price=100.0)
 
         assert decision.allowed is False
-        assert 'kill switch' in decision.reason.lower()
+        assert "kill switch" in decision.reason.lower()
 
     def test_check_order_max_daily_loss(self):
         """Test order check when daily loss limit is breached."""
         engine = RiskEngine()
         state = RiskState(
-            gross_notional=0.0,
-            daily_pnl=-3000.0  # Exceeds max_daily_loss of 2500
+            gross_notional=0.0, daily_pnl=-3000.0  # Exceeds max_daily_loss of 2500
         )
-        order = OrderRequest(symbol='AAPL', side='BUY', quantity=100.0)
+        order = OrderRequest(symbol="AAPL", side="BUY", quantity=100.0)
 
         decision = engine.check_order(state=state, order=order, price=100.0)
 
         assert decision.allowed is False
-        assert 'daily loss' in decision.reason.lower()
+        assert "daily loss" in decision.reason.lower()
 
     def test_check_order_max_position_notional(self):
         """Test order check when position notional limit is exceeded."""
         engine = RiskEngine()
         state = RiskState(
-            gross_notional=0.0,
-            position_notional={'AAPL': 45_000.0}  # Close to limit
+            gross_notional=0.0, position_notional={"AAPL": 45_000.0}  # Close to limit
         )
         order = OrderRequest(
-            symbol='AAPL',
-            side='BUY',
-            quantity=100.0  # Would add 10k, exceeding 50k limit
+            symbol="AAPL",
+            side="BUY",
+            quantity=100.0,  # Would add 10k, exceeding 50k limit
         )
         price = 100.0
 
         decision = engine.check_order(state=state, order=order, price=price)
 
         assert decision.allowed is False
-        assert 'position notional' in decision.reason.lower()
+        assert "position notional" in decision.reason.lower()
 
     def test_check_order_max_gross_notional(self):
         """Test order check when gross notional limit is exceeded."""
@@ -110,38 +105,33 @@ class TestRiskEngine:
         # Actually need gross_after > 250k, so need order > 50k
         # But position would be 50k > 50k limit... Need to customize limits
         # Let's just create custom limits for this test
-        engine = RiskEngine(limits=RiskLimits(
-            max_position_notional=1_000_000.0,  # Very high
-            max_gross_notional=250_000.0
-        ))
+        engine = RiskEngine(
+            limits=RiskLimits(
+                max_position_notional=1_000_000.0,  # Very high
+                max_gross_notional=250_000.0,
+            )
+        )
         state = RiskState(
             gross_notional=200_000.0,  # Close to 250k limit
-            position_notional={'AAPL': 10_000.0}
+            position_notional={"AAPL": 10_000.0},
         )
         order = OrderRequest(
-            symbol='AAPL',
-            side='BUY',
-            quantity=400.0  # 400 * 150 = 60k, gross becomes 260k > 250k
+            symbol="AAPL",
+            side="BUY",
+            quantity=400.0,  # 400 * 150 = 60k, gross becomes 260k > 250k
         )
         price = 150.0
 
         decision = engine.check_order(state=state, order=order, price=price)
 
         assert decision.allowed is False
-        assert 'gross notional' in decision.reason.lower()
+        assert "gross notional" in decision.reason.lower()
 
     def test_check_order_sell_reduces_position(self):
         """Test that selling reduces position notional."""
         engine = RiskEngine()
-        state = RiskState(
-            gross_notional=50_000.0,
-            position_notional={'AAPL': 30_000.0}
-        )
-        order = OrderRequest(
-            symbol='AAPL',
-            side='SELL',
-            quantity=100.0
-        )
+        state = RiskState(gross_notional=50_000.0, position_notional={"AAPL": 30_000.0})
+        order = OrderRequest(symbol="AAPL", side="SELL", quantity=100.0)
         price = 100.0
 
         decision = engine.check_order(state=state, order=order, price=price)
@@ -149,4 +139,4 @@ class TestRiskEngine:
         # Selling should be allowed (reduces position)
         assert decision.allowed is True
         # Symbol notional should decrease
-        assert decision.context['symbol_notional_after'] < 30_000.0
+        assert decision.context["symbol_notional_after"] < 30_000.0

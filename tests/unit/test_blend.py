@@ -1,7 +1,8 @@
 """Unit tests for portfolio signal blending."""
-import pytest
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
+
 from portfolio.blend import Signal, blend_signals, zscore
 
 
@@ -39,11 +40,7 @@ class TestBlendSignals:
 
     def test_blend_single_signal(self, sample_returns_series):
         """Test blending a single signal."""
-        signal = Signal(
-            name="test",
-            score=sample_returns_series,
-            weight=1.0
-        )
+        signal = Signal(name="test", score=sample_returns_series, weight=1.0)
 
         result = blend_signals([signal])
 
@@ -52,16 +49,8 @@ class TestBlendSignals:
 
     def test_blend_multiple_signals(self, sample_returns_series):
         """Test blending multiple signals."""
-        signal1 = Signal(
-            name="signal1",
-            score=sample_returns_series,
-            weight=1.0
-        )
-        signal2 = Signal(
-            name="signal2",
-            score=sample_returns_series * 2,
-            weight=0.5
-        )
+        signal1 = Signal(name="signal1", score=sample_returns_series, weight=1.0)
+        signal2 = Signal(name="signal2", score=sample_returns_series * 2, weight=0.5)
 
         result = blend_signals([signal1, signal2])
 
@@ -74,14 +63,10 @@ class TestBlendSignals:
         dates2 = pd.date_range("2024-01-15", periods=50, freq="D")
 
         signal1 = Signal(
-            name="signal1",
-            score=pd.Series(range(50), index=dates1),
-            weight=1.0
+            name="signal1", score=pd.Series(range(50), index=dates1), weight=1.0
         )
         signal2 = Signal(
-            name="signal2",
-            score=pd.Series(range(50), index=dates2),
-            weight=1.0
+            name="signal2", score=pd.Series(range(50), index=dates2), weight=1.0
         )
 
         result = blend_signals([signal1, signal2])
@@ -98,29 +83,31 @@ class TestBlendSignals:
 
     def test_blend_without_zscore(self, sample_returns_series):
         """Test blending without z-score normalization."""
-        signal = Signal(
-            name="test",
-            score=sample_returns_series,
-            weight=1.0
-        )
+        signal = Signal(name="test", score=sample_returns_series, weight=1.0)
 
         result = blend_signals([signal], zscore_each=False)
 
         assert len(result) == len(sample_returns_series)
         # Should be approximately equal to original (with weight 1.0)
-        pd.testing.assert_series_equal(result, sample_returns_series * 1.0, check_names=False)
+        pd.testing.assert_series_equal(
+            result, sample_returns_series * 1.0, check_names=False
+        )
 
     def test_blend_weighted(self, sample_returns_series):
         """Test weighted signal blending."""
         signal1 = Signal(
             name="signal1",
-            score=pd.Series([1.0] * len(sample_returns_series), index=sample_returns_series.index),
-            weight=2.0
+            score=pd.Series(
+                [1.0] * len(sample_returns_series), index=sample_returns_series.index
+            ),
+            weight=2.0,
         )
         signal2 = Signal(
             name="signal2",
-            score=pd.Series([1.0] * len(sample_returns_series), index=sample_returns_series.index),
-            weight=1.0
+            score=pd.Series(
+                [1.0] * len(sample_returns_series), index=sample_returns_series.index
+            ),
+            weight=1.0,
         )
 
         result = blend_signals([signal1, signal2], zscore_each=False)

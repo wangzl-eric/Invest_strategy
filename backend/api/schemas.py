@@ -1,11 +1,13 @@
 """Pydantic schemas for API request/response models."""
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 
 class AccountSummaryResponse(BaseModel):
     """Account summary response."""
+
     account_id: str
     timestamp: datetime
     total_cash_value: Optional[float] = None
@@ -19,6 +21,7 @@ class AccountSummaryResponse(BaseModel):
 
 class PositionResponse(BaseModel):
     """Position response."""
+
     id: int
     account_id: str
     timestamp: datetime
@@ -35,6 +38,7 @@ class PositionResponse(BaseModel):
 
 class PnLResponse(BaseModel):
     """PnL response."""
+
     id: int
     account_id: str
     date: datetime
@@ -47,6 +51,7 @@ class PnLResponse(BaseModel):
 
 class PnLTimeSeriesPoint(BaseModel):
     """Cleaned PnL time series point for charts."""
+
     timestamp: datetime = Field(..., description="Timestamp of the snapshot")
     realized_pnl: float = Field(0.0, description="Realized PnL at this time")
     unrealized_pnl: float = Field(0.0, description="Unrealized PnL at this time")
@@ -61,6 +66,7 @@ class PnLTimeSeriesPoint(BaseModel):
 
 class TradeResponse(BaseModel):
     """Trade response."""
+
     id: int
     account_id: str
     exec_id: str
@@ -80,6 +86,7 @@ class TradeResponse(BaseModel):
 
 class PerformanceMetricResponse(BaseModel):
     """Performance metric response."""
+
     id: int
     account_id: str
     date: datetime
@@ -99,6 +106,7 @@ class PerformanceMetricResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     """Error response."""
+
     error: str
     detail: Optional[str] = None
 
@@ -107,20 +115,25 @@ class ErrorResponse(BaseModel):
 # Performance Analytics Schemas
 # =============================================================================
 
+
 class HistogramData(BaseModel):
     """Histogram data for returns distribution."""
+
     bins: List[float] = Field(default_factory=list, description="Bin center values")
     counts: List[int] = Field(default_factory=list, description="Count per bin")
 
 
 class DistributionStatistics(BaseModel):
     """Statistical measures for returns distribution."""
+
     mean: float = Field(0.0, description="Mean daily return")
     std: float = Field(0.0, description="Standard deviation of returns")
     skewness: float = Field(0.0, description="Skewness of returns")
     kurtosis: float = Field(0.0, description="Kurtosis of returns")
     var_95: float = Field(0.0, description="Value at Risk (95% confidence)")
-    cvar_95: float = Field(0.0, description="Conditional VaR / Expected Shortfall (95%)")
+    cvar_95: float = Field(
+        0.0, description="Conditional VaR / Expected Shortfall (95%)"
+    )
     min: float = Field(0.0, description="Minimum return")
     max: float = Field(0.0, description="Maximum return")
     positive_days: int = Field(0, description="Number of positive return days")
@@ -130,6 +143,7 @@ class DistributionStatistics(BaseModel):
 
 class ReturnsDistributionResponse(BaseModel):
     """Returns distribution data for histogram and statistics."""
+
     histogram: HistogramData
     statistics: DistributionStatistics
     percentiles: Dict[str, float] = Field(default_factory=dict)
@@ -137,6 +151,7 @@ class ReturnsDistributionResponse(BaseModel):
 
 class RollingMetricsResponse(BaseModel):
     """Rolling performance metrics time series."""
+
     dates: List[str] = Field(default_factory=list)
     rolling_sharpe: List[float] = Field(default_factory=list)
     rolling_volatility: List[float] = Field(default_factory=list)
@@ -145,6 +160,7 @@ class RollingMetricsResponse(BaseModel):
 
 class BenchmarkTimeSeriesData(BaseModel):
     """Time series data for benchmark comparison chart."""
+
     dates: List[str] = Field(default_factory=list)
     portfolio_cumulative: List[float] = Field(default_factory=list)
     benchmark_cumulative: List[float] = Field(default_factory=list)
@@ -152,6 +168,7 @@ class BenchmarkTimeSeriesData(BaseModel):
 
 class BenchmarkComparisonResponse(BaseModel):
     """Benchmark comparison metrics and time series."""
+
     portfolio_sharpe: Optional[float] = None
     benchmark_sharpe: Optional[float] = None
     beta: Optional[float] = Field(None, description="Portfolio beta vs benchmark")
@@ -168,6 +185,7 @@ class BenchmarkComparisonResponse(BaseModel):
 
 class SP500DataPoint(BaseModel):
     """Single data point for S&P 500 time series."""
+
     date: str
     close: float
     daily_return: Optional[float] = None
@@ -176,6 +194,7 @@ class SP500DataPoint(BaseModel):
 
 class SP500DataResponse(BaseModel):
     """S&P 500 benchmark data response."""
+
     symbol: str = "^GSPC"
     name: str = "S&P 500"
     data: List[SP500DataPoint] = Field(default_factory=list)
@@ -187,6 +206,7 @@ class SP500DataResponse(BaseModel):
 
 class PerformanceAnalyticsResponse(BaseModel):
     """Comprehensive performance analytics response."""
+
     account_id: Optional[str] = None
     period_start: Optional[str] = None
     period_end: Optional[str] = None
@@ -203,12 +223,10 @@ class PerformanceAnalyticsResponse(BaseModel):
 
     # Time series data
     returns_series: List[Dict[str, Any]] = Field(
-        default_factory=list,
-        description="Daily returns time series"
+        default_factory=list, description="Daily returns time series"
     )
     equity_series: List[Dict[str, Any]] = Field(
-        default_factory=list,
-        description="Equity/NAV time series"
+        default_factory=list, description="Equity/NAV time series"
     )
 
     # Distribution
@@ -225,14 +243,17 @@ class PerformanceAnalyticsResponse(BaseModel):
 # Advanced Analytics Schemas
 # =============================================================================
 
+
 class OptimizationWeightsResponse(BaseModel):
     """Portfolio optimization weights response."""
+
     asset: str
     weight: float
 
 
 class OptimizationResponse(BaseModel):
     """Portfolio optimization result."""
+
     method: str
     weights: List[OptimizationWeightsResponse]
     expected_return: float
@@ -244,6 +265,7 @@ class OptimizationResponse(BaseModel):
 
 class FactorLoadingResponse(BaseModel):
     """Factor loading for an asset."""
+
     asset: str
     factor: str
     loading: float
@@ -251,6 +273,7 @@ class FactorLoadingResponse(BaseModel):
 
 class FactorAnalysisResponse(BaseModel):
     """Factor analysis result."""
+
     factor_loadings: List[FactorLoadingResponse]
     factor_returns: Dict[str, float]
     r_squared: Dict[str, float]
@@ -259,6 +282,7 @@ class FactorAnalysisResponse(BaseModel):
 
 class StyleAnalysisResponse(BaseModel):
     """Style analysis result."""
+
     style_weights: Dict[str, float]
     r_squared: float
     tracking_error: float
@@ -266,6 +290,7 @@ class StyleAnalysisResponse(BaseModel):
 
 class AttributionResponse(BaseModel):
     """Performance attribution result."""
+
     total_attribution: float
     factor_attribution: Optional[Dict[str, float]] = None
     sector_attribution: Optional[Dict[str, float]] = None
@@ -275,6 +300,7 @@ class AttributionResponse(BaseModel):
 
 class MonteCarloPercentilesResponse(BaseModel):
     """Monte Carlo simulation percentiles."""
+
     p5: float
     p25: float
     p50: float
@@ -284,6 +310,7 @@ class MonteCarloPercentilesResponse(BaseModel):
 
 class MonteCarloResponse(BaseModel):
     """Monte Carlo simulation result."""
+
     initial_value: float
     expected_final_value: float
     percentiles: MonteCarloPercentilesResponse
@@ -298,15 +325,24 @@ class MonteCarloResponse(BaseModel):
 # Alert Schemas
 # =============================================================================
 
+
 class AlertRuleCreate(BaseModel):
     """Request schema for creating an alert rule."""
+
     account_id: str
     name: str
     description: Optional[str] = None
-    rule_type: str = Field(..., description="PNL_THRESHOLD, DAILY_LOSS_LIMIT, POSITION_SIZE, DRAWDOWN, VOLATILITY, CORRELATION")
-    rule_config: Dict[str, Any] = Field(..., description="Rule configuration as JSON object")
+    rule_type: str = Field(
+        ...,
+        description="PNL_THRESHOLD, DAILY_LOSS_LIMIT, POSITION_SIZE, DRAWDOWN, VOLATILITY, CORRELATION",
+    )
+    rule_config: Dict[str, Any] = Field(
+        ..., description="Rule configuration as JSON object"
+    )
     severity: str = Field("WARN", description="INFO, WARN, ERROR, CRITICAL")
-    channel_ids: List[int] = Field(default_factory=list, description="List of channel IDs")
+    channel_ids: List[int] = Field(
+        default_factory=list, description="List of channel IDs"
+    )
     cooldown_minutes: int = Field(60, description="Cooldown period in minutes")
     escalation_enabled: bool = False
     escalation_after_minutes: int = 30
@@ -315,6 +351,7 @@ class AlertRuleCreate(BaseModel):
 
 class AlertRuleUpdate(BaseModel):
     """Request schema for updating an alert rule."""
+
     name: Optional[str] = None
     description: Optional[str] = None
     rule_config: Optional[Dict[str, Any]] = None
@@ -329,6 +366,7 @@ class AlertRuleUpdate(BaseModel):
 
 class AlertRuleResponse(BaseModel):
     """Response schema for alert rule."""
+
     id: int
     account_id: str
     name: str
@@ -348,6 +386,7 @@ class AlertRuleResponse(BaseModel):
 
 class AlertResponse(BaseModel):
     """Response schema for alert."""
+
     id: int
     rule_id: int
     account_id: str
@@ -368,6 +407,7 @@ class AlertResponse(BaseModel):
 
 class AlertHistoryResponse(BaseModel):
     """Response schema for alert history."""
+
     id: int
     alert_id: int
     rule_id: int
@@ -380,15 +420,21 @@ class AlertHistoryResponse(BaseModel):
 
 class AlertChannelCreate(BaseModel):
     """Request schema for creating an alert channel."""
+
     account_id: str
     name: str
-    channel_type: str = Field(..., description="EMAIL, SMS, PUSH, SLACK, TEAMS, WEBHOOK")
-    config: Dict[str, Any] = Field(..., description="Channel configuration as JSON object")
+    channel_type: str = Field(
+        ..., description="EMAIL, SMS, PUSH, SLACK, TEAMS, WEBHOOK"
+    )
+    config: Dict[str, Any] = Field(
+        ..., description="Channel configuration as JSON object"
+    )
     enabled: bool = True
 
 
 class AlertChannelUpdate(BaseModel):
     """Request schema for updating an alert channel."""
+
     name: Optional[str] = None
     config: Optional[Dict[str, Any]] = None
     enabled: Optional[bool] = None
@@ -396,6 +442,7 @@ class AlertChannelUpdate(BaseModel):
 
 class AlertChannelResponse(BaseModel):
     """Response schema for alert channel."""
+
     id: int
     account_id: str
     name: str

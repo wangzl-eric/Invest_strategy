@@ -1,25 +1,26 @@
 """Authentication and user management routes."""
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
-from backend.database import get_db
-from backend.models import User, UserAccount, UserPreferences, APIKey, Role, UserRole
 from backend.auth import (
-    get_password_hash,
-    verify_password,
     create_access_token,
-    get_current_user,
     generate_api_key,
-    hash_api_key,
+    get_current_user,
+    get_password_hash,
     get_user_accounts,
     get_user_primary_account,
+    hash_api_key,
     security,
+    verify_password,
 )
+from backend.database import get_db
+from backend.models import APIKey, Role, User, UserAccount, UserPreferences, UserRole
 
 logger = logging.getLogger(__name__)
 
@@ -94,18 +95,22 @@ class APIKeyResponse(BaseModel):
         from_attributes = True
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     """Register a new user."""
     # Check if user already exists
-    existing_user = db.query(User).filter(
-        (User.email == user_data.email) | (User.username == user_data.username)
-    ).first()
+    existing_user = (
+        db.query(User)
+        .filter((User.email == user_data.email) | (User.username == user_data.username))
+        .first()
+    )
 
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email or username already registered"
+            detail="Email or username already registered",
         )
 
     # Create user
@@ -143,8 +148,7 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
 
     if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User account is inactive"
+            status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive"
         )
 
     # Create access token
@@ -166,38 +170,43 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
 
 @router.get("/me/accounts", response_model=List[UserAccountResponse])
 async def get_my_accounts(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Get all accounts for the current user."""
     accounts = get_user_accounts(current_user, db)
     return accounts
 
 
-@router.post("/me/accounts", response_model=UserAccountResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/me/accounts",
+    response_model=UserAccountResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def add_account(
     account_data: UserAccountCreate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Add an IBKR account to the current user."""
     # Check if account already exists for this user
-    existing = db.query(UserAccount).filter(
-        UserAccount.user_id == current_user.id,
-        UserAccount.account_id == account_data.account_id
-    ).first()
+    existing = (
+        db.query(UserAccount)
+        .filter(
+            UserAccount.user_id == current_user.id,
+            UserAccount.account_id == account_data.account_id,
+        )
+        .first()
+    )
 
     if existing:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Account already added"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Account already added"
         )
 
     # If this is set as primary, unset other primary accounts
     if account_data.is_primary:
         db.query(UserAccount).filter(
-            UserAccount.user_id == current_user.id,
-            UserAccount.is_primary == True
+            UserAccount.user_id == current_user.id, UserAccount.is_primary == True
         ).update({"is_primary": False})
 
     # Create account
@@ -211,15 +220,19 @@ async def add_account(
     db.commit()
     db.refresh(account)
 
-    logger.info(f"User {current_user.username} added account: {account_data.account_id}")
+    logger.info(
+        f"User {current_user.username} added account: {account_data.account_id}"
+    )
     return account
 
 
-@router.post("/me/api-keys", response_model=APIKeyResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/me/api-keys", response_model=APIKeyResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_api_key(
     key_data: APIKeyCreate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Create a new API key for the current user."""
     key, key_hash, key_prefix = generate_api_key()
@@ -256,8 +269,7 @@ async def create_api_key(
 
 @router.get("/me/api-keys", response_model=List[APIKeyResponse])
 async def list_api_keys(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """List all API keys for the current user."""
     keys = db.query(APIKey).filter(APIKey.user_id == current_user.id).all()
@@ -268,18 +280,18 @@ async def list_api_keys(
 async def delete_api_key(
     key_id: int,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Delete an API key."""
-    api_key = db.query(APIKey).filter(
-        APIKey.id == key_id,
-        APIKey.user_id == current_user.id
-    ).first()
+    api_key = (
+        db.query(APIKey)
+        .filter(APIKey.id == key_id, APIKey.user_id == current_user.id)
+        .first()
+    )
 
     if not api_key:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="API key not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="API key not found"
         )
 
     db.delete(api_key)

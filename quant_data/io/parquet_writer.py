@@ -9,7 +9,12 @@ from typing import Optional
 import pandas as pd
 
 from quant_data.paths import DataLakeConfig, parquet_partition_path
-from quant_data.spec import DatasetId, DatasetLayer, validate_columns, CANONICAL_BARS_COLUMNS
+from quant_data.spec import (
+    CANONICAL_BARS_COLUMNS,
+    DatasetId,
+    DatasetLayer,
+    validate_columns,
+)
 
 
 @dataclass(frozen=True)
@@ -36,7 +41,11 @@ def write_bars_partitioned(
     if df.empty:
         return ParquetWriteResult(files_written=0)
 
-    validate_columns(dataset=f"{dataset_id.slug()} bars", columns=df.columns, required=CANONICAL_BARS_COLUMNS[:9])
+    validate_columns(
+        dataset=f"{dataset_id.slug()} bars",
+        columns=df.columns,
+        required=CANONICAL_BARS_COLUMNS[:9],
+    )
 
     df = df.copy()
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
@@ -59,7 +68,9 @@ def write_bars_partitioned(
                 df_s.drop(columns=["date"]).to_parquet(out_file, index=False)
                 files += 1
         else:
-            out_dir = parquet_partition_path(cfg, layer=layer, dataset_id=dataset_id, date=date, venue=venue)
+            out_dir = parquet_partition_path(
+                cfg, layer=layer, dataset_id=dataset_id, date=date, venue=venue
+            )
             out_dir.mkdir(parents=True, exist_ok=True)
             out_file = out_dir / "part-000.parquet"
             df_d.drop(columns=["date"]).to_parquet(out_file, index=False)

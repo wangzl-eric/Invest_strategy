@@ -1,7 +1,8 @@
 """Time-series database integration for efficient time-range queries."""
 import logging
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -10,6 +11,7 @@ logger = logging.getLogger(__name__)
 try:
     from sqlalchemy import create_engine, text
     from sqlalchemy.dialects.postgresql import insert
+
     HAS_POSTGRES = True
 except ImportError:
     HAS_POSTGRES = False
@@ -18,6 +20,7 @@ except ImportError:
 try:
     from influxdb_client import InfluxDBClient, Point
     from influxdb_client.client.write_api import SYNCHRONOUS
+
     HAS_INFLUXDB = True
 except ImportError:
     HAS_INFLUXDB = False
@@ -26,7 +29,9 @@ except ImportError:
 class TimeSeriesDB:
     """Time-series database abstraction layer."""
 
-    def __init__(self, db_type: str = "timescaledb", connection_string: Optional[str] = None):
+    def __init__(
+        self, db_type: str = "timescaledb", connection_string: Optional[str] = None
+    ):
         """
         Initialize time-series database.
 
@@ -49,20 +54,27 @@ class TimeSeriesDB:
             else:
                 # Use default from settings
                 from backend.config import settings
+
                 db_url = settings.database.url
                 if db_url.startswith("sqlite"):
-                    logger.warning("SQLite does not support TimescaleDB. Use PostgreSQL.")
+                    logger.warning(
+                        "SQLite does not support TimescaleDB. Use PostgreSQL."
+                    )
                     return
                 self.engine = create_engine(db_url)
 
             # Check if TimescaleDB extension is available
             try:
                 with self.engine.connect() as conn:
-                    result = conn.execute(text("SELECT * FROM pg_extension WHERE extname = 'timescaledb'"))
+                    result = conn.execute(
+                        text("SELECT * FROM pg_extension WHERE extname = 'timescaledb'")
+                    )
                     if result.fetchone():
                         logger.info("TimescaleDB extension detected")
                     else:
-                        logger.info("Using standard PostgreSQL (TimescaleDB extension not installed)")
+                        logger.info(
+                            "Using standard PostgreSQL (TimescaleDB extension not installed)"
+                        )
             except Exception as e:
                 logger.warning(f"Could not check TimescaleDB extension: {e}")
 
@@ -75,17 +87,24 @@ class TimeSeriesDB:
             if connection_string:
                 # Parse URL
                 import urllib.parse
+
                 parsed = urllib.parse.urlparse(connection_string)
                 token = parsed.username
                 host = parsed.hostname
                 port = parsed.port or 8086
-                org = parsed.path.split('/')[1] if len(parsed.path.split('/')) > 1 else "my-org"
-                bucket = parsed.path.split('/')[2] if len(parsed.path.split('/')) > 2 else "my-bucket"
+                org = (
+                    parsed.path.split("/")[1]
+                    if len(parsed.path.split("/")) > 1
+                    else "my-org"
+                )
+                bucket = (
+                    parsed.path.split("/")[2]
+                    if len(parsed.path.split("/")) > 2
+                    else "my-bucket"
+                )
 
                 self.client = InfluxDBClient(
-                    url=f"http://{host}:{port}",
-                    token=token,
-                    org=org
+                    url=f"http://{host}:{port}", token=token, org=org
                 )
                 self.bucket = bucket
                 self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
@@ -100,22 +119,26 @@ class TimeSeriesDB:
         try:
             with self.engine.connect() as conn:
                 # Check if hypertable already exists
-                check_sql = text("""
+                check_sql = text(
+                    """
                     SELECT * FROM timescaledb_information.hypertables
                     WHERE hypertable_name = :table_name
-                """)
+                """
+                )
                 result = conn.execute(check_sql, {"table_name": table_name})
                 if result.fetchone():
                     logger.info(f"Hypertable {table_name} already exists")
                     return True
 
                 # Create hypertable
-                create_sql = text(f"""
+                create_sql = text(
+                    f"""
                     SELECT create_hypertable('{table_name}', '{time_column}',
                         if_not_exists => TRUE,
                         chunk_time_interval => INTERVAL '1 day'
                     )
-                """)
+                """
+                )
                 conn.execute(create_sql)
                 conn.commit()
                 logger.info(f"Created hypertable {table_name}")
@@ -129,7 +152,7 @@ class TimeSeriesDB:
         measurement: str,
         tags: Dict[str, str],
         fields: Dict[str, float],
-        timestamp: datetime
+        timestamp: datetime,
     ):
         """Write a time-series data point."""
         if self.db_type == "influxdb" and self.client:
@@ -152,7 +175,7 @@ class TimeSeriesDB:
         tags: Optional[Dict[str, str]] = None,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
-        limit: Optional[int] = None
+        limit: Optional[int] = None,
     ) -> pd.DataFrame:
         """Query time-series data."""
         if self.db_type == "influxdb" and self.client:
@@ -164,7 +187,7 @@ class TimeSeriesDB:
                     query += f' |> filter(fn: (r) => r["{key}"] == "{value}")'
 
             if limit:
-                query += f' |> limit(n: {limit})'
+                query += f" |> limit(n: {limit})"
 
             query_api = self.client.query_api()
             result = query_api.query_data_frame(query)
@@ -187,10 +210,12 @@ class TimeSeriesDB:
         try:
             with self.engine.connect() as conn:
                 # Create index on timestamp if it doesn't exist
-                index_sql = text(f"""
+                index_sql = text(
+                    f"""
                     CREATE INDEX IF NOT EXISTS idx_{table_name}_timestamp
                     ON {table_name} (timestamp DESC)
-                """)
+                """
+                )
                 conn.execute(index_sql)
                 conn.commit()
                 logger.info(f"Optimized table {table_name} for time-series queries")
@@ -211,11 +236,14 @@ def get_timeseries_db() -> Optional[TimeSeriesDB]:
     if _timeseries_db is None:
         # Try to initialize from config
         from backend.config import settings
+
         db_url = settings.database.url
 
         if db_url.startswith("postgresql"):
             _timeseries_db = TimeSeriesDB("timescaledb", db_url)
         else:
-            logger.warning("Time-series DB not configured (requires PostgreSQL/TimescaleDB or InfluxDB)")
+            logger.warning(
+                "Time-series DB not configured (requires PostgreSQL/TimescaleDB or InfluxDB)"
+            )
 
     return _timeseries_db

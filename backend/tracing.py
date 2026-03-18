@@ -7,11 +7,12 @@ logger = logging.getLogger(__name__)
 # Try to import OpenTelemetry
 try:
     from opentelemetry import trace
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
     from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
-    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+
     HAS_OPENTELEMETRY = True
 except ImportError:
     HAS_OPENTELEMETRY = False
@@ -75,5 +76,5 @@ class TracingService:
 # Global tracing service
 tracing_service = TracingService(
     enabled=False,  # Enable via TRACING_ENABLED environment variable
-    otlp_endpoint=None  # Set via OTLP_ENDPOINT environment variable
+    otlp_endpoint=None,  # Set via OTLP_ENDPOINT environment variable
 )

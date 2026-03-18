@@ -3,17 +3,17 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional, Dict, Callable
 from datetime import datetime, timedelta
+from typing import Callable, Dict, Optional
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-from portfolio.optimizer import OptimizationConfig, weights_from_alpha
-from execution.runner import ExecutionRunner, RunnerConfig
-from execution.risk import RiskEngine, RiskLimits
 from execution.broker import Broker
+from execution.risk import RiskEngine, RiskLimits
+from execution.runner import ExecutionRunner, RunnerConfig
 from execution.types import OrderRequest
+from portfolio.optimizer import OptimizationConfig, weights_from_alpha
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,7 @@ PriceGetter = Callable[[str], float]
 @dataclass
 class RebalanceConfig:
     """Configuration for automated rebalancing."""
+
     account_id: str
     mode: str = "paper"  # paper/live/sim
     rebalance_threshold: float = 0.02  # Rebalance if drift > 2%
@@ -46,7 +47,7 @@ class PortfolioRebalancer:
         get_current_positions: Callable[[str], Dict[str, float]],
         get_net_liquidation: Callable[[str], float],
         risk_engine: Optional[RiskEngine] = None,
-        config: Optional[RebalanceConfig] = None
+        config: Optional[RebalanceConfig] = None,
     ):
         self.broker = broker
         self.price_getter = price_getter
@@ -56,22 +57,19 @@ class PortfolioRebalancer:
         self.config = config or RebalanceConfig(account_id="")
 
         runner_config = RunnerConfig(
-            mode=self.config.mode,
-            account_id=self.config.account_id
+            mode=self.config.mode, account_id=self.config.account_id
         )
         self.execution_runner = ExecutionRunner(
             broker=broker,
             price_getter=price_getter,
             risk_engine=self.risk_engine,
-            cfg=runner_config
+            cfg=runner_config,
         )
 
         self.last_rebalance_time: Optional[datetime] = None
 
     def calculate_target_weights(
-        self,
-        alpha: pd.Series,
-        returns: Optional[pd.DataFrame] = None
+        self, alpha: pd.Series, returns: Optional[pd.DataFrame] = None
     ) -> pd.Series:
         """Calculate target portfolio weights from alpha signals.
 
@@ -85,15 +83,11 @@ class PortfolioRebalancer:
         opt_config = OptimizationConfig(
             risk_aversion=self.config.risk_aversion,
             max_weight=self.config.max_position_weight,
-            min_weight=self.config.min_position_weight
+            min_weight=self.config.min_position_weight,
         )
 
         if returns is not None:
-            weights = weights_from_alpha(
-                alpha=alpha,
-                returns=returns,
-                cfg=opt_config
-            )
+            weights = weights_from_alpha(alpha=alpha, returns=returns, cfg=opt_config)
         else:
             # Simple normalization if no returns data
             # Normalize to sum to 1 and apply bounds
@@ -103,7 +97,7 @@ class PortfolioRebalancer:
             # Apply bounds
             weights = weights.clip(
                 lower=self.config.min_position_weight,
-                upper=self.config.max_position_weight
+                upper=self.config.max_position_weight,
             )
 
             # Normalize to sum to 1
@@ -119,7 +113,7 @@ class PortfolioRebalancer:
         self,
         positions: Dict[str, float],
         prices: Dict[str, float],
-        net_liquidation: float
+        net_liquidation: float,
     ) -> pd.Series:
         """Calculate current portfolio weights from positions.
 
@@ -148,7 +142,7 @@ class PortfolioRebalancer:
         target_weights: pd.Series,
         current_weights: pd.Series,
         net_liquidation: float,
-        prices: Dict[str, float]
+        prices: Dict[str, float],
     ) -> list[OrderRequest]:
         """Calculate orders needed to rebalance portfolio.
 
@@ -187,7 +181,10 @@ class PortfolioRebalancer:
             trade_qty = target_qty - current_qty
 
             # Apply threshold - don't trade if difference is too small
-            if abs(trade_qty * price / net_liquidation) < self.config.rebalance_threshold:
+            if (
+                abs(trade_qty * price / net_liquidation)
+                < self.config.rebalance_threshold
+            ):
                 continue
 
             # Round to reasonable precision
@@ -206,7 +203,7 @@ class PortfolioRebalancer:
                 quantity=quantity,
                 order_type="MKT",
                 sec_type="STK",
-                currency="USD"
+                currency="USD",
             )
 
             orders.append(order)
@@ -224,9 +221,7 @@ class PortfolioRebalancer:
         return time_since_rebalance >= min_interval
 
     def rebalance(
-        self,
-        target_weights: pd.Series,
-        returns: Optional[pd.DataFrame] = None
+        self, target_weights: pd.Series, returns: Optional[pd.DataFrame] = None
     ) -> Dict[str, any]:
         """Execute portfolio rebalancing.
 
@@ -241,7 +236,9 @@ class PortfolioRebalancer:
             return {
                 "status": "skipped",
                 "reason": "Minimum interval not met",
-                "last_rebalance": self.last_rebalance_time.isoformat() if self.last_rebalance_time else None
+                "last_rebalance": self.last_rebalance_time.isoformat()
+                if self.last_rebalance_time
+                else None,
             }
 
         # Get current positions and prices
@@ -266,22 +263,20 @@ class PortfolioRebalancer:
                 final_target_weights = target_weights
             else:
                 # Alpha scores, need optimization
-                final_target_weights = self.calculate_target_weights(target_weights, returns)
+                final_target_weights = self.calculate_target_weights(
+                    target_weights, returns
+                )
         else:
-            return {
-                "status": "error",
-                "error": "No target weights or alpha provided"
-            }
+            return {"status": "error", "error": "No target weights or alpha provided"}
 
         # Calculate current weights
-        current_weights = self.calculate_current_weights(positions, prices, net_liquidation)
+        current_weights = self.calculate_current_weights(
+            positions, prices, net_liquidation
+        )
 
         # Calculate rebalance orders
         orders = self.calculate_rebalance_orders(
-            final_target_weights,
-            current_weights,
-            net_liquidation,
-            prices
+            final_target_weights, current_weights, net_liquidation, prices
         )
 
         if not orders:
@@ -289,7 +284,7 @@ class PortfolioRebalancer:
                 "status": "skipped",
                 "reason": "No rebalancing needed",
                 "target_weights": final_target_weights.to_dict(),
-                "current_weights": current_weights.to_dict()
+                "current_weights": current_weights.to_dict(),
             }
 
         # Execute orders (or simulate if dry_run)
@@ -302,12 +297,12 @@ class PortfolioRebalancer:
                         "symbol": o.symbol,
                         "side": o.side,
                         "quantity": o.quantity,
-                        "order_type": o.order_type
+                        "order_type": o.order_type,
                     }
                     for o in orders
                 ],
                 "target_weights": final_target_weights.to_dict(),
-                "current_weights": current_weights.to_dict()
+                "current_weights": current_weights.to_dict(),
             }
         else:
             order_ids = self.execution_runner.submit_orders(orders)
@@ -316,7 +311,7 @@ class PortfolioRebalancer:
                 "orders_count": len(orders),
                 "order_ids": order_ids,
                 "target_weights": final_target_weights.to_dict(),
-                "current_weights": current_weights.to_dict()
+                "current_weights": current_weights.to_dict(),
             }
 
         self.last_rebalance_time = datetime.utcnow()

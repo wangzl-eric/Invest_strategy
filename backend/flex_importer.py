@@ -16,16 +16,16 @@ Usage:
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
 from sqlalchemy import func
 
 from backend.database import get_db_context
-from backend.models import PnLHistory, Trade, Position
+from backend.models import PnLHistory, Position, Trade
 
 if TYPE_CHECKING:
-    from backend.flex_query_client import FlexTrade, FlexPosition, FlexQueryResult
+    from backend.flex_query_client import FlexPosition, FlexQueryResult, FlexTrade
 
 logger = logging.getLogger(__name__)
 
@@ -44,59 +44,67 @@ def calculate_and_update_returns(account_id: str, db) -> None:
     For live-API records (total_cash IS NOT NULL) ``total_pnl`` is a running
     all-time cumulative figure, so we fall back to NAV percentage change.
     """
-    records = db.query(PnLHistory).filter(
-        PnLHistory.account_id == account_id
-    ).order_by(PnLHistory.date.asc()).all()
+    records = (
+        db.query(PnLHistory)
+        .filter(PnLHistory.account_id == account_id)
+        .order_by(PnLHistory.date.asc())
+        .all()
+    )
 
     if len(records) < 1:
         return
 
     data = []
     for record in records:
-        data.append({
-            'id': record.id,
-            'date': record.date,
-            'net_liquidation': record.net_liquidation,
-            'total_pnl': record.total_pnl or 0.0,
-            'total_cash': record.total_cash,
-        })
+        data.append(
+            {
+                "id": record.id,
+                "date": record.date,
+                "net_liquidation": record.net_liquidation,
+                "total_pnl": record.total_pnl or 0.0,
+                "total_cash": record.total_cash,
+            }
+        )
 
     df = pd.DataFrame(data)
-    df = df.sort_values('date')
+    df = df.sort_values("date")
 
     # Deduplicate: keep one record per calendar date (last entry wins)
-    df['cal_date'] = pd.to_datetime(df['date']).dt.date
-    df = df.drop_duplicates(subset=['cal_date'], keep='last')
+    df["cal_date"] = pd.to_datetime(df["date"]).dt.date
+    df = df.drop_duplicates(subset=["cal_date"], keep="last")
 
-    prev_nav = df['net_liquidation'].shift(1)
+    prev_nav = df["net_liquidation"].shift(1)
 
     # Flex records have total_cash = NULL; their total_pnl is the daily
     # investment P&L (excludes cash deposits/withdrawals).
-    is_flex = df['total_cash'].isna()
+    is_flex = df["total_cash"].isna()
 
     # PnL-based return for Flex records (cash-flow adjusted)
-    pnl_return = df['total_pnl'] / prev_nav
+    pnl_return = df["total_pnl"] / prev_nav
 
     # NAV pct_change fallback for live-API records
-    nav_return = df['net_liquidation'].pct_change()
+    nav_return = df["net_liquidation"].pct_change()
 
-    df['daily_return'] = pd.Series(dtype=float)
-    df.loc[is_flex, 'daily_return'] = pnl_return[is_flex]
-    df.loc[~is_flex, 'daily_return'] = nav_return[~is_flex]
+    df["daily_return"] = pd.Series(dtype=float)
+    df.loc[is_flex, "daily_return"] = pnl_return[is_flex]
+    df.loc[~is_flex, "daily_return"] = nav_return[~is_flex]
 
-    df['cumulative_return'] = (1 + df['daily_return'].fillna(0)).cumprod() - 1
+    df["cumulative_return"] = (1 + df["daily_return"].fillna(0)).cumprod() - 1
     if len(df) > 0:
-        df.loc[df.index[0], 'cumulative_return'] = 0.0
+        df.loc[df.index[0], "cumulative_return"] = 0.0
 
     for _, row in df.iterrows():
-        record_id = row['id']
-        daily_ret = row['daily_return'] if not pd.isna(row['daily_return']) else None
-        cum_ret = row['cumulative_return'] if not pd.isna(row['cumulative_return']) else 0.0
+        record_id = row["id"]
+        daily_ret = row["daily_return"] if not pd.isna(row["daily_return"]) else None
+        cum_ret = (
+            row["cumulative_return"] if not pd.isna(row["cumulative_return"]) else 0.0
+        )
 
         record = db.query(PnLHistory).filter(PnLHistory.id == record_id).first()
         if record:
             record.daily_return = float(daily_ret) if daily_ret is not None else None
             record.cumulative_return = float(cum_ret) if cum_ret is not None else 0.0
+
 
 def import_mark_to_market_performance_csv(
     csv_path: str,
@@ -159,8 +167,16 @@ def import_mark_to_market_performance_csv(
             data = lines[i + 1]
             # Parse using pandas' CSV parsing for quotes/commas
             try:
-                cols = pd.read_csv(pd.io.common.StringIO(header), header=None).iloc[0].tolist()
-                vals = pd.read_csv(pd.io.common.StringIO(data), header=None).iloc[0].tolist()
+                cols = (
+                    pd.read_csv(pd.io.common.StringIO(header), header=None)
+                    .iloc[0]
+                    .tolist()
+                )
+                vals = (
+                    pd.read_csv(pd.io.common.StringIO(data), header=None)
+                    .iloc[0]
+                    .tolist()
+                )
                 row = {str(c).strip().strip('"'): str(v) for c, v in zip(cols, vals)}
             except Exception:
                 i += 2
@@ -196,16 +212,29 @@ def import_mark_to_market_performance_csv(
             client_fees = _to_float(row.get("ClientFees", "")) or 0.0
 
             # Total PnL is the sum of all components
-            total_pnl = float(mtm + realized + change_unreal + dividends + interest + broker_fees + advisor_fees + client_fees)
+            total_pnl = float(
+                mtm
+                + realized
+                + change_unreal
+                + dividends
+                + interest
+                + broker_fees
+                + advisor_fees
+                + client_fees
+            )
 
             # Split between realized/unrealized only where meaningful.
             realized_pnl = float(realized)
             unrealized_pnl = float(total_pnl - realized_pnl)
 
-            existing = db.query(PnLHistory).filter(
-                PnLHistory.account_id == acct,
-                PnLHistory.date == to_dt,
-            ).first()
+            existing = (
+                db.query(PnLHistory)
+                .filter(
+                    PnLHistory.account_id == acct,
+                    PnLHistory.date == to_dt,
+                )
+                .first()
+            )
 
             if existing:
                 existing.realized_pnl = realized_pnl
@@ -216,16 +245,18 @@ def import_mark_to_market_performance_csv(
                     existing.net_liquidation = float(ending)
                 updated += 1
             else:
-                db.add(PnLHistory(
-                    account_id=acct,
-                    date=to_dt,
-                    realized_pnl=realized_pnl,
-                    unrealized_pnl=unrealized_pnl,
-                    total_pnl=total_pnl,
-                    mtm=float(mtm),
-                    net_liquidation=float(ending) if ending is not None else None,
-                    total_cash=None,
-                ))
+                db.add(
+                    PnLHistory(
+                        account_id=acct,
+                        date=to_dt,
+                        realized_pnl=realized_pnl,
+                        unrealized_pnl=unrealized_pnl,
+                        total_pnl=total_pnl,
+                        mtm=float(mtm),
+                        net_liquidation=float(ending) if ending is not None else None,
+                        total_cash=None,
+                    )
+                )
                 imported += 1
 
             dates.append(to_dt)
@@ -277,10 +308,16 @@ def import_pnl_csv(
 
     df = pd.read_csv(path)
     if date_column not in df.columns:
-        raise ValueError(f"Column '{date_column}' not found. Available: {list(df.columns)}")
+        raise ValueError(
+            f"Column '{date_column}' not found. Available: {list(df.columns)}"
+        )
 
     # Parse dates
-    df["_date"] = pd.to_datetime(df[date_column], format=date_format) if date_format else pd.to_datetime(df[date_column])
+    df["_date"] = (
+        pd.to_datetime(df[date_column], format=date_format)
+        if date_format
+        else pd.to_datetime(df[date_column])
+    )
 
     count = 0
     with get_db_context() as db:
@@ -311,14 +348,20 @@ def import_pnl_csv(
                         # Fallback: convert to string then parse
                         dt = pd.to_datetime(str(date_val)).to_pydatetime()
             except (ValueError, TypeError, AttributeError) as e:
-                logger.warning(f"Skipping row with invalid date: {date_val}, error: {e}")
+                logger.warning(
+                    f"Skipping row with invalid date: {date_val}, error: {e}"
+                )
                 continue
 
             # Extract values with proper None handling
             net_liq = _safe_float(row, net_liq_column)
-            total_cash = _safe_float(row, total_cash_column) if total_cash_column else None
+            total_cash = (
+                _safe_float(row, total_cash_column) if total_cash_column else None
+            )
             realized = _safe_float(row, realized_column) if realized_column else 0.0
-            unrealized = _safe_float(row, unrealized_column) if unrealized_column else 0.0
+            unrealized = (
+                _safe_float(row, unrealized_column) if unrealized_column else 0.0
+            )
 
             # Handle None values in arithmetic
             if realized is None:
@@ -328,7 +371,9 @@ def import_pnl_csv(
             total_pnl = realized + unrealized
 
             # Upsert
-            existing = db.query(PnLHistory).filter_by(account_id=account_id, date=dt).first()
+            existing = (
+                db.query(PnLHistory).filter_by(account_id=account_id, date=dt).first()
+            )
 
             if existing:
                 existing.realized_pnl = float(realized)  # type: ignore
@@ -339,13 +384,19 @@ def import_pnl_csv(
                 if total_cash is not None:
                     existing.total_cash = float(total_cash)  # type: ignore
             else:
-                db.add(PnLHistory(
-                    account_id=account_id, date=dt,
-                    realized_pnl=float(realized), unrealized_pnl=float(unrealized),
-                    total_pnl=float(total_pnl),
-                    net_liquidation=float(net_liq) if net_liq is not None else None,
-                    total_cash=float(total_cash) if total_cash is not None else None,
-                ))
+                db.add(
+                    PnLHistory(
+                        account_id=account_id,
+                        date=dt,
+                        realized_pnl=float(realized),
+                        unrealized_pnl=float(unrealized),
+                        total_pnl=float(total_pnl),
+                        net_liquidation=float(net_liq) if net_liq is not None else None,
+                        total_cash=float(total_cash)
+                        if total_cash is not None
+                        else None,
+                    )
+                )
             count += 1
 
     logger.info(f"Imported {count} rows from {path}")
@@ -381,10 +432,16 @@ def import_portfolio_analyst_csv(
     net_liq_col = net_liq_column or equity_column
     for col, name in [(date_column, "date"), (net_liq_col, "equity")]:
         if col not in df.columns:
-            raise ValueError(f"Column '{col}' ({name}) not found. Available: {list(df.columns)}")
+            raise ValueError(
+                f"Column '{col}' ({name}) not found. Available: {list(df.columns)}"
+            )
 
     # Parse and sort by date
-    df["_date"] = pd.to_datetime(df[date_column], format=date_format) if date_format else pd.to_datetime(df[date_column])
+    df["_date"] = (
+        pd.to_datetime(df[date_column], format=date_format)
+        if date_format
+        else pd.to_datetime(df[date_column])
+    )
     df = df.sort_values("_date").reset_index(drop=True)
 
     # Calculate returns
@@ -423,7 +480,9 @@ def import_portfolio_analyst_csv(
                         # Fallback: convert to string then parse
                         dt = pd.to_datetime(str(date_val)).to_pydatetime()
             except (ValueError, TypeError, AttributeError) as e:
-                logger.warning(f"Skipping row with invalid date: {date_val}, error: {e}")
+                logger.warning(
+                    f"Skipping row with invalid date: {date_val}, error: {e}"
+                )
                 continue
 
             net_liq = _safe_float(row, "_equity")
@@ -443,18 +502,27 @@ def import_portfolio_analyst_csv(
                             prev_equity_scalar = float(prev_equity_val) if not pd.isna(prev_equity_val) else None  # type: ignore
                             return_pct_scalar = float(return_pct_val) if not pd.isna(return_pct_val) else None  # type: ignore
 
-                            if prev_equity_scalar is not None and return_pct_scalar is not None:
-                                unrealized_pnl = (return_pct_scalar / 100.0) * prev_equity_scalar
+                            if (
+                                prev_equity_scalar is not None
+                                and return_pct_scalar is not None
+                            ):
+                                unrealized_pnl = (
+                                    return_pct_scalar / 100.0
+                                ) * prev_equity_scalar
                         except (ValueError, TypeError, OverflowError):
                             unrealized_pnl = 0.0
             except (ValueError, TypeError, IndexError, KeyError):
                 unrealized_pnl = 0.0
 
             # Ensure unrealized_pnl is a float
-            unrealized_pnl = float(unrealized_pnl) if unrealized_pnl is not None else 0.0
+            unrealized_pnl = (
+                float(unrealized_pnl) if unrealized_pnl is not None else 0.0
+            )
 
             # Upsert
-            existing = db.query(PnLHistory).filter_by(account_id=account_id, date=dt).first()
+            existing = (
+                db.query(PnLHistory).filter_by(account_id=account_id, date=dt).first()
+            )
 
             if existing:
                 if net_liq is not None:
@@ -462,13 +530,17 @@ def import_portfolio_analyst_csv(
                 existing.unrealized_pnl = unrealized_pnl  # type: ignore[assignment]
                 existing.total_pnl = unrealized_pnl  # type: ignore[assignment]
             else:
-                db.add(PnLHistory(
-                    account_id=account_id, date=dt,
-                    realized_pnl=0.0, unrealized_pnl=unrealized_pnl,
-                    total_pnl=unrealized_pnl,
-                    net_liquidation=float(net_liq) if net_liq is not None else None,  # type: ignore[arg-type]
-                    total_cash=None,
-                ))
+                db.add(
+                    PnLHistory(
+                        account_id=account_id,
+                        date=dt,
+                        realized_pnl=0.0,
+                        unrealized_pnl=unrealized_pnl,
+                        total_pnl=unrealized_pnl,
+                        net_liquidation=float(net_liq) if net_liq is not None else None,  # type: ignore[arg-type]
+                        total_cash=None,
+                    )
+                )
             count += 1
 
     logger.info(f"Imported {count} rows from {path}")
@@ -485,7 +557,10 @@ def _safe_float(row, col: str) -> Optional[float]:
     try:
         result = float(val)
         # Check for NaN or Inf
-        if pd.isna(result) or (isinstance(result, float) and (result == float('inf') or result == float('-inf'))):
+        if pd.isna(result) or (
+            isinstance(result, float)
+            and (result == float("inf") or result == float("-inf"))
+        ):
             return None
         return result
     except (ValueError, TypeError, OverflowError):
@@ -510,12 +585,12 @@ def import_trades_from_flex(trades: List["FlexTrade"]) -> int:
         for flex_trade in trades:
             # Generate a unique exec_id if not provided
             exec_id = flex_trade.exec_id or flex_trade.trade_id
-            if not exec_id or exec_id.strip() == '' or exec_id == 'nan':
+            if not exec_id or exec_id.strip() == "" or exec_id == "nan":
                 # Generate exec_id from trade details
                 exec_id = f"{flex_trade.symbol}_{flex_trade.trade_date.strftime('%Y%m%d%H%M%S')}_{flex_trade.side}_{abs(flex_trade.quantity)}"
 
             # Skip trades with no meaningful data
-            if not flex_trade.symbol or flex_trade.symbol == 'nan':
+            if not flex_trade.symbol or flex_trade.symbol == "nan":
                 logger.debug(f"Skipping trade with no symbol")
                 continue
 
@@ -525,9 +600,7 @@ def import_trades_from_flex(trades: List["FlexTrade"]) -> int:
                 continue
 
             # Check if trade already exists by exec_id
-            existing = db.query(Trade).filter(
-                Trade.exec_id == exec_id
-            ).first()
+            existing = db.query(Trade).filter(Trade.exec_id == exec_id).first()
 
             if existing:
                 logger.debug(f"Trade {exec_id} already exists, skipping")
@@ -581,7 +654,7 @@ def import_positions_from_flex(positions: List["FlexPosition"]) -> int:
                 symbol=flex_pos.symbol,
                 sec_type=flex_pos.sec_type,
                 currency=flex_pos.currency,
-                exchange='',  # Not provided in Flex Query
+                exchange="",  # Not provided in Flex Query
                 quantity=flex_pos.quantity,
                 avg_cost=flex_pos.cost_basis_price,
                 market_price=flex_pos.market_price,
@@ -615,11 +688,17 @@ def import_flex_query_result(result: "FlexQueryResult") -> dict:
     if result.net_liquidation is not None:
         with get_db_context() as db:
             # Check if we already have a PnL record for this date
-            existing = db.query(PnLHistory).filter(
-                PnLHistory.account_id == result.account_id,
-                PnLHistory.date >= result.to_date.replace(hour=0, minute=0, second=0),
-                PnLHistory.date <= result.to_date.replace(hour=23, minute=59, second=59),
-            ).first()
+            existing = (
+                db.query(PnLHistory)
+                .filter(
+                    PnLHistory.account_id == result.account_id,
+                    PnLHistory.date
+                    >= result.to_date.replace(hour=0, minute=0, second=0),
+                    PnLHistory.date
+                    <= result.to_date.replace(hour=23, minute=59, second=59),
+                )
+                .first()
+            )
 
             if not existing:
                 pnl_record = PnLHistory(
@@ -636,10 +715,10 @@ def import_flex_query_result(result: "FlexQueryResult") -> dict:
                 pnl_count = 1
 
     return {
-        'trades_imported': trades_count,
-        'positions_imported': positions_count,
-        'pnl_records_imported': pnl_count,
-        'account_id': result.account_id,
-        'from_date': result.from_date.isoformat(),
-        'to_date': result.to_date.isoformat(),
+        "trades_imported": trades_count,
+        "positions_imported": positions_count,
+        "pnl_records_imported": pnl_count,
+        "account_id": result.account_id,
+        "from_date": result.from_date.isoformat(),
+        "to_date": result.to_date.isoformat(),
     }

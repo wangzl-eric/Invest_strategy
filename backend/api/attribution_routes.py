@@ -20,6 +20,7 @@ router = APIRouter(prefix="/api/attribution", tags=["attribution"])
 
 class AttributionRequest(BaseModel):
     """Request model for running attribution."""
+
     scope: str = "signal"  # 'portfolio' or 'signal'
     target_name: str  # e.g., 'main_portfolio', 'momentum_tech'
     account_id: Optional[str] = None
@@ -28,12 +29,15 @@ class AttributionRequest(BaseModel):
     pnl_change_dollar: float
     previous_pnl: float = 0.0
     current_pnl: float = 0.0
-    positions: Optional[List[dict]] = None  # [{"symbol": "AAPL", "pnl_contribution": -500, "reason": "earnings_miss"}]
+    positions: Optional[
+        List[dict]
+    ] = None  # [{"symbol": "AAPL", "pnl_contribution": -500, "reason": "earnings_miss"}]
     trigger_type: str = "manual"
 
 
 class AttributionResponse(BaseModel):
     """Response model for attribution."""
+
     id: int
     scope: str
     target_name: str
@@ -53,12 +57,14 @@ class AttributionResponse(BaseModel):
 
 class DailyAttributionRequest(BaseModel):
     """Request model for daily attribution run."""
+
     account_id: str
     date: Optional[str] = None  # ISO format date string
 
 
 class AttributionHistoryRequest(BaseModel):
     """Request model for fetching attribution history."""
+
     target_name: Optional[str] = None
     start_date: Optional[str] = None  # ISO format
     end_date: Optional[str] = None  # ISO format
@@ -67,17 +73,20 @@ class AttributionHistoryRequest(BaseModel):
 
 class AttributionHistoryResponse(BaseModel):
     """Response model for attribution history."""
+
     attributions: List[AttributionResponse]
     total: int
 
 
 class SignalListResponse(BaseModel):
     """Response model for available signals."""
+
     signals: dict  # {signal_name: metadata}
 
 
 class LLMCreditsResponse(BaseModel):
     """Response model for LLM configuration status."""
+
     configured: bool
     model: str
 
@@ -188,7 +197,9 @@ async def run_daily_attribution(request: DailyAttributionRequest):
                     themes=explanation.get("themes"),
                     catalysts=explanation.get("catalysts"),
                     narrative=explanation.get("narrative"),
-                    strategy_specific_impact=explanation.get("strategy_specific_impact"),
+                    strategy_specific_impact=explanation.get(
+                        "strategy_specific_impact"
+                    ),
                     confidence=attr.confidence,
                     status=attr.status,
                     error_message=attr.error_message,
@@ -259,7 +270,9 @@ async def get_attribution_history(
                         themes=explanation.get("themes"),
                         catalysts=explanation.get("catalysts"),
                         narrative=explanation.get("narrative"),
-                        strategy_specific_impact=explanation.get("strategy_specific_impact"),
+                        strategy_specific_impact=explanation.get(
+                            "strategy_specific_impact"
+                        ),
                         confidence=attr.confidence,
                         status=attr.status,
                         error_message=attr.error_message,
@@ -284,9 +297,7 @@ async def get_available_signals():
     """Get list of available signals with their metadata."""
     from backtests.strategies import SIGNAL_METADATA
 
-    return SignalListResponse(
-        signals=SIGNAL_METADATA
-    )
+    return SignalListResponse(signals=SIGNAL_METADATA)
 
 
 @router.get("/config/status", response_model=LLMCreditsResponse)

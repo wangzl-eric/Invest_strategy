@@ -4,12 +4,12 @@ Reference: https://www.interactivebrokers.com/en/trading/ib-api.php
 """
 
 import logging
-from typing import List, Optional
+from typing import List
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from backend.ibkr_client import IBKRClient, NEWS_PROVIDERS
+from backend.ibkr_client import NEWS_PROVIDERS, IBKRClient
 from backend.news_service import NewsService
 
 logger = logging.getLogger(__name__)
@@ -19,8 +19,10 @@ router = APIRouter(prefix="/api/news", tags=["news"])
 
 # ============== Request/Response Models ==============
 
+
 class EquityNewsRequest(BaseModel):
     """Request model for equity news."""
+
     symbol: str
     max_articles: int = 10
     provider_code: str = "IBKR"
@@ -28,6 +30,7 @@ class EquityNewsRequest(BaseModel):
 
 class ForexNewsRequest(BaseModel):
     """Request model for forex news."""
+
     pair: str  # e.g., "EURUSD"
     max_articles: int = 10
     provider_code: str = "IBKR"
@@ -35,6 +38,7 @@ class ForexNewsRequest(BaseModel):
 
 class FuturesNewsRequest(BaseModel):
     """Request model for futures news."""
+
     symbol: str  # e.g., "ES", "CL", "GC"
     exchange: str = "CME"
     currency: str = "USD"
@@ -44,6 +48,7 @@ class FuturesNewsRequest(BaseModel):
 
 class IndexNewsRequest(BaseModel):
     """Request model for index news."""
+
     symbol: str  # e.g., "SPX", "NDX", "VIX"
     exchange: str = "CME"
     currency: str = "USD"
@@ -53,6 +58,7 @@ class IndexNewsRequest(BaseModel):
 
 class PortfolioNewsRequest(BaseModel):
     """Request model for portfolio news."""
+
     symbols: List[str]
     max_articles_per_symbol: int = 3
     provider_code: str = "IBKR"
@@ -60,6 +66,7 @@ class PortfolioNewsRequest(BaseModel):
 
 class NewsResponse(BaseModel):
     """Response model for news articles."""
+
     articles: List[dict]
     symbol: str
     count: int
@@ -67,16 +74,19 @@ class NewsResponse(BaseModel):
 
 class BulletinResponse(BaseModel):
     """Response model for market bulletins."""
+
     bulletins: List[dict]
     count: int
 
 
 class ProvidersResponse(BaseModel):
     """Response model for available news providers."""
+
     providers: dict
 
 
 # ============== API Endpoints ==============
+
 
 @router.post("/equity", response_model=NewsResponse)
 async def get_equity_news(request: EquityNewsRequest):
@@ -339,6 +349,7 @@ async def get_news_providers():
 
 
 # ============== Health Check ==============
+
 
 @router.get("/health")
 async def news_health_check():

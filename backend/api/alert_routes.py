@@ -1,20 +1,26 @@
 """API routes for alert management."""
-import logging
 import json
+import logging
 from datetime import datetime
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import desc, and_
 
-from backend.database import get_db
-from backend.models import AlertRule, Alert, AlertHistory, AlertChannel
-from backend.api.schemas import (
-    AlertRuleCreate, AlertRuleUpdate, AlertRuleResponse,
-    AlertResponse, AlertHistoryResponse,
-    AlertChannelCreate, AlertChannelUpdate, AlertChannelResponse
-)
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import and_, desc
+from sqlalchemy.orm import Session
+
 from backend.alert_engine import AlertEngine
+from backend.api.schemas import (
+    AlertChannelCreate,
+    AlertChannelResponse,
+    AlertChannelUpdate,
+    AlertHistoryResponse,
+    AlertResponse,
+    AlertRuleCreate,
+    AlertRuleResponse,
+    AlertRuleUpdate,
+)
+from backend.database import get_db
+from backend.models import Alert, AlertChannel, AlertHistory, AlertRule
 from backend.notifications import NotificationService
 
 logger = logging.getLogger(__name__)
@@ -40,16 +46,16 @@ def model_to_dict(model_instance, exclude_fields: Optional[List[str]] = None):
 # Alert Rules
 # =============================================================================
 
+
 @router.post("/rules", response_model=AlertRuleResponse, status_code=201)
-async def create_alert_rule(
-    rule_data: AlertRuleCreate,
-    db: Session = Depends(get_db)
-):
+async def create_alert_rule(rule_data: AlertRuleCreate, db: Session = Depends(get_db)):
     """Create a new alert rule."""
     try:
         # Convert channel_ids list to comma-separated string
         channel_ids_str = ",".join(str(cid) for cid in rule_data.channel_ids)
-        escalation_channel_ids_str = ",".join(str(cid) for cid in rule_data.escalation_channel_ids)
+        escalation_channel_ids_str = ",".join(
+            str(cid) for cid in rule_data.escalation_channel_ids
+        )
 
         rule = AlertRule(
             account_id=rule_data.account_id,
@@ -63,7 +69,7 @@ async def create_alert_rule(
             escalation_enabled=rule_data.escalation_enabled,
             escalation_after_minutes=rule_data.escalation_after_minutes,
             escalation_channel_ids=escalation_channel_ids_str,
-            enabled=True
+            enabled=True,
         )
         db.add(rule)
         db.commit()
@@ -71,7 +77,7 @@ async def create_alert_rule(
 
         # Convert response
         rule_dict = model_to_dict(rule)
-        rule_dict['rule_config'] = json.loads(rule.rule_config)
+        rule_dict["rule_config"] = json.loads(rule.rule_config)
         return AlertRuleResponse(**rule_dict)
     except Exception as e:
         logger.error(f"Error creating alert rule: {e}", exc_info=True)
@@ -83,7 +89,7 @@ async def create_alert_rule(
 async def list_alert_rules(
     account_id: Optional[str] = Query(None, description="Filter by account ID"),
     enabled: Optional[bool] = Query(None, description="Filter by enabled status"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """List all alert rules."""
     try:
@@ -99,7 +105,7 @@ async def list_alert_rules(
         result = []
         for rule in rules:
             rule_dict = model_to_dict(rule)
-            rule_dict['rule_config'] = json.loads(rule.rule_config)
+            rule_dict["rule_config"] = json.loads(rule.rule_config)
             result.append(AlertRuleResponse(**rule_dict))
 
         return result
@@ -109,10 +115,7 @@ async def list_alert_rules(
 
 
 @router.get("/rules/{rule_id}", response_model=AlertRuleResponse)
-async def get_alert_rule(
-    rule_id: int,
-    db: Session = Depends(get_db)
-):
+async def get_alert_rule(rule_id: int, db: Session = Depends(get_db)):
     """Get a specific alert rule."""
     try:
         rule = db.query(AlertRule).filter(AlertRule.id == rule_id).first()
@@ -120,7 +123,7 @@ async def get_alert_rule(
             raise HTTPException(status_code=404, detail="Alert rule not found")
 
         rule_dict = model_to_dict(rule)
-        rule_dict['rule_config'] = json.loads(rule.rule_config)
+        rule_dict["rule_config"] = json.loads(rule.rule_config)
         return AlertRuleResponse(**rule_dict)
     except HTTPException:
         raise
@@ -131,9 +134,7 @@ async def get_alert_rule(
 
 @router.put("/rules/{rule_id}", response_model=AlertRuleResponse)
 async def update_alert_rule(
-    rule_id: int,
-    rule_data: AlertRuleUpdate,
-    db: Session = Depends(get_db)
+    rule_id: int, rule_data: AlertRuleUpdate, db: Session = Depends(get_db)
 ):
     """Update an alert rule."""
     try:
@@ -160,14 +161,16 @@ async def update_alert_rule(
         if rule_data.escalation_after_minutes is not None:
             rule.escalation_after_minutes = rule_data.escalation_after_minutes
         if rule_data.escalation_channel_ids is not None:
-            rule.escalation_channel_ids = ",".join(str(cid) for cid in rule_data.escalation_channel_ids)
+            rule.escalation_channel_ids = ",".join(
+                str(cid) for cid in rule_data.escalation_channel_ids
+            )
 
         rule.updated_at = datetime.utcnow()
         db.commit()
         db.refresh(rule)
 
         rule_dict = model_to_dict(rule)
-        rule_dict['rule_config'] = json.loads(rule.rule_config)
+        rule_dict["rule_config"] = json.loads(rule.rule_config)
         return AlertRuleResponse(**rule_dict)
     except HTTPException:
         raise
@@ -178,10 +181,7 @@ async def update_alert_rule(
 
 
 @router.delete("/rules/{rule_id}", status_code=204)
-async def delete_alert_rule(
-    rule_id: int,
-    db: Session = Depends(get_db)
-):
+async def delete_alert_rule(rule_id: int, db: Session = Depends(get_db)):
     """Delete an alert rule."""
     try:
         rule = db.query(AlertRule).filter(AlertRule.id == rule_id).first()
@@ -202,13 +202,16 @@ async def delete_alert_rule(
 # Alerts
 # =============================================================================
 
+
 @router.get("", response_model=List[AlertResponse])
 async def list_alerts(
     account_id: Optional[str] = Query(None, description="Filter by account ID"),
-    status: Optional[str] = Query(None, description="Filter by status (ACTIVE, ACKNOWLEDGED, RESOLVED)"),
+    status: Optional[str] = Query(
+        None, description="Filter by status (ACTIVE, ACKNOWLEDGED, RESOLVED)"
+    ),
     severity: Optional[str] = Query(None, description="Filter by severity"),
     limit: int = Query(100, description="Maximum number of alerts to return"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """List all alerts."""
     try:
@@ -226,7 +229,7 @@ async def list_alerts(
         result = []
         for alert in alerts:
             alert_dict = model_to_dict(alert)
-            alert_dict['context'] = json.loads(alert.context_json)
+            alert_dict["context"] = json.loads(alert.context_json)
             result.append(AlertResponse(**alert_dict))
 
         return result
@@ -236,10 +239,7 @@ async def list_alerts(
 
 
 @router.get("/{alert_id}", response_model=AlertResponse)
-async def get_alert(
-    alert_id: int,
-    db: Session = Depends(get_db)
-):
+async def get_alert(alert_id: int, db: Session = Depends(get_db)):
     """Get a specific alert."""
     try:
         alert = db.query(Alert).filter(Alert.id == alert_id).first()
@@ -247,7 +247,7 @@ async def get_alert(
             raise HTTPException(status_code=404, detail="Alert not found")
 
         alert_dict = model_to_dict(alert)
-        alert_dict['context'] = json.loads(alert.context_json)
+        alert_dict["context"] = json.loads(alert.context_json)
         return AlertResponse(**alert_dict)
     except HTTPException:
         raise
@@ -259,8 +259,10 @@ async def get_alert(
 @router.post("/{alert_id}/acknowledge", response_model=AlertResponse)
 async def acknowledge_alert(
     alert_id: int,
-    acknowledged_by: Optional[str] = Query(None, description="User who acknowledged the alert"),
-    db: Session = Depends(get_db)
+    acknowledged_by: Optional[str] = Query(
+        None, description="User who acknowledged the alert"
+    ),
+    db: Session = Depends(get_db),
 ):
     """Acknowledge an alert."""
     try:
@@ -270,7 +272,7 @@ async def acknowledge_alert(
 
         alert = db.query(Alert).filter(Alert.id == alert_id).first()
         alert_dict = model_to_dict(alert)
-        alert_dict['context'] = json.loads(alert.context_json)
+        alert_dict["context"] = json.loads(alert.context_json)
         return AlertResponse(**alert_dict)
     except HTTPException:
         raise
@@ -280,10 +282,7 @@ async def acknowledge_alert(
 
 
 @router.post("/{alert_id}/resolve", response_model=AlertResponse)
-async def resolve_alert(
-    alert_id: int,
-    db: Session = Depends(get_db)
-):
+async def resolve_alert(alert_id: int, db: Session = Depends(get_db)):
     """Resolve an alert."""
     try:
         success = alert_engine.resolve_alert(alert_id)
@@ -292,7 +291,7 @@ async def resolve_alert(
 
         alert = db.query(Alert).filter(Alert.id == alert_id).first()
         alert_dict = model_to_dict(alert)
-        alert_dict['context'] = json.loads(alert.context_json)
+        alert_dict["context"] = json.loads(alert.context_json)
         return AlertResponse(**alert_dict)
     except HTTPException:
         raise
@@ -303,8 +302,10 @@ async def resolve_alert(
 
 @router.post("/evaluate", status_code=200)
 async def evaluate_rules(
-    account_id: Optional[str] = Query(None, description="Account ID to evaluate rules for"),
-    db: Session = Depends(get_db)
+    account_id: Optional[str] = Query(
+        None, description="Account ID to evaluate rules for"
+    ),
+    db: Session = Depends(get_db),
 ):
     """Manually trigger evaluation of all alert rules."""
     try:
@@ -315,12 +316,15 @@ async def evaluate_rules(
             try:
                 await notification_service.send_alert_notifications(alert)
             except Exception as e:
-                logger.error(f"Error sending notifications for alert {alert.id}: {e}", exc_info=True)
+                logger.error(
+                    f"Error sending notifications for alert {alert.id}: {e}",
+                    exc_info=True,
+                )
 
         return {
             "evaluated": True,
             "alerts_triggered": len(alerts),
-            "alert_ids": [a.id for a in alerts]
+            "alert_ids": [a.id for a in alerts],
         }
     except Exception as e:
         logger.error(f"Error evaluating rules: {e}", exc_info=True)
@@ -328,20 +332,20 @@ async def evaluate_rules(
 
 
 @router.get("/{alert_id}/history", response_model=List[AlertHistoryResponse])
-async def get_alert_history(
-    alert_id: int,
-    db: Session = Depends(get_db)
-):
+async def get_alert_history(alert_id: int, db: Session = Depends(get_db)):
     """Get history for a specific alert."""
     try:
-        history = db.query(AlertHistory).filter(
-            AlertHistory.alert_id == alert_id
-        ).order_by(AlertHistory.created_at).all()
+        history = (
+            db.query(AlertHistory)
+            .filter(AlertHistory.alert_id == alert_id)
+            .order_by(AlertHistory.created_at)
+            .all()
+        )
 
         result = []
         for h in history:
             h_dict = model_to_dict(h)
-            h_dict['context'] = json.loads(h.context_json) if h.context_json else {}
+            h_dict["context"] = json.loads(h.context_json) if h.context_json else {}
             result.append(AlertHistoryResponse(**h_dict))
 
         return result
@@ -354,10 +358,10 @@ async def get_alert_history(
 # Alert Channels
 # =============================================================================
 
+
 @router.post("/channels", response_model=AlertChannelResponse, status_code=201)
 async def create_alert_channel(
-    channel_data: AlertChannelCreate,
-    db: Session = Depends(get_db)
+    channel_data: AlertChannelCreate, db: Session = Depends(get_db)
 ):
     """Create a new alert channel."""
     try:
@@ -366,15 +370,15 @@ async def create_alert_channel(
             name=channel_data.name,
             channel_type=channel_data.channel_type,
             config_json=json.dumps(channel_data.config),
-            enabled=channel_data.enabled
+            enabled=channel_data.enabled,
         )
         db.add(channel)
         db.commit()
         db.refresh(channel)
 
         channel_dict = model_to_dict(channel)
-        channel_dict['config'] = json.loads(channel.config_json)
-        del channel_dict['config_json']
+        channel_dict["config"] = json.loads(channel.config_json)
+        del channel_dict["config_json"]
         return AlertChannelResponse(**channel_dict)
     except Exception as e:
         logger.error(f"Error creating alert channel: {e}", exc_info=True)
@@ -386,7 +390,7 @@ async def create_alert_channel(
 async def list_alert_channels(
     account_id: Optional[str] = Query(None, description="Filter by account ID"),
     enabled: Optional[bool] = Query(None, description="Filter by enabled status"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """List all alert channels."""
     try:
@@ -402,8 +406,8 @@ async def list_alert_channels(
         result = []
         for channel in channels:
             channel_dict = model_to_dict(channel)
-            channel_dict['config'] = json.loads(channel.config_json)
-            del channel_dict['config_json']
+            channel_dict["config"] = json.loads(channel.config_json)
+            del channel_dict["config_json"]
             result.append(AlertChannelResponse(**channel_dict))
 
         return result
@@ -413,10 +417,7 @@ async def list_alert_channels(
 
 
 @router.get("/channels/{channel_id}", response_model=AlertChannelResponse)
-async def get_alert_channel(
-    channel_id: int,
-    db: Session = Depends(get_db)
-):
+async def get_alert_channel(channel_id: int, db: Session = Depends(get_db)):
     """Get a specific alert channel."""
     try:
         channel = db.query(AlertChannel).filter(AlertChannel.id == channel_id).first()
@@ -424,8 +425,8 @@ async def get_alert_channel(
             raise HTTPException(status_code=404, detail="Alert channel not found")
 
         channel_dict = model_to_dict(channel)
-        channel_dict['config'] = json.loads(channel.config_json)
-        del channel_dict['config_json']
+        channel_dict["config"] = json.loads(channel.config_json)
+        del channel_dict["config_json"]
         return AlertChannelResponse(**channel_dict)
     except HTTPException:
         raise
@@ -436,9 +437,7 @@ async def get_alert_channel(
 
 @router.put("/channels/{channel_id}", response_model=AlertChannelResponse)
 async def update_alert_channel(
-    channel_id: int,
-    channel_data: AlertChannelUpdate,
-    db: Session = Depends(get_db)
+    channel_id: int, channel_data: AlertChannelUpdate, db: Session = Depends(get_db)
 ):
     """Update an alert channel."""
     try:
@@ -458,8 +457,8 @@ async def update_alert_channel(
         db.refresh(channel)
 
         channel_dict = model_to_dict(channel)
-        channel_dict['config'] = json.loads(channel.config_json)
-        del channel_dict['config_json']
+        channel_dict["config"] = json.loads(channel.config_json)
+        del channel_dict["config_json"]
         return AlertChannelResponse(**channel_dict)
     except HTTPException:
         raise
@@ -470,10 +469,7 @@ async def update_alert_channel(
 
 
 @router.delete("/channels/{channel_id}", status_code=204)
-async def delete_alert_channel(
-    channel_id: int,
-    db: Session = Depends(get_db)
-):
+async def delete_alert_channel(channel_id: int, db: Session = Depends(get_db)):
     """Delete an alert channel."""
     try:
         channel = db.query(AlertChannel).filter(AlertChannel.id == channel_id).first()

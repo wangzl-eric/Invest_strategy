@@ -17,7 +17,12 @@ from quant_data.spec import DatasetId
 
 
 def _utc_now_tag() -> str:
-    return datetime.now(tz=timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return (
+        datetime.now(tz=timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
 
 
 @dataclass(frozen=True)
@@ -27,7 +32,9 @@ class RegisterResult:
     version: str
 
 
-def get_or_create_dataset(db: Session, *, ds: DatasetId, description: str = "") -> Dataset:
+def get_or_create_dataset(
+    db: Session, *, ds: DatasetId, description: str = ""
+) -> Dataset:
     existing = (
         db.query(Dataset)
         .filter(
@@ -73,7 +80,11 @@ def register_dataset_version(
         .one_or_none()
     )
     if existing:
-        return RegisterResult(dataset_id=dataset.id, dataset_version_id=existing.id, version=existing.version)
+        return RegisterResult(
+            dataset_id=dataset.id,
+            dataset_version_id=existing.id,
+            version=existing.version,
+        )
 
     dv = DatasetVersion(
         dataset_id=dataset.id,
@@ -85,7 +96,9 @@ def register_dataset_version(
     )
     db.add(dv)
     db.flush()
-    return RegisterResult(dataset_id=dataset.id, dataset_version_id=dv.id, version=dv.version)
+    return RegisterResult(
+        dataset_id=dataset.id, dataset_version_id=dv.id, version=dv.version
+    )
 
 
 def start_ingestion_run(
@@ -104,7 +117,9 @@ def start_ingestion_run(
     return run
 
 
-def finish_ingestion_run(db: Session, *, run_id: int, status: str, error: str = "") -> None:
+def finish_ingestion_run(
+    db: Session, *, run_id: int, status: str, error: str = ""
+) -> None:
     run = db.query(IngestionRun).filter(IngestionRun.id == run_id).one()
     run.status = status
     run.error = error

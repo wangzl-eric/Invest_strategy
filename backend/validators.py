@@ -1,15 +1,17 @@
 """Data validation layer for IBKR data."""
 import logging
-from typing import Optional, Dict, Any, List
 from datetime import datetime
-import pandas as pd
+from typing import Any, Dict, List, Optional
+
 import numpy as np
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
 
 class ValidationError(Exception):
     """Exception raised when data validation fails."""
+
     pass
 
 
@@ -47,8 +49,13 @@ class DataValidator:
 
         # Validate numeric fields
         numeric_fields = [
-            "total_cash_value", "net_liquidation", "buying_power",
-            "gross_position_value", "available_funds", "excess_liquidity", "equity"
+            "total_cash_value",
+            "net_liquidation",
+            "buying_power",
+            "gross_position_value",
+            "available_funds",
+            "excess_liquidity",
+            "equity",
         ]
 
         for field in numeric_fields:
@@ -100,9 +107,7 @@ class DataValidator:
             raise ValidationError(f"Invalid quantity: {data['quantity']}")
 
         # Validate optional numeric fields
-        numeric_fields = [
-            "avg_cost", "market_price", "market_value", "unrealized_pnl"
-        ]
+        numeric_fields = ["avg_cost", "market_price", "market_value", "unrealized_pnl"]
 
         for field in numeric_fields:
             value = data.get(field)
@@ -139,7 +144,14 @@ class DataValidator:
         Raises:
             ValidationError: If validation fails
         """
-        required_fields = ["account_id", "exec_id", "exec_time", "symbol", "shares", "price"]
+        required_fields = [
+            "account_id",
+            "exec_id",
+            "exec_time",
+            "symbol",
+            "shares",
+            "price",
+        ]
 
         for field in required_fields:
             if field not in data or data[field] is None:
@@ -157,7 +169,11 @@ class DataValidator:
         # Validate shares and price
         if np.isnan(validated["shares"]) or np.isinf(validated["shares"]):
             raise ValidationError(f"Invalid shares: {data['shares']}")
-        if np.isnan(validated["price"]) or np.isinf(validated["price"]) or validated["price"] <= 0:
+        if (
+            np.isnan(validated["price"])
+            or np.isinf(validated["price"])
+            or validated["price"] <= 0
+        ):
             raise ValidationError(f"Invalid price: {data['price']}")
 
         # Validate side
@@ -168,8 +184,13 @@ class DataValidator:
 
         # Validate optional numeric fields
         numeric_fields = [
-            "avg_price", "cum_qty", "proceeds", "commission", "taxes", "cost_basis",
-            "realized_pnl"
+            "avg_price",
+            "cum_qty",
+            "proceeds",
+            "commission",
+            "taxes",
+            "cost_basis",
+            "realized_pnl",
         ]
 
         for field in numeric_fields:
@@ -220,8 +241,11 @@ class DataValidator:
 
         # Validate numeric fields (all optional but should be validated if present)
         numeric_fields = [
-            "realized_pnl", "unrealized_pnl", "total_pnl",
-            "net_liquidation", "total_cash"
+            "realized_pnl",
+            "unrealized_pnl",
+            "total_pnl",
+            "net_liquidation",
+            "total_cash",
         ]
 
         for field in numeric_fields:
@@ -242,9 +266,7 @@ class DataValidator:
 
     @staticmethod
     def detect_outliers(
-        series: pd.Series,
-        method: str = "iqr",
-        threshold: float = 3.0
+        series: pd.Series, method: str = "iqr", threshold: float = 3.0
     ) -> pd.Series:
         """Detect outliers in a pandas Series.
 
@@ -296,7 +318,7 @@ class DataValidator:
         account_id: str,
         positions: Optional[List[Dict[str, Any]]] = None,
         trades: Optional[List[Dict[str, Any]]] = None,
-        pnl_history: Optional[List[Dict[str, Any]]] = None
+        pnl_history: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         """Perform comprehensive data quality checks.
 
@@ -328,11 +350,14 @@ class DataValidator:
 
             # Check for invalid quantities
             invalid_quantities = [
-                p for p in positions
+                p
+                for p in positions
                 if p.get("quantity") is None or np.isnan(float(p.get("quantity", 0)))
             ]
             if invalid_quantities:
-                quality_report["issues"].append(f"{len(invalid_quantities)} positions with invalid quantities")
+                quality_report["issues"].append(
+                    f"{len(invalid_quantities)} positions with invalid quantities"
+                )
                 quality_report["checks_passed"] = False
 
         # Check trades
@@ -347,11 +372,14 @@ class DataValidator:
 
             # Check for invalid prices
             invalid_prices = [
-                t for t in trades
+                t
+                for t in trades
                 if t.get("price") is None or float(t.get("price", 0)) <= 0
             ]
             if invalid_prices:
-                quality_report["issues"].append(f"{len(invalid_prices)} trades with invalid prices")
+                quality_report["issues"].append(
+                    f"{len(invalid_prices)} trades with invalid prices"
+                )
                 quality_report["checks_passed"] = False
 
         # Check PnL history

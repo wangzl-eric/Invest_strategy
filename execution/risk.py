@@ -49,24 +49,39 @@ class RiskEngine:
     def __init__(self, limits: Optional[RiskLimits] = None):
         self.limits = limits or RiskLimits()
 
-    def check_order(self, *, state: RiskState, order: OrderRequest, price: float) -> RiskDecision:
+    def check_order(
+        self, *, state: RiskState, order: OrderRequest, price: float
+    ) -> RiskDecision:
         if _killswitch_enabled(self.limits.kill_switch_env):
-            return RiskDecision(allowed=False, reason="Kill switch enabled", context={"env": self.limits.kill_switch_env})
+            return RiskDecision(
+                allowed=False,
+                reason="Kill switch enabled",
+                context={"env": self.limits.kill_switch_env},
+            )
 
         if state.daily_pnl <= -abs(self.limits.max_daily_loss):
             return RiskDecision(
                 allowed=False,
                 reason="Max daily loss breached",
-                context={"daily_pnl": state.daily_pnl, "max_daily_loss": self.limits.max_daily_loss},
+                context={
+                    "daily_pnl": state.daily_pnl,
+                    "max_daily_loss": self.limits.max_daily_loss,
+                },
             )
 
         notional = float(order.quantity) * float(price)
-        sym_notional = state.position_notional.get(order.symbol, 0.0) + (notional if order.side == "BUY" else -notional)
+        sym_notional = state.position_notional.get(order.symbol, 0.0) + (
+            notional if order.side == "BUY" else -notional
+        )
         if abs(sym_notional) > abs(self.limits.max_position_notional):
             return RiskDecision(
                 allowed=False,
                 reason="Max position notional exceeded",
-                context={"symbol": order.symbol, "symbol_notional": sym_notional, "limit": self.limits.max_position_notional},
+                context={
+                    "symbol": order.symbol,
+                    "symbol_notional": sym_notional,
+                    "limit": self.limits.max_position_notional,
+                },
             )
 
         gross_after = state.gross_notional + abs(notional)
@@ -74,7 +89,17 @@ class RiskEngine:
             return RiskDecision(
                 allowed=False,
                 reason="Max gross notional exceeded",
-                context={"gross_after": gross_after, "limit": self.limits.max_gross_notional},
+                context={
+                    "gross_after": gross_after,
+                    "limit": self.limits.max_gross_notional,
+                },
             )
 
-        return RiskDecision(allowed=True, context={"notional": notional, "symbol_notional_after": sym_notional, "gross_after": gross_after})
+        return RiskDecision(
+            allowed=True,
+            context={
+                "notional": notional,
+                "symbol_notional_after": sym_notional,
+                "gross_after": gross_after,
+            },
+        )

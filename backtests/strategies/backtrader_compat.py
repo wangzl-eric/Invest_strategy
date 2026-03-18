@@ -11,11 +11,7 @@ import backtrader as bt
 import numpy as np
 import pandas as pd
 
-from backtests.strategies.signals import (
-    BaseSignal,
-    get_signal,
-    list_signals,
-)
+from backtests.strategies.signals import BaseSignal, get_signal, list_signals
 
 
 class BacktraderSignalIndicator(bt.Indicator):
@@ -257,6 +253,7 @@ def get_backtrader_equivalent(signal_name: str) -> Optional[str]:
 # ============================================================================
 # Event-Driven Signal Computation
 # ============================================================================
+
 
 class EventDrivenSignalComputer:
     """

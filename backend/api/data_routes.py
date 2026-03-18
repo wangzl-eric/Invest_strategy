@@ -7,7 +7,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
-from backend.market_data_store import market_data_store, get_job_status
+from backend.market_data_store import get_job_status, market_data_store
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +17,7 @@ router = APIRouter()
 # ---------------------------------------------------------------------------
 # Request / response models
 # ---------------------------------------------------------------------------
+
 
 class PullRequest(BaseModel):
     source: str  # "yfinance" | "fred"
@@ -35,6 +36,7 @@ class PullResponse(BaseModel):
 # Endpoints
 # ---------------------------------------------------------------------------
 
+
 @router.get("/data/catalog")
 async def get_catalog():
     """Return metadata about all stored market data."""
@@ -52,11 +54,17 @@ async def pull_data(req: PullRequest):
         try:
             if req.source == "yfinance":
                 rows = market_data_store.pull_yf_data(
-                    req.tickers, req.start_date, req.end_date, req.asset_class,
+                    req.tickers,
+                    req.start_date,
+                    req.end_date,
+                    req.asset_class,
                 )
             elif req.source == "fred":
                 rows = market_data_store.pull_fred_data(
-                    req.tickers, req.start_date, req.end_date, req.asset_class,
+                    req.tickers,
+                    req.start_date,
+                    req.end_date,
+                    req.asset_class,
                 )
             else:
                 _finish_job(job_id, error=f"Unknown source: {req.source}")
@@ -108,14 +116,16 @@ async def pull_status(job_id: str):
 # IBKR-specific endpoints
 # ---------------------------------------------------------------------------
 
+
 class IBKRPullRequest(BaseModel):
     """Request model for IBKR data pulls."""
+
     asset_class: str  # "ibkr_equities", "ibkr_fx", "ibkr_futures"
     tickers: List[str]
     start_date: str
     end_date: str
     interval: str = "1 day"  # "1 day", "1 min", "5 mins", etc.
-    sec_type: str = "STK"    # "STK", "CASH", "FUT"
+    sec_type: str = "STK"  # "STK", "CASH", "FUT"
     exchange: str = "SMART"  # "SMART", "IDEALPRO", "CME"
 
 
@@ -173,8 +183,8 @@ async def ibkr_subscription_status():
                 "instructions": [
                     "1. Make sure IB Gateway or TWS is running",
                     "2. Ensure API access is enabled in Gateway/TWS settings",
-                    "3. Check that the port matches (7497 for paper, 7496 for live)"
-                ]
+                    "3. Check that the port matches (7497 for paper, 7496 for live)",
+                ],
             }
 
         # Get account summary (this also verifies the connection is working)
@@ -188,18 +198,17 @@ async def ibkr_subscription_status():
         return {
             "connected": True,
             "account": summary.get("AccountId", "Unknown"),
-            "note": "Connection successful. Market data subscriptions are handled by IBKR."
+            "note": "Connection successful. Market data subscriptions are handled by IBKR.",
         }
 
     except Exception as e:
-        return {
-            "connected": False,
-            "error": str(e)
-        }
+        return {"connected": False, "error": str(e)}
 
 
 @router.get("/data/ibkr/symbol-search")
-async def ibkr_symbol_search(symbol: str = Query(..., description="Symbol to search for")):
+async def ibkr_symbol_search(
+    symbol: str = Query(..., description="Symbol to search for")
+):
     """Search for symbols in IBKR's database."""
     from backend.ibkr_client import IBKRClient
 
@@ -213,11 +222,7 @@ async def ibkr_symbol_search(symbol: str = Query(..., description="Symbol to sea
         results = await client.search_symbols(symbol)
         await client.disconnect()
 
-        return {
-            "symbol": symbol,
-            "matches": results,
-            "count": len(results)
-        }
+        return {"symbol": symbol, "matches": results, "count": len(results)}
 
     except Exception as e:
         return {"error": str(e)}
@@ -244,7 +249,7 @@ async def pull_ibkr_options(
         if not chain:
             return {
                 "error": f"No options chain found for {underlying}",
-                "note": "Make sure you have options market data subscription"
+                "note": "Make sure you have options market data subscription",
             }
 
         return chain
@@ -255,17 +260,15 @@ async def pull_ibkr_options(
 
 @router.get("/data/ibkr/tickers")
 async def ibkr_tickers(
-    asset_class: str = Query(..., description="Asset class (ibkr_equities, ibkr_fx, ibkr_futures)")
+    asset_class: str = Query(
+        ..., description="Asset class (ibkr_equities, ibkr_fx, ibkr_futures)"
+    )
 ):
     """Get default ticker list for an IBKR asset class."""
     from backend.market_data_store import _IBKR_ASSET_TICKERS
 
     tickers = _IBKR_ASSET_TICKERS.get(asset_class, [])
-    return {
-        "asset_class": asset_class,
-        "tickers": tickers,
-        "count": len(tickers)
-    }
+    return {"asset_class": asset_class, "tickers": tickers, "count": len(tickers)}
 
 
 @router.post("/data/ibkr/quote")

@@ -5,10 +5,11 @@ for portfolio performance comparison.
 """
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List
 from functools import lru_cache
-import pandas as pd
+from typing import Any, Dict, List, Optional
+
 import numpy as np
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ def _is_cache_valid(cache_key: str) -> bool:
 def get_sp500_data(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
-    use_cache: bool = True
+    use_cache: bool = True,
 ) -> pd.DataFrame:
     """Fetch S&P 500 historical data.
 
@@ -75,16 +76,18 @@ def get_sp500_data(
             return pd.DataFrame()
 
         # Process data
-        df = pd.DataFrame({
-            'date': hist.index,
-            'close': hist['Close'].values,
-        })
-        df['date'] = pd.to_datetime(df['date']).dt.tz_localize(None)
-        df = df.sort_values('date').reset_index(drop=True)
+        df = pd.DataFrame(
+            {
+                "date": hist.index,
+                "close": hist["Close"].values,
+            }
+        )
+        df["date"] = pd.to_datetime(df["date"]).dt.tz_localize(None)
+        df = df.sort_values("date").reset_index(drop=True)
 
         # Calculate returns
-        df['daily_return'] = df['close'].pct_change()
-        df['cumulative_return'] = (1 + df['daily_return']).cumprod() - 1
+        df["daily_return"] = df["close"].pct_change()
+        df["cumulative_return"] = (1 + df["daily_return"]).cumprod() - 1
 
         # Cache the result
         _benchmark_cache[cache_key] = df
@@ -101,7 +104,7 @@ def get_sp500_data(
 def get_benchmark_comparison(
     portfolio_returns: pd.Series,
     start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None,
 ) -> Dict[str, Any]:
     """Compare portfolio returns against S&P 500 benchmark.
 
@@ -118,15 +121,15 @@ def get_benchmark_comparison(
 
     if sp500_df.empty:
         return {
-            'error': 'Could not fetch benchmark data',
-            'portfolio_sharpe': None,
-            'benchmark_sharpe': None,
-            'alpha': None,
-            'beta': None,
+            "error": "Could not fetch benchmark data",
+            "portfolio_sharpe": None,
+            "benchmark_sharpe": None,
+            "alpha": None,
+            "beta": None,
         }
 
     # Align dates
-    sp500_df = sp500_df.set_index('date')
+    sp500_df = sp500_df.set_index("date")
 
     # Convert portfolio returns to DataFrame if needed
     if isinstance(portfolio_returns.index, pd.DatetimeIndex):
@@ -134,28 +137,36 @@ def get_benchmark_comparison(
     else:
         portfolio_dates = pd.to_datetime(portfolio_returns.index)
 
-    portfolio_df = pd.DataFrame({
-        'portfolio_return': portfolio_returns.values
-    }, index=portfolio_dates)
+    portfolio_df = pd.DataFrame(
+        {"portfolio_return": portfolio_returns.values}, index=portfolio_dates
+    )
 
     # Merge on date
-    merged = portfolio_df.join(sp500_df[['daily_return']], how='inner')
-    merged = merged.rename(columns={'daily_return': 'benchmark_return'})
+    merged = portfolio_df.join(sp500_df[["daily_return"]], how="inner")
+    merged = merged.rename(columns={"daily_return": "benchmark_return"})
     merged = merged.dropna()
 
     if len(merged) < 10:
         return {
-            'error': 'Insufficient overlapping data points',
-            'data_points': len(merged),
+            "error": "Insufficient overlapping data points",
+            "data_points": len(merged),
         }
 
     # Calculate metrics
-    portfolio_ret = merged['portfolio_return']
-    benchmark_ret = merged['benchmark_return']
+    portfolio_ret = merged["portfolio_return"]
+    benchmark_ret = merged["benchmark_return"]
 
     # Sharpe ratios (assuming 0 risk-free rate for simplicity)
-    portfolio_sharpe = np.sqrt(252) * portfolio_ret.mean() / portfolio_ret.std() if portfolio_ret.std() > 0 else 0
-    benchmark_sharpe = np.sqrt(252) * benchmark_ret.mean() / benchmark_ret.std() if benchmark_ret.std() > 0 else 0
+    portfolio_sharpe = (
+        np.sqrt(252) * portfolio_ret.mean() / portfolio_ret.std()
+        if portfolio_ret.std() > 0
+        else 0
+    )
+    benchmark_sharpe = (
+        np.sqrt(252) * benchmark_ret.mean() / benchmark_ret.std()
+        if benchmark_ret.std() > 0
+        else 0
+    )
 
     # Beta and Alpha (CAPM)
     cov_matrix = np.cov(portfolio_ret, benchmark_ret)
@@ -172,27 +183,30 @@ def get_benchmark_comparison(
     benchmark_cumulative = (1 + benchmark_ret).cumprod() - 1
 
     return {
-        'portfolio_sharpe': float(portfolio_sharpe),
-        'benchmark_sharpe': float(benchmark_sharpe),
-        'beta': float(beta),
-        'alpha': float(alpha),
-        'information_ratio': float(information_ratio),
-        'tracking_error': float(tracking_error),
-        'correlation': float(portfolio_ret.corr(benchmark_ret)),
-        'data_points': len(merged),
-        'portfolio_cumulative_return': float(portfolio_cumulative.iloc[-1]) if len(portfolio_cumulative) > 0 else 0,
-        'benchmark_cumulative_return': float(benchmark_cumulative.iloc[-1]) if len(benchmark_cumulative) > 0 else 0,
-        'time_series': {
-            'dates': merged.index.strftime('%Y-%m-%d').tolist(),
-            'portfolio_cumulative': portfolio_cumulative.tolist(),
-            'benchmark_cumulative': benchmark_cumulative.tolist(),
-        }
+        "portfolio_sharpe": float(portfolio_sharpe),
+        "benchmark_sharpe": float(benchmark_sharpe),
+        "beta": float(beta),
+        "alpha": float(alpha),
+        "information_ratio": float(information_ratio),
+        "tracking_error": float(tracking_error),
+        "correlation": float(portfolio_ret.corr(benchmark_ret)),
+        "data_points": len(merged),
+        "portfolio_cumulative_return": float(portfolio_cumulative.iloc[-1])
+        if len(portfolio_cumulative) > 0
+        else 0,
+        "benchmark_cumulative_return": float(benchmark_cumulative.iloc[-1])
+        if len(benchmark_cumulative) > 0
+        else 0,
+        "time_series": {
+            "dates": merged.index.strftime("%Y-%m-%d").tolist(),
+            "portfolio_cumulative": portfolio_cumulative.tolist(),
+            "benchmark_cumulative": benchmark_cumulative.tolist(),
+        },
     }
 
 
 def calculate_rolling_metrics(
-    returns: pd.Series,
-    window: int = 30
+    returns: pd.Series, window: int = 30
 ) -> Dict[str, List[float]]:
     """Calculate rolling performance metrics.
 
@@ -205,10 +219,10 @@ def calculate_rolling_metrics(
     """
     if len(returns) < window:
         return {
-            'dates': [],
-            'rolling_sharpe': [],
-            'rolling_volatility': [],
-            'rolling_return': [],
+            "dates": [],
+            "rolling_sharpe": [],
+            "rolling_volatility": [],
+            "rolling_return": [],
         }
 
     # Rolling calculations
@@ -224,23 +238,20 @@ def calculate_rolling_metrics(
     valid_idx = ~rolling_sharpe.isna()
 
     dates = returns.index[valid_idx]
-    if hasattr(dates, 'strftime'):
-        date_strings = dates.strftime('%Y-%m-%d').tolist()
+    if hasattr(dates, "strftime"):
+        date_strings = dates.strftime("%Y-%m-%d").tolist()
     else:
         date_strings = [str(d) for d in dates]
 
     return {
-        'dates': date_strings,
-        'rolling_sharpe': rolling_sharpe[valid_idx].tolist(),
-        'rolling_volatility': rolling_volatility[valid_idx].tolist(),
-        'rolling_return': rolling_return[valid_idx].tolist(),
+        "dates": date_strings,
+        "rolling_sharpe": rolling_sharpe[valid_idx].tolist(),
+        "rolling_volatility": rolling_volatility[valid_idx].tolist(),
+        "rolling_return": rolling_return[valid_idx].tolist(),
     }
 
 
-def get_returns_distribution(
-    returns: pd.Series,
-    bins: int = 50
-) -> Dict[str, Any]:
+def get_returns_distribution(returns: pd.Series, bins: int = 50) -> Dict[str, Any]:
     """Calculate returns distribution statistics.
 
     Args:
@@ -254,8 +265,8 @@ def get_returns_distribution(
 
     if len(returns) < 2:
         return {
-            'histogram': {'bins': [], 'counts': []},
-            'statistics': {},
+            "histogram": {"bins": [], "counts": []},
+            "statistics": {},
         }
 
     # Histogram
@@ -270,38 +281,42 @@ def get_returns_distribution(
 
     # VaR and CVaR at 95% confidence
     var_95 = float(np.percentile(returns, 5))
-    cvar_95 = float(returns[returns <= var_95].mean()) if len(returns[returns <= var_95]) > 0 else var_95
+    cvar_95 = (
+        float(returns[returns <= var_95].mean())
+        if len(returns[returns <= var_95]) > 0
+        else var_95
+    )
 
     # Percentiles
     percentiles = {
-        'p1': float(np.percentile(returns, 1)),
-        'p5': float(np.percentile(returns, 5)),
-        'p25': float(np.percentile(returns, 25)),
-        'p50': float(np.percentile(returns, 50)),
-        'p75': float(np.percentile(returns, 75)),
-        'p95': float(np.percentile(returns, 95)),
-        'p99': float(np.percentile(returns, 99)),
+        "p1": float(np.percentile(returns, 1)),
+        "p5": float(np.percentile(returns, 5)),
+        "p25": float(np.percentile(returns, 25)),
+        "p50": float(np.percentile(returns, 50)),
+        "p75": float(np.percentile(returns, 75)),
+        "p95": float(np.percentile(returns, 95)),
+        "p99": float(np.percentile(returns, 99)),
     }
 
     return {
-        'histogram': {
-            'bins': bin_centers.tolist(),
-            'counts': counts.tolist(),
+        "histogram": {
+            "bins": bin_centers.tolist(),
+            "counts": counts.tolist(),
         },
-        'statistics': {
-            'mean': mean_ret,
-            'std': std_ret,
-            'skewness': skewness,
-            'kurtosis': kurtosis,
-            'var_95': var_95,
-            'cvar_95': cvar_95,
-            'min': float(returns.min()),
-            'max': float(returns.max()),
-            'positive_days': int((returns > 0).sum()),
-            'negative_days': int((returns < 0).sum()),
-            'total_days': len(returns),
+        "statistics": {
+            "mean": mean_ret,
+            "std": std_ret,
+            "skewness": skewness,
+            "kurtosis": kurtosis,
+            "var_95": var_95,
+            "cvar_95": cvar_95,
+            "min": float(returns.min()),
+            "max": float(returns.max()),
+            "positive_days": int((returns > 0).sum()),
+            "negative_days": int((returns < 0).sum()),
+            "total_days": len(returns),
         },
-        'percentiles': percentiles,
+        "percentiles": percentiles,
     }
 
 
