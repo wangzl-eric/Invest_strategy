@@ -1,46 +1,45 @@
 """Prometheus metrics collection for monitoring."""
-from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
-from typing import Optional
 import time
+from typing import Optional
+
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    Counter,
+    Gauge,
+    Histogram,
+    generate_latest,
+)
 
 # API request metrics
 api_requests_total = Counter(
     "api_requests_total",
     "Total number of API requests",
-    ["method", "endpoint", "status"]
+    ["method", "endpoint", "status"],
 )
 
 api_request_duration = Histogram(
     "api_request_duration_seconds",
     "API request duration in seconds",
     ["method", "endpoint"],
-    buckets=(0.01, 0.05, 0.1, 0.5, 1.0, 5.0)
+    buckets=(0.01, 0.05, 0.1, 0.5, 1.0, 5.0),
 )
 
 # Data fetch metrics
 data_fetch_total = Counter(
-    "data_fetch_total",
-    "Total number of data fetch operations",
-    ["source", "status"]
+    "data_fetch_total", "Total number of data fetch operations", ["source", "status"]
 )
 
 data_fetch_duration = Histogram(
-    "data_fetch_duration_seconds",
-    "Data fetch duration in seconds",
-    ["source"]
+    "data_fetch_duration_seconds", "Data fetch duration in seconds", ["source"]
 )
 
 # Scheduler metrics
 scheduler_runs_total = Counter(
-    "scheduler_runs_total",
-    "Total number of scheduler runs",
-    ["job_name", "status"]
+    "scheduler_runs_total", "Total number of scheduler runs", ["job_name", "status"]
 )
 
 scheduler_last_run_time = Gauge(
-    "scheduler_last_run_time_seconds",
-    "Timestamp of last scheduler run",
-    ["job_name"]
+    "scheduler_last_run_time_seconds", "Timestamp of last scheduler run", ["job_name"]
 )
 
 # IBKR connection metrics
@@ -50,8 +49,7 @@ ibkr_connection_status = Gauge(
 )
 
 ibkr_connection_errors_total = Counter(
-    "ibkr_connection_errors_total",
-    "Total number of IBKR connection errors"
+    "ibkr_connection_errors_total", "Total number of IBKR connection errors"
 )
 
 # Database metrics
@@ -64,7 +62,7 @@ database_connection_status = Gauge(
 performance_calculation_duration = Histogram(
     "performance_calculation_duration_seconds",
     "Performance metrics calculation duration",
-    ["metric_type"]
+    ["metric_type"],
 )
 
 
