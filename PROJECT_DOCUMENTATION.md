@@ -122,7 +122,7 @@ Legacy root paths such as `backend/`, `frontend/`, `backtests/`, and `quant_data
 Important distinctions:
 
 - `data/` stores files. `quant_data/` is the Python package that manages those files.
-- `backtests/` is the research framework. `backend/backtest_engine.py` is the event-driven execution adapter.
+- `backtests/` is the research framework. `workstation/backtests/event_driven/backtest_engine.py` is the canonical event-driven execution adapter, and `backend/backtest_engine.py` is kept as a compatibility shim.
 - `qc_lean/` is an optional local Lean workspace, not part of the core Python package graph.
 
 See `docs/repo_layout.md` for the maintained stack map.
@@ -195,7 +195,7 @@ Two complementary layers are available:
 | Layer | File(s) | Use Case |
 |-------|---------|----------|
 | **Research framework** | `backtests/builder.py`, `backtests/walkforward.py`, `backtests/stats/` | portfolio research, walk-forward validation, statistical tests |
-| **Event-driven engine** | `backend/backtest_engine.py` | Backtrader-based simulation with execution realism |
+| **Event-driven engine** | `workstation/backtests/event_driven/backtest_engine.py` | Backtrader-based simulation with execution realism |
 
 #### Using BacktestEngine (Backtrader)
 

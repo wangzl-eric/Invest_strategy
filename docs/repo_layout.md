@@ -56,8 +56,8 @@ These legacy root paths currently remain in place as symlinks:
 ### `backtests/` vs `backend/backtest_engine.py`
 
 - `backtests/` is the research framework: signals, portfolio builder, walk-forward analysis, statistics, reporting.
-- `backend/backtest_engine.py` is an event-driven execution adapter around Backtrader and sits closer to the API/live stack.
-- They should stay separate unless the event-driven engine is migrated deliberately with compatibility imports.
+- `workstation/backtests/event_driven/backtest_engine.py` is the canonical event-driven execution adapter around Backtrader.
+- `backend/backtest_engine.py` is kept only as a compatibility shim for existing imports.
 
 ### `backend/` and `frontend/`
 
@@ -83,6 +83,6 @@ These legacy root paths currently remain in place as symlinks:
 These are reasonable next steps, but were intentionally not done in this pass because they are import- and path-sensitive:
 
 1. Move `qc_lean/` under `external/` or out of the repo entirely.
-2. Move `backend/backtest_engine.py` into `workstation/backtests/event_driven/` and keep a compatibility import.
+2. Replace the `backend/backtest_engine.py` compatibility shim with direct imports once downstream callers are updated.
 3. Replace the compatibility symlinks with updated imports and path references once the new grouped layout has settled.
 4. Split optional systems like `cerebro/` into their own package or workspace once the interfaces stabilize.
