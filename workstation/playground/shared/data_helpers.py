@@ -1,21 +1,187 @@
 """
 Playground Data Helpers
 
-Simplified data access wrappers for the Market Study Playground.
-Leverages existing infrastructure (quant_data/, market_data_store, market_data_service)
-with relaxed validation for exploratory use.
+Simplified local-first data access wrappers for the Market Study Playground.
+They use the unified backend data pipeline so notebooks can:
+- read from the local research cache first
+- optionally start a refresh job to update the cache from source APIs
+- keep exploratory work aligned with the main research storage model
 """
 
+from __future__ import annotations
+
 import sys
+import time
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
 
-# Add project root to path
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
+# Add repo root to path so playground notebooks can import backend modules
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from backend.data_pipeline import data_pipeline  # noqa: E402
+
+DEFAULT_PRICE_DATASET = "equities"
+DEFAULT_MACRO_DATASET = "macro_indicators"
+
+
+def _today_str() -> str:
+    return datetime.now().strftime("%Y-%m-%d")
+
+
+def _normalize_identifiers(values: Union[str, Sequence[str]]) -> list[str]:
+    if isinstance(values, str):
+        value = values.strip()
+        return [value] if value else []
+    return [str(v).strip() for v in values if str(v).strip()]
+
+
+def _require_identifiers(kind: str, identifiers: Sequence[str]) -> None:
+    if not identifiers:
+        raise ValueError(f"{kind} requires at least one identifier")
+
+
+def _empty_price_frame() -> pd.DataFrame:
+    return pd.DataFrame(
+        columns=["date", "ticker", "open", "high", "low", "close", "volume"]
+    )
+
+
+def _empty_macro_frame() -> pd.DataFrame:
+    return pd.DataFrame(columns=["date", "series_id", "value"])
+
+
+def _price_dataset_candidates(source: str, dataset: Optional[str]) -> list[str]:
+    if dataset:
+        return [dataset]
+
+    source_key = source.lower()
+    if source_key == "ibkr":
+        return ["ibkr_equities"]
+    if source_key in {"yfinance", "yf"}:
+        return ["equities"]
+    if source_key in {"auto", "local", "parquet"}:
+        return ["ibkr_equities", "equities"]
+
+    raise ValueError(f"Unknown price source: {source}")
+
+
+def _macro_dataset_candidates(source: str, dataset: Optional[str]) -> list[str]:
+    if dataset:
+        return [dataset]
+
+    source_key = source.lower()
+    if source_key in {"fred", "auto", "local", "parquet"}:
+        return ["macro_indicators", "treasury_yields", "fed_liquidity"]
+
+    raise ValueError(f"Unknown macro source: {source}")
+
+
+def _query_local_dataset(
+    *,
+    dataset: str,
+    identifiers: Sequence[str],
+    start: str,
+    end: str,
+    refresh_if_missing: bool = False,
+) -> pd.DataFrame:
+    req = data_pipeline.build_local_request(
+        dataset=dataset,
+        identifiers=identifiers,
+        start_date=start,
+        end_date=end,
+        refresh_if_missing=refresh_if_missing,
+    )
+    return data_pipeline.query_local(req)
+
+
+def start_refresh_job(
+    *,
+    dataset: str,
+    identifiers: Union[str, Sequence[str]],
+    start: str,
+    end: Optional[str] = None,
+    interval: str = "1 day",
+    sec_type: Optional[str] = None,
+    exchange: Optional[str] = None,
+) -> str:
+    """Start a local data refresh job and return the job id."""
+    normalized = _normalize_identifiers(identifiers)
+    _require_identifiers("Refresh job", normalized)
+    job_req = data_pipeline.build_refresh_request(
+        dataset=dataset,
+        identifiers=normalized,
+        start_date=start,
+        end_date=end or _today_str(),
+        interval=interval,
+        sec_type=sec_type,
+        exchange=exchange,
+    )
+    return data_pipeline.start_refresh_job(job_req)
+
+
+def wait_for_refresh_job(
+    job_id: str,
+    *,
+    timeout_seconds: float = 60.0,
+    poll_interval: float = 0.25,
+) -> dict:
+    """Poll a refresh job until it completes or times out."""
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+        status = data_pipeline.get_job_status(job_id)
+        if status and status.get("status") != "running":
+            return status
+        time.sleep(poll_interval)
+
+    raise TimeoutError(f"Timed out waiting for refresh job {job_id}")
+
+
+def refresh_prices(
+    tickers: Union[str, Sequence[str]],
+    *,
+    start: str,
+    end: Optional[str] = None,
+    dataset: str = DEFAULT_PRICE_DATASET,
+    interval: str = "1 day",
+    sec_type: Optional[str] = None,
+    exchange: Optional[str] = None,
+    wait: bool = True,
+) -> Union[str, dict]:
+    """Start a refresh job for local price data."""
+    job_id = start_refresh_job(
+        dataset=dataset,
+        identifiers=tickers,
+        start=start,
+        end=end,
+        interval=interval,
+        sec_type=sec_type,
+        exchange=exchange,
+    )
+    return wait_for_refresh_job(job_id) if wait else job_id
+
+
+def refresh_macro_series(
+    series_ids: Union[str, Sequence[str]],
+    *,
+    start: str,
+    end: Optional[str] = None,
+    dataset: str = DEFAULT_MACRO_DATASET,
+    wait: bool = True,
+) -> Union[str, dict]:
+    """Start a refresh job for local macro/FRED data."""
+    job_id = start_refresh_job(
+        dataset=dataset,
+        identifiers=series_ids,
+        start=start,
+        end=end,
+    )
+    return wait_for_refresh_job(job_id) if wait else job_id
 
 
 def get_prices(
@@ -23,157 +189,168 @@ def get_prices(
     start: str,
     end: Optional[str] = None,
     source: str = "auto",
+    dataset: Optional[str] = None,
+    refresh_if_missing: bool = False,
 ) -> Union[pd.DataFrame, dict]:
     """
-    Load price data for one or more tickers.
+    Load price data from the local research cache.
 
     Args:
         tickers: Single ticker string or list of tickers
         start: Start date (YYYY-MM-DD)
         end: End date (YYYY-MM-DD), defaults to today
-        source: 'auto', 'parquet', 'yfinance', or 'ibkr'
+        source: 'auto', 'local', 'parquet', 'yfinance', 'yf', or 'ibkr'
+        dataset: Explicit dataset key such as 'equities', 'ibkr_equities', 'fx'
+        refresh_if_missing: If True, refresh the final candidate dataset on cache miss
 
     Returns:
-        If single ticker: DataFrame with columns [date, open, high, low, close, volume]
+        If single ticker: DataFrame with columns [date, ticker, open, high, low, close, volume]
         If multiple tickers: dict of {ticker: DataFrame}
-
-    Example:
-        >>> spy = get_prices('SPY', start='2020-01-01')
-        >>> prices = get_prices(['SPY', 'TLT', 'GLD'], start='2020-01-01')
     """
-    from datetime import datetime
-
-    import yfinance as yf
-
-    if end is None:
-        end = datetime.now().strftime("%Y-%m-%d")
-
+    end = end or _today_str()
+    identifiers = _normalize_identifiers(tickers)
+    _require_identifiers("Price lookup", identifiers)
     single_ticker = isinstance(tickers, str)
-    if single_ticker:
-        tickers = [tickers]
+    candidates = _price_dataset_candidates(source, dataset)
 
-    result = {}
+    result: dict[str, pd.DataFrame] = {}
+    remaining = identifiers.copy()
 
-    for ticker in tickers:
-        # Try Parquet lake first if source is auto
-        if source in ["auto", "parquet"]:
-            try:
-                from backend.market_data_store import MarketDataStore
+    for idx, dataset_name in enumerate(candidates):
+        if not remaining:
+            break
 
-                store = MarketDataStore()
-                df = store.get_prices(ticker, start_date=start, end_date=end)
-                if df is not None and len(df) > 0:
-                    result[ticker] = df
-                    continue
-            except Exception:
-                pass
+        allow_refresh = refresh_if_missing and idx == len(candidates) - 1
+        df = _query_local_dataset(
+            dataset=dataset_name,
+            identifiers=remaining,
+            start=start,
+            end=end,
+            refresh_if_missing=allow_refresh,
+        )
+        if df.empty or "ticker" not in df.columns:
+            continue
 
-        # Fallback to yfinance
-        if source in ["auto", "yfinance"]:
-            try:
-                df = yf.download(ticker, start=start, end=end, progress=False)
-                if len(df) > 0:
-                    # Normalize column names
-                    df = df.reset_index()
-                    df.columns = [c.lower() for c in df.columns]
+        for ticker in remaining.copy():
+            sub = df[df["ticker"] == ticker].sort_values("date").reset_index(drop=True)
+            if not sub.empty:
+                result[ticker] = sub
+                remaining.remove(ticker)
 
-                    # Handle multi-level columns from yfinance
-                    if isinstance(df.columns, pd.MultiIndex):
-                        df.columns = df.columns.get_level_values(0)
+    for ticker in remaining:
+        result[ticker] = _empty_price_frame()
 
-                    # Ensure standard columns
-                    required = ["date", "open", "high", "low", "close", "volume"]
-                    if "date" not in df.columns and df.index.name == "date":
-                        df = df.reset_index()
-
-                    result[ticker] = (
-                        df[required] if all(c in df.columns for c in required) else df
-                    )
-            except Exception as e:
-                print(f"Warning: Failed to load {ticker}: {e}")
-                result[ticker] = pd.DataFrame()
-
-    return result[tickers[0]] if single_ticker else result
+    return result[identifiers[0]] if single_ticker else result
 
 
 def get_macro_series(
-    series_ids: Union[str, List[str]], start: str, end: Optional[str] = None
+    series_ids: Union[str, List[str]],
+    start: str,
+    end: Optional[str] = None,
+    source: str = "auto",
+    dataset: Optional[str] = None,
+    refresh_if_missing: bool = False,
 ) -> pd.DataFrame:
     """
-    Load FRED macro series.
+    Load FRED or macro data from the local research cache.
 
-    Args:
-        series_ids: Single series ID or list of series IDs
-        start: Start date (YYYY-MM-DD)
-        end: End date (YYYY-MM-DD), defaults to today
-
-    Returns:
-        DataFrame with columns [date, series_id, value] (long format)
-        or [date, series1, series2, ...] (wide format if multiple series)
-
-    Example:
-        >>> vix = get_macro_series('VIXCLS', start='2020-01-01')
-        >>> yields = get_macro_series(['DGS10', 'DGS2'], start='2020-01-01')
+    If `dataset` is not provided, local reads scan the common macro datasets.
+    Refresh-on-miss requires an explicit dataset so the helper knows which local
+    store to update.
     """
-    from datetime import datetime
-
-    if end is None:
-        end = datetime.now().strftime("%Y-%m-%d")
-
+    end = end or _today_str()
+    identifiers = _normalize_identifiers(series_ids)
+    _require_identifiers("Macro series lookup", identifiers)
     single_series = isinstance(series_ids, str)
+    candidates = _macro_dataset_candidates(source, dataset)
+
+    if refresh_if_missing and len(candidates) > 1:
+        raise ValueError(
+            "Refreshing macro data requires an explicit dataset. "
+            "Use dataset='macro_indicators', 'treasury_yields', or 'fed_liquidity'."
+        )
+
+    frames = []
+    for idx, dataset_name in enumerate(candidates):
+        df = _query_local_dataset(
+            dataset=dataset_name,
+            identifiers=identifiers,
+            start=start,
+            end=end,
+            refresh_if_missing=refresh_if_missing and idx == len(candidates) - 1,
+        )
+        if not df.empty:
+            frames.append(df)
+
+    if not frames:
+        return _empty_macro_frame()
+
+    result = (
+        pd.concat(frames, ignore_index=True)
+        .drop_duplicates(subset=["date", "series_id"], keep="last")
+        .sort_values(["series_id", "date"])
+        .reset_index(drop=True)
+    )
+
     if single_series:
-        series_ids = [series_ids]
+        return result[result["series_id"] == identifiers[0]].reset_index(drop=True)
 
-    try:
-        from backend.market_data_service import MarketDataService
+    if len(identifiers) > 1:
+        wide = result.pivot(index="date", columns="series_id", values="value")
+        wide = wide.reset_index()
+        return wide
 
-        service = MarketDataService()
+    return result
 
-        dfs = []
-        for series_id in series_ids:
-            df = service.get_fred_series(series_id, start_date=start, end_date=end)
-            if df is not None and len(df) > 0:
-                df["series_id"] = series_id
-                dfs.append(df)
 
-        if not dfs:
-            return pd.DataFrame()
+def load_market_data(
+    tickers: Union[str, Sequence[str]],
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    dataset: str = DEFAULT_PRICE_DATASET,
+    refresh_if_missing: bool = False,
+) -> Union[pd.DataFrame, dict]:
+    """Backward-compatible alias for playground notebooks."""
+    start = start or (datetime.now() - timedelta(days=365 * 5)).strftime("%Y-%m-%d")
+    return get_prices(
+        tickers,
+        start=start,
+        end=end,
+        dataset=dataset,
+        refresh_if_missing=refresh_if_missing,
+    )
 
-        result = pd.concat(dfs, ignore_index=True)
 
-        # Convert to wide format if multiple series
-        if not single_series and len(series_ids) > 1:
-            result = result.pivot(index="date", columns="series_id", values="value")
-            result = result.reset_index()
-
-        return result
-
-    except Exception as e:
-        print(f"Warning: Failed to load FRED series: {e}")
-        print("Tip: Check that FRED_API_KEY is set in .env")
-        return pd.DataFrame()
+def load_fred_data(
+    series_ids: Union[str, Sequence[str]],
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    dataset: str = DEFAULT_MACRO_DATASET,
+    refresh_if_missing: bool = False,
+) -> pd.DataFrame:
+    """Backward-compatible alias for playground notebooks."""
+    start = start or (datetime.now() - timedelta(days=365 * 5)).strftime("%Y-%m-%d")
+    return get_macro_series(
+        series_ids,
+        start=start,
+        end=end,
+        dataset=dataset,
+        refresh_if_missing=refresh_if_missing,
+    )
 
 
 def get_market_snapshot() -> dict:
     """
-    Get current market overview snapshot.
+    Get current market overview snapshot from locally cached data.
 
     Returns:
-        dict with current values for major indices, rates, volatility, etc.
-
-    Example:
-        >>> snapshot = get_market_snapshot()
-        >>> print(f"VIX: {snapshot['vix']:.2f}")
+        dict with current values for major indices and rates
     """
-    from datetime import datetime, timedelta
-
-    # Get recent data (last 5 days to ensure we have latest)
-    end = datetime.now().strftime("%Y-%m-%d")
+    end = _today_str()
     start = (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d")
 
     snapshot = {}
 
-    # Equities
     for ticker in ["SPY", "QQQ", "IWM"]:
         try:
             df = get_prices(ticker, start=start, end=end)
@@ -182,22 +359,20 @@ def get_market_snapshot() -> dict:
         except Exception:
             pass
 
-    # Rates
     for series_id in ["DGS10", "DGS2", "DFF"]:
         try:
-            df = get_macro_series(series_id, start=start, end=end)
+            df = get_macro_series(
+                series_id,
+                start=start,
+                end=end,
+                dataset="treasury_yields"
+                if series_id.startswith("DGS")
+                else "macro_indicators",
+            )
             if len(df) > 0:
                 snapshot[series_id.lower()] = df["value"].iloc[-1]
         except Exception:
             pass
-
-    # Volatility
-    try:
-        vix = get_macro_series("VIXCLS", start=start, end=end)
-        if len(vix) > 0:
-            snapshot["vix"] = vix["value"].iloc[-1]
-    except Exception:
-        pass
 
     return snapshot
 
@@ -207,31 +382,16 @@ def get_correlation_matrix(
     window: int = 60,
     start: Optional[str] = None,
     end: Optional[str] = None,
+    dataset: str = DEFAULT_PRICE_DATASET,
 ) -> pd.DataFrame:
     """
     Calculate correlation matrix for multiple assets.
-
-    Args:
-        tickers: List of ticker symbols
-        window: Rolling window for correlation (days)
-        start: Start date (YYYY-MM-DD)
-        end: End date (YYYY-MM-DD)
-
-    Returns:
-        Correlation matrix DataFrame
-
-    Example:
-        >>> corr = get_correlation_matrix(['SPY', 'TLT', 'GLD'], window=60)
     """
-    from datetime import datetime, timedelta
-
     if start is None:
         start = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
 
-    # Load prices
-    prices_dict = get_prices(tickers, start=start, end=end)
+    prices_dict = get_prices(tickers, start=start, end=end, dataset=dataset)
 
-    # Extract close prices
     close_prices = pd.DataFrame()
     for ticker, df in prices_dict.items():
         if len(df) > 0 and "close" in df.columns:
@@ -240,16 +400,12 @@ def get_correlation_matrix(
     if close_prices.empty:
         return pd.DataFrame()
 
-    # Calculate returns
     returns = close_prices.pct_change().dropna()
 
-    # Calculate correlation
     if window > 0:
-        # Rolling correlation (return latest)
         corr = returns.rolling(window).corr().iloc[-len(tickers) :]
         corr.index = corr.index.droplevel(0)
     else:
-        # Full period correlation
         corr = returns.corr()
 
     return corr
@@ -260,28 +416,15 @@ def calculate_returns(
 ) -> pd.Series:
     """
     Calculate returns from price series.
-
-    Args:
-        prices: DataFrame or Series with price data
-        method: 'simple' or 'log'
-        periods: Number of periods for return calculation
-
-    Returns:
-        Series of returns
-
-    Example:
-        >>> returns = calculate_returns(spy['close'], method='simple')
-        >>> log_returns = calculate_returns(spy['close'], method='log')
     """
     if isinstance(prices, pd.DataFrame):
         prices = prices["close"]
 
     if method == "simple":
         return prices.pct_change(periods=periods)
-    elif method == "log":
+    if method == "log":
         return np.log(prices / prices.shift(periods))
-    else:
-        raise ValueError(f"Unknown method: {method}. Use 'simple' or 'log'")
+    raise ValueError(f"Unknown method: {method}. Use 'simple' or 'log'")
 
 
 def calculate_volatility(
@@ -292,18 +435,6 @@ def calculate_volatility(
 ) -> pd.Series:
     """
     Calculate volatility from returns.
-
-    Args:
-        returns: Series of returns
-        window: Rolling window size
-        annualize: Whether to annualize (multiply by sqrt(252))
-        method: 'rolling' or 'ewm' (exponentially weighted)
-
-    Returns:
-        Series of volatility values
-
-    Example:
-        >>> vol = calculate_volatility(returns, window=20, annualize=True)
     """
     if method == "rolling":
         vol = returns.rolling(window).std()
@@ -321,16 +452,6 @@ def calculate_volatility(
 def calculate_drawdown(prices: pd.Series) -> pd.Series:
     """
     Calculate drawdown from price series.
-
-    Args:
-        prices: Series of prices
-
-    Returns:
-        Series of drawdown values (negative percentages)
-
-    Example:
-        >>> dd = calculate_drawdown(spy['close'])
-        >>> max_dd = dd.min()
     """
     if isinstance(prices, pd.DataFrame):
         prices = prices["close"]
@@ -342,7 +463,6 @@ def calculate_drawdown(prices: pd.Series) -> pd.Series:
     return drawdown
 
 
-# Convenience function for common FRED series
 FRED_SERIES = {
     "vix": "VIXCLS",
     "vvix": "VVIX",
@@ -364,18 +484,6 @@ def get_fred_shortcut(
 ) -> pd.DataFrame:
     """
     Load FRED series using shortcut names.
-
-    Args:
-        shortcut: Shortcut name (see FRED_SERIES dict)
-        start: Start date
-        end: End date
-
-    Returns:
-        DataFrame with series data
-
-    Example:
-        >>> vix = get_fred_shortcut('vix', start='2020-01-01')
-        >>> yield_curve = get_fred_shortcut('yield_curve', start='2020-01-01')
     """
     if shortcut not in FRED_SERIES:
         raise ValueError(
@@ -383,4 +491,7 @@ def get_fred_shortcut(
         )
 
     series_id = FRED_SERIES[shortcut]
-    return get_macro_series(series_id, start=start, end=end)
+    dataset = (
+        "treasury_yields" if series_id.startswith("DGS") else DEFAULT_MACRO_DATASET
+    )
+    return get_macro_series(series_id, start=start, end=end, dataset=dataset)
