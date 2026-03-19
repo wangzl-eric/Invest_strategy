@@ -16,7 +16,7 @@ echo "=== Cleaning Up Research Team ==="
 
 # 1. Stop all research group sessions
 echo "[1/3] Stopping research sessions..."
-for session in research-marco research-elena research-dev research-pm research-cerebro codex-runner; do
+for session in research-marco research-elena research-dev research-pm research-cerebro research-data codex-runner; do
   $AD session stop "$session" 2>/dev/null && echo "  Stopped: $session" || true
 done
 
