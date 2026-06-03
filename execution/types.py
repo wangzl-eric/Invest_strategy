@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal, Optional
 
-
 Side = Literal["BUY", "SELL"]
 OrderType = Literal["MKT", "LMT"]
 

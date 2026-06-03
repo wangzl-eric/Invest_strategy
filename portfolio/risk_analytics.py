@@ -1,5 +1,6 @@
 """Risk analytics: VaR, CVaR, and portfolio risk metrics."""
 from typing import Optional
+
 import numpy as np
 import pandas as pd
 
@@ -42,6 +43,7 @@ def parametric_var(returns: pd.Series, confidence_level: float = 0.95) -> float:
 
     # Z-score for confidence level
     from scipy import stats
+
     z_score = stats.norm.ppf(1 - confidence_level)
 
     var = mean + z_score * std
@@ -92,11 +94,11 @@ def portfolio_metrics(
     """
     if len(returns) == 0:
         return {
-            'var': 0.0,
-            'cvar': 0.0,
-            'volatility': 0.0,
-            'beta': 0.0,
-            'alpha': 0.0,
+            "var": 0.0,
+            "cvar": 0.0,
+            "volatility": 0.0,
+            "beta": 0.0,
+            "alpha": 0.0,
         }
 
     var = historical_var(returns, confidence_level)
@@ -126,9 +128,9 @@ def portfolio_metrics(
             alpha = float(portfolio_mean - beta * benchmark_mean)
 
     return {
-        'var': var,
-        'cvar': cvar,
-        'volatility': volatility,
-        'beta': beta,
-        'alpha': alpha,
+        "var": var,
+        "cvar": cvar,
+        "volatility": volatility,
+        "beta": beta,
+        "alpha": alpha,
     }

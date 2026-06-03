@@ -1,7 +1,8 @@
 """Unit tests for portfolio/blend.py."""
-import pytest
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
+
 from portfolio.blend import Signal, blend_signals, zscore
 
 
@@ -70,16 +71,12 @@ class TestBlendSignals:
 
     def test_blend_with_weights(self):
         """Test blending with different signal weights."""
-        symbols = ['AAPL', 'GOOGL']
+        symbols = ["AAPL", "GOOGL"]
         signal1 = Signal(
-            name='signal1',
-            score=pd.Series([1.0, 2.0], index=symbols),
-            weight=2.0
+            name="signal1", score=pd.Series([1.0, 2.0], index=symbols), weight=2.0
         )
         signal2 = Signal(
-            name='signal2',
-            score=pd.Series([3.0, 4.0], index=symbols),
-            weight=1.0
+            name="signal2", score=pd.Series([3.0, 4.0], index=symbols), weight=1.0
         )
 
         result = blend_signals([signal1, signal2], zscore_each=True)
@@ -90,16 +87,12 @@ class TestBlendSignals:
 
     def test_blend_without_zscore(self):
         """Test blending without z-score normalization."""
-        symbols = ['AAPL', 'GOOGL']
+        symbols = ["AAPL", "GOOGL"]
         signal1 = Signal(
-            name='signal1',
-            score=pd.Series([1.0, 2.0], index=symbols),
-            weight=1.0
+            name="signal1", score=pd.Series([1.0, 2.0], index=symbols), weight=1.0
         )
         signal2 = Signal(
-            name='signal2',
-            score=pd.Series([3.0, 4.0], index=symbols),
-            weight=1.0
+            name="signal2", score=pd.Series([3.0, 4.0], index=symbols), weight=1.0
         )
 
         result = blend_signals([signal1, signal2], zscore_each=False)
@@ -111,39 +104,39 @@ class TestBlendSignals:
     def test_blend_mismatched_indices(self):
         """Test blending signals with different asset universes."""
         signal1 = Signal(
-            name='signal1',
-            score=pd.Series([1.0, 2.0], index=['AAPL', 'GOOGL']),
-            weight=1.0
+            name="signal1",
+            score=pd.Series([1.0, 2.0], index=["AAPL", "GOOGL"]),
+            weight=1.0,
         )
         signal2 = Signal(
-            name='signal2',
-            score=pd.Series([3.0, 4.0, 5.0], index=['AAPL', 'MSFT', 'TSLA']),
-            weight=1.0
+            name="signal2",
+            score=pd.Series([3.0, 4.0, 5.0], index=["AAPL", "MSFT", "TSLA"]),
+            weight=1.0,
         )
 
         result = blend_signals([signal1, signal2])
 
         # Should union indices
-        expected_symbols = {'AAPL', 'GOOGL', 'MSFT', 'TSLA'}
+        expected_symbols = {"AAPL", "GOOGL", "MSFT", "TSLA"}
         assert set(result.index) == expected_symbols
 
         # Missing values should be filled with 0
-        assert result['MSFT'] is not None
-        assert result['TSLA'] is not None
+        assert result["MSFT"] is not None
+        assert result["TSLA"] is not None
 
     def test_blend_with_missing_values(self):
         """Test blending handles missing values correctly."""
-        symbols = ['AAPL', 'GOOGL', 'MSFT']
+        symbols = ["AAPL", "GOOGL", "MSFT"]
         signal1 = Signal(
-            name='signal1',
+            name="signal1",
             score=pd.Series([1.0, np.nan, 3.0], index=symbols),
-            weight=1.0
+            weight=1.0,
         )
 
         result = blend_signals([signal1])
 
         assert len(result) == 3
         # NaN should be filled with 0 in the blend
-        assert pd.notna(result['AAPL'])
-        assert pd.notna(result['GOOGL'])  # NaN filled with 0
-        assert pd.notna(result['MSFT'])
+        assert pd.notna(result["AAPL"])
+        assert pd.notna(result["GOOGL"])  # NaN filled with 0
+        assert pd.notna(result["MSFT"])

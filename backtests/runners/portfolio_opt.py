@@ -9,10 +9,9 @@ from pathlib import Path
 
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from portfolio.blend import Signal, blend_signals
-from portfolio.optimizer import OptimizationConfig, weights_from_alpha
+from portfolio.optimizer import OptimizationConfig, weights_from_alpha  # noqa: E402
 
 
 def main() -> int:

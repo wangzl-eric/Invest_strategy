@@ -51,6 +51,19 @@ logs/
 .DS_Store
 Thumbs.db
 
+# Coverage
+.coverage
+htmlcov/
+
+# Data lake (generated)
+data_lake/
+
+# Claude worktrees
+.claude/worktrees/
+
+# agent-deck worktrees
+.worktrees/
+
 # Docker
 docker-compose.override.yml
 

@@ -12,40 +12,38 @@
 # ==============================================================================
 US_LARGE_CAP = [
     # Mega Cap (Top 10)
-    "AAPL",   # Apple
-    "MSFT",   # Microsoft
+    "AAPL",  # Apple
+    "MSFT",  # Microsoft
     "GOOGL",  # Alphabet Class A
-    "AMZN",   # Amazon
-    "NVDA",   # NVIDIA
-    "META",   # Meta Platforms
-    "TSLA",   # Tesla
+    "AMZN",  # Amazon
+    "NVDA",  # NVIDIA
+    "META",  # Meta Platforms
+    "TSLA",  # Tesla
     "BRK.B",  # Berkshire Hathaway Class B
-    "JPM",    # JPMorgan Chase
-    "JNJ",    # Johnson & Johnson
-    
+    "JPM",  # JPMorgan Chase
+    "JNJ",  # Johnson & Johnson
     # Top 20
-    "V",      # Visa
-    "PG",     # Procter & Gamble
-    "UNH",    # UnitedHealth
-    "HD",     # Home Depot
-    "MA",     # Mastercard
-    "DIS",    # Walt Disney
-    "PYPL",   # PayPal
-    "BAC",    # Bank of America
-    "ADBE",   # Adobe
-    "NFLX",   # Netflix
-    
+    "V",  # Visa
+    "PG",  # Procter & Gamble
+    "UNH",  # UnitedHealth
+    "HD",  # Home Depot
+    "MA",  # Mastercard
+    "DIS",  # Walt Disney
+    "PYPL",  # PayPal
+    "BAC",  # Bank of America
+    "ADBE",  # Adobe
+    "NFLX",  # Netflix
     # Top 30
-    "CRM",    # Salesforce
-    "INTC",   # Intel
-    "VZ",     # Verizon
-    "T",      # AT&T
-    "PFE",    # Pfizer
-    "MRK",    # Merck
-    "KO",     # Coca-Cola
-    "PEP",    # PepsiCo
-    "ABT",    # Abbott Labs
-    "TMO",    # Thermo Fisher
+    "CRM",  # Salesforce
+    "INTC",  # Intel
+    "VZ",  # Verizon
+    "T",  # AT&T
+    "PFE",  # Pfizer
+    "MRK",  # Merck
+    "KO",  # Coca-Cola
+    "PEP",  # PepsiCo
+    "ABT",  # Abbott Labs
+    "TMO",  # Thermo Fisher
 ]
 
 # ==============================================================================
@@ -53,40 +51,36 @@ US_LARGE_CAP = [
 # ==============================================================================
 US_ETFS = [
     # SPAC/Index ETFs
-    "SPY",    # S&P 500 ETF
-    "QQQ",    # Nasdaq 100 ETF
-    "IWM",    # Russell 2000 ETF
-    "DIA",    # Dow Jones ETF
-    
+    "SPY",  # S&P 500 ETF
+    "QQQ",  # Nasdaq 100 ETF
+    "IWM",  # Russell 2000 ETF
+    "DIA",  # Dow Jones ETF
     # Sector ETFs
-    "XLK",    # Technology
-    "XLF",    # Financials
-    "XLE",    # Energy
-    "XLV",    # Healthcare
-    "XLC",    # Communications
-    "XLY",    # Consumer Discretionary
-    "XLP",    # Consumer Staples
-    "XLB",    # Materials
-    "XLRE",   # Real Estate
-    "XLU",    # Utilities
-    
+    "XLK",  # Technology
+    "XLF",  # Financials
+    "XLE",  # Energy
+    "XLV",  # Healthcare
+    "XLC",  # Communications
+    "XLY",  # Consumer Discretionary
+    "XLP",  # Consumer Staples
+    "XLB",  # Materials
+    "XLRE",  # Real Estate
+    "XLU",  # Utilities
     # Bond ETFs
-    "TLT",    # 20+ Year Treasury
-    "IEF",    # 7-10 Year Treasury
-    "SHY",    # 1-3 Year Treasury
-    "LQD",    # Investment Grade Corporate Bonds
-    "HYG",    # High Yield Corporate Bonds
-    "AGG",    # US Aggregate Bond
-    
+    "TLT",  # 20+ Year Treasury
+    "IEF",  # 7-10 Year Treasury
+    "SHY",  # 1-3 Year Treasury
+    "LQD",  # Investment Grade Corporate Bonds
+    "HYG",  # High Yield Corporate Bonds
+    "AGG",  # US Aggregate Bond
     # Commodity ETFs
-    "GLD",    # Gold
-    "SLV",    # Silver
-    "USO",    # Oil
-    "UNG",    # Natural Gas
-    
+    "GLD",  # Gold
+    "SLV",  # Silver
+    "USO",  # Oil
+    "UNG",  # Natural Gas
     # Volatility
-    "VXX",    # Volatility
-    "UVXY",   # Ultra VIX
+    "VXX",  # Volatility
+    "UVXY",  # Ultra VIX
 ]
 
 # ==============================================================================
@@ -94,23 +88,22 @@ US_ETFS = [
 # ==============================================================================
 US_MID_SMALL_CAP = [
     # Mid Cap
-    "SNAP",   # Snap
-    "ROKU",   # Roku
-    "ZM",     # Zoom
-    "DDOG",   # Datadog
-    "CRWD",   # CrowdStrike
-    "NET",    # Cloudflare
-    "OKTA",   # Okta
-    "SNOW",   # Snowflake
-    "PLTR",   # Palantir
-    "U",      # Unity Software
-    
+    "SNAP",  # Snap
+    "ROKU",  # Roku
+    "ZM",  # Zoom
+    "DDOG",  # Datadog
+    "CRWD",  # CrowdStrike
+    "NET",  # Cloudflare
+    "OKTA",  # Okta
+    "SNOW",  # Snowflake
+    "PLTR",  # Palantir
+    "U",  # Unity Software
     # Small Cap / IPO
-    "RIVN",   # Rivian
-    "LCID",   # Lucid
-    "SOFI",   # SoFi
-    "ARM",    # Arm Holdings
-    "PATH",   # UiPath
+    "RIVN",  # Rivian
+    "LCID",  # Lucid
+    "SOFI",  # SoFi
+    "ARM",  # Arm Holdings
+    "PATH",  # UiPath
 ]
 
 # ==============================================================================
@@ -118,32 +111,28 @@ US_MID_SMALL_CAP = [
 # ==============================================================================
 HK_EQUITIES = [
     # Index Components (HSI)
-    "0700.HK",   # Tencent
-    "0992.HK",   # Lenovo
-    "0005.HK",   # HSBC
-    "0941.HK",   # China Mobile
-    "0388.HK",   # HKEX
-    "0011.HK",   # Hang Seng Bank
-    "0001.HK",   # CK Hutchison
-    "0012.HK",   # Henderson Land
-    "0066.HK",   # MTR
-    "0019.A.HK", # Swire Pacific
-    
+    "0700.HK",  # Tencent
+    "0992.HK",  # Lenovo
+    "0005.HK",  # HSBC
+    "0941.HK",  # China Mobile
+    "0388.HK",  # HKEX
+    "0011.HK",  # Hang Seng Bank
+    "0001.HK",  # CK Hutchison
+    "0012.HK",  # Henderson Land
+    "0066.HK",  # MTR
+    "0019.A.HK",  # Swire Pacific
     # Tech / Growth
-    "1024.HK",   # Xiaomi
-    "3690.HK",   # Meituan
-    "6618.HK",   # JD Health
-    "9961.HK",   # Trip.com
-    
+    "1024.HK",  # Xiaomi
+    "3690.HK",  # Meituan
+    "6618.HK",  # JD Health
+    "9961.HK",  # Trip.com
     # Finance
-    "3988.HK",   # Bank of China
-    "0939.HK",   # CCB
-    "2388.HK",   # BOC Hong Kong
-    
+    "3988.HK",  # Bank of China
+    "0939.HK",  # CCB
+    "2388.HK",  # BOC Hong Kong
     # Properties
-    "0016.HK",   # Vanke
-    "1109.HK",   # China Resources Land
-    
+    "0016.HK",  # Vanke
+    "1109.HK",  # China Resources Land
     # H-Derivatives (for options)
     # Note: HK options require specific subscription
 ]

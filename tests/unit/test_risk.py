@@ -1,6 +1,7 @@
 """Unit tests for execution risk controls."""
 import pytest
-from execution.risk import RiskEngine, RiskLimits, RiskState, RiskDecision
+
+from execution.risk import RiskDecision, RiskEngine, RiskLimits, RiskState
 from execution.types import OrderRequest
 
 
@@ -30,9 +31,7 @@ class TestRiskState:
     def test_state_initialization(self):
         """Test risk state initialization with values."""
         state = RiskState(
-            gross_notional=1000.0,
-            position_notional={"AAPL": 500.0},
-            daily_pnl=-100.0
+            gross_notional=1000.0, position_notional={"AAPL": 500.0}, daily_pnl=-100.0
         )
 
         assert state.gross_notional == 1000.0
@@ -48,17 +47,12 @@ class TestRiskEngine:
         limits = RiskLimits(
             max_position_notional=10_000.0,
             max_gross_notional=50_000.0,
-            max_daily_loss=1_000.0
+            max_daily_loss=1_000.0,
         )
         engine = RiskEngine(limits)
         state = RiskState()
 
-        order = OrderRequest(
-            symbol="AAPL",
-            side="BUY",
-            quantity=10.0,
-            order_type="MKT"
-        )
+        order = OrderRequest(symbol="AAPL", side="BUY", quantity=10.0, order_type="MKT")
         price = 150.0
 
         decision = engine.check_order(state=state, order=order, price=price)
@@ -72,12 +66,7 @@ class TestRiskEngine:
         engine = RiskEngine(limits)
         state = RiskState(position_notional={"AAPL": 500.0})
 
-        order = OrderRequest(
-            symbol="AAPL",
-            side="BUY",
-            quantity=10.0,
-            order_type="MKT"
-        )
+        order = OrderRequest(symbol="AAPL", side="BUY", quantity=10.0, order_type="MKT")
         price = 100.0  # Notional = 1000, plus existing 500 = 1500 > limit
 
         decision = engine.check_order(state=state, order=order, price=price)
@@ -91,12 +80,7 @@ class TestRiskEngine:
         engine = RiskEngine(limits)
         state = RiskState(gross_notional=500.0)
 
-        order = OrderRequest(
-            symbol="AAPL",
-            side="BUY",
-            quantity=10.0,
-            order_type="MKT"
-        )
+        order = OrderRequest(symbol="AAPL", side="BUY", quantity=10.0, order_type="MKT")
         price = 100.0  # Notional = 1000, plus existing 500 = 1500 > limit
 
         decision = engine.check_order(state=state, order=order, price=price)
@@ -110,12 +94,7 @@ class TestRiskEngine:
         engine = RiskEngine(limits)
         state = RiskState(daily_pnl=-1_500.0)  # Exceeded loss limit
 
-        order = OrderRequest(
-            symbol="AAPL",
-            side="BUY",
-            quantity=10.0,
-            order_type="MKT"
-        )
+        order = OrderRequest(symbol="AAPL", side="BUY", quantity=10.0, order_type="MKT")
         price = 150.0
 
         decision = engine.check_order(state=state, order=order, price=price)
@@ -131,12 +110,7 @@ class TestRiskEngine:
 
         monkeypatch.setenv("TEST_KILL_SWITCH", "true")
 
-        order = OrderRequest(
-            symbol="AAPL",
-            side="BUY",
-            quantity=10.0,
-            order_type="MKT"
-        )
+        order = OrderRequest(symbol="AAPL", side="BUY", quantity=10.0, order_type="MKT")
         price = 150.0
 
         decision = engine.check_order(state=state, order=order, price=price)
@@ -150,12 +124,7 @@ class TestRiskEngine:
         engine = RiskEngine(limits)
         state = RiskState(position_notional={"AAPL": 2_000.0})
 
-        order = OrderRequest(
-            symbol="AAPL",
-            side="SELL",
-            quantity=5.0,
-            order_type="MKT"
-        )
+        order = OrderRequest(symbol="AAPL", side="SELL", quantity=5.0, order_type="MKT")
         price = 100.0  # Notional = 500, new position = 2000 - 500 = 1500
 
         decision = engine.check_order(state=state, order=order, price=price)

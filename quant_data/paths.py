@@ -23,9 +23,17 @@ class DataLakeConfig:
         return self.root / layer.value
 
 
-def dataset_root(cfg: DataLakeConfig, *, layer: DatasetLayer, dataset_id: DatasetId) -> Path:
+def dataset_root(
+    cfg: DataLakeConfig, *, layer: DatasetLayer, dataset_id: DatasetId
+) -> Path:
     # {root}/{layer}/{provider}/{kind}/{universe}/{frequency}/
-    return cfg.layer_root(layer) / dataset_id.provider / dataset_id.kind.value / dataset_id.universe / dataset_id.frequency.value
+    return (
+        cfg.layer_root(layer)
+        / dataset_id.provider
+        / dataset_id.kind.value
+        / dataset_id.universe
+        / dataset_id.frequency.value
+    )
 
 
 def parquet_partition_path(

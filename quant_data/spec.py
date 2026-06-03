@@ -62,7 +62,9 @@ class DatasetId:
     frequency: DatasetFrequency
 
     def slug(self) -> str:
-        return f"{self.provider}/{self.kind.value}/{self.universe}/{self.frequency.value}"
+        return (
+            f"{self.provider}/{self.kind.value}/{self.universe}/{self.frequency.value}"
+        )
 
 
 # ---- Canonical schemas (column names) ---------------------------------------

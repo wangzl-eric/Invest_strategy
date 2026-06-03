@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from itertools import count
-from typing import Optional
 
 from execution.broker import Broker
 from execution.types import Fill, OrderRequest
@@ -22,7 +21,13 @@ def _ib_fill_to_fill(ib_fill) -> Fill:
     comm = 0.0
     if ib_fill.commissionReport is not None:
         comm = float(getattr(ib_fill.commissionReport, "commission", 0) or 0)
-    ts = ib_fill.time if ib_fill.time else (exec_obj.time if hasattr(exec_obj, "time") else datetime.now(timezone.utc))
+    ts = (
+        ib_fill.time
+        if ib_fill.time
+        else (
+            exec_obj.time if hasattr(exec_obj, "time") else datetime.now(timezone.utc)
+        )
+    )
     if ts.tzinfo is None:
         ts = ts.replace(tzinfo=timezone.utc)
     return Fill(
@@ -63,9 +68,11 @@ class IBKRBroker(Broker):
     def _ensure_connected(self) -> bool:
         """Connect to IBKR if not already connected."""
         try:
-            from ib_insync import IB, MarketOrder, Stock
+            from ib_insync import IB
         except ImportError as e:
-            raise ImportError("ib_insync is required for IBKRBroker. pip install ib_insync") from e
+            raise ImportError(
+                "ib_insync is required for IBKRBroker. pip install ib_insync"
+            ) from e
 
         if self._ib is not None and self._ib.isConnected():
             return True
@@ -78,7 +85,11 @@ class IBKRBroker(Broker):
                 clientId=self.client_id,
                 timeout=int(self.timeout),
             )
-            logger.info(f"Connected to IBKR at {self.host}:{self.port} (paper)" if self.port == 7497 else f"Connected to IBKR at {self.host}:{self.port}")
+            logger.info(
+                f"Connected to IBKR at {self.host}:{self.port} (paper)"
+                if self.port == 7497
+                else f"Connected to IBKR at {self.host}:{self.port}"
+            )
             return True
         except Exception as e:
             logger.error(f"IBKR connection failed: {e}")
@@ -96,7 +107,11 @@ class IBKRBroker(Broker):
             raise ImportError("ib_insync is required") from e
 
         contract = Stock(order.symbol, "SMART", order.currency or "USD")
-        qty = int(order.quantity) if order.quantity == int(order.quantity) else float(order.quantity)
+        qty = (
+            int(order.quantity)
+            if order.quantity == int(order.quantity)
+            else float(order.quantity)
+        )
         ib_order = MarketOrder(order.side, qty)
 
         order_id = next(self._order_id_gen)

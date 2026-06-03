@@ -8,8 +8,8 @@ from pathlib import Path
 
 
 def _workspace_root() -> Path:
-    # Assumes this file lives in {root}/quant_data/qconfig.py
-    return Path(__file__).resolve().parent.parent
+    # This file lives in {repo}/quant_data/qconfig.py.
+    return Path(__file__).resolve().parents[1]
 
 
 @dataclass(frozen=True)
@@ -29,7 +29,15 @@ class QuantDataSettings:
     @classmethod
     def from_env(cls) -> "QuantDataSettings":
         root = _workspace_root()
-        data_lake_root = Path(os.getenv("DATA_LAKE_ROOT", str(root / "data_lake"))).expanduser()
+        data_lake_root = Path(
+            os.getenv("DATA_LAKE_ROOT", str(root / "data_lake"))
+        ).expanduser()
         meta_db_url = os.getenv("QDATA_META_DB_URL", "sqlite:///./quant_data_meta.db")
-        duckdb_path = Path(os.getenv("QDATA_DUCKDB_PATH", str(data_lake_root / "research.duckdb"))).expanduser()
-        return cls(data_lake_root=data_lake_root, meta_db_url=meta_db_url, duckdb_path=duckdb_path)
+        duckdb_path = Path(
+            os.getenv("QDATA_DUCKDB_PATH", str(data_lake_root / "research.duckdb"))
+        ).expanduser()
+        return cls(
+            data_lake_root=data_lake_root,
+            meta_db_url=meta_db_url,
+            duckdb_path=duckdb_path,
+        )

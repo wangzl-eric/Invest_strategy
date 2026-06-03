@@ -7,9 +7,6 @@ from datetime import datetime, timezone
 from itertools import count
 from typing import Dict, Optional
 
-import pandas as pd
-
-from execution.broker import Broker
 from execution.types import Fill, OrderRequest
 
 
@@ -26,7 +23,13 @@ class SimMarket:
 class SimBrokerImpl:
     name = "sim"
 
-    def __init__(self, market: SimMarket, *, commission_per_order: float = 0.0, venue: str = "SIM"):
+    def __init__(
+        self,
+        market: SimMarket,
+        *,
+        commission_per_order: float = 0.0,
+        venue: str = "SIM",
+    ):
         self.market = market
         self.commission_per_order = commission_per_order
         self.venue = venue

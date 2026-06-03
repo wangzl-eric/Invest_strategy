@@ -8,7 +8,6 @@ Parquet lake -> DuckDB scan -> feature -> backtest -> MLflow log.
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,13 +16,14 @@ import numpy as np
 import pandas as pd
 
 # Add repo root
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-import mlflow
+import mlflow  # noqa: E402
 
-# Use BacktestEngine for backtesting
-from backend.backtest_engine import BacktestEngine, IBKRDataFeed
-from quant_data.duckdb_store import connect, register_parquet_view
+from backtests.event_driven.backtest_engine import (  # noqa: E402
+    BacktestEngine,
+    IBKRDataFeed,
+)
 
 
 @dataclass(frozen=True)
@@ -56,7 +56,7 @@ def run_momentum_experiment(
     )
 
     # 2. Compute signal
-    signal = compute_momentum_signal(prices, params.lookback)
+    _ = compute_momentum_signal(prices, params.lookback)
 
     # 3. Backtest using BacktestEngine
     # Prepare data for Backtrader

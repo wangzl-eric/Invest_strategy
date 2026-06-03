@@ -11,11 +11,7 @@ import backtrader as bt
 import numpy as np
 import pandas as pd
 
-from backtests.strategies.signals import (
-    BaseSignal,
-    get_signal,
-    list_signals,
-)
+from backtests.strategies.signals import BaseSignal, get_signal
 
 
 class BacktraderSignalIndicator(bt.Indicator):
@@ -183,7 +179,7 @@ def run_backtest_with_signals(
     Returns:
         Backtest results dictionary
     """
-    from backend.backtest_engine import BacktestEngine, IBKRDataFeed
+    from backtests.event_driven.backtest_engine import BacktestEngine, IBKRDataFeed
 
     weights = weights or [1.0 / len(signal_names)] * len(signal_names)
 
@@ -221,7 +217,7 @@ def run_backtest_with_signals(
     engine.add_data(IBKRDataFeed(dataname=bt_data), name="asset")
 
     # Use SignalStrategy with blended signals
-    from backend.backtest_engine import create_signal_strategy_class
+    from backtests.event_driven.backtest_engine import create_signal_strategy_class
 
     StrategyClass = create_signal_strategy_class(
         signals=blended,
@@ -257,6 +253,7 @@ def get_backtrader_equivalent(signal_name: str) -> Optional[str]:
 # ============================================================================
 # Event-Driven Signal Computation
 # ============================================================================
+
 
 class EventDrivenSignalComputer:
     """

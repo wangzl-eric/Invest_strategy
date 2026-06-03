@@ -44,10 +44,15 @@ class BinancePublicKlinesConnector:
         out = out.sort_values(["symbol", "timestamp"]).reset_index(drop=True)
         return out
 
-    def _fetch_symbol_klines(self, symbol: str, *, start: str, end: str) -> pd.DataFrame:
+    def _fetch_symbol_klines(
+        self, symbol: str, *, start: str, end: str
+    ) -> pd.DataFrame:
         # interval=1d for now (extend as needed)
         start_ms = int(pd.Timestamp(start, tz="UTC").timestamp() * 1000)
-        end_ms = int((pd.Timestamp(end, tz="UTC") + pd.Timedelta(days=1)).timestamp() * 1000) - 1
+        end_ms = (
+            int((pd.Timestamp(end, tz="UTC") + pd.Timedelta(days=1)).timestamp() * 1000)
+            - 1
+        )
 
         params = {
             "symbol": symbol,
@@ -86,4 +91,9 @@ class BinancePublicKlinesConnector:
 
     @staticmethod
     def dataset_id(*, universe: str = "crypto_core") -> DatasetId:
-        return DatasetId(provider="binance_public", kind=MarketDataKind.BARS, universe=universe, frequency=DatasetFrequency.DAY)
+        return DatasetId(
+            provider="binance_public",
+            kind=MarketDataKind.BARS,
+            universe=universe,
+            frequency=DatasetFrequency.DAY,
+        )

@@ -6,18 +6,21 @@ Usage:
     python scripts/pa_scheduler.py --daemon           # Run daily at 09:00
     python scripts/pa_scheduler.py --daemon --time 21:00  # Custom time
 """
-import sys
 import logging
+import sys
 import time
-import schedule
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
+import schedule
 
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from scripts.automate_pa_daily import automate_pa_daily
 from dotenv import load_dotenv
+
+from scripts.automate_pa_daily import automate_pa_daily
+
 load_dotenv()
 
 # Setup logging
@@ -48,7 +51,9 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="PA automation scheduler")
-    parser.add_argument("--run-now", action="store_true", help="Run immediately and exit")
+    parser.add_argument(
+        "--run-now", action="store_true", help="Run immediately and exit"
+    )
     parser.add_argument("--daemon", action="store_true", help="Run as daemon")
     parser.add_argument("--time", default="09:00", help="Daily run time (HH:MM)")
 

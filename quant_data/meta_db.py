@@ -28,7 +28,9 @@ def create_session_factory(settings: QuantDataSettings | None = None):
 
 
 @contextmanager
-def get_meta_db_context(settings: QuantDataSettings | None = None) -> Generator[Session, None, None]:
+def get_meta_db_context(
+    settings: QuantDataSettings | None = None,
+) -> Generator[Session, None, None]:
     """Context manager that commits/rolls back like backend.get_db_context()."""
 
     SessionLocal = create_session_factory(settings)

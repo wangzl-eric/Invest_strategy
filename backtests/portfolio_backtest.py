@@ -70,7 +70,11 @@ def run_portfolio_backtest(
         )
 
     n_sigs = len(signals)
-    weights = signal_weights if signal_weights is not None else [1.0 / max(1, n_sigs)] * n_sigs
+    weights = (
+        signal_weights
+        if signal_weights is not None
+        else [1.0 / max(1, n_sigs)] * n_sigs
+    )
     cost_tps = cost_bps / 10000.0
     cost_model = CostModel(cost_tps=cost_tps)
 
@@ -162,7 +166,9 @@ def run_portfolio_backtest(
         "avg_daily_return": float(portfolio_rets.mean()),
         "vol_daily": float(portfolio_rets.std()),
     }
-    stats = {k: (0.0 if (np.isnan(v) or np.isinf(v)) else float(v)) for k, v in stats.items()}
+    stats = {
+        k: (0.0 if (np.isnan(v) or np.isinf(v)) else float(v)) for k, v in stats.items()
+    }
 
     # Positions: use gross exposure as proxy (portfolio-level)
     gross_exp = pd.Series(1.0, index=idx)
@@ -173,5 +179,8 @@ def run_portfolio_backtest(
         positions=gross_exp,
         turnover=turnover_series,
         stats=stats,
-        metadata={"strategy": "portfolio_blend", "signals": ",".join(s.name for s in signals)},
+        metadata={
+            "strategy": "portfolio_blend",
+            "signals": ",".join(s.name for s in signals),
+        },
     )

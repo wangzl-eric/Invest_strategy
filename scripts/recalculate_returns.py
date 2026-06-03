@@ -15,8 +15,9 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from backend.database import get_db_context
-from backend.models import PnLHistory
 from backend.flex_importer import calculate_and_update_returns
+from backend.models import PnLHistory
+
 
 def recalculate_all_returns():
     """Recalculate returns for all accounts in the database."""
@@ -45,9 +46,11 @@ def recalculate_all_returns():
         for account_id in account_ids:
             try:
                 # Count records for this account
-                count = db.query(PnLHistory).filter(
-                    PnLHistory.account_id == account_id
-                ).count()
+                count = (
+                    db.query(PnLHistory)
+                    .filter(PnLHistory.account_id == account_id)
+                    .count()
+                )
 
                 print(f"Account: {account_id}")
                 print(f"  Records: {count}")
@@ -62,6 +65,7 @@ def recalculate_all_returns():
             except Exception as e:
                 print(f"✗ Error: {e}")
                 import traceback
+
                 traceback.print_exc()
                 continue
 
@@ -69,13 +73,16 @@ def recalculate_all_returns():
         db.commit()
         print()
         print("=" * 60)
-        print(f"✓ Successfully recalculated returns for {total_records} records across {len(account_ids)} account(s)")
+        print(
+            f"✓ Successfully recalculated returns for {total_records} records across {len(account_ids)} account(s)"
+        )
         print()
         print("New calculation method:")
         print("  daily_return = total_pnl / previous_day_net_liquidation")
         print("  cumulative_return = (1 + r1) × (1 + r2) × ... - 1")
 
         return True
+
 
 if __name__ == "__main__":
     try:
@@ -84,5 +91,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"✗ Script failed: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

@@ -7,8 +7,8 @@ Usage:
 Example:
     python scripts/import_portfolio_analyst.py data/pa_reports/report.csv U1234567
 """
-import sys
 import argparse
+import sys
 from pathlib import Path
 
 project_root = Path(__file__).parent.parent
@@ -18,7 +18,9 @@ from backend.flex_importer import import_portfolio_analyst_csv
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Import Portfolio Analyst CSV to database")
+    parser = argparse.ArgumentParser(
+        description="Import Portfolio Analyst CSV to database"
+    )
     parser.add_argument("csv_file", help="Path to CSV file")
     parser.add_argument("account_id", help="IBKR account ID (e.g., U1234567)")
     parser.add_argument("--date-column", default="Date", help="Date column name")
@@ -48,7 +50,9 @@ def main():
 
         print(f"✓ Imported {rows} rows")
         print(f"  Database: {project_root / 'ibkr_analytics.db'}")
-        print(f"  API: http://localhost:8000/api/pnl/history?account_id={args.account_id}")
+        print(
+            f"  API: http://localhost:8000/api/pnl/history?account_id={args.account_id}"
+        )
         return 0
 
     except Exception as e:

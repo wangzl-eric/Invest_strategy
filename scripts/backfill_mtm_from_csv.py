@@ -15,6 +15,7 @@ sys.path.insert(0, str(project_root))
 
 from backend.flex_importer import import_mark_to_market_performance_csv
 
+
 def backfill_mtm_from_csv():
     """Backfill mtm values from CSV files."""
     data_dir = project_root / "data" / "flex_reports"
@@ -60,6 +61,7 @@ def backfill_mtm_from_csv():
         except Exception as e:
             print(f"  ✗ Error: {e}")
             import traceback
+
             traceback.print_exc()
             continue
 
@@ -73,6 +75,7 @@ def backfill_mtm_from_csv():
 
     return True
 
+
 if __name__ == "__main__":
     try:
         success = backfill_mtm_from_csv()
@@ -80,5 +83,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"✗ Script failed: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

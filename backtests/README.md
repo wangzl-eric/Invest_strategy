@@ -177,10 +177,14 @@ metadata = get_signal_metadata("momentum_tech")
 
 ## Backtest Engine
 
-The main backtest engine is in `backend/backtest_engine.py`:
+The canonical event-driven backtest engine is in `workstation/backtests/event_driven/backtest_engine.py`.
+Legacy imports from `backend.backtest_engine` still work through a compatibility shim:
 
 ```python
-from backend.backtest_engine import BacktestEngine, IBKRDataFeed
+from workstation.backtests.event_driven.backtest_engine import (
+    BacktestEngine,
+    IBKRDataFeed,
+)
 import backtrader as bt
 
 engine = BacktestEngine(cash=100000, commission=0.001)

@@ -1,17 +1,18 @@
 """Unit tests for data source manager and fallback logic."""
 
-import pytest
 from datetime import datetime, timedelta
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
+
 import pandas as pd
+import pytest
 
 from backend.data_source_manager import (
-    DataSource,
-    SourceStatus,
-    SourceHealthTracker,
-    DataSourceManager,
     DEFAULT_PRIORITY_ORDER,
     SOURCE_CAPABILITIES,
+    DataSource,
+    DataSourceManager,
+    SourceHealthTracker,
+    SourceStatus,
     data_source_manager,
     get_best_source,
     get_with_fallback,
@@ -95,7 +96,11 @@ class TestDataSourceManager:
     def test_set_custom_priority(self):
         """Test setting custom priority order."""
         manager = DataSourceManager()
-        custom_sources = [DataSource.YFINANCE, DataSource.IBKR, DataSource.PARQUET_STORE]
+        custom_sources = [
+            DataSource.YFINANCE,
+            DataSource.IBKR,
+            DataSource.PARQUET_STORE,
+        ]
         manager.set_priority_order("equity", custom_sources)
         priority = manager.get_priority_order("equity")
         assert priority == custom_sources
@@ -104,7 +109,11 @@ class TestDataSourceManager:
         """Test best source for equity."""
         manager = DataSourceManager()
         source, reason = manager.get_best_source("equity", check_health=False)
-        assert source in [DataSource.IBKR, DataSource.PARQUET_STORE, DataSource.YFINANCE]
+        assert source in [
+            DataSource.IBKR,
+            DataSource.PARQUET_STORE,
+            DataSource.YFINANCE,
+        ]
 
     def test_get_best_source_fred(self):
         """Test best source for macro (FRED)."""
@@ -135,9 +144,7 @@ class TestDataSourceManager:
         }
 
         result = manager.get_with_fallback(
-            asset_class="equity_index",
-            symbol="AAPL",
-            fetch_funcs=fetch_funcs
+            asset_class="equity_index", symbol="AAPL", fetch_funcs=fetch_funcs
         )
 
         # The result depends on health tracker - let's verify the function structure
@@ -156,7 +163,9 @@ class TestDataSourceManager:
         # This test verifies the logic - in practice we'd need to mock the tracker
         mock_data = pd.DataFrame({"close": [100]})
         fetch_funcs = {
-            DataSource.YFINANCE: lambda s, s2, **k: (_ for _ in ()).throw(Exception("fail")),
+            DataSource.YFINANCE: lambda s, s2, **k: (_ for _ in ()).throw(
+                Exception("fail")
+            ),
             DataSource.PARQUET_STORE: lambda s, s2, **k: mock_data,
         }
 
@@ -197,7 +206,7 @@ class TestConvenienceFunctions:
         result = get_with_fallback(
             asset_class="equity_index",
             symbol="AAPL",
-            fetch_funcs={DataSource.YFINANCE: mock_fetch}
+            fetch_funcs={DataSource.YFINANCE: mock_fetch},
         )
 
         # Should return a result dict with expected keys

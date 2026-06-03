@@ -45,8 +45,14 @@ class EcbFxConnector:
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
 
         start = pd.Timestamp(req.start, tz="UTC")
-        end = pd.Timestamp(req.end, tz="UTC") + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+        end = (
+            pd.Timestamp(req.end, tz="UTC")
+            + pd.Timedelta(days=1)
+            - pd.Timedelta(seconds=1)
+        )
         df = df[(df["timestamp"] >= start) & (df["timestamp"] <= end)]
 
         df["venue"] = self.cfg.venue
-        return df[["timestamp", "base_ccy", "quote_ccy", "rate", "venue"]].reset_index(drop=True)
+        return df[["timestamp", "base_ccy", "quote_ccy", "rate", "venue"]].reset_index(
+            drop=True
+        )

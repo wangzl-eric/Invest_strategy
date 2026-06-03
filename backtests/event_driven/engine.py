@@ -12,7 +12,13 @@ from typing import Deque, Dict, Iterable, Optional
 
 import pandas as pd
 
-from backtests.event_driven.events import Event, FillEvent, MarketEvent, OrderEvent, SignalEvent
+from backtests.event_driven.events import (
+    Event,
+    FillEvent,
+    MarketEvent,
+    OrderEvent,
+    SignalEvent,
+)
 
 
 @dataclass
@@ -28,10 +34,18 @@ class PortfolioState:
 class EventDrivenBacktester:
     """Single-threaded queue-based engine."""
 
-    def __init__(self, *, initial_cash: float = 1_000_000.0):
+    def __init__(
+        self,
+        *,
+        initial_cash: float = 1_000_000.0,
+        commission_rate: float = 0.001,
+        slippage_bps: float = 5.0,
+    ):
         self.state = PortfolioState(cash=initial_cash)
         self.events: Deque[Event] = deque()
         self.fills: list[FillEvent] = []
+        self.commission_rate = commission_rate
+        self.slippage_bps = slippage_bps
 
     def seed_market_events(self, market_events: Iterable[MarketEvent]) -> None:
         for e in market_events:
@@ -46,22 +60,33 @@ class EventDrivenBacktester:
         return None
 
     def execute_order(self, order: OrderEvent, market_price: float) -> FillEvent:
-        # Simplest possible fill model: fill immediately at market_price.
+        # Apply slippage: adverse price movement proportional to slippage_bps
+        slippage_mult = self.slippage_bps / 10000
+        if order.direction == "BUY":
+            fill_price = market_price * (1 + slippage_mult)
+        else:
+            fill_price = market_price * (1 - slippage_mult)
+
+        # Calculate commission
+        commission = abs(order.quantity * fill_price * self.commission_rate)
+
         return FillEvent(
             type="FILL",
             timestamp=order.timestamp,
             symbol=order.symbol,
             direction=order.direction,
             quantity=order.quantity,
-            fill_price=market_price,
-            commission=0.0,
+            fill_price=fill_price,
+            commission=commission,
         )
 
     def apply_fill(self, fill: FillEvent) -> None:
         sign = 1.0 if fill.direction == "BUY" else -1.0
         qty = sign * fill.quantity
-        self.state.positions[fill.symbol] = self.state.positions.get(fill.symbol, 0.0) + qty
-        self.state.cash -= qty * fill.fill_price
+        self.state.positions[fill.symbol] = (
+            self.state.positions.get(fill.symbol, 0.0) + qty
+        )
+        self.state.cash -= qty * fill.fill_price + fill.commission
         self.fills.append(fill)
 
     def run(self) -> pd.DataFrame:

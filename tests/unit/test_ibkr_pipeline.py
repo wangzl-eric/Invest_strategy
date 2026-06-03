@@ -1,11 +1,12 @@
 """Unit tests for IBKR data pipeline components."""
-import pytest
-import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
 import json
+from datetime import datetime, timedelta
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import numpy as np
+import pandas as pd
+import pytest
 
 
 class TestIBKRClientHistoricalData:
@@ -14,7 +15,7 @@ class TestIBKRClientHistoricalData:
     @pytest.fixture
     def mock_ib_client(self):
         """Create a mock IB client."""
-        with patch('backend.ibkr_client.IB') as mock_ib:
+        with patch("backend.ibkr_client.IB") as mock_ib:
             yield mock_ib
 
     def test_create_contract_stock(self):
@@ -152,10 +153,9 @@ class TestDataQualityValidation:
         """Test validation with missing columns."""
         from backend.ibkr_data_fetcher import DataQualityReport
 
-        df = pd.DataFrame({
-            'date': ['2024-01-01', '2024-01-02'],
-            'close': [100.0, 101.0]
-        })
+        df = pd.DataFrame(
+            {"date": ["2024-01-01", "2024-01-02"], "close": [100.0, 101.0]}
+        )
         report = DataQualityReport(df)
 
         assert not report.is_valid()
@@ -165,33 +165,37 @@ class TestDataQualityValidation:
         """Test validation of valid DataFrame."""
         from backend.ibkr_data_fetcher import DataQualityReport
 
-        df = pd.DataFrame({
-            'date': pd.date_range('2024-01-01', periods=10),
-            'open': [100.0] * 10,
-            'high': [105.0] * 10,
-            'low': [95.0] * 10,
-            'close': [102.0] * 10,
-            'volume': [1000000] * 10,
-            'ticker': ['AAPL'] * 10
-        })
+        df = pd.DataFrame(
+            {
+                "date": pd.date_range("2024-01-01", periods=10),
+                "open": [100.0] * 10,
+                "high": [105.0] * 10,
+                "low": [95.0] * 10,
+                "close": [102.0] * 10,
+                "volume": [1000000] * 10,
+                "ticker": ["AAPL"] * 10,
+            }
+        )
         report = DataQualityReport(df)
 
         # Should be valid (no critical issues)
         # May have warnings but no issues
-        assert 'date' in report.stats['columns']
+        assert "date" in report.stats["columns"]
 
     def test_validate_negative_prices(self):
         """Test detection of negative prices."""
         from backend.ibkr_data_fetcher import DataQualityReport
 
-        df = pd.DataFrame({
-            'date': pd.date_range('2024-01-01', periods=5),
-            'open': [100.0, -5.0, 100.0, 100.0, 100.0],
-            'high': [105.0] * 5,
-            'low': [95.0] * 5,
-            'close': [102.0] * 5,
-            'volume': [1000000] * 5
-        })
+        df = pd.DataFrame(
+            {
+                "date": pd.date_range("2024-01-01", periods=5),
+                "open": [100.0, -5.0, 100.0, 100.0, 100.0],
+                "high": [105.0] * 5,
+                "low": [95.0] * 5,
+                "close": [102.0] * 5,
+                "volume": [1000000] * 5,
+            }
+        )
         report = DataQualityReport(df)
 
         assert any("negative" in issue.lower() for issue in report.issues)
@@ -201,14 +205,16 @@ class TestDataQualityValidation:
         from backend.ibkr_data_fetcher import DataQualityReport
 
         # Create DataFrame with explicit high < low
-        df = pd.DataFrame({
-            'date': pd.date_range('2024-01-01', periods=5),
-            'open': [100.0, 100.0, 100.0, 100.0, 100.0],
-            'high': [95.0, 105.0, 105.0, 105.0, 105.0],  # First row: high < low
-            'low': [105.0, 95.0, 95.0, 95.0, 95.0],  # First row: high < low
-            'close': [100.0, 100.0, 100.0, 100.0, 100.0],
-            'volume': [1000000, 1000000, 1000000, 1000000, 1000000]
-        })
+        df = pd.DataFrame(
+            {
+                "date": pd.date_range("2024-01-01", periods=5),
+                "open": [100.0, 100.0, 100.0, 100.0, 100.0],
+                "high": [95.0, 105.0, 105.0, 105.0, 105.0],  # First row: high < low
+                "low": [105.0, 95.0, 95.0, 95.0, 95.0],  # First row: high < low
+                "close": [100.0, 100.0, 100.0, 100.0, 100.0],
+                "volume": [1000000, 1000000, 1000000, 1000000, 1000000],
+            }
+        )
 
         report = DataQualityReport(df)
 
@@ -219,15 +225,17 @@ class TestDataQualityValidation:
         """Test data cleaning function."""
         from backend.ibkr_data_fetcher import validate_and_clean
 
-        df = pd.DataFrame({
-            'date': ['2024-01-01', '2024-01-02', '2024-01-02'],  # Duplicate
-            'open': [100.0, 101.0, 101.0],  # Duplicate
-            'high': [105.0, 106.0, 106.0],
-            'low': [95.0, 96.0, 96.0],
-            'close': [102.0, 103.0, 103.0],
-            'volume': [1000000, 1000001, 1000001],
-            'ticker': ['AAPL', 'AAPL', 'AAPL']
-        })
+        df = pd.DataFrame(
+            {
+                "date": ["2024-01-01", "2024-01-02", "2024-01-02"],  # Duplicate
+                "open": [100.0, 101.0, 101.0],  # Duplicate
+                "high": [105.0, 106.0, 106.0],
+                "low": [95.0, 96.0, 96.0],
+                "close": [102.0, 103.0, 103.0],
+                "volume": [1000000, 1000001, 1000001],
+                "ticker": ["AAPL", "AAPL", "AAPL"],
+            }
+        )
 
         cleaned = validate_and_clean(df)
 
@@ -273,7 +281,7 @@ class TestDataRoutesIBKR:
             end_date="2024-12-31",
             interval="1 day",
             sec_type="STK",
-            exchange="SMART"
+            exchange="SMART",
         )
 
         assert req.asset_class == "ibkr_equities"
@@ -285,6 +293,7 @@ class TestDataRoutesIBKR:
         """Test that subscription status endpoint can be imported."""
         # Just verify the import works - actual connection testing requires IBKR running
         from backend.api.data_routes import ibkr_subscription_status
+
         assert ibkr_subscription_status is not None
         assert callable(ibkr_subscription_status)
 
@@ -294,15 +303,24 @@ class TestIBKRSubscriptionsConfig:
 
     def test_config_file_exists(self):
         """Test that config file was created."""
-        config_path = Path(__file__).resolve().parent.parent.parent / "config" / "ibkr_data_subscriptions.yaml"
+        config_path = (
+            Path(__file__).resolve().parent.parent.parent
+            / "config"
+            / "ibkr_data_subscriptions.yaml"
+        )
         assert config_path.exists()
 
     def test_config_file_valid_yaml(self):
         """Test that config file is valid YAML."""
         import yaml
-        config_path = Path(__file__).resolve().parent.parent.parent / "config" / "ibkr_data_subscriptions.yaml"
 
-        with open(config_path, 'r') as f:
+        config_path = (
+            Path(__file__).resolve().parent.parent.parent
+            / "config"
+            / "ibkr_data_subscriptions.yaml"
+        )
+
+        with open(config_path, "r") as f:
             config = yaml.safe_load(f)
 
         assert isinstance(config, dict)
@@ -343,32 +361,37 @@ class TestIBKRClientEdgeCases:
         contract = client._create_contract("UNKNOWN", "UNKNOWN", "SMART", "USD")
 
         # Should default to Stock
-        assert hasattr(contract, 'symbol')
+        assert hasattr(contract, "symbol")
 
     def test_get_historical_data_with_datetime_dates(self):
         """Test filtering with datetime.date objects."""
-        from backend.ibkr_client import IBKRClient
         import pandas as pd
+
+        from backend.ibkr_client import IBKRClient
 
         client = IBKRClient()
 
         # Create sample data
-        df = pd.DataFrame({
-            'date': pd.date_range('2024-01-01', periods=10),
-            'open': [100.0] * 10,
-            'high': [105.0] * 10,
-            'low': [95.0] * 10,
-            'close': [102.0] * 10,
-            'volume': [1000000] * 10
-        })
+        df = pd.DataFrame(
+            {
+                "date": pd.date_range("2024-01-01", periods=10),
+                "open": [100.0] * 10,
+                "high": [105.0] * 10,
+                "low": [95.0] * 10,
+                "close": [102.0] * 10,
+                "volume": [1000000] * 10,
+            }
+        )
 
         # Filter with date objects (simulating what happens in real usage)
         start_date = datetime(2024, 1, 5).date()
         end_date = datetime(2024, 1, 8).date()
 
         # The filter should handle both datetime and date objects
-        df_filtered = df[pd.to_datetime(df['date']) >= pd.to_datetime(start_date)]
-        df_filtered = df_filtered[pd.to_datetime(df_filtered['date']) <= pd.to_datetime(end_date)]
+        df_filtered = df[pd.to_datetime(df["date"]) >= pd.to_datetime(start_date)]
+        df_filtered = df_filtered[
+            pd.to_datetime(df_filtered["date"]) <= pd.to_datetime(end_date)
+        ]
 
         assert len(df_filtered) == 4
 
@@ -424,14 +447,16 @@ class TestDataValidationEdgeCases:
         """Test validation with all NaN prices."""
         from backend.ibkr_data_fetcher import DataQualityReport
 
-        df = pd.DataFrame({
-            'date': pd.date_range('2024-01-01', periods=5),
-            'open': [np.nan] * 5,
-            'high': [np.nan] * 5,
-            'low': [np.nan] * 5,
-            'close': [np.nan] * 5,
-            'volume': [1000000] * 5
-        })
+        df = pd.DataFrame(
+            {
+                "date": pd.date_range("2024-01-01", periods=5),
+                "open": [np.nan] * 5,
+                "high": [np.nan] * 5,
+                "low": [np.nan] * 5,
+                "close": [np.nan] * 5,
+                "volume": [1000000] * 5,
+            }
+        )
         report = DataQualityReport(df)
 
         assert not report.is_valid()
@@ -440,14 +465,16 @@ class TestDataValidationEdgeCases:
         """Test zero prices are allowed (not flagged as error)."""
         from backend.ibkr_data_fetcher import DataQualityReport
 
-        df = pd.DataFrame({
-            'date': pd.date_range('2024-01-01', periods=5),
-            'open': [100.0, 0.0, 100.0, 100.0, 100.0],
-            'high': [105.0] * 5,
-            'low': [95.0] * 5,
-            'close': [102.0] * 5,
-            'volume': [1000000] * 5
-        })
+        df = pd.DataFrame(
+            {
+                "date": pd.date_range("2024-01-01", periods=5),
+                "open": [100.0, 0.0, 100.0, 100.0, 100.0],
+                "high": [105.0] * 5,
+                "low": [95.0] * 5,
+                "close": [102.0] * 5,
+                "volume": [1000000] * 5,
+            }
+        )
         report = DataQualityReport(df)
 
         # Zero prices are NOT issues (only negative prices)
@@ -457,14 +484,16 @@ class TestDataValidationEdgeCases:
         """Test zero volume is allowed (not flagged as error)."""
         from backend.ibkr_data_fetcher import DataQualityReport
 
-        df = pd.DataFrame({
-            'date': pd.date_range('2024-01-01', periods=5),
-            'open': [100.0] * 5,
-            'high': [105.0] * 5,
-            'low': [95.0] * 5,
-            'close': [102.0] * 5,
-            'volume': [0, 0, 0, 0, 0]  # All zero volumes
-        })
+        df = pd.DataFrame(
+            {
+                "date": pd.date_range("2024-01-01", periods=5),
+                "open": [100.0] * 5,
+                "high": [105.0] * 5,
+                "low": [95.0] * 5,
+                "close": [102.0] * 5,
+                "volume": [0, 0, 0, 0, 0],  # All zero volumes
+            }
+        )
         report = DataQualityReport(df)
 
         # Zero volume is NOT an issue (only negative)
@@ -474,13 +503,15 @@ class TestDataValidationEdgeCases:
         """Test validation with missing date column."""
         from backend.ibkr_data_fetcher import DataQualityReport
 
-        df = pd.DataFrame({
-            'open': [100.0, 101.0],
-            'high': [105.0, 106.0],
-            'low': [95.0, 96.0],
-            'close': [102.0, 103.0],
-            'volume': [1000000, 1000001]
-        })
+        df = pd.DataFrame(
+            {
+                "open": [100.0, 101.0],
+                "high": [105.0, 106.0],
+                "low": [95.0, 96.0],
+                "close": [102.0, 103.0],
+                "volume": [1000000, 1000001],
+            }
+        )
         report = DataQualityReport(df)
 
         assert not report.is_valid()
@@ -489,15 +520,17 @@ class TestDataValidationEdgeCases:
         """Test duplicates are detected as warnings."""
         from backend.ibkr_data_fetcher import DataQualityReport
 
-        df = pd.DataFrame({
-            'date': ['2024-01-01', '2024-01-01', '2024-01-02'],
-            'ticker': ['AAPL', 'AAPL', 'AAPL'],
-            'open': [100.0, 100.5, 101.0],
-            'high': [105.0, 105.5, 106.0],
-            'low': [95.0, 95.5, 96.0],
-            'close': [102.0, 102.5, 103.0],
-            'volume': [1000000, 1000001, 1000002]
-        })
+        df = pd.DataFrame(
+            {
+                "date": ["2024-01-01", "2024-01-01", "2024-01-02"],
+                "ticker": ["AAPL", "AAPL", "AAPL"],
+                "open": [100.0, 100.5, 101.0],
+                "high": [105.0, 105.5, 106.0],
+                "low": [95.0, 95.5, 96.0],
+                "close": [102.0, 102.5, 103.0],
+                "volume": [1000000, 1000001, 1000002],
+            }
+        )
         report = DataQualityReport(df)
 
         # Duplicates are warnings, not issues
@@ -506,19 +539,22 @@ class TestDataValidationEdgeCases:
 
     def test_validate_future_dates(self):
         """Test future dates don't cause errors."""
-        from backend.ibkr_data_fetcher import DataQualityReport
         from datetime import date
+
+        from backend.ibkr_data_fetcher import DataQualityReport
 
         # Use future dates
         future_date = date.today() + timedelta(days=30)
-        df = pd.DataFrame({
-            'date': [future_date, future_date + timedelta(days=1)],
-            'open': [100.0, 101.0],
-            'high': [105.0, 106.0],
-            'low': [95.0, 96.0],
-            'close': [102.0, 103.0],
-            'volume': [1000000, 1000001]
-        })
+        df = pd.DataFrame(
+            {
+                "date": [future_date, future_date + timedelta(days=1)],
+                "open": [100.0, 101.0],
+                "high": [105.0, 106.0],
+                "low": [95.0, 96.0],
+                "close": [102.0, 103.0],
+                "volume": [1000000, 1000001],
+            }
+        )
         report = DataQualityReport(df)
 
         # Future dates should not cause errors (they may generate warnings)
@@ -528,15 +564,17 @@ class TestDataValidationEdgeCases:
         """Test close outside high-low range is detected as warning."""
         from backend.ibkr_data_fetcher import DataQualityReport
 
-        df = pd.DataFrame({
-            'date': pd.date_range('2024-01-01', periods=5),
-            'open': [100.0] * 5,
-            'high': [105.0] * 5,
-            'low': [95.0] * 5,
-            # Close outside range for first two rows
-            'close': [110.0, 90.0, 102.0, 102.0, 102.0],
-            'volume': [1000000] * 5
-        })
+        df = pd.DataFrame(
+            {
+                "date": pd.date_range("2024-01-01", periods=5),
+                "open": [100.0] * 5,
+                "high": [105.0] * 5,
+                "low": [95.0] * 5,
+                # Close outside range for first two rows
+                "close": [110.0, 90.0, 102.0, 102.0, 102.0],
+                "volume": [1000000] * 5,
+            }
+        )
         report = DataQualityReport(df)
 
         # Close outside high-low is a warning, not an issue
@@ -546,15 +584,23 @@ class TestDataValidationEdgeCases:
         """Test that clean removes duplicate rows."""
         from backend.ibkr_data_fetcher import validate_and_clean
 
-        df = pd.DataFrame({
-            'date': ['2024-01-01', '2024-01-01', '2024-01-02', '2024-01-02', '2024-01-03'],
-            'ticker': ['AAPL', 'AAPL', 'AAPL', 'AAPL', 'AAPL'],
-            'open': [100.0, 100.0, 101.0, 101.0, 102.0],
-            'high': [105.0, 105.0, 106.0, 106.0, 107.0],
-            'low': [95.0, 95.0, 96.0, 96.0, 97.0],
-            'close': [102.0, 102.0, 103.0, 103.0, 104.0],
-            'volume': [1000000, 1000000, 1000001, 1000001, 1000002]
-        })
+        df = pd.DataFrame(
+            {
+                "date": [
+                    "2024-01-01",
+                    "2024-01-01",
+                    "2024-01-02",
+                    "2024-01-02",
+                    "2024-01-03",
+                ],
+                "ticker": ["AAPL", "AAPL", "AAPL", "AAPL", "AAPL"],
+                "open": [100.0, 100.0, 101.0, 101.0, 102.0],
+                "high": [105.0, 105.0, 106.0, 106.0, 107.0],
+                "low": [95.0, 95.0, 96.0, 96.0, 97.0],
+                "close": [102.0, 102.0, 103.0, 103.0, 104.0],
+                "volume": [1000000, 1000000, 1000001, 1000001, 1000002],
+            }
+        )
 
         cleaned = validate_and_clean(df)
 
@@ -575,15 +621,17 @@ class TestDataValidationEdgeCases:
         """Test that clean handles single row."""
         from backend.ibkr_data_fetcher import validate_and_clean
 
-        df = pd.DataFrame({
-            'date': ['2024-01-01'],
-            'ticker': ['AAPL'],
-            'open': [100.0],
-            'high': [105.0],
-            'low': [95.0],
-            'close': [102.0],
-            'volume': [1000000]
-        })
+        df = pd.DataFrame(
+            {
+                "date": ["2024-01-01"],
+                "ticker": ["AAPL"],
+                "open": [100.0],
+                "high": [105.0],
+                "low": [95.0],
+                "close": [102.0],
+                "volume": [1000000],
+            }
+        )
 
         cleaned = validate_and_clean(df)
 
@@ -595,15 +643,16 @@ class TestAPIValidation:
 
     def test_pull_request_with_empty_tickers(self):
         """Test pull request with empty tickers list."""
-        from backend.api.data_routes import IBKRPullRequest
         from pydantic import ValidationError
+
+        from backend.api.data_routes import IBKRPullRequest
 
         try:
             req = IBKRPullRequest(
                 asset_class="ibkr_equities",
                 tickers=[],
                 start_date="2024-01-01",
-                end_date="2024-12-31"
+                end_date="2024-12-31",
             )
             # Empty list might be allowed - just check it was created
             assert req.tickers == []
@@ -613,8 +662,9 @@ class TestAPIValidation:
 
     def test_pull_request_with_invalid_dates(self):
         """Test pull request with invalid date format."""
-        from backend.api.data_routes import IBKRPullRequest
         from pydantic import ValidationError
+
+        from backend.api.data_routes import IBKRPullRequest
 
         # Should handle invalid date format
         try:
@@ -622,7 +672,7 @@ class TestAPIValidation:
                 asset_class="ibkr_equities",
                 tickers=["AAPL"],
                 start_date="invalid-date",
-                end_date="2024-12-31"
+                end_date="2024-12-31",
             )
             # If it didn't raise, check start_date is preserved
             assert req.start_date == "invalid-date"
@@ -639,7 +689,7 @@ class TestAPIValidation:
             asset_class="ibkr_equities",
             tickers=["AAPL"],
             start_date="2024-12-31",
-            end_date="2024-01-01"
+            end_date="2024-01-01",
         )
 
         # The dates are preserved as-is (validation happens at execution time)
@@ -654,7 +704,7 @@ class TestAPIValidation:
             asset_class="ibkr_equities",
             tickers=["AAPL"],
             start_date="2024-01-01",
-            end_date="2024-12-31"
+            end_date="2024-12-31",
         )
 
         assert req.interval == "1 day"
@@ -671,7 +721,7 @@ class TestAPIValidation:
             start_date="2024-01-01",
             end_date="2024-12-31",
             exchange="IDEALPRO",
-            sec_type="CASH"
+            sec_type="CASH",
         )
 
         assert req.exchange == "IDEALPRO"
@@ -685,14 +735,23 @@ class TestTickerUniverse:
         """Test ticker universe config exists."""
         from pathlib import Path
 
-        config_path = Path(__file__).resolve().parent.parent.parent / "config" / "ticker_universe.py"
+        config_path = (
+            Path(__file__).resolve().parent.parent.parent
+            / "config"
+            / "ticker_universe.py"
+        )
         assert config_path.exists()
 
     def test_ticker_universe_has_required_lists(self):
         """Test ticker universe has all required lists."""
         from config.ticker_universe import (
-            US_LARGE_CAP, US_ETFS, US_MID_SMALL_CAP, HK_EQUITIES,
-            FOREX_MAJOR, FOREX_MINOR, FOREX_EM
+            FOREX_EM,
+            FOREX_MAJOR,
+            FOREX_MINOR,
+            HK_EQUITIES,
+            US_ETFS,
+            US_LARGE_CAP,
+            US_MID_SMALL_CAP,
         )
 
         assert len(US_LARGE_CAP) > 0
@@ -723,7 +782,12 @@ class TestCatalogOperations:
         """Test catalog file exists."""
         from pathlib import Path
 
-        catalog_path = Path(__file__).resolve().parent.parent.parent / "data" / "market_data" / "catalog.json"
+        catalog_path = (
+            Path(__file__).resolve().parent.parent.parent
+            / "data"
+            / "market_data"
+            / "catalog.json"
+        )
         assert catalog_path.exists()
 
     def test_catalog_is_valid_json(self):
@@ -731,9 +795,14 @@ class TestCatalogOperations:
         import json
         from pathlib import Path
 
-        catalog_path = Path(__file__).resolve().parent.parent.parent / "data" / "market_data" / "catalog.json"
+        catalog_path = (
+            Path(__file__).resolve().parent.parent.parent
+            / "data"
+            / "market_data"
+            / "catalog.json"
+        )
 
-        with open(catalog_path, 'r') as f:
+        with open(catalog_path, "r") as f:
             catalog = json.load(f)
 
         assert isinstance(catalog, dict)
@@ -743,9 +812,14 @@ class TestCatalogOperations:
         import json
         from pathlib import Path
 
-        catalog_path = Path(__file__).resolve().parent.parent.parent / "data" / "market_data" / "catalog.json"
+        catalog_path = (
+            Path(__file__).resolve().parent.parent.parent
+            / "data"
+            / "market_data"
+            / "catalog.json"
+        )
 
-        with open(catalog_path, 'r') as f:
+        with open(catalog_path, "r") as f:
             catalog = json.load(f)
 
         # Check at least one entry

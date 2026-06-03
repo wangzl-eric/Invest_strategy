@@ -1,0 +1,19 @@
+{
+  "enabledPlugins": {
+    "everything-claude-code@everything-claude-code": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/zelin/Desktop/PA Investment/Invest_strategy/scripts/sync_agents.sh",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -107,6 +107,28 @@ This is a **full-stack quantitative analytics platform** for Interactive Brokers
 
 ---
 
+### Repository Layout
+
+The repo is best understood as two primary product surfaces that share libraries:
+
+| Surface | Main Paths | Purpose |
+|---------|------------|---------|
+| **Investment dashboard application** | `apps/dashboard/backend/`, `apps/dashboard/frontend/`, `data/` | broker/account workflows, APIs, UI, stored operational data |
+| **Quant research workstation** | `workstation/backtests/`, `workstation/portfolio/`, `workstation/execution/`, `workstation/quant_data/`, `workstation/research/`, `workstation/notebooks/` | ingestion, strategy research, backtesting, optimization, paper-trading prep |
+| **Optional extensions** | `extensions/cerebro/`, `qc_lean/` | separate research tooling and external-engine experiments |
+
+Legacy root paths such as `backend/`, `frontend/`, `backtests/`, and `quant_data/` are currently kept as compatibility symlinks.
+
+Important distinctions:
+
+- `data/` stores files. `quant_data/` is the Python package that manages those files.
+- `backtests/` is the research framework. `workstation/backtests/event_driven/backtest_engine.py` is the canonical event-driven execution adapter, and `backend/backtest_engine.py` is kept as a compatibility shim.
+- `qc_lean/` is an optional local Lean workspace, not part of the core Python package graph.
+
+See `docs/repo_layout.md` for the maintained stack map.
+
+---
+
 ## 2. Core Components
 
 ### 2.1 Backend API (`backend/`)
@@ -168,30 +190,33 @@ This is a **full-stack quantitative analytics platform** for Interactive Brokers
 
 ### 2.3 Backtesting Framework (`backtests/`)
 
-Two backtesting approaches are available:
+Two complementary layers are available:
 
-| Approach | File | Use Case |
-|----------|------|----------|
-| **Backtrader** | `backend/backtest_engine.py` | Event-driven with realistic simulation |
-| **Research** | `backend/research/backtest.py` | Quick strategy testing |
+| Layer | File(s) | Use Case |
+|-------|---------|----------|
+| **Research framework** | `backtests/builder.py`, `backtests/walkforward.py`, `backtests/stats/` | portfolio research, walk-forward validation, statistical tests |
+| **Event-driven engine** | `workstation/backtests/event_driven/backtest_engine.py` | Backtrader-based simulation with execution realism |
 
 #### Using BacktestEngine (Backtrader)
 
 For event-driven backtesting with realistic order execution:
 
 ```python
-from backend.backtest_engine import BacktestEngine, IBKRDataFeed
+from workstation.backtests.event_driven.backtest_engine import (
+    BacktestEngine,
+    IBKRDataFeed,
+)
 import backtrader as bt
 
 # Define a strategy
 class MyStrategy(bt.Strategy):
     params = (('period', 20),)
-    
+
     def __init__(self):
         self.sma = bt.indicators.SimpleMovingAverage(
             self.data.close, period=self.params.period
         )
-        
+
     def next(self):
         if self.data.close[0] > self.sma[0]:
             self.buy()
@@ -229,17 +254,17 @@ class BacktestResult:
 
 ### 2.4 QuantConnect Lean Integration (`qc_lean/`)
 
-Full QuantConnect Lean engine integration for professional-grade backtesting:
+Optional QuantConnect Lean integration for local experimentation. Treat this directory as an isolated external-engine workspace:
 
 **Directory Structure**:
 ```
 qc_lean/
-├── Lean/                    # Full Lean engine source
-├── Data/                    # Market data (equity/usa/daily/)
-├── Results/                 # Backtest output
+├── Lean/                    # Lean engine source / vendor subtree
+├── Data/                    # Lean-formatted market data
+├── Results/                 # Generated backtest output
 ├── config.json              # Lean configuration
 ├── MomentumDemoAlgorithm.py # Example strategy
-└── .dotnet/                 # .NET runtime
+└── .dotnet/                 # Local .NET runtime
 ```
 
 **Example Strategy** (`MomentumDemoAlgorithm.py`):
@@ -697,7 +722,10 @@ import sys
 sys.path.insert(0, "/Users/zelin/Desktop/PA Investment/Invest_strategy")
 
 from quant_data.duckdb_store import connect, register_parquet_view
-from backend.backtest_engine import BacktestEngine, IBKRDataFeed
+from workstation.backtests.event_driven.backtest_engine import (
+    BacktestEngine,
+    IBKRDataFeed,
+)
 
 # Load market data from Parquet
 con = connect()
@@ -929,64 +957,51 @@ Invest_strategy/
 │   ├── config.py             # Settings loader
 │   └── main.py               # Entry point
 │
-├── frontend/                 # Dash dashboard
-│   ├── app.py                # Main application
-│   ├── assets/               # CSS
-│   └── components/           # UI components
+├── apps/
+│   └── dashboard/
+│       ├── backend/          # FastAPI dashboard backend
+│       └── frontend/         # Dash dashboard frontend
 │
-├── backtests/                # Backtesting framework
-│   ├── core.py               # Core types
-│   └── metrics.py            # Performance metrics
+├── workstation/
+│   ├── backtests/           # Research and validation framework
+│   ├── portfolio/           # Optimization and allocation
+│   ├── execution/           # Paper/live execution path
+│   ├── quant_data/          # Market-data code: connectors, schemas, registry
+│   ├── research/            # Strategy folders, reviews, and audit outputs
+│   ├── notebooks/           # Notebooks and templates
+│   ├── playground/          # Fast-iteration sandbox
+│   └── books_and_papers/    # Reference library
 │
-├── portfolio/                # Portfolio management
-│   ├── optimizer.py          # Mean-variance optimization
-│   ├── risk.py               # Covariance estimation
-│   ├── blend.py              # Alpha blending
-│   └── rebalancer.py         # Order generation
+├── data/                     # Stored market data and broker exports
+│   ├── market_data/
+│   └── flex_reports/
 │
-├── execution/                # Trading execution
-│   ├── runner.py             # Execution loop
-│   ├── risk.py               # Risk controls
-│   ├── broker.py             # Broker interface
-│   ├── sim_broker.py         # Simulated broker
-│   ├── audit.py              # DB recording
-│   └── types.py              # Data types
+├── backend/                  # Compatibility symlink -> apps/dashboard/backend
+├── frontend/                 # Compatibility symlink -> apps/dashboard/frontend
+├── backtests/                # Compatibility symlink -> workstation/backtests
+├── portfolio/                # Compatibility symlink -> workstation/portfolio
+├── execution/                # Compatibility symlink -> workstation/execution
+├── quant_data/               # Compatibility symlink -> workstation/quant_data
+├── research/                 # Compatibility symlink -> workstation/research
+├── notebooks/                # Compatibility symlink -> workstation/notebooks
+├── playground/               # Compatibility symlink -> workstation/playground
+├── books_and_papers/         # Compatibility symlink -> workstation/books_and_papers
 │
-├── quant_data/               # Market data infrastructure
-│   ├── connectors/           # Data source connectors
-│   │   ├── stooq.py
-│   │   ├── binance_public.py
-│   │   ├── polygon.py
-│   │   └── ecb_fx.py
-│   ├── io/                   # I/O utilities
-│   ├── pipelines/            # Ingestion pipelines
-│   ├── duckdb_store.py       # DuckDB interface
-│   ├── spec.py               # Canonical schemas
-│   ├── paths.py              # Path helpers
-│   └── meta_db.py            # Metadata DB
+├── extensions/
+│   └── cerebro/             # Optional research-ingestion extension
 │
-├── qc_lean/                  # QuantConnect Lean
+├── qc_lean/                  # Optional external Lean workspace
 │   ├── Lean/                 # Lean engine source
-│   ├── Data/                 # Market data
-│   ├── Results/              # Backtest output
+│   ├── Data/                 # Lean-formatted market data
+│   ├── Results/              # Generated backtest output
 │   ├── config.json           # Lean config
 │   └── *.py                  # Strategy files
-│
-├── notebooks/                # Jupyter notebooks
-│   ├── analysis.ipynb        # General analysis
-│   ├── qc_lean_momentum_demo.ipynb  # QC demo
-│   └── test_connection.py
 │
 ├── scripts/                  # Utility scripts
 │   ├── init_db.py
 │   ├── automate_pa_daily.py
 │   ├── ingest_*.py
 │   └── ...
-│
-├── research/                 # Research experiments
-│   └── experiments/
-│       ├── run_example_momentum.py
-│       └── run_example_portfolio_opt.py
 │
 ├── tests/                    # Test suite
 │
@@ -1117,10 +1132,10 @@ kill -9 <PID>
 | Document | Description |
 |----------|-------------|
 | [README.md](README.md) | Main project readme |
-| [DATABASE_GUIDE.md](guides/DATABASE_GUIDE.md) | Database queries, P&L analysis |
-| [IBKR_SETUP_GUIDE.md](guides/IBKR_SETUP_GUIDE.md) | IBKR TWS/Gateway configuration |
-| [FLEX_QUERY_SETUP.md](guides/FLEX_QUERY_SETUP.md) | Flex Query web service setup |
-| [PA_AUTOMATION_SETUP.md](guides/PA_AUTOMATION_SETUP.md) | Portfolio Analyst automation |
+| [DATABASE_GUIDE.md](docs/guides/DATABASE_GUIDE.md) | Database queries, P&L analysis |
+| [IBKR_SETUP_GUIDE.md](docs/guides/IBKR_SETUP_GUIDE.md) | IBKR TWS/Gateway configuration |
+| [FLEX_QUERY_SETUP.md](docs/guides/FLEX_QUERY_SETUP.md) | Flex Query web service setup |
+| [PA_AUTOMATION_SETUP.md](docs/guides/PA_AUTOMATION_SETUP.md) | Portfolio Analyst automation |
 | [QUANT_DATA_SPEC.md](docs/QUANT_DATA_SPEC.md) | Canonical data specifications |
 | [QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md) | Quick reference commands |
 | [DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md) | Production deployment checklist |

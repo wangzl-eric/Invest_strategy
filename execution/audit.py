@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
-from typing import Optional
 
 from backend.database import get_db_context
 from backend.models import ExecutionFill, ExecutionOrder, RiskEvent
@@ -58,7 +56,9 @@ def record_fill(*, order_id: int, fill: Fill) -> int:
         return int(row.id)
 
 
-def record_risk_event(*, severity: str, event_type: str, message: str, context: dict) -> int:
+def record_risk_event(
+    *, severity: str, event_type: str, message: str, context: dict
+) -> int:
     with get_db_context() as db:
         row = RiskEvent(
             severity=severity,

@@ -54,7 +54,12 @@ class PolygonBarsConnector:
     def _fetch_symbol(self, symbol: str, *, start: str, end: str) -> pd.DataFrame:
         # https://polygon.io/docs/stocks/get_v2_aggs_ticker__stocksticker__range__multiplier___timespan___from___to
         path = f"/v2/aggs/ticker/{symbol}/range/1/day/{start}/{end}"
-        params = {"adjusted": "true", "sort": "asc", "limit": 50000, "apiKey": self.cfg.api_key}
+        params = {
+            "adjusted": "true",
+            "sort": "asc",
+            "limit": 50000,
+            "apiKey": self.cfg.api_key,
+        }
         url = f"{self.cfg.base_url}{path}?{urlencode(params)}"
         with urlopen(url, timeout=30) as resp:
             payload = json.loads(resp.read().decode("utf-8"))
@@ -85,4 +90,9 @@ class PolygonBarsConnector:
 
     @staticmethod
     def dataset_id(*, universe: str = "us_equities") -> DatasetId:
-        return DatasetId(provider="polygon", kind=MarketDataKind.BARS, universe=universe, frequency=DatasetFrequency.DAY)
+        return DatasetId(
+            provider="polygon",
+            kind=MarketDataKind.BARS,
+            universe=universe,
+            frequency=DatasetFrequency.DAY,
+        )

@@ -37,7 +37,8 @@ Use `SendMessage` to communicate with teammates. Your plain text output is NOT v
 ## Working with the Platform
 
 Before reviewing, always:
-1. **Review business context** — Read `~/.claude/projects/-Users-zelin-Desktop-PA-Investment-Invest-strategy/memory/BUSINESS_CONTEXT.md` for PM principles and statistical thresholds
+1. **Read the domain KB** — Read the relevant `memory/knowledge/KNOWLEDGE_{DOMAIN}.md` for the strategy under review. Check the **Known Failure Modes** section for the relevant topic. The question "Does this strategy repeat a known failure?" is now a **mandatory challenge question** in every review round.
+2. **Review business context** — Read `~/.claude/projects/-Users-zelin-Desktop-PA-Investment-Invest-strategy/memory/BUSINESS_CONTEXT.md` for PM principles and statistical thresholds
 2. **Check lessons applied** — Verify researcher completed pre-flight checklist and applied relevant lessons from `~/.claude/projects/-Users-zelin-Desktop-PA-Investment-Invest-strategy/memory/LESSONS_LEARNED.md`
 3. Read `research/STRATEGY_TRACKER.md` for current pipeline status and "Lessons Applied" column
 4. Read `research/framework_audit/backtesting_audit.md` for framework issues
@@ -113,6 +114,9 @@ REQUIRED ACTIONS:
 ```
 
 Save your review to `pm_review.md` in the strategy folder.
+
+**Post-verdict KB trigger (MANDATORY):** After writing any final verdict (APPROVED, REJECTED, or CONDITIONAL), message the user:
+> "Verdict written for {strategy_name}. Run `/learn-verdict {strategy_folder}` to extract lessons into the knowledge base."
 
 ### Round 2 — Evidence Verification (MANDATORY)
 

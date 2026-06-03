@@ -9,22 +9,24 @@ Workflow:
     2. Import CSV data into pnl_history table
     3. Cleanup old CSV files (>30 days)
 """
-import sys
-import os
 import logging
-from pathlib import Path
+import os
+import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Optional
 
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # ============================================================================
 # LOGGING
 # ============================================================================
+
 
 def setup_logging() -> logging.Logger:
     """Setup logging to console and file."""
@@ -41,11 +43,13 @@ def setup_logging() -> logging.Logger:
     )
     return logging.getLogger(__name__)
 
+
 logger = setup_logging()
 
 # ============================================================================
 # AUTOMATION
 # ============================================================================
+
 
 def automate_pa_daily(
     account_id: Optional[str] = None,
@@ -63,8 +67,8 @@ def automate_pa_daily(
     Returns:
         dict with: success, csv_path, rows_imported, error
     """
-    from scripts.download_portfolio_analyst import download_pa_report
     from backend.flex_importer import import_portfolio_analyst_csv
+    from scripts.download_portfolio_analyst import download_pa_report
 
     account_id = account_id or os.getenv("IBKR_ACCOUNT_ID")
     if not account_id:
@@ -129,6 +133,7 @@ def automate_pa_daily(
 # ============================================================================
 # CLI
 # ============================================================================
+
 
 def main():
     import argparse

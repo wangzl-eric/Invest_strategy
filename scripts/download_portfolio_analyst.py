@@ -8,18 +8,19 @@ Environment Variables:
     IBKR_USERNAME, IBKR_PASSWORD, IBKR_ACCOUNT_ID (required)
     PA_DOWNLOAD_DIR (optional, default: ./data/pa_reports)
 """
-import sys
-import os
-import logging
-from pathlib import Path
-from datetime import datetime, timedelta
-from typing import Optional
 import argparse
+import logging
+import os
+import sys
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Optional
 
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # ============================================================================
@@ -27,7 +28,10 @@ load_dotenv()
 # ============================================================================
 
 SELECTORS = {
-    "username": ['input[name="username"]', 'input[type="text"][placeholder*="username" i]'],
+    "username": [
+        'input[name="username"]',
+        'input[type="text"][placeholder*="username" i]',
+    ],
     "password": ['input[name="password"]', 'input[type="password"]'],
     "login_btn": [
         'button[type="submit"]',
@@ -35,22 +39,36 @@ SELECTORS = {
         'button:has-text("Sign In")',
         'button:has-text("Login")',
         'input[type="submit"]',
-        'button.btn-primary',
-        'button.primary',
+        "button.btn-primary",
+        "button.primary",
         '[data-testid*="login"]',
         '[data-testid*="signin"]',
         'form button[type="submit"]',
     ],
     "date_start": ['input[name*="start"]', 'input[id*="start"]', 'input[name*="from"]'],
     "date_end": ['input[name*="end"]', 'input[id*="end"]', 'input[name*="to"]'],
-    "download_btn": ['button:has-text("Download")', 'button:has-text("Export")', 'a:has-text("Download")'],
+    "download_btn": [
+        'button:has-text("Download")',
+        'button:has-text("Export")',
+        'a:has-text("Download")',
+    ],
     "popup_dismiss": [
-        'button:has-text("Close")', 'button:has-text("Next")', 'button:has-text("Got it")',
-        'button:has-text("OK")', 'button[aria-label*="close" i]', '.modal-close',
+        'button:has-text("Close")',
+        'button:has-text("Next")',
+        'button:has-text("Got it")',
+        'button:has-text("OK")',
+        'button[aria-label*="close" i]',
+        ".modal-close",
     ],
     "two_fa": [
-        'text=Face ID', 'text=Two-Factor', 'text=2FA', 'text=Verify',
-        'text=Approve', 'text=Authenticate', '.two-factor', '.face-id',
+        "text=Face ID",
+        "text=Two-Factor",
+        "text=2FA",
+        "text=Verify",
+        "text=Approve",
+        "text=Authenticate",
+        ".two-factor",
+        ".face-id",
     ],
 }
 
@@ -62,6 +80,7 @@ PA_URLS = [
 # ============================================================================
 # LOGGING SETUP
 # ============================================================================
+
 
 def setup_logging(log_dir: Optional[str] = None) -> logging.Logger:
     """Configure logging to console and dated file."""
@@ -77,16 +96,21 @@ def setup_logging(log_dir: Optional[str] = None) -> logging.Logger:
     # Console: INFO level
     ch = logging.StreamHandler(sys.stdout)
     ch.setLevel(logging.INFO)
-    ch.setFormatter(logging.Formatter('%(asctime)s │ %(levelname)s │ %(message)s', datefmt='%H:%M:%S'))
+    ch.setFormatter(
+        logging.Formatter(
+            "%(asctime)s │ %(levelname)s │ %(message)s", datefmt="%H:%M:%S"
+        )
+    )
     logger.addHandler(ch)
 
     # File: DEBUG level
-    fh = logging.FileHandler(log_file, mode='a')
+    fh = logging.FileHandler(log_file, mode="a")
     fh.setLevel(logging.DEBUG)
-    fh.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+    fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
     logger.addHandler(fh)
 
     return logger
+
 
 logger = setup_logging()
 
@@ -94,7 +118,14 @@ logger = setup_logging()
 # BROWSER HELPERS
 # ============================================================================
 
-def try_selectors(page, selectors: list, action: str = "click", value: Optional[str] = None, timeout: int = 3000) -> bool:
+
+def try_selectors(
+    page,
+    selectors: list,
+    action: str = "click",
+    value: Optional[str] = None,
+    timeout: int = 3000,
+) -> bool:
     """Try multiple selectors until one works. Returns True on success."""
     for sel in selectors:
         try:
@@ -114,15 +145,23 @@ def try_selectors(page, selectors: list, action: str = "click", value: Optional[
                                     element.click()
                                 elif action == "fill" and value:
                                     element.fill(value)
-                                logger.debug(f"✓ {action} via {sel} (exact match: '{element_text}')")
+                                logger.debug(
+                                    f"✓ {action} via {sel} (exact match: '{element_text}')"
+                                )
                                 return True
                             # Also check if it contains "报告" or "Report" but NOT "performances"
-                            elif ("报告" in element_text or "Report" in element_text) and "performances" not in element_text.lower() and "&" not in element_text:
+                            elif (
+                                ("报告" in element_text or "Report" in element_text)
+                                and "performances" not in element_text.lower()
+                                and "&" not in element_text
+                            ):
                                 if action == "click":
                                     element.click()
                                 elif action == "fill" and value:
                                     element.fill(value)
-                                logger.debug(f"✓ {action} via {sel} (filtered match: '{element_text}')")
+                                logger.debug(
+                                    f"✓ {action} via {sel} (filtered match: '{element_text}')"
+                                )
                                 return True
                     except:
                         continue
@@ -148,7 +187,7 @@ def fast_find_and_click(
     description: str,
     max_attempts: int = 20,
     refresh_interval_ms: int = 500,
-    click_delay_ms: int = 1000
+    click_delay_ms: int = 1000,
 ) -> bool:
     """
     Fast refresh cycle to find and click an element.
@@ -172,7 +211,9 @@ def fast_find_and_click(
             try:
                 locator = page.locator(selector)
                 if locator.is_visible(timeout=500):
-                    logger.info(f"✓ Found '{description}' (attempt {attempt}) using: {selector}")
+                    logger.info(
+                        f"✓ Found '{description}' (attempt {attempt}) using: {selector}"
+                    )
                     locator.click()
                     page.wait_for_timeout(click_delay_ms)
                     return True
@@ -184,7 +225,9 @@ def fast_find_and_click(
             try:
                 page.reload(wait_until="domcontentloaded", timeout=5000)
                 page.wait_for_timeout(refresh_interval_ms)
-                logger.debug(f"Refresh cycle {attempt}/{max_attempts} - checking for '{description}'...")
+                logger.debug(
+                    f"Refresh cycle {attempt}/{max_attempts} - checking for '{description}'..."
+                )
             except Exception as e:
                 logger.debug(f"Refresh failed: {e}, continuing...")
                 page.wait_for_timeout(refresh_interval_ms)
@@ -228,12 +271,12 @@ def wait_for_login(page, max_wait: int = 90) -> bool:
     logger.info("=" * 60)
 
     dashboard_selectors = [
-        'text=Portfolio Analyst',
+        "text=Portfolio Analyst",
         '[href*="portfolio"]',
-        '.account-menu',
+        ".account-menu",
         '[data-testid*="dashboard"]',
-        'text=Account',
-        'text=Positions',
+        "text=Account",
+        "text=Positions",
     ]
     two_fa_detected = False
     fast_cycle_started = False
@@ -248,7 +291,9 @@ def wait_for_login(page, max_wait: int = 90) -> bool:
             try:
                 if page.locator(selector).is_visible(timeout=1000):
                     if elapsed > 10:
-                        logger.info(f"✓ Login successful - Face ID completed ({elapsed}s)")
+                        logger.info(
+                            f"✓ Login successful - Face ID completed ({elapsed}s)"
+                        )
                     else:
                         logger.info(f"✓ Login successful ({elapsed}s)")
                     return True
@@ -259,7 +304,17 @@ def wait_for_login(page, max_wait: int = 90) -> bool:
         if elapsed == 5 and not two_fa_detected:
             try:
                 page_text = page.inner_text("body").lower()
-                if any(term in page_text for term in ["face id", "two-factor", "2fa", "verify", "authenticate", "approve"]):
+                if any(
+                    term in page_text
+                    for term in [
+                        "face id",
+                        "two-factor",
+                        "2fa",
+                        "verify",
+                        "authenticate",
+                        "approve",
+                    ]
+                ):
                     logger.info("⚠️  2FA/Face ID prompt detected on page")
                     logger.info("Please complete Face ID authentication on your device")
                     two_fa_detected = True
@@ -278,7 +333,9 @@ def wait_for_login(page, max_wait: int = 90) -> bool:
             for selector in dashboard_selectors:
                 try:
                     if page.locator(selector).is_visible(timeout=500):
-                        logger.info(f"✓ Login successful - detected via fast cycle ({elapsed}s)")
+                        logger.info(
+                            f"✓ Login successful - detected via fast cycle ({elapsed}s)"
+                        )
                         return True
                 except:
                     continue
@@ -287,7 +344,9 @@ def wait_for_login(page, max_wait: int = 90) -> bool:
             if elapsed % 2 == 0:
                 try:
                     page.reload(wait_until="domcontentloaded", timeout=5000)
-                    logger.debug(f"Fast cycle refresh at {elapsed}s - checking for login...")
+                    logger.debug(
+                        f"Fast cycle refresh at {elapsed}s - checking for login..."
+                    )
                 except Exception as e:
                     logger.debug(f"Refresh failed: {e}, continuing...")
         else:
@@ -295,7 +354,9 @@ def wait_for_login(page, max_wait: int = 90) -> bool:
             if elapsed % 15 == 0:
                 current_url = page.url.lower()
                 if "login" in current_url or "signin" in current_url:
-                    logger.info(f"⏳ Still waiting for Face ID authentication... ({elapsed}s)")
+                    logger.info(
+                        f"⏳ Still waiting for Face ID authentication... ({elapsed}s)"
+                    )
                     logger.info("   Check your device for Face ID prompts")
                 else:
                     logger.debug(f"Checking login status... ({elapsed}s)")
@@ -326,6 +387,7 @@ def wait_for_login(page, max_wait: int = 90) -> bool:
 # MAIN DOWNLOAD FUNCTION
 # ============================================================================
 
+
 def download_pa_report(
     username: Optional[str] = None,
     password: Optional[str] = None,
@@ -342,9 +404,12 @@ def download_pa_report(
     Raises: ImportError, ValueError, RuntimeError on failure
     """
     try:
-        from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+        from playwright.sync_api import TimeoutError as PlaywrightTimeout
+        from playwright.sync_api import sync_playwright
     except ImportError:
-        raise ImportError("Install playwright: pip install playwright && playwright install chromium")
+        raise ImportError(
+            "Install playwright: pip install playwright && playwright install chromium"
+        )
 
     # Resolve credentials
     username = username or os.getenv("IBKR_USERNAME")
@@ -352,14 +417,20 @@ def download_pa_report(
     account_id = account_id or os.getenv("IBKR_ACCOUNT_ID")
 
     if not all([username, password, account_id]):
-        raise ValueError("Missing credentials. Set IBKR_USERNAME, IBKR_PASSWORD, IBKR_ACCOUNT_ID")
+        raise ValueError(
+            "Missing credentials. Set IBKR_USERNAME, IBKR_PASSWORD, IBKR_ACCOUNT_ID"
+        )
 
     # Default dates
     end_date = end_date or datetime.now().strftime("%Y-%m-%d")
-    start_date = start_date or (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
+    start_date = start_date or (datetime.now() - timedelta(days=365)).strftime(
+        "%Y-%m-%d"
+    )
 
     # Setup paths
-    download_path = Path(download_dir or os.getenv("PA_DOWNLOAD_DIR", "./data/pa_reports"))
+    download_path = Path(
+        download_dir or os.getenv("PA_DOWNLOAD_DIR", "./data/pa_reports")
+    )
     download_path.mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -371,22 +442,26 @@ def download_pa_report(
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=headless)
-        context = browser.new_context(accept_downloads=True, viewport={"width": 1920, "height": 1080})
+        context = browser.new_context(
+            accept_downloads=True, viewport={"width": 1920, "height": 1080}
+        )
         page = context.new_page()
 
         try:
             # STEP 1: Login
             logger.info("Step 1/8: Logging in...")
-            page.goto("https://www.interactivebrokers.com/portal/", wait_until="networkidle")
+            page.goto(
+                "https://www.interactivebrokers.com/portal/", wait_until="networkidle"
+            )
             logger.debug(f"Page loaded: {page.url}")
 
             # Check if already logged in
             already_logged_in = False
             try:
                 dashboard_indicators = [
-                    'text=Portfolio Analyst',
+                    "text=Portfolio Analyst",
                     '[href*="portfolio"]',
-                    '.account-menu',
+                    ".account-menu",
                     '[data-testid*="dashboard"]',
                 ]
                 for indicator in dashboard_indicators:
@@ -402,31 +477,47 @@ def download_pa_report(
 
             if not already_logged_in:
                 # Fill username
-                username_filled = try_selectors(page, SELECTORS["username"], "fill", username, timeout=5000)
+                username_filled = try_selectors(
+                    page, SELECTORS["username"], "fill", username, timeout=5000
+                )
                 if username_filled:
                     logger.info("✓ Username filled")
                 else:
-                    logger.warning("⚠ Could not fill username - check selectors or page structure")
+                    logger.warning(
+                        "⚠ Could not fill username - check selectors or page structure"
+                    )
                     logger.debug("Taking screenshot for debugging...")
-                    page.screenshot(path=str(download_path / f"debug_username_{timestamp}.png"))
+                    page.screenshot(
+                        path=str(download_path / f"debug_username_{timestamp}.png")
+                    )
 
                 # Fill password
-                password_filled = try_selectors(page, SELECTORS["password"], "fill", password, timeout=5000)
+                password_filled = try_selectors(
+                    page, SELECTORS["password"], "fill", password, timeout=5000
+                )
                 if password_filled:
                     logger.info("✓ Password filled")
                 else:
-                    logger.warning("⚠ Could not fill password - check selectors or page structure")
+                    logger.warning(
+                        "⚠ Could not fill password - check selectors or page structure"
+                    )
 
                 if not username_filled or not password_filled:
-                    logger.error("Failed to fill credentials - cannot proceed with login")
+                    logger.error(
+                        "Failed to fill credentials - cannot proceed with login"
+                    )
                     raise RuntimeError("Could not fill username/password fields")
 
                 # Click login button - CRITICAL STEP
                 logger.info("Clicking Login button...")
-                login_clicked = try_selectors(page, SELECTORS["login_btn"], "click", timeout=5000)
+                login_clicked = try_selectors(
+                    page, SELECTORS["login_btn"], "click", timeout=5000
+                )
 
                 if not login_clicked:
-                    logger.warning("⚠ Could not click Login button with standard selectors")
+                    logger.warning(
+                        "⚠ Could not click Login button with standard selectors"
+                    )
                     logger.info("Trying alternative methods...")
 
                     # Method 1: Try pressing Enter on password field
@@ -444,9 +535,14 @@ def download_pa_report(
                             for btn in buttons:
                                 try:
                                     text = btn.inner_text().lower()
-                                    if any(word in text for word in ["log", "sign", "submit"]):
+                                    if any(
+                                        word in text
+                                        for word in ["log", "sign", "submit"]
+                                    ):
                                         btn.click()
-                                        logger.info(f"✓ Clicked login button via text search: '{text}'")
+                                        logger.info(
+                                            f"✓ Clicked login button via text search: '{text}'"
+                                        )
                                         login_clicked = True
                                         break
                                 except:
@@ -477,11 +573,15 @@ def download_pa_report(
                         logger.error("  1. The browser window should be visible")
                         logger.error("  2. Please manually click the Login button")
                         logger.error("  3. Complete Face ID if prompted")
-                        logger.error("  4. The script will wait 60 seconds for you to complete login")
+                        logger.error(
+                            "  4. The script will wait 60 seconds for you to complete login"
+                        )
                         logger.error("=" * 60)
 
                         # Take screenshot for debugging
-                        debug_screenshot = download_path / f"debug_login_button_{timestamp}.png"
+                        debug_screenshot = (
+                            download_path / f"debug_login_button_{timestamp}.png"
+                        )
                         page.screenshot(path=str(debug_screenshot), full_page=True)
                         logger.info(f"Debug screenshot saved: {debug_screenshot}")
 
@@ -511,8 +611,14 @@ def download_pa_report(
                     logger.info("✓ Appears to be logged in (not on login page)")
                     logger.info(f"Current URL: {page.url}")
                     login_success = True
-                elif "portfolio" in current_url or "dashboard" in current_url or "account" in current_url:
-                    logger.info("✓ Appears to be logged in (on dashboard/portfolio page)")
+                elif (
+                    "portfolio" in current_url
+                    or "dashboard" in current_url
+                    or "account" in current_url
+                ):
+                    logger.info(
+                        "✓ Appears to be logged in (on dashboard/portfolio page)"
+                    )
                     login_success = True
                 else:
                     logger.error("=" * 60)
@@ -530,7 +636,9 @@ def download_pa_report(
                     logger.error("")
                     logger.error("Try running with --no-headless to debug")
                     logger.error("=" * 60)
-                    raise RuntimeError("Login failed - check credentials or complete Face ID")
+                    raise RuntimeError(
+                        "Login failed - check credentials or complete Face ID"
+                    )
 
             # Verify we're logged in before proceeding
             logger.info("Verifying login status before proceeding...")
@@ -541,7 +649,9 @@ def download_pa_report(
             logged_in_indicators = [
                 # URL-based checks
                 "login" not in current_url and "signin" not in current_url,
-                "portfolio" in current_url or "dashboard" in current_url or "account" in current_url,
+                "portfolio" in current_url
+                or "dashboard" in current_url
+                or "account" in current_url,
                 # Page element checks
             ]
 
@@ -549,18 +659,20 @@ def download_pa_report(
             try:
                 # Check for dashboard indicators on page
                 dashboard_indicators = [
-                    'text=Portfolio Analyst',
+                    "text=Portfolio Analyst",
                     '[href*="portfolio"]',
-                    '.account-menu',
+                    ".account-menu",
                     '[data-testid*="dashboard"]',
-                    'text=Account',
-                    'text=Positions',
-                    'text=Trades',
+                    "text=Account",
+                    "text=Positions",
+                    "text=Trades",
                 ]
                 for indicator in dashboard_indicators:
                     try:
                         if page.locator(indicator).is_visible(timeout=2000):
-                            logger.info(f"✓ Confirmed logged in (found element: {indicator})")
+                            logger.info(
+                                f"✓ Confirmed logged in (found element: {indicator})"
+                            )
                             logged_in = True
                             break
                     except:
@@ -574,7 +686,9 @@ def download_pa_report(
                     logger.info(f"✓ Confirmed logged in (URL check: {page.url})")
                     logged_in = True
                 elif "portfolio" in current_url or "dashboard" in current_url:
-                    logger.info(f"✓ Confirmed logged in (on dashboard page: {page.url})")
+                    logger.info(
+                        f"✓ Confirmed logged in (on dashboard page: {page.url})"
+                    )
                     logged_in = True
 
             if not logged_in:
@@ -599,8 +713,8 @@ def download_pa_report(
                 'a:has-text("Portfolio Analyst")',
                 '[href*="portfolio-analyst"]',
                 '[href*="portfolio"]',
-                'text=PortfolioAnalyst',
-                'text=Portfolio Analyst',
+                "text=PortfolioAnalyst",
+                "text=Portfolio Analyst",
                 '[data-testid*="portfolio"]',
                 '[aria-label*="Portfolio Analyst" i]',
             ]
@@ -611,7 +725,7 @@ def download_pa_report(
                 description="PortfolioAnalyst button",
                 max_attempts=20,
                 refresh_interval_ms=500,
-                click_delay_ms=2000
+                click_delay_ms=2000,
             )
 
             if not pa_clicked:
@@ -621,7 +735,10 @@ def download_pa_report(
                     try:
                         logger.debug(f"Trying PA URL {idx}/{len(PA_URLS)}: {url}")
                         page.goto(url, wait_until="networkidle", timeout=15000)
-                        if "portfolio" in page.url.lower() or "analyst" in page.url.lower():
+                        if (
+                            "portfolio" in page.url.lower()
+                            or "analyst" in page.url.lower()
+                        ):
                             logger.info(f"✓ Navigated to Portfolio Analyst: {page.url}")
                             pa_clicked = True
                             break
@@ -664,7 +781,9 @@ def download_pa_report(
                 'a:has-text("Reports"):not(:has-text("performances"))',  # Plural
             ]
 
-            report_clicked = try_selectors(page, report_selectors, "click", timeout=5000)
+            report_clicked = try_selectors(
+                page, report_selectors, "click", timeout=5000
+            )
 
             if report_clicked:
                 logger.info("✓ Clicked 'Reports' / '报告' tab/button")
@@ -682,11 +801,11 @@ def download_pa_report(
             # Look for Custom Reports panel
             custom_reports_panel_found = False
             custom_reports_selectors = [
-                'text=Custom Reports',
-                'text=自定义报告',  # Chinese for Custom Reports
+                "text=Custom Reports",
+                "text=自定义报告",  # Chinese for Custom Reports
                 '[aria-label*="Custom Reports" i]',
                 '[aria-label*="自定义报告" i]',
-                '.custom-reports',
+                ".custom-reports",
                 '[data-testid*="custom-reports"]',
                 '[class*="custom-reports"]',
                 '[class*="CustomReports"]',
@@ -705,7 +824,12 @@ def download_pa_report(
                 logger.warning("Could not find Custom Reports panel, but continuing...")
                 logger.info("Taking screenshot for debugging...")
                 try:
-                    page.screenshot(path=str(download_path / f"debug_custom_reports_{timestamp}.png"), full_page=True)
+                    page.screenshot(
+                        path=str(
+                            download_path / f"debug_custom_reports_{timestamp}.png"
+                        ),
+                        full_page=True,
+                    )
                 except:
                     pass
 
@@ -717,11 +841,11 @@ def download_pa_report(
             # Search for the specific report name
             report_name_selectors = [
                 'text="custom_report_algo"',  # Exact match
-                'text=custom_report_algo',  # Contains match
+                "text=custom_report_algo",  # Contains match
                 '[aria-label*="custom_report_algo" i]',
                 # Look within Custom Reports section
-                'text=Custom Reports >> .. >> text=custom_report_algo',
-                'text=自定义报告 >> .. >> text=custom_report_algo',
+                "text=Custom Reports >> .. >> text=custom_report_algo",
+                "text=自定义报告 >> .. >> text=custom_report_algo",
             ]
 
             report_found = False
@@ -741,28 +865,42 @@ def download_pa_report(
             if report_found and report_element:
                 # Find Run button associated with this report
                 # Try multiple approaches to find Run button in same row/container
-                logger.info("Looking for Run button associated with 'custom_report_algo'...")
+                logger.info(
+                    "Looking for Run button associated with 'custom_report_algo'..."
+                )
 
                 run_clicked = False
 
                 # Strategy 1: Look for Font Awesome Run icon (fa-circle-arrow-right) with data-original-title="Run"
                 # The Run button is: <i class="fa fa-circle-arrow-right" data-original-title="Run"></i>
                 try:
-                    parent = report_element.locator('..')
+                    parent = report_element.locator("..")
                     # Look for the icon element directly
                     icon_run_selectors = [
                         # Font Awesome icon with Run tooltip
-                        parent.locator('i.fa-circle-arrow-right[data-original-title="Run"]'),
-                        parent.locator('i[class*="fa-circle-arrow-right"][data-original-title="Run"]'),
+                        parent.locator(
+                            'i.fa-circle-arrow-right[data-original-title="Run"]'
+                        ),
+                        parent.locator(
+                            'i[class*="fa-circle-arrow-right"][data-original-title="Run"]'
+                        ),
                         parent.locator('i[data-original-title="Run"]'),
-                        parent.locator('i.fa-circle-arrow-right'),
+                        parent.locator("i.fa-circle-arrow-right"),
                         # Parent button/element containing the icon
-                        parent.locator('button:has(i.fa-circle-arrow-right[data-original-title="Run"])'),
+                        parent.locator(
+                            'button:has(i.fa-circle-arrow-right[data-original-title="Run"])'
+                        ),
                         parent.locator('button:has(i[data-original-title="Run"])'),
-                        parent.locator('a:has(i.fa-circle-arrow-right[data-original-title="Run"])'),
-                        parent.locator('div:has(i.fa-circle-arrow-right[data-original-title="Run"])'),
+                        parent.locator(
+                            'a:has(i.fa-circle-arrow-right[data-original-title="Run"])'
+                        ),
+                        parent.locator(
+                            'div:has(i.fa-circle-arrow-right[data-original-title="Run"])'
+                        ),
                         # Look for clickable element containing the icon
-                        parent.locator('[role="button"]:has(i.fa-circle-arrow-right[data-original-title="Run"])'),
+                        parent.locator(
+                            '[role="button"]:has(i.fa-circle-arrow-right[data-original-title="Run"])'
+                        ),
                         # Fallback: any element with data-original-title="Run"
                         parent.locator('[data-original-title="Run"]'),
                         parent.locator('[data-original-title*="Run" i]'),
@@ -770,7 +908,9 @@ def download_pa_report(
                     for icon_sel in icon_run_selectors:
                         try:
                             if icon_sel.is_visible(timeout=1000):
-                                logger.info("✓ Found Run icon (Font Awesome fa-circle-arrow-right)")
+                                logger.info(
+                                    "✓ Found Run icon (Font Awesome fa-circle-arrow-right)"
+                                )
                                 icon_sel.click()
                                 page.wait_for_timeout(2000)
                                 run_clicked = True
@@ -783,12 +923,16 @@ def download_pa_report(
                 # Strategy 2: Parent container approach with Font Awesome icon
                 if not run_clicked:
                     try:
-                        parent_container = report_element.locator('../..')
+                        parent_container = report_element.locator("../..")
                         icon_selectors = [
                             # Font Awesome icon in parent container
-                            parent_container.locator('i.fa-circle-arrow-right[data-original-title="Run"]'),
+                            parent_container.locator(
+                                'i.fa-circle-arrow-right[data-original-title="Run"]'
+                            ),
                             parent_container.locator('i[data-original-title="Run"]'),
-                            parent_container.locator('button:has(i.fa-circle-arrow-right[data-original-title="Run"])'),
+                            parent_container.locator(
+                                'button:has(i.fa-circle-arrow-right[data-original-title="Run"])'
+                            ),
                             parent_container.locator('[data-original-title="Run"]'),
                             # Fallback to aria-label/title
                             parent_container.locator('button[aria-label*="Run" i]'),
@@ -797,7 +941,9 @@ def download_pa_report(
                         for icon_sel in icon_selectors:
                             try:
                                 if icon_sel.is_visible(timeout=1000):
-                                    logger.info("✓ Found Run icon (parent container approach)")
+                                    logger.info(
+                                        "✓ Found Run icon (parent container approach)"
+                                    )
                                     icon_sel.click()
                                     page.wait_for_timeout(2000)
                                     run_clicked = True
@@ -811,17 +957,25 @@ def download_pa_report(
                 if not run_clicked:
                     try:
                         # Try XPath to find Font Awesome icon with data-original-title="Run" in ancestor tr or div
-                        run_icon = report_element.locator('xpath=ancestor::tr//i[contains(@class, "fa-circle-arrow-right") and @data-original-title="Run"]').first
+                        run_icon = report_element.locator(
+                            'xpath=ancestor::tr//i[contains(@class, "fa-circle-arrow-right") and @data-original-title="Run"]'
+                        ).first
                         if run_icon.is_visible(timeout=1000):
-                            logger.info("✓ Found Run icon (XPath ancestor::tr - Font Awesome)")
+                            logger.info(
+                                "✓ Found Run icon (XPath ancestor::tr - Font Awesome)"
+                            )
                             run_icon.click()
                             page.wait_for_timeout(2000)
                             run_clicked = True
                         else:
                             # Try finding parent button/element
-                            run_button = report_element.locator('xpath=ancestor::tr//*[.//i[contains(@class, "fa-circle-arrow-right") and @data-original-title="Run"]]').first
+                            run_button = report_element.locator(
+                                'xpath=ancestor::tr//*[.//i[contains(@class, "fa-circle-arrow-right") and @data-original-title="Run"]]'
+                            ).first
                             if run_button.is_visible(timeout=1000):
-                                logger.info("✓ Found Run icon container (XPath ancestor::tr)")
+                                logger.info(
+                                    "✓ Found Run icon container (XPath ancestor::tr)"
+                                )
                                 run_button.click()
                                 page.wait_for_timeout(2000)
                                 run_clicked = True
@@ -832,17 +986,25 @@ def download_pa_report(
                 if not run_clicked:
                     try:
                         # Find Font Awesome icon in ancestor div
-                        run_icon = report_element.locator('xpath=ancestor::div[contains(@class, "report") or contains(@class, "row")]//i[contains(@class, "fa-circle-arrow-right") and @data-original-title="Run"]').first
+                        run_icon = report_element.locator(
+                            'xpath=ancestor::div[contains(@class, "report") or contains(@class, "row")]//i[contains(@class, "fa-circle-arrow-right") and @data-original-title="Run"]'
+                        ).first
                         if run_icon.is_visible(timeout=1000):
-                            logger.info("✓ Found Run icon (XPath ancestor::div - Font Awesome)")
+                            logger.info(
+                                "✓ Found Run icon (XPath ancestor::div - Font Awesome)"
+                            )
                             run_icon.click()
                             page.wait_for_timeout(2000)
                             run_clicked = True
                         else:
                             # Try finding parent element
-                            run_button = report_element.locator('xpath=ancestor::div//*[.//i[contains(@class, "fa-circle-arrow-right") and @data-original-title="Run"]]').first
+                            run_button = report_element.locator(
+                                'xpath=ancestor::div//*[.//i[contains(@class, "fa-circle-arrow-right") and @data-original-title="Run"]]'
+                            ).first
                             if run_button.is_visible(timeout=1000):
-                                logger.info("✓ Found Run icon container (XPath ancestor::div)")
+                                logger.info(
+                                    "✓ Found Run icon container (XPath ancestor::div)"
+                                )
                                 run_button.click()
                                 page.wait_for_timeout(2000)
                                 run_clicked = True
@@ -853,7 +1015,9 @@ def download_pa_report(
                 if not run_clicked:
                     try:
                         # Look for all Font Awesome icons with data-original-title="Run" near the report
-                        all_run_icons = page.locator('i.fa-circle-arrow-right[data-original-title="Run"], i[data-original-title="Run"], [data-original-title="Run"]').all()
+                        all_run_icons = page.locator(
+                            'i.fa-circle-arrow-right[data-original-title="Run"], i[data-original-title="Run"], [data-original-title="Run"]'
+                        ).all()
                         report_box = report_element.bounding_box()
 
                         for icon_element in all_run_icons:
@@ -862,12 +1026,18 @@ def download_pa_report(
                                     icon_box = icon_element.bounding_box()
                                     if icon_box:
                                         # Check if they're in similar vertical position (same row) and close horizontally
-                                        vertical_diff = abs(report_box['y'] - icon_box['y'])
-                                        horizontal_diff = abs(report_box['x'] - icon_box['x'])
+                                        vertical_diff = abs(
+                                            report_box["y"] - icon_box["y"]
+                                        )
+                                        horizontal_diff = abs(
+                                            report_box["x"] - icon_box["x"]
+                                        )
 
                                         # Same row (vertical diff < 50px) and not too far horizontally (within 500px)
                                         if vertical_diff < 50 and horizontal_diff < 500:
-                                            logger.info(f"✓ Found Run icon (proximity check: v_diff={vertical_diff:.0f}px, h_diff={horizontal_diff:.0f}px)")
+                                            logger.info(
+                                                f"✓ Found Run icon (proximity check: v_diff={vertical_diff:.0f}px, h_diff={horizontal_diff:.0f}px)"
+                                            )
                                             icon_element.click()
                                             page.wait_for_timeout(2000)
                                             run_clicked = True
@@ -881,7 +1051,9 @@ def download_pa_report(
                 if not run_clicked:
                     try:
                         # Look for the icon and click its parent (button/a/div) if icon itself is not clickable
-                        run_icon = page.locator('i.fa-circle-arrow-right[data-original-title="Run"]').first
+                        run_icon = page.locator(
+                            'i.fa-circle-arrow-right[data-original-title="Run"]'
+                        ).first
                         if run_icon.is_visible(timeout=1000):
                             # Try clicking the icon directly first
                             try:
@@ -892,9 +1064,13 @@ def download_pa_report(
                             except:
                                 # If direct click fails, try clicking parent
                                 try:
-                                    parent_clickable = run_icon.locator('xpath=ancestor::button | ancestor::a | ancestor::div[@role="button"]').first
+                                    parent_clickable = run_icon.locator(
+                                        'xpath=ancestor::button | ancestor::a | ancestor::div[@role="button"]'
+                                    ).first
                                     if parent_clickable.is_visible(timeout=1000):
-                                        logger.info("✓ Found Run icon parent (clicking parent element)")
+                                        logger.info(
+                                            "✓ Found Run icon parent (clicking parent element)"
+                                        )
                                         parent_clickable.click()
                                         page.wait_for_timeout(2000)
                                         run_clicked = True
@@ -907,7 +1083,12 @@ def download_pa_report(
                     logger.warning("Could not find Run button for 'custom_report_algo'")
                     logger.info("Taking screenshot for debugging...")
                     try:
-                        page.screenshot(path=str(download_path / f"debug_run_button_{timestamp}.png"), full_page=True)
+                        page.screenshot(
+                            path=str(
+                                download_path / f"debug_run_button_{timestamp}.png"
+                            ),
+                            full_page=True,
+                        )
                     except:
                         pass
                 else:
@@ -931,27 +1112,47 @@ def download_pa_report(
                         'button[type="button"]:has-text("Run")',
                     ]
 
-                    popup_run_clicked = try_selectors(page, popup_run_selectors, "click", timeout=5000)
+                    popup_run_clicked = try_selectors(
+                        page, popup_run_selectors, "click", timeout=5000
+                    )
 
                     if popup_run_clicked:
                         logger.info("✓ Clicked 'Run' button in pop-up window")
-                        page.wait_for_timeout(3000)  # Wait for report to start generating
+                        page.wait_for_timeout(
+                            3000
+                        )  # Wait for report to start generating
                     else:
                         logger.warning("Could not find 'Run' button in pop-up window")
-                        logger.info("Pop-up may not have appeared, or button has different text")
+                        logger.info(
+                            "Pop-up may not have appeared, or button has different text"
+                        )
                         logger.info("Taking screenshot for debugging...")
                         try:
-                            page.screenshot(path=str(download_path / f"debug_popup_run_{timestamp}.png"), full_page=True)
+                            page.screenshot(
+                                path=str(
+                                    download_path / f"debug_popup_run_{timestamp}.png"
+                                ),
+                                full_page=True,
+                            )
                         except:
                             pass
             else:
-                logger.error("Could not find 'custom_report_algo' report in Custom Reports panel")
+                logger.error(
+                    "Could not find 'custom_report_algo' report in Custom Reports panel"
+                )
                 logger.info("Taking screenshot for debugging...")
                 try:
-                    page.screenshot(path=str(download_path / f"debug_custom_report_algo_{timestamp}.png"), full_page=True)
+                    page.screenshot(
+                        path=str(
+                            download_path / f"debug_custom_report_algo_{timestamp}.png"
+                        ),
+                        full_page=True,
+                    )
                 except:
                     pass
-                logger.warning("The script will continue and try to proceed with date configuration...")
+                logger.warning(
+                    "The script will continue and try to proceed with date configuration..."
+                )
 
             dismiss_popups(page)
 
@@ -962,13 +1163,17 @@ def download_pa_report(
 
             # Fill date fields
             logger.debug("Setting date range...")
-            start_date_set = try_selectors(page, SELECTORS["date_start"], "fill", start_date, timeout=3000)
+            start_date_set = try_selectors(
+                page, SELECTORS["date_start"], "fill", start_date, timeout=3000
+            )
             if start_date_set:
                 logger.info(f"✓ Start date set: {start_date}")
             else:
                 logger.warning("Could not set start date")
 
-            end_date_set = try_selectors(page, SELECTORS["date_end"], "fill", end_date, timeout=3000)
+            end_date_set = try_selectors(
+                page, SELECTORS["date_end"], "fill", end_date, timeout=3000
+            )
             if end_date_set:
                 logger.info(f"✓ End date set: {end_date}")
             else:
@@ -988,21 +1193,29 @@ def download_pa_report(
                 'button.btn-primary:has-text("Run")',
             ]
 
-            run_clicked = try_selectors(page, run_button_selectors, "click", timeout=5000)
+            run_clicked = try_selectors(
+                page, run_button_selectors, "click", timeout=5000
+            )
             if run_clicked:
                 logger.info("✓ Clicked Run button to generate report")
                 page.wait_for_timeout(3000)  # Wait for report to generate
             else:
-                logger.warning("Could not find Run button - report may already be generated")
+                logger.warning(
+                    "Could not find Run button - report may already be generated"
+                )
 
             dismiss_popups(page)
             logger.debug("Setting up download event listener...")
             download_promise = page.wait_for_event("download", timeout=60000)
 
-            download_clicked = try_selectors(page, SELECTORS["download_btn"], "click", timeout=5000)
+            download_clicked = try_selectors(
+                page, SELECTORS["download_btn"], "click", timeout=5000
+            )
 
             if not download_clicked:
-                logger.warning("Could not click download button with standard selectors")
+                logger.warning(
+                    "Could not click download button with standard selectors"
+                )
                 logger.info("Trying alternative download methods...")
 
                 # Try alternative download selectors
@@ -1010,9 +1223,11 @@ def download_pa_report(
                     'button:has-text("Export")',
                     'button:has-text("CSV")',
                     'a:has-text("Download")',
-                    '[download]',
+                    "[download]",
                 ]
-                download_clicked = try_selectors(page, alt_download, "click", timeout=5000)
+                download_clicked = try_selectors(
+                    page, alt_download, "click", timeout=5000
+                )
 
             if not download_clicked:
                 logger.error("=" * 60)
@@ -1028,7 +1243,9 @@ def download_pa_report(
                 logger.info("✓ Download event received")
             except PlaywrightTimeout:
                 logger.error("Download timeout - file download did not start")
-                raise RuntimeError("Download timeout - file download did not start within 60 seconds")
+                raise RuntimeError(
+                    "Download timeout - file download did not start within 60 seconds"
+                )
 
             # STEP 8: Save downloaded file
             logger.info("Step 8/8: Saving file...")
@@ -1058,15 +1275,20 @@ def download_pa_report(
 # CLI
 # ============================================================================
 
+
 def main():
     parser = argparse.ArgumentParser(description="Download IBKR Portfolio Analyst CSV")
     parser.add_argument("--username", help="IBKR username (or IBKR_USERNAME env)")
     parser.add_argument("--password", help="IBKR password (or IBKR_PASSWORD env)")
     parser.add_argument("--account-id", help="Account ID (or IBKR_ACCOUNT_ID env)")
-    parser.add_argument("--start-date", help="Start date YYYY-MM-DD (default: 1 year ago)")
+    parser.add_argument(
+        "--start-date", help="Start date YYYY-MM-DD (default: 1 year ago)"
+    )
     parser.add_argument("--end-date", help="End date YYYY-MM-DD (default: today)")
     parser.add_argument("--download-dir", help="Download directory")
-    parser.add_argument("--no-headless", action="store_true", help="Show browser (debug)")
+    parser.add_argument(
+        "--no-headless", action="store_true", help="Show browser (debug)"
+    )
 
     args = parser.parse_args()
 

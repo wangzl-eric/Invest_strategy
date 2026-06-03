@@ -1,19 +1,15 @@
 """Unit tests for forward_pass module."""
 
-import pytest
-from datetime import datetime, timedelta
-from unittest.mock import Mock
+from datetime import datetime
 
-import numpy as np
-import pandas as pd
+import pytest
 
 from backtests.forward_pass import (
+    ComparisonView,
     ForwardPassTracker,
-    TradeRecord,
     SignalHistory,
     SignalSnapshot,
-    TradeComparison,
-    ComparisonView,
+    TradeRecord,
     create_tracker,
 )
 
@@ -290,8 +286,7 @@ class TestForwardPassTracker:
         tracker.update_signals(ts_entry, {"momentum": 0.5})
         tracker.update_market_data(ts_entry, {"AAPL": 100.0}, {})
         tracker.open_trade(
-            ts_entry, "AAPL", 1, 100, 100.0,
-            predicted_return=0.10  # Predict 10% up
+            ts_entry, "AAPL", 1, 100, 100.0, predicted_return=0.10  # Predict 10% up
         )
 
         # Close with actual 5% up
@@ -302,7 +297,7 @@ class TestForwardPassTracker:
         assert len(df) == 1
         assert df.iloc[0]["predicted_return"] == 0.10
         assert df.iloc[0]["actual_return"] == pytest.approx(0.05, rel=0.01)
-        assert df.iloc[0]["correct_direction"] == True  # Both positive
+        assert df.iloc[0]["correct_direction"]  # Both positive
 
     def test_signal_performance_summary(self):
         """Test performance summary."""
@@ -314,12 +309,16 @@ class TestForwardPassTracker:
 
         # Trade 1: predict up (0.05), actual up (0.05) -> correct
         tracker.update_market_data(ts1, {"AAPL": 100.0}, {})
-        tracker.open_trade(ts1, "AAPL", 1, 100, 100.0, predicted_return=0.05, confidence=0.8)
+        tracker.open_trade(
+            ts1, "AAPL", 1, 100, 100.0, predicted_return=0.05, confidence=0.8
+        )
         tracker.close_trade("AAPL", ts1, 105.0)  # +5% actual
 
         # Trade 2: predict down (-0.03), actual up (+0.05) -> wrong direction
         tracker.update_market_data(ts2, {"MSFT": 200.0}, {})
-        tracker.open_trade(ts2, "MSFT", 1, 50, 200.0, predicted_return=-0.03, confidence=0.2)
+        tracker.open_trade(
+            ts2, "MSFT", 1, 50, 200.0, predicted_return=-0.03, confidence=0.2
+        )
         tracker.close_trade("MSFT", ts2, 210.0)  # +5% actual
 
         summary = tracker.get_signal_performance_summary()

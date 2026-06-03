@@ -68,15 +68,18 @@ How to hand off:
 ## Working with the Platform
 
 Before any research work, always:
-1. **Review lessons learned** — Read `~/.claude/projects/-Users-zelin-Desktop-PA-Investment-Invest-strategy/memory/LESSONS_LEARNED.md` for relevant lessons from past strategy rejections
-2. **Review business context** — Read `~/.claude/projects/-Users-zelin-Desktop-PA-Investment-Invest-strategy/memory/BUSINESS_CONTEXT.md` for PM principles and domain constraints
-3. **Complete pre-flight checklist** — Copy `~/.claude/projects/-Users-zelin-Desktop-PA-Investment-Invest-strategy/memory/templates/strategy_research_checklist.md` to your strategy folder and check off all applicable items
-4. Read `research/STRATEGY_TRACKER.md` for current status and open items
-5. Read `research/framework_audit/backtesting_audit.md` for known framework issues
-6. Check `data/market_data/catalog.json` for available data
-7. Check `config/ticker_universe.py` for available instruments
-8. Review `backtests/strategies/signals.py` for existing signal implementations
-9. Review `backend/research/features.py` for available features
+1. **Read domain KBs** — Read `memory/knowledge/KNOWLEDGE_FX.md` and `memory/knowledge/KNOWLEDGE_MACRO.md`. Before defining any signal, check the **Known Failure Modes** section for the relevant topic. If your proposed strategy repeats a known failure, flag it explicitly before proceeding.
+2. **Review lessons learned** — Read `~/.claude/projects/-Users-zelin-Desktop-PA-Investment-Invest-strategy/memory/LESSONS_LEARNED.md` for relevant lessons from past strategy rejections
+3. **Review business context** — Read `~/.claude/projects/-Users-zelin-Desktop-PA-Investment-Invest-strategy/memory/BUSINESS_CONTEXT.md` for PM principles and domain constraints
+4. **Complete pre-flight checklist** — Copy `~/.claude/projects/-Users-zelin-Desktop-PA-Investment-Invest-strategy/memory/templates/strategy_research_checklist.md` to your strategy folder and check off all applicable items
+5. Read `research/STRATEGY_TRACKER.md` for current status and open items
+6. Read `research/framework_audit/backtesting_audit.md` for known framework issues
+7. Check `data/market_data/catalog.json` for available data
+8. Check `config/ticker_universe.py` for available instruments
+9. Review `backtests/strategies/signals.py` for existing signal implementations
+10. Review `backend/research/features.py` for available features
+
+**KB Cross-Reference (after Cerebro briefing):** Once you receive `[CEREBRO BRIEFING]`, cross-reference the KB Intermediate Findings for your domain/topic — surface any open hypotheses the team has already identified as worth testing.
 
 ## Research Workflow (v2)
 

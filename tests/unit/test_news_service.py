@@ -1,7 +1,6 @@
 """Unit tests for news service and news API routes."""
-import json
-from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pandas as pd
 import pytest
@@ -50,12 +49,10 @@ class TestNewsService:
         """Test getting equity news."""
         from backend.news_service import NewsService
 
-        mock_ibkr_client.get_news_articles = AsyncMock(
-            return_value=mock_news_articles
-        )
+        mock_ibkr_client.get_news_articles = AsyncMock(return_value=mock_news_articles)
 
         service = NewsService(ib_client=mock_ibkr_client)
-        articles = await service.get_equity_news("AAPL", max_articles=5)
+        _ = await service.get_equity_news("AAPL", max_articles=5)
 
         mock_ibkr_client.get_news_articles.assert_called_once_with(
             symbol="AAPL",
@@ -72,9 +69,7 @@ class TestNewsService:
         """Test getting equity news as DataFrame."""
         from backend.news_service import NewsService
 
-        mock_ibkr_client.get_news_for_contract = AsyncMock(
-            return_value=mock_news_df
-        )
+        mock_ibkr_client.get_news_for_contract = AsyncMock(return_value=mock_news_df)
 
         service = NewsService(ib_client=mock_ibkr_client)
         df = await service.get_equity_news_df("AAPL", max_articles=5)
@@ -98,7 +93,7 @@ class TestNewsService:
         )
 
         service = NewsService(ib_client=mock_ibkr_client)
-        articles = await service.get_forex_news("EURUSD", max_articles=5)
+        _ = await service.get_forex_news("EURUSD", max_articles=5)
 
         mock_ibkr_client.get_news_articles.assert_called_once()
         call_kwargs = mock_ibkr_client.get_news_articles.call_args.kwargs
@@ -111,12 +106,10 @@ class TestNewsService:
         """Test getting futures news."""
         from backend.news_service import NewsService
 
-        mock_ibkr_client.get_news_articles = AsyncMock(
-            return_value=mock_news_articles
-        )
+        mock_ibkr_client.get_news_articles = AsyncMock(return_value=mock_news_articles)
 
         service = NewsService(ib_client=mock_ibkr_client)
-        articles = await service.get_futures_news("ES", exchange="CME", max_articles=5)
+        _ = await service.get_futures_news("ES", exchange="CME", max_articles=5)
 
         mock_ibkr_client.get_news_articles.assert_called_once()
         call_kwargs = mock_ibkr_client.get_news_articles.call_args.kwargs
@@ -129,9 +122,7 @@ class TestNewsService:
         """Test getting index news."""
         from backend.news_service import NewsService
 
-        mock_ibkr_client.get_news_articles = AsyncMock(
-            return_value=mock_news_articles
-        )
+        mock_ibkr_client.get_news_articles = AsyncMock(return_value=mock_news_articles)
 
         service = NewsService(ib_client=mock_ibkr_client)
         articles = await service.get_index_news("SPX", exchange="CME", max_articles=5)
@@ -163,9 +154,7 @@ class TestNewsService:
         """Test getting news for multiple symbols."""
         from backend.news_service import NewsService
 
-        mock_ibkr_client.get_news_articles = AsyncMock(
-            return_value=mock_news_articles
-        )
+        mock_ibkr_client.get_news_articles = AsyncMock(return_value=mock_news_articles)
 
         service = NewsService(ib_client=mock_ibkr_client)
         results = await service.get_portfolio_news(
@@ -341,8 +330,9 @@ class TestNewsRoutesEndpoints:
     @pytest.mark.asyncio
     async def test_equity_news_endpoint(self):
         """Test equity news endpoint with mocked client."""
-        from backend.api.news_routes import get_equity_news, EquityNewsRequest
         from unittest.mock import AsyncMock, patch
+
+        from backend.api.news_routes import EquityNewsRequest, get_equity_news
 
         mock_client = AsyncMock()
         mock_client.connect = AsyncMock(return_value=True)
@@ -371,8 +361,9 @@ class TestNewsRoutesEndpoints:
     @pytest.mark.asyncio
     async def test_equity_news_df_endpoint(self):
         """Test equity news df endpoint with mocked client."""
-        from backend.api.news_routes import get_equity_news_df, EquityNewsRequest
         from unittest.mock import AsyncMock, patch
+
+        from backend.api.news_routes import EquityNewsRequest, get_equity_news_df
 
         mock_client = AsyncMock()
         mock_client.connect = AsyncMock(return_value=True)
@@ -398,8 +389,9 @@ class TestNewsRoutesEndpoints:
     @pytest.mark.asyncio
     async def test_forex_news_endpoint(self):
         """Test forex news endpoint with mocked client."""
-        from backend.api.news_routes import get_forex_news, ForexNewsRequest
         from unittest.mock import AsyncMock, patch
+
+        from backend.api.news_routes import ForexNewsRequest, get_forex_news
 
         mock_client = AsyncMock()
         mock_client.connect = AsyncMock(return_value=True)
@@ -415,8 +407,9 @@ class TestNewsRoutesEndpoints:
     @pytest.mark.asyncio
     async def test_futures_news_endpoint(self):
         """Test futures news endpoint with mocked client."""
-        from backend.api.news_routes import get_futures_news, FuturesNewsRequest
         from unittest.mock import AsyncMock, patch
+
+        from backend.api.news_routes import FuturesNewsRequest, get_futures_news
 
         mock_client = AsyncMock()
         mock_client.connect = AsyncMock(return_value=True)
@@ -432,8 +425,9 @@ class TestNewsRoutesEndpoints:
     @pytest.mark.asyncio
     async def test_index_news_endpoint(self):
         """Test index news endpoint with mocked client."""
-        from backend.api.news_routes import get_index_news, IndexNewsRequest
         from unittest.mock import AsyncMock, patch
+
+        from backend.api.news_routes import IndexNewsRequest, get_index_news
 
         mock_client = AsyncMock()
         mock_client.connect = AsyncMock(return_value=True)
@@ -449,8 +443,9 @@ class TestNewsRoutesEndpoints:
     @pytest.mark.asyncio
     async def test_market_bulletins_endpoint(self):
         """Test market bulletins endpoint with mocked client."""
-        from backend.api.news_routes import get_market_bulletins
         from unittest.mock import AsyncMock, patch
+
+        from backend.api.news_routes import get_market_bulletins
 
         mock_client = AsyncMock()
         mock_client.connect = AsyncMock(return_value=True)
@@ -476,8 +471,9 @@ class TestNewsRoutesEndpoints:
     @pytest.mark.asyncio
     async def test_portfolio_news_endpoint(self):
         """Test portfolio news endpoint with mocked client."""
-        from backend.api.news_routes import get_portfolio_news, PortfolioNewsRequest
-        from unittest.mock import AsyncMock, patch, Mock
+        from unittest.mock import AsyncMock, Mock, patch
+
+        from backend.api.news_routes import PortfolioNewsRequest, get_portfolio_news
 
         # Create a mock IBKRClient
         mock_ib_client = AsyncMock()
@@ -488,20 +484,14 @@ class TestNewsRoutesEndpoints:
         mock_news_service = Mock()
         mock_news_service.get_portfolio_news = AsyncMock(
             return_value={
-                "AAPL": [
-                    {"id": "1", "title": "AAPL News", "source": "Reuters"}
-                ],
-                "MSFT": [
-                    {"id": "2", "title": "MSFT News", "source": "Bloomberg"}
-                ],
+                "AAPL": [{"id": "1", "title": "AAPL News", "source": "Reuters"}],
+                "MSFT": [{"id": "2", "title": "MSFT News", "source": "Bloomberg"}],
             }
         )
 
         with patch(
             "backend.api.news_routes.IBKRClient", return_value=mock_ib_client
-        ), patch(
-            "backend.api.news_routes.NewsService", return_value=mock_news_service
-        ):
+        ), patch("backend.api.news_routes.NewsService", return_value=mock_news_service):
             request = PortfolioNewsRequest(
                 symbols=["AAPL", "MSFT"], max_articles_per_symbol=3
             )
@@ -518,14 +508,14 @@ class TestNewsRoutesErrorHandling:
     @pytest.mark.asyncio
     async def test_equity_news_handles_connection_error(self):
         """Test equity news endpoint handles connection errors."""
-        from backend.api.news_routes import get_equity_news, EquityNewsRequest
-        from fastapi import HTTPException
         from unittest.mock import AsyncMock, patch
 
+        from fastapi import HTTPException
+
+        from backend.api.news_routes import EquityNewsRequest, get_equity_news
+
         mock_client = AsyncMock()
-        mock_client.connect = AsyncMock(
-            side_effect=Exception("Connection failed")
-        )
+        mock_client.connect = AsyncMock(side_effect=Exception("Connection failed"))
 
         with patch("backend.api.news_routes.IBKRClient", return_value=mock_client):
             request = EquityNewsRequest(symbol="AAPL")
