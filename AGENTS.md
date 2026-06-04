@@ -79,7 +79,7 @@ apps/dashboard/backend/
   api/             FastAPI routes for dashboard, data, and reporting
   market_data_*    Dashboard-facing market data services and storage
   reporting.py     Operational PDF reports for account/trade workflows
-workstation/quant_data/
+quant_data/
   connectors/      Source adapters and dataset normalization
   pipelines/       Ingestion into the research data lake
   registry.py      Dataset versioning and ingestion lineage
@@ -125,6 +125,71 @@ Flake8 config: `--max-line-length=120 --ignore=E501,W503`
 - `skills/data-pulling/SKILL.md` — source-aware data pulls with validation and consistent reporting
 - `skills/rigorous-backtest/SKILL.md` — tiered (`specific` / `rigorous` / `highly-rigorous`) backtest execution and review with engine validation, QuantStats reporting, and PyPortfolioOpt comparison for optimizer-heavy work
 - `skills/research-pipeline/SKILL.md` — end-to-end orchestration for data refresh, backtest execution, run persistence, and research review artifact generation
+
+---
+
+## Playground Team
+
+The playground team supports quant researchers in reading, understanding, and condensing knowledge from papers, books, and articles. Team members are **process-driven and logical** — not exploratory in an undisciplined way.
+
+### Philosophy
+
+- Target audience is a quantitative researcher. Cover frontier methodologies, market microstructure, portfolio theory, factor models, and adjacent fields
+- Material understanding is systematic: extract structure, identify key claims, condense knowledge points rigorously
+- No rigor gates or PM review — fast iteration and learning-focused
+
+### Reading-Type Protocols
+
+**Books:**
+- Track content progression and the author's central argument arc chapter by chapter
+- Extract technicalities (formulas, methods, frameworks) and draft structured documentation to maintain context across sessions
+- Produce key notes: concepts encountered, how they build on each other, and what the author is ultimately trying to convey
+
+**Articles / Papers:**
+- Identify the core focus, narrative, and central claim
+- Suggest concrete ways to validate or challenge the author's perspective (data, replication, alternative methodology)
+- Note data sources, methodology choices, and replication potential
+
+### Material Scoring
+
+Apply to all related materials surfaced during reading:
+
+| Dimension | Description |
+|-----------|-------------|
+| Credibility (1–5) | Author reputation, publication venue, methodology soundness |
+| Relevance (1–5) | Direct applicability to quant research and current playground scope |
+| Actionability (1–5) | Can findings be implemented, tested, or studied concretely? |
+
+Only materials scoring ≥ 3 in all three dimensions warrant deeper follow-up.
+
+### Agent Roles
+
+- **playground-explorer** — Generates study ideas from readings. MUST invoke the brainstorm skill to relate main topics with materials available online. Surfaces connections across domains.
+- **playground-tutor** — Explains concepts, methods, and reading content. For books: tracks progression and author intent. For articles: unpacks focus, story, and validation paths.
+- **playground-dev** — Notebook scaffolding, tooling, and reproducible study infrastructure. Must review all markdown files produced by the team and fix math formula rendering issues before work is complete.
+- **playground-cerebro** — Paper discovery, reading queue management, literature maps, adjacent field expansion. Scores all related materials on credibility, relevance, and actionability. When writing paper notes, MUST explicitly check if any paper findings contradict, expose issues in, or validate existing strategy code, signals, or notebooks in the codebase. Flag any discrepancies directly in the paper notes.
+
+### Completion Protocol
+
+When any agent finishes a task, it MUST send a summary message to `conductor-playground` via agent-deck. Do not wait to be asked. The message should include: what was completed, what files were created or modified, and any blockers or suggested next steps.
+
+### Directory Structure
+
+All study artifacts (notebooks, chapter notes, reading queues, book briefings) live under:
+```
+workstation/playground/studies/<book_or_topic_name>/
+```
+No separate briefings directory. Everything co-located under the study folder.
+
+### Markdown Math Rendering Standard
+
+All markdown notes must use standard LaTeX delimiters:
+- Inline math: `$...$`
+- Display math: `$$...$$`
+
+Dev must review and fix any math formatting issues in all markdown files before considering work complete.
+
+---
 
 ## Quantitative Gates (11 required for strategy approval)
 

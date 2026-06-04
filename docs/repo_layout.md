@@ -1,90 +1,94 @@
 # Repository Layout
 
-This repository contains a few different kinds of top-level directories. They should not all be read as equal "stacks".
+This repository is organized into **three product components**, each a top-level directory:
 
-The most useful framing is:
-
-- an **investment dashboard application** for broker/account monitoring and operational workflows
-- a **quant research workstation** for ingestion, strategy research, backtesting, and optimization
-- a small set of **optional extensions** that should stay isolated
+1. **`dashboard/`** — IBKR portfolio analytics & market-price application (FastAPI backend + Dash frontend)
+2. **`alpha_research/`** — alpha research & backtesting infrastructure (signal/backtest/portfolio/execution libraries, data ingestion, research notes, notebooks, and the Cerebro discovery pipeline)
+3. **`book_notes/`** — learning material: notes on books/papers and the playground study environment
 
 For the end-to-end research flow, see [`docs/data_backtest_report_pipeline.md`](./data_backtest_report_pipeline.md).
 
-The current physical layout now groups those areas under `apps/`, `workstation/`, and `extensions/`. Legacy root paths are kept as compatibility symlinks during the transition.
+The project runs on a flat `PYTHONPATH=.` import namespace (`from backend...`, `from portfolio...`, etc.). To keep that namespace working after the physical grouping, root-level **compatibility symlinks** point each importable package name at its new location inside a component. This is a physical/organizational grouping, not enforced module isolation — the dashboard and research libraries still import each other freely.
 
 ## Stack Map
 
-| Path | Category | Status | Purpose |
-|------|----------|--------|---------|
-| `apps/dashboard/backend/` | Dashboard app | Active | FastAPI service, IBKR integration, persistence, APIs |
-| `apps/dashboard/frontend/` | Dashboard app | Active | Dash dashboard for monitoring and controls |
+| Path | Component | Status | Purpose |
+|------|-----------|--------|---------|
+| `dashboard/backend/` | Dashboard | Active | FastAPI service, IBKR integration, persistence, APIs |
+| `dashboard/frontend/` | Dashboard | Active | Dash dashboard for monitoring and controls |
+| `alpha_research/backtests/` | Alpha research | Active | Signal research, walk-forward analysis, stats, reporting |
+| `alpha_research/portfolio/` | Alpha research | Active | Alpha blending, optimization, risk analytics, rebalancing |
+| `alpha_research/execution/` | Alpha research | Active | Paper/live order flow, broker abstraction, risk checks |
+| `alpha_research/quant_data/` | Alpha research | Active | Data-ingestion code, schemas, connectors, registry, DuckDB helpers |
+| `alpha_research/research/` | Alpha research | Active | Strategy notes, reviews, tracker, framework audits |
+| `alpha_research/notebooks/` | Alpha research | Active | Exploratory notebooks and templates |
+| `alpha_research/cerebro/` | Alpha research | Experimental | Research-ingestion and idea-generation pipeline |
+| `book_notes/playground/` | Book notes | Active | Playground study environment (studies, agents, skills) |
+| `book_notes/books_and_papers/` | Book notes | Active | Source PDFs of books and papers |
 | `data/` | Shared runtime data | Active | Pulled datasets, market data files, broker exports, catalogs |
-| `workstation/backtests/` | Research workstation | Active | Signal research, walk-forward analysis, stats, reporting |
-| `workstation/portfolio/` | Research workstation | Active | Alpha blending, optimization, risk analytics, rebalancing |
-| `workstation/execution/` | Research workstation | Active | Paper/live order flow, broker abstraction, risk checks |
-| `workstation/quant_data/` | Research workstation | Active | Data-ingestion code, schemas, connectors, registry, DuckDB helpers |
-| `workstation/research/` | Research output | Active | Strategy notes, reviews, tracker, framework audits |
-| `workstation/notebooks/` | Research workspace | Active | Exploratory notebooks and templates |
-| `extensions/cerebro/` | Optional extension | Experimental | Research-ingestion and idea-generation pipeline |
 | `qc_lean/` | Optional external integration | Isolated | Local QuantConnect Lean runtime, engine source, results |
 | `docs/` | Documentation | Active | Guides, specs, architecture notes |
 | `scripts/` | Tooling | Active | CLI entry points, ingestion jobs, automation |
 | `tests/` | Verification | Active | Unit and integration coverage |
 
-## Compatibility
+## Compatibility symlinks
 
-These legacy root paths currently remain in place as symlinks:
+These root paths are symlinks that preserve the flat import namespace. Do not delete them
+without first rewriting the corresponding imports/path references.
 
-- `backend/`
-- `frontend/`
-- `backtests/`
-- `portfolio/`
-- `execution/`
-- `quant_data/`
-- `research/`
-- `notebooks/`
-- `playground/`
-- `books_and_papers/`
-- `cerebro/`
+| Symlink | Target |
+|---------|--------|
+| `backend/` | `dashboard/backend/` |
+| `frontend/` | `dashboard/frontend/` |
+| `backtests/` | `alpha_research/backtests/` |
+| `portfolio/` | `alpha_research/portfolio/` |
+| `execution/` | `alpha_research/execution/` |
+| `quant_data/` | `alpha_research/quant_data/` |
+| `research/` | `alpha_research/research/` |
+| `notebooks/` | `alpha_research/notebooks/` |
+| `cerebro/` | `alpha_research/cerebro/` |
+| `books_and_papers/` | `book_notes/books_and_papers/` |
 
 ## Naming Decisions
 
-### `data/` vs `quant_data/`
+### `data/` vs `alpha_research/quant_data/`
 
 - `data/` is not a Python package. It is the runtime storage root for pulled datasets and broker artifacts.
-- `workstation/quant_data/` is the Python package that fetches, validates, normalizes, and registers those datasets.
+- `alpha_research/quant_data/` (importable as `quant_data`) is the Python package that fetches, validates, normalizes, and registers those datasets.
 - The names overlap semantically, but they represent different layers: storage vs code.
 
-### `backtests/` vs `backend/backtest_engine.py`
+### `alpha_research/backtests/` vs `dashboard/backend/backtest_engine.py`
 
-- `backtests/` is the research framework: signals, portfolio builder, walk-forward analysis, statistics, reporting.
-- `workstation/backtests/event_driven/backtest_engine.py` is the canonical event-driven execution adapter around Backtrader.
-- `backend/backtest_engine.py` is kept only as a compatibility shim for existing imports.
+- `alpha_research/backtests/` is the research framework: signals, portfolio builder, walk-forward analysis, statistics, reporting.
+- `alpha_research/backtests/event_driven/backtest_engine.py` is the canonical event-driven execution adapter around Backtrader.
+- `dashboard/backend/backtest_engine.py` is kept only as a compatibility shim for existing imports.
 
-### `backend/` and `frontend/`
+### `dashboard/`
 
-- These are deployable apps.
-- `backtests/`, `portfolio/`, `execution/`, and `quant_data/` are shared domain libraries used by apps and scripts.
+- `dashboard/backend/` and `dashboard/frontend/` are the deployable app.
+- `backtests/`, `portfolio/`, `execution/`, and `quant_data/` (under `alpha_research/`) are shared domain libraries used by the app and scripts.
 
 ### `qc_lean/`
 
 - `qc_lean/` should be treated as an optional external engine, not a first-class peer of the Python packages.
 - It contains vendor source, local runtime files, example algorithms, and generated outputs.
-- If you want a deeper physical cleanup later, the likely target is `external/qc_lean/` or a separate sibling repository.
+- A deeper physical cleanup target is `external/qc_lean/` or a separate sibling repository.
 
 ## Recommended Boundaries
 
-- Put API, DB, broker, and scheduler code in `apps/dashboard/backend/`.
-- Put UI code in `apps/dashboard/frontend/`.
-- Put reusable research logic in `workstation/backtests/`, `workstation/portfolio/`, `workstation/execution/`, or `workstation/quant_data/`.
+- Put API, DB, broker, and scheduler code in `dashboard/backend/`.
+- Put UI code in `dashboard/frontend/`.
+- Put reusable research logic in `alpha_research/{backtests,portfolio,execution,quant_data}/`.
+- Put strategy notes and exploratory notebooks in `alpha_research/{research,notebooks}/`.
+- Put book/paper learning material in `book_notes/`.
 - Put raw or generated files in `data/`.
-- Keep optional or experimental integrations clearly marked, like `extensions/cerebro/` and `qc_lean/`.
+- Keep optional or experimental integrations clearly marked (`alpha_research/cerebro/`, `qc_lean/`).
 
 ## Follow-Up Refactors
 
-These are reasonable next steps, but were intentionally not done in this pass because they are import- and path-sensitive:
+Reasonable next steps, intentionally not done because they are import- and path-sensitive:
 
 1. Move `qc_lean/` under `external/` or out of the repo entirely.
-2. Replace the `backend/backtest_engine.py` compatibility shim with direct imports once downstream callers are updated.
-3. Replace the compatibility symlinks with updated imports and path references once the new grouped layout has settled.
-4. Split optional systems like `cerebro/` into their own package or workspace once the interfaces stabilize.
+2. Replace the `dashboard/backend/backtest_engine.py` compatibility shim with direct imports once downstream callers are updated.
+3. Replace the compatibility symlinks with updated imports and path references once the new component layout has settled.
+4. Extract a shared `core` (DB models, IBKR client, market-data store) to break the dashboard↔research import coupling, if true module isolation becomes desirable.

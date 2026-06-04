@@ -225,7 +225,7 @@ Only materials scoring ≥ 3 in all three dimensions warrant deeper follow-up.
 - `./scripts/show_playground_team.sh` — shows effective models and override points
 
 **Directory structure:**
-- All study artifacts live under `workstation/playground/studies/<book_or_topic>/`
+- All study artifacts live under `book_notes/playground/studies/<book_or_topic>/`
 - Each study folder is organized as:
   ```
   {date}_{topic}/
@@ -236,7 +236,7 @@ Only materials scoring ≥ 3 in all three dimensions warrant deeper follow-up.
   ├── FINDINGS_LOG.md
   └── (briefings, book maps, data files at root)
   ```
-- Example: `workstation/playground/studies/2026-03-26_fixed_income_relative_value_analysis_2e/`
+- Example: `book_notes/playground/studies/2026-03-26_fixed_income_relative_value_analysis_2e/`
 
 **Markdown math rendering:**
 - All markdown notes must use standard LaTeX delimiters: `$...$` for inline, `$$...$$` for display math

@@ -51,6 +51,9 @@ logs/
 .DS_Store
 Thumbs.db
 
+# Large book source binaries (exceed git large-file limit; keep locally only)
+book_notes/books_and_papers/advances-in-financial-machine-learning.pdf
+
 # Coverage
 .coverage
 htmlcov/

@@ -1,0 +1,4 @@
+,fwd_21d_spy_beta,fwd_rv_21d_ann_beta
+intercept,0.007468,0.217484
+vrp_vix_minus_rv21,0.030511,-0.144826
+term_structure_vix3m_minus_vix,-0.01067,-3.146091

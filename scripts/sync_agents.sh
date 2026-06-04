@@ -19,6 +19,10 @@ AGENTS_DIR="$PROJECT_DIR/.claude/agents"
 LAUNCH_SCRIPT="$PROJECT_DIR/scripts/launch_research_team.sh"
 LOG_FILE="$PROJECT_DIR/.claude/sync_agents.log"
 AD="$HOME/.local/bin/agent-deck"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/lib/research_team.sh"
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
@@ -52,11 +56,16 @@ AGENT_NAME=$(basename "$CHANGED_FILE" .md)
 
 # Map agent name to the session name used in launch_research_team.sh
 # Convention: sessions are named  research-<agent>  (e.g. research-marco)
-SESSION_NAME="research-$AGENT_NAME"
+SESSION_NAME="$(research_session_name "$AGENT_NAME")"
+TARGET_MODEL="$(effective_claude_agent_model "$AGENT_NAME")"
+TARGET_TOOL="claude"
+TARGET_WRAPPER="$(claude_wrapper_for_agent "$AGENT_NAME")"
+TARGET_COMMAND="$(claude_command_for_model "$TARGET_MODEL")"
 
 # ── 3. Check if that session is live and send reload message ──────────────────
 if command -v "$AD" &>/dev/null; then
-  SESSION_STATUS=$("$AD" session show "$SESSION_NAME" --json 2>/dev/null \
+  SESSION_JSON=$("$AD" session show "$SESSION_NAME" --json 2>/dev/null || true)
+  SESSION_STATUS=$(printf '%s' "$SESSION_JSON" \
     | python3 -c "
 import sys, json
 try:
@@ -66,11 +75,36 @@ except Exception:
     print('not_found')
 " 2>/dev/null || true)
   SESSION_STATUS="${SESSION_STATUS:-not_found}"
+  CURRENT_COMMAND=$(printf '%s' "$SESSION_JSON" \
+    | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    print(d.get('command', ''))
+except Exception:
+    print('')
+" 2>/dev/null || true)
+
+  if [[ "$SESSION_STATUS" != "not_found" ]]; then
+    if SET_OUTPUT=$("$AD" session set "$SESSION_NAME" tool "$TARGET_TOOL" -q 2>&1 \
+      && "$AD" session set "$SESSION_NAME" command "$TARGET_TOOL" -q 2>&1 \
+      && "$AD" session set "$SESSION_NAME" wrapper "$TARGET_WRAPPER" -q 2>&1); then
+      if [[ "$CURRENT_COMMAND" != "$TARGET_COMMAND" ]]; then
+        log "Updated '$SESSION_NAME' command: '$CURRENT_COMMAND' -> '$TARGET_COMMAND'"
+      fi
+    elif printf '%s' "$SET_OUTPUT" | grep -qi "readonly database"; then
+      log "WARNING: Could not persist command for '$SESSION_NAME' because the agent-deck database is read-only in this environment. Desired command remains '$TARGET_COMMAND'."
+    else
+      log "WARNING: Failed to update command for '$SESSION_NAME' to '$TARGET_COMMAND' ($SET_OUTPUT)"
+    fi
+  else
+    log "Session '$SESSION_NAME' not found. Stored command sync skipped."
+  fi
 
   if [[ "$SESSION_STATUS" == "idle" || "$SESSION_STATUS" == "waiting" || "$SESSION_STATUS" == "running" ]]; then
     log "Session '$SESSION_NAME' is live (status: $SESSION_STATUS). Sending reload message."
     "$AD" session send "$SESSION_NAME" \
-      "[SYSTEM] Your agent definition file (.claude/agents/$AGENT_NAME.md) has been updated. Please re-read it now with: Read .claude/agents/$AGENT_NAME.md — then acknowledge the changes and continue your current task." \
+      "[SYSTEM] Your agent definition file (.claude/agents/$AGENT_NAME.md) has been updated. Please re-read it now with: Read .claude/agents/$AGENT_NAME.md — then acknowledge the changes and continue your current task. Default launch command is now: $TARGET_COMMAND. Restart the session later if you need the model change to take effect." \
       --no-wait -q 2>/dev/null && log "Reload message sent to $SESSION_NAME." \
       || log "WARNING: Failed to send reload message to $SESSION_NAME."
   else

@@ -10,7 +10,7 @@ Sources
     ->
 Ingestion code
   apps/dashboard/backend/market_data_store.py
-  workstation/quant_data/pipelines/ingest_bars.py
+  quant_data/pipelines/ingest_bars.py
     ->
 Storage
   data/market_data/   for dashboard-compatible OHLCV/FRED parquet + catalog
@@ -18,7 +18,7 @@ Storage
     ->
 Research access
   backend.research.duckdb_utils
-  workstation/quant_data/duckdb_store.py
+  quant_data/duckdb_store.py
     ->
 Backtesting
   workstation/backtests/builder.py
@@ -38,15 +38,15 @@ Research reporting
 ### 1. Data ingestion
 
 - `apps/dashboard/backend/market_data_store.py` is the dashboard-facing adapter for pulling and querying the shared market-data cache in `data/market_data/`.
-- `workstation/quant_data/` is the reusable ingestion library for cleaner, partitioned, versioned datasets in `data_lake/`.
+- `quant_data/` is the reusable ingestion library for cleaner, partitioned, versioned datasets in `data_lake/`.
 - `data/` is storage.
-- `workstation/quant_data/` is code.
+- `quant_data/` is code.
 
 ### 2. Research access
 
 - `backend.data_pipeline.UnifiedDataPipeline` is now the canonical local-first access layer for research queries and refresh jobs.
 - `backend.research.duckdb_utils` reads the shared Parquet cache in `data/market_data/`.
-- `workstation/quant_data/duckdb_store.py` is the DuckDB helper for the newer partitioned `data_lake/` side.
+- `quant_data/duckdb_store.py` is the DuckDB helper for the newer partitioned `data_lake/` side.
 - Today, many dashboard and notebook flows still consume `data/market_data/` directly, so treating `data_lake/` as an automatic replacement would be incorrect.
 
 Recommended rule:
@@ -105,7 +105,7 @@ After the restructure, the recommended interpretation is:
 - `apps/` owns deployable application surfaces.
 - `workstation/` owns reusable research and quant libraries.
 - `data/market_data/` is the shared runtime cache that existing dashboard and research routes already understand.
-- `data_lake/` is the structured next-generation dataset store for `workstation/quant_data/`.
+- `data_lake/` is the structured next-generation dataset store for `quant_data/`.
 
 ## Skills To Use
 

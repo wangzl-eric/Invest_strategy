@@ -24,23 +24,24 @@ def _fake_price_frame(ticker: str, start_value: float) -> pd.DataFrame:
 
 
 def test_field_study_template_executes_with_stubbed_helpers(monkeypatch):
-    fake_data_helpers = ModuleType("playground.data_helpers")
-    fake_data_helpers.calculate_volatility = (
+    # field_study_template.py imports directly from quant_data.api
+    import quant_data.api as _api
+    monkeypatch.setattr(
+        _api, "calculate_volatility",
         lambda returns, window=20, annualize=True, method="rolling": pd.Series(
             0.2, index=returns.index
-        )
+        ),
     )
-    fake_data_helpers.get_prices = lambda ticker, **_: (
-        _fake_price_frame("SPY", 100.0)
-        if ticker == "SPY"
-        else _fake_price_frame("TLT", 80.0)
+    monkeypatch.setattr(
+        _api, "get_prices",
+        lambda ticker, **_: (
+            _fake_price_frame("SPY", 100.0)
+            if ticker == "SPY"
+            else _fake_price_frame("TLT", 80.0)
+        ),
     )
-    fake_data_helpers.refresh_prices = lambda *args, **kwargs: {
-        "status": "completed",
-        "rows_written": 180,
-    }
 
-    fake_viz_helpers = ModuleType("playground.shared.viz_helpers")
+    fake_viz_helpers = ModuleType("workstation.playground.shared.viz_helpers")
 
     def _fake_plot(*args, **kwargs):
         return {"args": args, "kwargs": kwargs}
@@ -51,8 +52,7 @@ def test_field_study_template_executes_with_stubbed_helpers(monkeypatch):
     fake_viz_helpers.plot_time_series = _fake_plot
 
     monkeypatch.chdir(REPO_ROOT)
-    monkeypatch.setitem(sys.modules, "playground.data_helpers", fake_data_helpers)
-    monkeypatch.setitem(sys.modules, "playground.shared.viz_helpers", fake_viz_helpers)
+    monkeypatch.setitem(sys.modules, "workstation.playground.shared.viz_helpers", fake_viz_helpers)
 
     spec = importlib.util.spec_from_file_location(
         "test_field_study_template_module", TEMPLATE_PATH

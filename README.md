@@ -2,6 +2,8 @@
 
 A full-stack quantitative analytics platform for Interactive Brokers (IBKR) accounts. Covers the entire workflow from data ingestion and research through backtesting, portfolio optimization, execution, and real-time monitoring with alerts.
 
+Agent-team model defaults and override points live in [`RESEARCH_TEAM_MODELS.md`](./RESEARCH_TEAM_MODELS.md) and [`PLAYGROUND_TEAM_MODELS.md`](./PLAYGROUND_TEAM_MODELS.md). For the live resolved state, run `./scripts/show_agent_team.sh` or `./scripts/show_playground_team.sh`.
+
 ---
 
 ## Table of Contents
@@ -256,7 +258,7 @@ The repo is easier to understand as two primary product surfaces that share doma
 | Surface | Main Paths | Purpose |
 |---------|------------|---------|
 | **Investment dashboard application** | `apps/dashboard/backend/`, `apps/dashboard/frontend/`, `data/` | API, broker/account workflows, monitoring UI, stored operational data |
-| **Quant research workstation** | `workstation/backtests/`, `workstation/portfolio/`, `workstation/execution/`, `workstation/quant_data/`, `workstation/research/`, `workstation/notebooks/` | data ingestion, signal research, strategy testing, optimization, paper-trading preparation |
+| **Quant research workstation** | `workstation/backtests/`, `workstation/portfolio/`, `workstation/execution/`, `quant_data/`, `workstation/research/`, `workstation/notebooks/` | data ingestion, signal research, strategy testing, optimization, paper-trading preparation |
 | **Optional extensions** | `extensions/cerebro/`, `qc_lean/` | separate research tooling and external-engine experiments |
 
 For compatibility, the legacy root paths like `backend/`, `frontend/`, `backtests/`, and `quant_data/` are currently symlinks to the grouped locations above.
@@ -885,7 +887,7 @@ Invest_strategy/
 ├── backtests/                  # Compatibility symlink -> workstation/backtests
 ├── portfolio/                  # Compatibility symlink -> workstation/portfolio
 ├── execution/                  # Compatibility symlink -> workstation/execution
-├── quant_data/                 # Compatibility symlink -> workstation/quant_data
+├── quant_data/                 # Real directory — canonical data layer
 ├── research/                   # Compatibility symlink -> workstation/research
 ├── notebooks/                  # Compatibility symlink -> workstation/notebooks
 ├── playground/                 # Compatibility symlink -> workstation/playground
