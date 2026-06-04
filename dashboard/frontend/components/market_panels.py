@@ -305,7 +305,6 @@ _CHG_COL = {
 
 def build_rates_panel(data: dict, sparklines: Optional[dict] = None) -> html.Div:
     """UST yields, swap rates, swap spreads, asset swap spreads — grouped by category."""
-    yf_yields = data.get("yields") or []
     ibkr_futures = data.get("ibkr_futures") or []
     fred_rates = data.get("fred") or []
     sparklines = sparklines or {}
@@ -563,7 +562,6 @@ def build_fx_panel(data: dict, sparklines: Optional[dict] = None) -> html.Div:
     rows = []
     for item in pairs:
         price = item.get("price")
-        chg = item.get("change")
         chg_pct = item.get("change_pct")
         ticker = item.get("ticker", "")
         pts = sparklines.get(ticker, [])
@@ -996,9 +994,7 @@ def build_mover_news_panel(data: dict) -> html.Div:
     """
     llm_summary = data.get("llm_summary") or {}
     movers = data.get("movers", [])
-    news_by_ticker = data.get("news_by_ticker", {})
     error = data.get("error")
-    timestamp = data.get("timestamp", "")
 
     # Handle error state
     if error and not llm_summary:
@@ -1826,7 +1822,6 @@ def build_cb_meeting_panel(data: dict) -> html.Div:
     for m in upcoming[:4]:
         d = m.get("days_until", 0)
         lbl = m.get("label", m.get("date", ""))
-        sep = " (SEP)" if m.get("has_sep") else ""
         meeting_list.append(
             html.Div(
                 [
@@ -1931,7 +1926,6 @@ def build_markets_layout(overview: dict, mover_news_data: dict = None) -> html.D
     fx_source = fx_data.get("source", "—")
     equities_source = equities_data.get("source", "—")
     commodities_source = commodities_data.get("source", "—")
-    ibkr_connected = overview.get("ibkr_connected", False)
 
     # Show warning if IBKR is not connected
     ibkr_warning = None

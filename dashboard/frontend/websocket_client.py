@@ -1,8 +1,7 @@
 """WebSocket client component for Dash frontend."""
 import logging
 
-import dash
-from dash import dcc, html
+from dash import html
 
 logger = logging.getLogger(__name__)
 
