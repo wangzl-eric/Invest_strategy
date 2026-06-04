@@ -1,0 +1,5 @@
+asset_class,ann_return,ann_vol,ann_sharpe,hit_rate
+commodity,0.284,0.2845,1.1379,0.5202
+equity,0.0886,0.1878,0.4718,0.5221
+fx,-0.0031,0.0793,0.0138,0.4826
+rates,-0.0908,0.1899,-0.4912,0.4678

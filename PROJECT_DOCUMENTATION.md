@@ -114,7 +114,7 @@ The repo is best understood as two primary product surfaces that share libraries
 | Surface | Main Paths | Purpose |
 |---------|------------|---------|
 | **Investment dashboard application** | `apps/dashboard/backend/`, `apps/dashboard/frontend/`, `data/` | broker/account workflows, APIs, UI, stored operational data |
-| **Quant research workstation** | `workstation/backtests/`, `workstation/portfolio/`, `workstation/execution/`, `workstation/quant_data/`, `workstation/research/`, `workstation/notebooks/` | ingestion, strategy research, backtesting, optimization, paper-trading prep |
+| **Quant research workstation** | `workstation/backtests/`, `workstation/portfolio/`, `workstation/execution/`, `quant_data/`, `workstation/research/`, `workstation/notebooks/` | ingestion, strategy research, backtesting, optimization, paper-trading prep |
 | **Optional extensions** | `extensions/cerebro/`, `qc_lean/` | separate research tooling and external-engine experiments |
 
 Legacy root paths such as `backend/`, `frontend/`, `backtests/`, and `quant_data/` are currently kept as compatibility symlinks.
@@ -126,6 +126,47 @@ Important distinctions:
 - `qc_lean/` is an optional local Lean workspace, not part of the core Python package graph.
 
 See `docs/repo_layout.md` for the maintained stack map.
+
+---
+
+### Research Team Models
+
+The research workflow uses a mixed Claude + Codex team orchestrated through `agent-deck`. The root reference for defaults and override points is `RESEARCH_TEAM_MODELS.md`.
+
+| Role | Session | Default model | Override |
+|------|---------|---------------|----------|
+| Marco | `research-marco` | `opus` | `RESEARCH_MARCO_MODEL=...` |
+| Elena | `research-elena` | `opus` | `RESEARCH_ELENA_MODEL=...` |
+| PM | `research-pm` | `opus` | `RESEARCH_PM_MODEL=...` |
+| Cerebro | `research-cerebro` | `opus` | `RESEARCH_CEREBRO_MODEL=...` |
+| Dev | `research-dev` | `opus` | `RESEARCH_DEV_MODEL=...` |
+| Data | `research-data` | `sonnet` | `RESEARCH_DATA_MODEL=...` |
+| Codex runner | `codex-runner` | `gpt-5.4` | `RESEARCH_CODEX_MODEL=...` |
+
+Fast checks:
+
+- `./scripts/show_agent_team.sh` shows the effective defaults, env overrides, and saved `agent-deck` commands
+- `./scripts/launch_research_team.sh <strategy_name> <elena|marco>` launches the research team using those defaults
+- Persistent Claude-role defaults live in `.claude/agents/*.md` frontmatter (`model:`)
+
+---
+
+### Playground Team Models
+
+The playground also has a dedicated `agent-deck` team for paper reading and knowledge-scope expansion. The root reference for defaults and override points is `PLAYGROUND_TEAM_MODELS.md`.
+
+| Role | Session | Default runtime | Default model | Override |
+|------|---------|-----------------|---------------|----------|
+| Explorer | `playground-explorer` | `codex` | `gpt-5.4` | `PLAYGROUND_EXPLORER_RUNTIME=...` / `PLAYGROUND_EXPLORER_MODEL=...` |
+| Tutor | `playground-tutor` | `codex` | `gpt-5.4` | `PLAYGROUND_TUTOR_RUNTIME=...` / `PLAYGROUND_TUTOR_MODEL=...` |
+| Cerebro | `playground-cerebro` | `claude` | `opus` | `PLAYGROUND_CEREBRO_RUNTIME=...` / `PLAYGROUND_CEREBRO_MODEL=...` |
+| Dev | `playground-dev` | `codex` | `gpt-5.4` | `PLAYGROUND_DEV_RUNTIME=...` / `PLAYGROUND_DEV_MODEL=...` |
+
+Fast checks:
+
+- `./scripts/show_playground_team.sh` shows the effective defaults, env overrides, and saved `agent-deck` commands
+- `./scripts/launch_playground_team.sh "topic"` launches the playground paper-reading team
+- Persistent playground defaults live in `workstation/playground/agents/*.md` frontmatter (`runtime:` and `model:`)
 
 ---
 
@@ -981,7 +1022,7 @@ Invest_strategy/
 ├── backtests/                # Compatibility symlink -> workstation/backtests
 ├── portfolio/                # Compatibility symlink -> workstation/portfolio
 ├── execution/                # Compatibility symlink -> workstation/execution
-├── quant_data/               # Compatibility symlink -> workstation/quant_data
+├── quant_data/               # Real directory — canonical data layer
 ├── research/                 # Compatibility symlink -> workstation/research
 ├── notebooks/                # Compatibility symlink -> workstation/notebooks
 ├── playground/               # Compatibility symlink -> workstation/playground

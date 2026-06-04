@@ -98,6 +98,39 @@ _All entries validated by kb-curator agent before write._
 
 ---
 
+## Topic: vol-cross-section
+
+### Market Facts & Structural Observations
+- Stocks with high sensitivity to VIX innovations (high VIX-beta) earn ~−1% lower monthly returns — they are priced as vol insurance and are structurally expensive | [BOOK/ARTICLE: Ang et al. 2006] | 2026-03-30
+- Stocks with high idiosyncratic volatility (IVOL, residual from FF3) earn ~−1.06% lower monthly returns — the idiosyncratic volatility puzzle; opposite of Merton (1987) prediction | [BOOK/ARTICLE: Ang et al. 2006] | 2026-03-30
+- VIX-beta effect and IVOL effect are empirically distinct — both significant in horse-race regressions; different mechanisms | [BOOK/ARTICLE: Ang et al. 2006] | 2026-03-30
+- IVOL puzzle holds in all G7 markets — not a US data-mining artifact | [BOOK/ARTICLE: Ang et al. 2006] | 2026-03-30
+- Price of aggregate vol risk is negative: bearing vol risk earns a positive premium; hedging against it costs a negative premium | [BOOK/ARTICLE: Ang et al. 2006] | 2026-03-30
+
+### Intermediate Findings
+- IVOL computable from equities.parquet: regress daily returns on FF3 within each month, take residual std dev — data infrastructure ready | confidence: high | follow-up: implement IVOLSignal in backtests/strategies/signals.py | [PLAYGROUND] | 2026-03-30
+- VIX-beta computable from vix_daily.parquet + equities.parquet: rolling 60-month regression of monthly stock returns on market + ΔVIX — data infrastructure ready | confidence: high | follow-up: implement VIXBetaSignal | [PLAYGROUND] | 2026-03-30
+- VolatilitySignal in signals.py (line 116) is total realised vol, not factor-adjusted IVOL — directionally consistent but theoretically imprecise | [PLAYGROUND] | 2026-03-30
+
+### Confirmed Signals
+- (none yet — IVOL and VIX-beta signals not yet implemented or backtested in this codebase)
+
+### Known Failure Modes
+- IVOL effect is concentrated in small-cap, illiquid stocks; large-cap-only universe will attenuate the effect significantly | [BOOK/ARTICLE: Bali & Cakici 2008] | 2026-03-30
+- Short leg (high-IVOL) drives most of the long-short return — long-only implementation loses most of the alpha | [BOOK/ARTICLE: Stambaugh et al. 2015] | 2026-03-30
+- After realistic transaction costs and short-borrow rates, net alpha is substantially smaller than gross spread | [BOOK/ARTICLE: Ang et al. 2006 limitation] | 2026-03-30
+- VIX-beta estimates from rolling 5-year individual stock regressions are noisy — high classification error month-to-month | [BOOK/ARTICLE: Ang et al. 2006] | 2026-03-30
+- Do NOT confuse VIX-level regime overlay (our rejected vix_regime strategy) with VIX-beta cross-sectional sort — these are different constructs | [PM-VERDICT: vix_regime_2026-03-15 REJECTED] | 2026-03-30
+
+### Key Papers & Concepts
+- "The Cross-Section of Volatility and Expected Returns" | Ang, Hodrick, Xing, Zhang | 2006 | JoF | Two-effect paper: VIX-beta pricing + IVOL puzzle | credibility: 5/5
+- "High Idiosyncratic Volatility and Low Returns: International Evidence" | Ang, Hodrick, Xing, Zhang | 2009 | JFE | G7 follow-up
+- "Idiosyncratic Volatility and the Cross-Section of Expected Returns" | Bali & Cakici | 2008 | JFQA | Robustness checks; value-weighting weakens effect
+- "Arbitrage Asymmetry and the Idiosyncratic Volatility Puzzle" | Stambaugh, Yu & Yuan | 2015 | JoF | Short-leg mechanism
+- "Have We Solved the Idiosyncratic Volatility Puzzle?" | Hou & Loh | 2016 | JFE | Lottery demand explains ~50%
+
+---
+
 ## Topic: tail-risk
 
 ### Market Facts & Structural Observations

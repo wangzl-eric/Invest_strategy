@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "exa": {
+      "command": "agent-deck",
+      "args": [
+        "mcp-proxy",
+        "/tmp/agentdeck-mcp-exa.sock"
+      ]
+    },
+    "filesystem": {
+      "command": "agent-deck",
+      "args": [
+        "mcp-proxy",
+        "/tmp/agentdeck-mcp-filesystem.sock"
+      ]
+    }
+  }
+}

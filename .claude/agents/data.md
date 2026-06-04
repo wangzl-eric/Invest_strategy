@@ -250,13 +250,46 @@ When PM asks "can we backtest this?", your answer must be one of:
 - Requires Treasury futures or zero-coupon yield curve — FRED has yields but no futures
 - Duration-matched bond returns require additional computation layer
 
+### Function 5: Ticker Universe Maintenance
+
+You are the **owner** of `config/ticker_universe.py` and `quant_data/ticker_map.py`.
+
+**When a researcher requests a new ticker or series:**
+1. Check `data/market_data/catalog.json` for existing coverage
+2. Check `ticker_map.py` — if already registered, tell the researcher the canonical ID and source
+3. If not registered: add to the appropriate list in `config/ticker_universe.py` (equities, ETFs, FX, crypto)
+4. Add a `TickerInfo` entry with NL aliases to the correct `_*_ENTRIES` list in `ticker_map.py`
+5. Confirm the source and asset_class are correct (`auto_detect_source()` logic in ticker_map.py)
+
+**Canonical pull interface:** always reference `quant_data.api.get_data()`.
+Do NOT reference `data_helpers.py` functions for new code — that file is a deprecated shim only.
+
+**Periodic alias audit:** scan `ticker_map.py` aliases for accuracy when:
+- A ticker is renamed or delisted
+- A FRED series ID changes
+- A researcher reports a resolve miss
+
+**Adding a new data source:**
+1. Add `_fetch_<source>()` in `quant_data/api.py`
+2. Add source detection pattern in `auto_detect_source()` in `quant_data/ticker_map.py`
+3. Update the Source Reference table in `.claude/skills/data_fetcher/SKILL.md`
+
 ## Key Files
 
+**Unified data layer:**
+- `quant_data/api.py` — `get_data()` public interface (local-first + API fallback)
+- `quant_data/ticker_map.py` — ticker registry + NL alias resolver
+- `quant_data/analytics.py` — rolling Sharpe, drawdown, correlation helpers
+- `playground/shared/data_helpers.py` — backward-compat shim (re-exports only)
+- `.claude/skills/data_fetcher/SKILL.md` — skill docs for this layer
+
+**Infrastructure:**
 - `quant_data/connectors/` — Data source connectors
 - `quant_data/pipelines/ingest_bars.py` — Bar ingestion pipeline
 - `quant_data/duckdb_store.py` — DuckDB query interface
 - `quant_data/registry.py` — Dataset registry
 - `quant_data/spec.py` — Dataset specifications
+- `config/ticker_universe.py` — Curated ticker lists by asset class
 - `data/market_data/catalog.json` — Live data catalog
 - `scripts/ingest_stooq_bars.py` — Stooq ingestion
 - `scripts/ingest_binance_bars.py` — Binance ingestion

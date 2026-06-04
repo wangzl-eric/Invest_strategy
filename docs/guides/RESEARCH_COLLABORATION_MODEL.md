@@ -14,6 +14,9 @@
 | **Cerebro** | Opus 4.6 | Research intelligence — literature, contradictions, monitoring |
 | **Dev** | Opus 4.6 | Quantitative developer — code review & production implementation |
 | **Data** | Sonnet 4.6 | Data engineer — coverage gaps, pipeline builds, data quality |
+| **Codex Runner** | GPT-5.4 (default) | Execution assistant — backtests, parameter sweeps, data pulls, second-opinion review |
+
+Defaults above are role defaults, not hard-coded session requirements. The shared source of truth for Claude-role model defaults is `.claude/agents/*.md` frontmatter (`model:`). For one-off `agent-deck` launches, use env overrides like `RESEARCH_PM_MODEL=sonnet` or `RESEARCH_DATA_MODEL=opus`.
 
 **Utility agents** (invoked by slash commands, not standing sessions):
 - **KB Curator** — validates and writes entries to domain knowledge bases (`/learn-verdict`, `/capture-finding`)
@@ -268,6 +271,9 @@ The team runs as isolated tmux sessions managed by agent-deck:
 # Launch full team
 ./scripts/launch_research_team.sh <strategy_name> <researcher: elena|marco>
 
+# Inspect effective models + override points
+./scripts/show_agent_team.sh
+
 # Stop sessions (preserve worktrees)
 ./scripts/cleanup_research_team.sh
 
@@ -284,7 +290,7 @@ The team runs as isolated tmux sessions managed by agent-deck:
 | `research-pm` | PM | main | filesystem |
 | `codex-runner` | Codex | — | — |
 
-**Auto-sync:** When any `.claude/agents/*.md` file is edited, `scripts/sync_agents.sh` fires automatically (via `PostToolUse` hook) and sends a reload message to the matching live session.
+**Auto-sync:** When any `.claude/agents/*.md` file is edited, `scripts/sync_agents.sh` fires automatically (via `PostToolUse` hook). It attempts to update the saved `agent-deck` session command for the matching role, then sends a reload message to the live session. Restart the session when you want a model change to take effect.
 
 ---
 

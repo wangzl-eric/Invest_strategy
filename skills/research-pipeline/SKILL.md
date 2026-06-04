@@ -26,7 +26,7 @@ conda run -n ibkr-analytics env PYTHONPATH=. python ...
 
 1. Pick the data path deliberately.
    - Dashboard-compatible market data lives in `data/market_data/`.
-   - New partitioned research datasets live in `data_lake/` through `workstation/quant_data/`.
+   - New partitioned research datasets live in `data_lake/` through `quant_data/`.
    - Do not describe these as interchangeable unless you verified the consuming code reads the chosen store.
 
 2. Use the right skill for the first mile.
@@ -34,7 +34,7 @@ conda run -n ibkr-analytics env PYTHONPATH=. python ...
    - For strategy evaluation and approval-grade review, use `skills/rigorous-backtest/SKILL.md`.
 
 3. Keep the pipeline boundary clear.
-   - `workstation/quant_data/` is ingestion and dataset metadata code.
+   - `quant_data/` is ingestion and dataset metadata code.
    - `workstation/backtests/` is research and validation code.
    - `backend.data_pipeline` is the canonical local-first interface for reading cached research data and launching refresh jobs.
    - `apps/dashboard/backend/reporting.py` is for operational account/trade PDFs, not research backtest verdicts.

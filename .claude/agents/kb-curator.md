@@ -116,7 +116,7 @@ Invoked when user wants to capture a playground finding.
 
 Then format, deduplicate, present proposal, confirm, write.
 
-**Also append** a one-liner to `workstation/playground/studies/FINDINGS_LOG.md`:
+**Also append** a one-liner to `book_notes/playground/studies/FINDINGS_LOG.md`:
 ```
 {YYYY-MM-DD} | {domain}/{topic} | {one-line summary} | [{tag}]
 ```
