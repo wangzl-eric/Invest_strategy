@@ -9,9 +9,10 @@ echo   IBKR Analytics Startup Script
 echo ========================================
 echo.
 
-REM Get script directory
-set "SCRIPT_DIR=%~dp0"
-cd /d "%SCRIPT_DIR%"
+REM Script lives in bin\; repo root is its parent
+cd /d "%~dp0.."
+REM Repo root on PYTHONPATH so component-qualified imports (dashboard.*, alpha_research.*) resolve
+set PYTHONPATH=%CD%
 
 REM Check Python
 echo [INFO] Checking Python version...
@@ -107,14 +108,14 @@ echo.
 
 REM Start backend
 echo [INFO] Starting backend server...
-start "IBKR Backend" /min python backend\main.py > backend.log 2>&1
+start "IBKR Backend" /min python dashboard\backend\main.py > backend.log 2>&1
 timeout /t 3 /nobreak >nul
 echo [SUCCESS] Backend started on http://localhost:8000
 echo.
 
 REM Start frontend
 echo [INFO] Starting frontend dashboard...
-start "IBKR Frontend" python frontend\app.py > frontend.log 2>&1
+start "IBKR Frontend" python dashboard\frontend\app.py > frontend.log 2>&1
 timeout /t 3 /nobreak >nul
 echo [SUCCESS] Frontend started on http://localhost:8050
 echo.

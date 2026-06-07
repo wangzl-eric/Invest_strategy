@@ -587,8 +587,8 @@ The `quant_data/` package provides a vendor-agnostic research data layer:
 | `scripts/qc_build_equity_daily.py` | Build daily equity curves from QuantConnect results |
 | `scripts/qc_plot_backtest.py` | Plot QuantConnect backtest results |
 | `scripts/run_paper_trader.py` | Start the paper trading execution runner |
-| `start_scheduler.py` | Start the PnL data fetch scheduler |
-| `test_ibkr_connection.py` | Test IBKR TWS/Gateway connectivity |
+| `bin/start_scheduler.py` | Start the PnL data fetch scheduler |
+| `scripts/test_ibkr_connection.py` | Test IBKR TWS/Gateway connectivity |
 
 ---
 

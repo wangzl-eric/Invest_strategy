@@ -5,11 +5,11 @@ import asyncio
 import logging
 from pathlib import Path
 
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent))
+# Script lives in bin/; add repo root (its parent) to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from backend.scheduler import scheduler
-from backend.ibkr_client import IBKRClient
+from dashboard.backend.scheduler import scheduler
+from dashboard.backend.ibkr_client import IBKRClient
 
 logging.basicConfig(
     level=logging.INFO,

@@ -9,7 +9,7 @@ NC='\033[0m'
 
 killed=0
 
-for pattern in "uvicorn backend.main:app" "python frontend/app.py"; do
+for pattern in "uvicorn dashboard.backend.main:app" "python dashboard/frontend/app.py"; do
     pids=$(pgrep -f "$pattern" 2>/dev/null || true)
     if [ -n "$pids" ]; then
         echo -e "${BLUE}[stop]${NC} Killing: $pattern (PIDs: $pids)"

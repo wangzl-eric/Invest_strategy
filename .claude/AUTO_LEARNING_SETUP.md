@@ -33,7 +33,7 @@ When a new session starts:
 Updates these files based on session work:
 - `memory/LESSONS_LEARNED.md` - New lessons from bugs/insights
 - `research/STRATEGY_TRACKER.md` - Research work log
-- `PROJECT_DOCUMENTATION.md` - Architecture changes
+- `docs/PROJECT_DOCUMENTATION.md` - Architecture changes
 - `playground/studies/*/findings.md` - Playground work
 
 ## Workflow Example
@@ -88,7 +88,7 @@ rm .claude/auto_learning_trigger.txt
 - **STRATEGY_TRACKER.md** - Research work on any strategy
 
 ### Update When Applicable
-- **PROJECT_DOCUMENTATION.md** - New features, architecture changes
+- **docs/PROJECT_DOCUMENTATION.md** - New features, architecture changes
 - **Playground findings** - Ensure findings.md exists for studies
 
 ### Never Update

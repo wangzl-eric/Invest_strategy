@@ -731,7 +731,7 @@ python scripts/init_db.py
 # Edit config/app_config.yaml with your settings
 
 # 7. Start application
-./start.sh
+./bin/start.sh
 ```
 
 ### 6.2 Daily Workflow
@@ -740,7 +740,7 @@ python scripts/init_db.py
 # Ensure TWS/Gateway is running and logged in first!
 
 # Option A: Start full application
-./start.sh
+./bin/start.sh
 # Backend: http://localhost:8000
 # Frontend: http://localhost:8050
 
@@ -751,7 +751,7 @@ curl -X POST "http://localhost:8000/api/fetch-data"
 curl -X POST "http://localhost:8000/api/flex-query/fetch-all-reports"
 
 # Option D: Automated scheduler
-python start_scheduler.py YOUR_ACCOUNT_ID
+python bin/start_scheduler.py YOUR_ACCOUNT_ID
 ```
 
 ### 6.3 Research Workflow
@@ -1085,8 +1085,8 @@ Invest_strategy/
 │
 ├── requirements.txt          # Python dependencies
 ├── environment.yml           # Conda environment
-├── start.sh                  # Startup script
-├── start_scheduler.py        # Scheduler entry
+├── bin/start.sh                  # Startup script
+├── bin/start_scheduler.py        # Scheduler entry
 ├── README.md                 # Main readme
 └── PROJECT_DOCUMENTATION.md  # This file
 ```
@@ -1107,7 +1107,7 @@ Invest_strategy/
 
 **Test connection**:
 ```bash
-python test_ibkr_connection.py
+python scripts/test_ibkr_connection.py
 ```
 
 ### Environment Issues

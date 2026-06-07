@@ -7,7 +7,8 @@
 # ──────────────────────────────────────────────────────────
 set -euo pipefail
 
-PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Script lives in bin/; repo root is its parent.
+PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 CONDA_ENV="ibkr-analytics"
 BACKEND_PORT=8000
 FRONTEND_PORT=8050
@@ -67,7 +68,7 @@ trap cleanup EXIT INT TERM
 start_backend() {
     log "Starting backend (FastAPI) on port $BACKEND_PORT …"
     cd "$PROJECT_DIR"
-    python -m uvicorn backend.main:app --host 0.0.0.0 --port "$BACKEND_PORT" --reload &
+    python -m uvicorn dashboard.backend.main:app --host 0.0.0.0 --port "$BACKEND_PORT" --reload &
     PIDS+=($!)
     ok "Backend PID: ${PIDS[-1]}"
 }
@@ -75,7 +76,7 @@ start_backend() {
 start_frontend() {
     log "Starting frontend (Dash) on port $FRONTEND_PORT …"
     cd "$PROJECT_DIR"
-    python frontend/app.py &
+    python dashboard/frontend/app.py &
     PIDS+=($!)
     ok "Frontend PID: ${PIDS[-1]}"
 }

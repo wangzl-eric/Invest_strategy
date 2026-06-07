@@ -5,7 +5,7 @@
 ### Start Services
 ```bash
 cd "/Users/zelin/Desktop/PA Investment/Invest_strategy"
-./start.sh
+./bin/start.sh
 ```
 
 ### Import Trades from Flex Query
