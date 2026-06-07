@@ -7,11 +7,11 @@ from typing import Any, Dict, Optional
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from backend.data_fetcher import DataFetcher
-from backend.database import get_db_context
-from backend.ibkr_client import IBKRClient
-from backend.models import AccountSnapshot, PnLHistory, Position, Trade
-from backend.websocket_manager import manager
+from dashboard.backend.data_fetcher import DataFetcher
+from dashboard.backend.database import get_db_context
+from dashboard.backend.ibkr_client import IBKRClient
+from dashboard.backend.models import AccountSnapshot, PnLHistory, Position, Trade
+from dashboard.backend.websocket_manager import manager
 
 logger = logging.getLogger(__name__)
 

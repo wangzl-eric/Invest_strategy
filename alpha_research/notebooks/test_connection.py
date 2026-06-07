@@ -12,8 +12,8 @@ try:
     from sqlalchemy import create_engine, inspect
     from sqlalchemy.orm import sessionmaker
 
-    from backend.config import settings
-    from backend.models import (
+    from dashboard.backend.config import settings
+    from dashboard.backend.models import (
         AccountSnapshot,
         PerformanceMetric,
         PnLHistory,

@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from backtests.reporting import (
+from alpha_research.backtests.reporting import (
     ReviewConfig,
     build_review_bundle_from_run,
     build_review_payload,
@@ -17,7 +17,7 @@ from backtests.reporting import (
     load_series_from_file,
     render_review_markdown,
 )
-from backtests.run_manager import RunManager
+from alpha_research.backtests.run_manager import RunManager
 
 
 def make_returns() -> pd.Series:

@@ -82,7 +82,7 @@ def make_returns(n: int = 1000, sharpe: float = 0.7, seed: int = 42) -> pd.Serie
 class TestGate1DeflatedSharpe:
     def test_deflated_sharpe_computable(self):
         """Gate 1: deflated_sharpe_ratio() runs and returns a float."""
-        from backtests.stats import deflated_sharpe_ratio
+        from alpha_research.backtests.stats import deflated_sharpe_ratio
 
         rets = make_returns(1000)
         dsr = deflated_sharpe_ratio(
@@ -101,7 +101,7 @@ class TestGate1DeflatedSharpe:
 class TestGate2WalkForwardHitRate:
     def test_walk_forward_splits_no_overlap(self):
         """Gate 2: CPCV splits are non-overlapping (prerequisite for hit rate)."""
-        from backtests.stats import cpcv_split
+        from alpha_research.backtests.stats import cpcv_split
 
         rets = make_returns(1000)
         # cpcv_split takes a DatetimeIndex, n_splits, n_test_groups
@@ -120,8 +120,8 @@ class TestGate2WalkForwardHitRate:
 class TestGate3CostSurvival:
     def test_cost_model_integrates_with_backtest(self):
         """Gate 3: CompositeCostModel wires into PortfolioBuilder.backtest()."""
-        from backtests.builder import PortfolioBuilder, PortfolioConfig
-        from backtests.costs import CompositeCostModel, ProportionalCostModel
+        from alpha_research.backtests.builder import PortfolioBuilder, PortfolioConfig
+        from alpha_research.backtests.costs import CompositeCostModel, ProportionalCostModel
 
         prices = make_prices(500, tickers=["A", "B"])
         config = PortfolioConfig(
@@ -164,7 +164,7 @@ class TestGate3CostSurvival:
 class TestGate4PSR:
     def test_psr_computable(self):
         """Gate 4: probabilistic_sharpe_ratio() runs and returns a float in [0,1]."""
-        from backtests.stats import probabilistic_sharpe_ratio
+        from alpha_research.backtests.stats import probabilistic_sharpe_ratio
 
         rets = make_returns(1000)
         psr = probabilistic_sharpe_ratio(
@@ -183,7 +183,7 @@ class TestGate4PSR:
 class TestGate5RegimeLoss:
     def test_regime_conditional_sharpe_computable(self):
         """Gate 5: regime_conditional_sharpe() runs and returns dict."""
-        from backtests.stats import regime_conditional_sharpe
+        from alpha_research.backtests.stats import regime_conditional_sharpe
 
         rng = np.random.RandomState(99)
         n = 1000
@@ -204,7 +204,7 @@ class TestGate5RegimeLoss:
 
     def test_max_drawdown_computable(self):
         """Gate 5: max drawdown can be extracted from PortfolioBuilder backtest."""
-        from backtests.builder import PortfolioBuilder, PortfolioConfig
+        from alpha_research.backtests.builder import PortfolioBuilder, PortfolioConfig
 
         prices = make_prices(500, tickers=["A", "B"])
         config = PortfolioConfig(universe=["A", "B"], optimization="equal_weight")
@@ -249,7 +249,7 @@ class TestGate6LLMVerdict:
 class TestGate7HalfLife:
     def test_strategy_half_life_computable(self):
         """Gate 7: strategy_half_life() runs and returns finite float."""
-        from backtests.stats import rolling_sharpe, strategy_half_life
+        from alpha_research.backtests.stats import rolling_sharpe, strategy_half_life
 
         rets = make_returns(1500)
         sharpes = rolling_sharpe(rets, window=252)
@@ -266,7 +266,7 @@ class TestGate7HalfLife:
 class TestGate8MinBTL:
     def test_minimum_backtest_length_computable(self):
         """Gate 8: minimum_backtest_length() runs and returns positive int."""
-        from backtests.stats import minimum_backtest_length
+        from alpha_research.backtests.stats import minimum_backtest_length
 
         # With n_trials=1 (single strategy, no multiple testing) and a
         # positive Sharpe, MinBTL should be a finite, positive integer.
@@ -295,7 +295,7 @@ class TestGate8MinBTL:
 class TestGate9DynamicRebalancing:
     def test_dynamic_reoptimize_produces_finite_curve(self):
         """Gate 9: backtest(dynamic_reoptimize=True) produces finite equity curve."""
-        from backtests.builder import PortfolioBuilder, PortfolioConfig
+        from alpha_research.backtests.builder import PortfolioBuilder, PortfolioConfig
 
         prices = make_prices(500, tickers=["SPY", "TLT", "GLD"])
         config = PortfolioConfig(
@@ -328,7 +328,7 @@ class TestGate9DynamicRebalancing:
 class TestGate10CostModelIntegration:
     def test_composite_cost_model_api(self):
         """Gate 10: CompositeCostModel.calculate_cost() works correctly."""
-        from backtests.costs import (
+        from alpha_research.backtests.costs import (
             CompositeCostModel,
             FixedCostModel,
             ProportionalCostModel,
@@ -347,7 +347,7 @@ class TestGate10CostModelIntegration:
 
     def test_cost_model_frozen(self):
         """Gate 10: CostModel instances are immutable (frozen dataclass)."""
-        from backtests.costs import ProportionalCostModel
+        from alpha_research.backtests.costs import ProportionalCostModel
 
         model = ProportionalCostModel(cost_bps=10.0)
         with pytest.raises((AttributeError, TypeError)):
@@ -366,7 +366,7 @@ class TestGate11CalendarAlignment:
     )
     def test_align_to_trading_days_removes_weekends(self):
         """Gate 11: align_to_trading_days() removes Saturday/Sunday rows."""
-        from backtests.calendar import align_to_trading_days
+        from alpha_research.backtests.calendar import align_to_trading_days
 
         # Create a price series with explicit weekend dates
         dates = pd.date_range("2024-01-01", "2024-01-31", freq="D")
@@ -386,7 +386,7 @@ class TestGate11CalendarAlignment:
     )
     def test_get_trading_days_returns_business_days(self):
         """Gate 11: get_trading_days() returns only NYSE trading sessions."""
-        from backtests.calendar import get_trading_days
+        from alpha_research.backtests.calendar import get_trading_days
 
         days = get_trading_days("2024-01-01", "2024-01-31", exchange="XNYS")
         assert len(days) > 0, "Must return at least one trading day"
@@ -399,7 +399,7 @@ class TestGate11CalendarAlignment:
 
     def test_align_to_trading_days_empty_df(self):
         """Gate 11: align_to_trading_days handles empty DataFrame gracefully."""
-        from backtests.calendar import align_to_trading_days
+        from alpha_research.backtests.calendar import align_to_trading_days
 
         empty = pd.DataFrame({"close": []})
         result = align_to_trading_days(empty)

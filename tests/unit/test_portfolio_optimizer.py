@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from portfolio.optimizer import (
+from alpha_research.portfolio.optimizer import (
     OptimizationConfig,
     mean_variance_optimize,
     weights_from_alpha,

@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import and_, desc
 from sqlalchemy.orm import Session
 
-from backend.alert_engine import AlertEngine
-from backend.api.schemas import (
+from dashboard.backend.alert_engine import AlertEngine
+from dashboard.backend.api.schemas import (
     AlertChannelCreate,
     AlertChannelResponse,
     AlertChannelUpdate,
@@ -19,9 +19,9 @@ from backend.api.schemas import (
     AlertRuleResponse,
     AlertRuleUpdate,
 )
-from backend.database import get_db
-from backend.models import Alert, AlertChannel, AlertHistory, AlertRule
-from backend.notifications import NotificationService
+from dashboard.backend.database import get_db
+from dashboard.backend.models import Alert, AlertChannel, AlertHistory, AlertRule
+from dashboard.backend.notifications import NotificationService
 
 logger = logging.getLogger(__name__)
 

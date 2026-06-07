@@ -4,11 +4,11 @@ Import historical PnL/equity data into the pnl_history table.
 Import trade history from Flex Query responses.
 
 Usage:
-    from backend.flex_importer import import_portfolio_analyst_csv, import_trades_from_flex
+    from dashboard.backend.flex_importer import import_portfolio_analyst_csv, import_trades_from_flex
     rows = import_portfolio_analyst_csv("report.csv", "U1234567")
 
     # Import from Flex Query
-    from backend.flex_query_client import FlexQueryClient
+    from dashboard.backend.flex_query_client import FlexQueryClient
     client = FlexQueryClient(token="your_token")
     result = await client.fetch_statement(query_id="123456")
     count = import_trades_from_flex(result.trades)
@@ -21,11 +21,11 @@ from typing import TYPE_CHECKING, List, Optional
 import pandas as pd
 from sqlalchemy import func
 
-from backend.database import get_db_context
-from backend.models import PnLHistory, Position, Trade
+from dashboard.backend.database import get_db_context
+from dashboard.backend.models import PnLHistory, Position, Trade
 
 if TYPE_CHECKING:
-    from backend.flex_query_client import FlexPosition, FlexQueryResult, FlexTrade
+    from dashboard.backend.flex_query_client import FlexPosition, FlexQueryResult, FlexTrade
 
 logger = logging.getLogger(__name__)
 

@@ -10,11 +10,11 @@ import pandas as pd
 from ib_insync import IB, AccountValue, Contract, Forex, Future, Position, Stock, Trade
 from ib_insync.objects import PortfolioItem
 
-from backend.config import settings
+from dashboard.backend.config import settings
 
 # Import circuit breaker if available
 try:
-    from backend.circuit_breaker import CircuitState, ibkr_circuit_breaker
+    from dashboard.backend.circuit_breaker import CircuitState, ibkr_circuit_breaker
 except ImportError:
     ibkr_circuit_breaker = None
     CircuitState = None
@@ -412,7 +412,7 @@ class IBKRClient:
             # Use portfolio() which has accurate market data and unrealized PnL
             portfolio_items = self.ib.portfolio(account_id)
 
-            # Calculate total unrealized PnL from portfolio items
+            # Calculate total unrealized PnL from alpha_research.portfolio items
             total_unrealized_pnl = sum(
                 float(item.unrealizedPNL) if item.unrealizedPNL else 0.0
                 for item in portfolio_items

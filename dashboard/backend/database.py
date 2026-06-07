@@ -6,8 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from backend.config import settings
-from backend.models import Base
+from dashboard.backend.config import settings
+from dashboard.backend.models import Base
 
 # Create engine
 if settings.database.url.startswith("sqlite"):

@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from backend.data_processor import DataProcessor
+from dashboard.backend.data_processor import DataProcessor
 
 
 class TestDataProcessor:

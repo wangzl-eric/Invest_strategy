@@ -12,8 +12,8 @@ from typing import Any, Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 
-from backend.llm_client import VerdictExplanation
-from backend.llm_client import generate_verdict as llm_generate_verdict
+from dashboard.backend.llm_client import VerdictExplanation
+from dashboard.backend.llm_client import generate_verdict as llm_generate_verdict
 
 logger = logging.getLogger(__name__)
 

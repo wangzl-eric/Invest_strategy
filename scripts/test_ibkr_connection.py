@@ -8,8 +8,8 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from backend.config import settings
-from backend.ibkr_client import IBKRClient
+from dashboard.backend.config import settings
+from dashboard.backend.ibkr_client import IBKRClient
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"

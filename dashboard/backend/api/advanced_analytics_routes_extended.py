@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from backend.advanced_analytics import (
+from dashboard.backend.advanced_analytics import (
     AnomalyDetector,
     AttributionAnalyzer,
     FactorAnalyzer,
@@ -17,9 +17,9 @@ from backend.advanced_analytics import (
     PortfolioOptimizer,
     RegimeDetector,
 )
-from backend.data_processor import DataProcessor
-from backend.database import get_db
-from backend.models import AccountSnapshot, PnLHistory
+from dashboard.backend.data_processor import DataProcessor
+from dashboard.backend.database import get_db
+from dashboard.backend.models import AccountSnapshot, PnLHistory
 
 logger = logging.getLogger(__name__)
 

@@ -50,7 +50,7 @@ REPO_ROOT = Path("/Users/zelin/Desktop/PA Investment/Invest_strategy")
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from quant_data.api import get_data
+from alpha_research.quant_data.api import get_data
 
 plt.style.use("seaborn-v0_8-whitegrid")
 plt.rcParams["figure.figsize"] = (12, 5)

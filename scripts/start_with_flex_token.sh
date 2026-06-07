@@ -20,6 +20,6 @@ sleep 2
 
 # Start backend (token will be loaded from .env via environment)
 echo "Starting backend..."
-PYTHONPATH="$(pwd)" nohup python backend/main.py > backend.log 2>&1 &
+PYTHONPATH="$(pwd)" nohup python dashboard/backend/main.py > backend.log 2>&1 &
 
 echo "Backend started. Check logs with: tail -f backend.log"

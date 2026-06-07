@@ -10,14 +10,14 @@ import plotly.graph_objs as go
 import requests
 from dash import ALL, Input, Output, State, callback, ctx, dcc, html
 
-from frontend.components.cerebro_panel import (
+from dashboard.frontend.components.cerebro_panel import (
     create_cerebro_tab,
     register_cerebro_callbacks,
 )
-from frontend.components.data_manager import build_data_manager_layout
-from frontend.components.market_panels import build_markets_layout
-from frontend.components.strategy_monitor import build_strategy_monitor_layout
-from frontend.websocket_client import create_websocket_client_component
+from dashboard.frontend.components.data_manager import build_data_manager_layout
+from dashboard.frontend.components.market_panels import build_markets_layout
+from dashboard.frontend.components.strategy_monitor import build_strategy_monitor_layout
+from dashboard.frontend.websocket_client import create_websocket_client_component
 
 logger = logging.getLogger(__name__)
 
@@ -962,7 +962,7 @@ def update_summary_metrics(data, flex_store):
 
     data = data or {}
 
-    # Use flex from dedicated store if available, otherwise from portfolio store
+    # Use flex from dedicated store if available, otherwise from alpha_research.portfolio store
     flex = flex_store or data.get("flex") or {}
     db = data.get("db") or {}
     account = db.get("account") or {}
@@ -1788,7 +1788,7 @@ def create_portfolio_tab(data):
 
 
 def fetch_performance_analytics(start_date=None, end_date=None):
-    """Fetch comprehensive performance analytics from backend with optional date range.
+    """Fetch comprehensive performance analytics from dashboard.backend with optional date range.
 
     Args:
         start_date: Start date string in format 'YYYY-MM-DD' or None

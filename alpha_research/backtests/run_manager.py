@@ -20,7 +20,7 @@ Two workflows are supported:
     )
 
 Usage:
-    from backtests.run_manager import RunManager
+    from alpha_research.backtests.run_manager import RunManager
 
     mgr = RunManager()
     runs_df = mgr.list_runs(strategy_name="momentum_60_21")

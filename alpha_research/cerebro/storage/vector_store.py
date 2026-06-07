@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from cerebro.config import cerebro_config
+from alpha_research.cerebro.config import cerebro_config
 
 logger = logging.getLogger(__name__)
 

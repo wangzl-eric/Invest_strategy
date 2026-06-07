@@ -7,7 +7,7 @@ from fastapi import APIRouter, Body, HTTPException, Query
 from pydantic import BaseModel
 
 # Note: Vectorized backtest has been deprecated. Use BacktestEngine with Backtrader.
-from portfolio.blend import Signal, blend_signals
+from alpha_research.portfolio.blend import Signal, blend_signals
 
 logger = logging.getLogger(__name__)
 

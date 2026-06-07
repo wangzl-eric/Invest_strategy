@@ -8,7 +8,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
-from backend.auth import (
+from dashboard.backend.auth import (
     create_access_token,
     generate_api_key,
     get_current_user,
@@ -19,8 +19,8 @@ from backend.auth import (
     security,
     verify_password,
 )
-from backend.database import get_db
-from backend.models import APIKey, Role, User, UserAccount, UserPreferences, UserRole
+from dashboard.backend.database import get_db
+from dashboard.backend.models import APIKey, Role, User, UserAccount, UserPreferences, UserRole
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ when the source data changes (mtime-based) or manually.
 Thread-safe via ``threading.Lock``.
 
 Usage:
-    from backtests.cache import SignalCache
+    from alpha_research.backtests.cache import SignalCache
 
     cache = SignalCache()
     key = SignalCache.compute_data_hash(prices)

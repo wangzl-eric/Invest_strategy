@@ -5,7 +5,7 @@ This module provides dual-tracking for P&L attribution:
 2. Post-trade: What actually happened (with hindsight)
 
 Usage:
-    from backtests.forward_pass import ForwardPassTracker, ComparisonView
+    from alpha_research.backtests.forward_pass import ForwardPassTracker, ComparisonView
 
     # Track predictions during backtest
     tracker = ForwardPassTracker()
@@ -17,12 +17,12 @@ Usage:
     summary = comparison.get_summary()
 """
 
-from backtests.forward_pass.comparison import (
+from alpha_research.backtests.forward_pass.comparison import (
     ComparisonView,
     TradeComparison,
     create_comparison_view,
 )
-from backtests.forward_pass.trade_tracker import (
+from alpha_research.backtests.forward_pass.trade_tracker import (
     ForwardPassTracker,
     SignalHistory,
     SignalSnapshot,

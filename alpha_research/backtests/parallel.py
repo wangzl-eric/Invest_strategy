@@ -4,7 +4,7 @@ Run parameter sweeps and strategy comparisons across multiple CPU cores
 without shared mutable state.
 
 Usage:
-    from backtests.parallel import ParallelBacktester
+    from alpha_research.backtests.parallel import ParallelBacktester
 
     pb = ParallelBacktester(n_workers=4)
     results = pb.run_parameter_sweep(

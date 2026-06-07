@@ -6,11 +6,11 @@ from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
-from backend.database import SessionLocal
-from backend.llm_client import QwenLLMClient
-from backend.models import PnLAttribution, PnLHistory
-from backend.news_service import NewsService
-from backtests.strategies import SIGNAL_METADATA, get_signal_metadata
+from dashboard.backend.database import SessionLocal
+from dashboard.backend.llm_client import QwenLLMClient
+from dashboard.backend.models import PnLAttribution, PnLHistory
+from dashboard.backend.news_service import NewsService
+from alpha_research.backtests.strategies import SIGNAL_METADATA, get_signal_metadata
 
 logger = logging.getLogger(__name__)
 

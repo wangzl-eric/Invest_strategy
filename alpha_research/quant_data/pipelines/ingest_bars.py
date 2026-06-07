@@ -4,17 +4,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from quant_data.connectors.base import BarsConnector, BarsRequest
-from quant_data.io.parquet_writer import ParquetWriteResult, write_bars_partitioned
-from quant_data.meta_db import get_meta_db_context
-from quant_data.paths import DataLakeConfig
-from quant_data.qconfig import QuantDataSettings
-from quant_data.registry import (
+from alpha_research.quant_data.connectors.base import BarsConnector, BarsRequest
+from alpha_research.quant_data.io.parquet_writer import ParquetWriteResult, write_bars_partitioned
+from alpha_research.quant_data.meta_db import get_meta_db_context
+from alpha_research.quant_data.paths import DataLakeConfig
+from alpha_research.quant_data.qconfig import QuantDataSettings
+from alpha_research.quant_data.registry import (
     finish_ingestion_run,
     register_dataset_version,
     start_ingestion_run,
 )
-from quant_data.spec import DatasetId, DatasetLayer
+from alpha_research.quant_data.spec import DatasetId, DatasetLayer
 
 
 @dataclass(frozen=True)

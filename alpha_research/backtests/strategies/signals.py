@@ -419,7 +419,7 @@ def create_signal_strategy(
         Backtrader Strategy class
 
     Example:
-        from backtests.strategies import create_signal_strategy, MomentumSignal
+        from alpha_research.backtests.strategies import create_signal_strategy, MomentumSignal
 
         StrategyClass = create_signal_strategy(MomentumSignal, {'lookback': 60, 'skip': 21})
         cerebro.addstrategy(StrategyClass)
@@ -697,8 +697,8 @@ def run_signal_research_ml(
             signal, mean_ic, ic_std, ic_ir, mean_accuracy, n_folds,
             label_pos_pct, label_neg_pct, label_zero_pct
     """
-    from backtests.stats.cross_validation import purged_kfold_split
-    from backtests.strategies.labeling import TripleBarrierLabeler
+    from alpha_research.backtests.stats.cross_validation import purged_kfold_split
+    from alpha_research.backtests.strategies.labeling import TripleBarrierLabeler
 
     if "close" not in prices.columns:
         raise ValueError("prices must have a 'close' column")

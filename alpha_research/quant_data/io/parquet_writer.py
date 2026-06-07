@@ -7,8 +7,8 @@ from typing import Optional
 
 import pandas as pd
 
-from quant_data.paths import DataLakeConfig, parquet_partition_path
-from quant_data.spec import (
+from alpha_research.quant_data.paths import DataLakeConfig, parquet_partition_path
+from alpha_research.quant_data.spec import (
     CANONICAL_BARS_COLUMNS,
     DatasetId,
     DatasetLayer,

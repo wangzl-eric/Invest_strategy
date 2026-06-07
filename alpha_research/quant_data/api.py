@@ -2,7 +2,7 @@
 
 Usage::
 
-    from quant_data.api import get_data
+    from alpha_research.quant_data.api import get_data
     df = get_data(["DGS10", "SPY"], start="2010-01-01")
 
 Local Parquet lake is tried first; on a cache miss the appropriate API
@@ -26,14 +26,14 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from quant_data.analytics import (  # re-exported for convenience  # noqa: E402
+from alpha_research.quant_data.analytics import (  # re-exported for convenience  # noqa: E402
     calculate_returns,
     calculate_volatility,
     compute_correlation_matrix,
     compute_drawdown,
     compute_rolling_sharpe,
 )
-from quant_data.ticker_map import TickerInfo, resolve_strict  # noqa: E402
+from alpha_research.quant_data.ticker_map import TickerInfo, resolve_strict  # noqa: E402
 
 log = logging.getLogger(__name__)
 
@@ -161,7 +161,7 @@ def _fetch_fred(series_id: str, start: str, end: str) -> pd.DataFrame:
 def _fetch_binance(symbol: str, start: str, end: str) -> pd.DataFrame:
     """Pull daily OHLCV from Binance public API."""
     try:
-        from quant_data.connectors.binance_public import (
+        from alpha_research.quant_data.connectors.binance_public import (
             BinancePublicConnector,  # type: ignore
         )
 

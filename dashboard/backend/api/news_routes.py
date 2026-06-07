@@ -9,8 +9,8 @@ from typing import List
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from backend.ibkr_client import NEWS_PROVIDERS, IBKRClient
-from backend.news_service import NewsService
+from dashboard.backend.ibkr_client import NEWS_PROVIDERS, IBKRClient
+from dashboard.backend.news_service import NewsService
 
 logger = logging.getLogger(__name__)
 

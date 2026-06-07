@@ -12,7 +12,7 @@ from typing import Deque, Dict, Iterable, Optional
 
 import pandas as pd
 
-from backtests.event_driven.events import (
+from alpha_research.backtests.event_driven.events import (
     Event,
     FillEvent,
     MarketEvent,

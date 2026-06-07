@@ -67,7 +67,7 @@ def automate_pa_daily(
     Returns:
         dict with: success, csv_path, rows_imported, error
     """
-    from backend.flex_importer import import_portfolio_analyst_csv
+    from dashboard.backend.flex_importer import import_portfolio_analyst_csv
     from scripts.download_portfolio_analyst import download_pa_report
 
     account_id = account_id or os.getenv("IBKR_ACCOUNT_ID")

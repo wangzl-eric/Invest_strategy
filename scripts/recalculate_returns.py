@@ -14,9 +14,9 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from backend.database import get_db_context
-from backend.flex_importer import calculate_and_update_returns
-from backend.models import PnLHistory
+from dashboard.backend.database import get_db_context
+from dashboard.backend.flex_importer import calculate_and_update_returns
+from dashboard.backend.models import PnLHistory
 
 
 def recalculate_all_returns():

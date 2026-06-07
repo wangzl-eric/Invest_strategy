@@ -29,7 +29,7 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from backend.market_data_service import (
+from dashboard.backend.market_data_service import (
     COMMODITY_TICKERS,
     EQUITY_TICKERS,
     FED_LIQUIDITY_SERIES,
@@ -336,7 +336,7 @@ class MarketDataStore:
         category: str,
     ) -> int:
         """Bulk-download from FRED and append to Parquet."""
-        from backend.market_data_service import _get_fred
+        from dashboard.backend.market_data_service import _get_fred
 
         fred = _get_fred()
         if fred is None:
@@ -432,7 +432,7 @@ class MarketDataStore:
 
         # Get IBKR client
         try:
-            from backend.ibkr_client import IBKRClient
+            from dashboard.backend.ibkr_client import IBKRClient
         except ImportError:
             logger.error("IBKR client not available")
             return 0

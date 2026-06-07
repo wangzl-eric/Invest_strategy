@@ -11,7 +11,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from backend.api.schemas import (
+from dashboard.backend.api.schemas import (
     AccountSummaryResponse,
     PerformanceMetricResponse,
     PnLResponse,
@@ -19,33 +19,33 @@ from backend.api.schemas import (
     PositionResponse,
     TradeResponse,
 )
-from backend.auth import (
+from dashboard.backend.auth import (
     get_current_user_or_api_key,
     get_user_accounts,
     get_user_primary_account,
     require_role,
 )
-from backend.cache import cache_manager, cached
-from backend.config import settings
-from backend.data_fetcher import DataFetcher
-from backend.data_processor import DataProcessor
-from backend.database import get_db
-from backend.db_utils import import_all_flex_data, import_trades_from_flex_result
-from backend.export import (
+from dashboard.backend.cache import cache_manager, cached
+from dashboard.backend.config import settings
+from dashboard.backend.data_fetcher import DataFetcher
+from dashboard.backend.data_processor import DataProcessor
+from dashboard.backend.database import get_db
+from dashboard.backend.db_utils import import_all_flex_data, import_trades_from_flex_result
+from dashboard.backend.export import (
     export_combined_report,
     export_performance_excel,
     export_pnl_excel,
     export_trades_excel,
     get_export_filename,
 )
-from backend.flex_importer import (
+from dashboard.backend.flex_importer import (
     import_flex_query_result,
     import_mark_to_market_performance_csv,
     import_trades_from_flex,
 )
-from backend.flex_query_client import FlexQueryClient, FlexQueryError
-from backend.ibkr_client import IBKRClient
-from backend.models import (
+from dashboard.backend.flex_query_client import FlexQueryClient, FlexQueryError
+from dashboard.backend.ibkr_client import IBKRClient
+from dashboard.backend.models import (
     AccountSnapshot,
     PerformanceMetric,
     PnLHistory,
@@ -967,7 +967,7 @@ async def get_risk_metrics(
 ):
     """Get comprehensive risk metrics including VaR, CVaR, beta, and more."""
     try:
-        from portfolio.risk_analytics import portfolio_metrics
+        from alpha_research.portfolio.risk_analytics import portfolio_metrics
 
         # Get returns data
         returns_df = data_processor.calculate_daily_returns(
@@ -1023,7 +1023,7 @@ async def get_var(
 ):
     """Calculate Value at Risk (VaR) for the portfolio."""
     try:
-        from portfolio.risk_analytics import historical_var, parametric_var
+        from alpha_research.portfolio.risk_analytics import historical_var, parametric_var
 
         returns_df = data_processor.calculate_daily_returns(account_id)
 
@@ -1063,7 +1063,7 @@ async def get_cvar(
 ):
     """Calculate Conditional VaR (CVaR) / Expected Shortfall."""
     try:
-        from portfolio.risk_analytics import conditional_var
+        from alpha_research.portfolio.risk_analytics import conditional_var
 
         returns_df = data_processor.calculate_daily_returns(account_id)
 
@@ -1256,7 +1256,7 @@ async def get_performance_analytics(
 
     import pandas as pd
 
-    from backend.api.schemas import (
+    from dashboard.backend.api.schemas import (
         BenchmarkComparisonResponse,
         BenchmarkTimeSeriesData,
         DistributionStatistics,
@@ -1265,7 +1265,7 @@ async def get_performance_analytics(
         ReturnsDistributionResponse,
         RollingMetricsResponse,
     )
-    from backend.benchmark_service import (
+    from dashboard.backend.benchmark_service import (
         calculate_rolling_metrics,
         get_benchmark_comparison,
         get_returns_distribution,
@@ -1516,8 +1516,8 @@ async def get_sp500_benchmark(
     ),
 ):
     """Get S&P 500 benchmark data for comparison charts."""
-    from backend.api.schemas import SP500DataPoint, SP500DataResponse
-    from backend.benchmark_service import get_sp500_data
+    from dashboard.backend.api.schemas import SP500DataPoint, SP500DataResponse
+    from dashboard.backend.benchmark_service import get_sp500_data
 
     try:
         # Set default date range

@@ -9,8 +9,8 @@ import logging
 from datetime import datetime
 from typing import List
 
-from cerebro.config import cerebro_config
-from cerebro.sources.base import BaseSource, RawPaper
+from alpha_research.cerebro.config import cerebro_config
+from alpha_research.cerebro.sources.base import BaseSource, RawPaper
 
 logger = logging.getLogger(__name__)
 

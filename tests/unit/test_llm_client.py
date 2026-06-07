@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from backend.llm_client import VerdictExplanation, VerdictLLMClient, generate_verdict
+from dashboard.backend.llm_client import VerdictExplanation, VerdictLLMClient, generate_verdict
 
 
 class TestVerdictExplanation:
@@ -45,7 +45,7 @@ class TestVerdictLLMClient:
     @pytest.fixture
     def mock_llm_client(self):
         """Create a mock LLM client."""
-        with patch("backend.llm_client.QwenLLMClient.__init__") as mock_init:
+        with patch("dashboard.backend.llm_client.QwenLLMClient.__init__") as mock_init:
             mock_init.return_value = None
             client = VerdictLLMClient.__new__(VerdictLLMClient)  # Bypass __init__
             client.api_key = "test_key"
@@ -83,7 +83,7 @@ class TestVerdictLLMClient:
             },
         }
 
-        with patch("backend.llm_client.httpx.AsyncClient") as mock_client:
+        with patch("dashboard.backend.llm_client.httpx.AsyncClient") as mock_client:
             mock_async_client = AsyncMock()
             mock_response_obj = MagicMock()
             mock_response_obj.status_code = 200
@@ -94,7 +94,7 @@ class TestVerdictLLMClient:
             mock_async_client.post.return_value = mock_response_obj
             mock_client.return_value = mock_async_client
 
-            with patch("backend.llm_client.get_token_tracker") as mock_tracker:
+            with patch("dashboard.backend.llm_client.get_token_tracker") as mock_tracker:
                 mock_tracker_instance = MagicMock()
                 mock_tracker.return_value = mock_tracker_instance
 
@@ -129,7 +129,7 @@ class TestVerdictLLMClient:
     @pytest.mark.asyncio
     async def test_generate_verdict_not_configured(self):
         """Test error when client not configured."""
-        with patch("backend.llm_client.QwenLLMClient.__init__") as mock_init:
+        with patch("dashboard.backend.llm_client.QwenLLMClient.__init__") as mock_init:
             mock_init.return_value = None
             client = VerdictLLMClient.__new__(VerdictLLMClient)
             object.__setattr__(client, "_config", MagicMock())
@@ -163,7 +163,7 @@ class TestVerdictLLMClient:
     @pytest.mark.asyncio
     async def test_generate_verdict_http_error(self, mock_llm_client):
         """Test handling of HTTP errors."""
-        with patch("backend.llm_client.httpx.AsyncClient") as mock_client:
+        with patch("dashboard.backend.llm_client.httpx.AsyncClient") as mock_client:
             mock_async_client = AsyncMock()
             mock_response_obj = MagicMock()
             mock_response_obj.status_code = 401
@@ -206,7 +206,7 @@ class TestVerdictLLMClient:
             "usage": {"prompt_tokens": 100, "completion_tokens": 50},
         }
 
-        with patch("backend.llm_client.httpx.AsyncClient") as mock_client:
+        with patch("dashboard.backend.llm_client.httpx.AsyncClient") as mock_client:
             mock_async_client = AsyncMock()
             mock_response_obj = MagicMock()
             mock_response_obj.status_code = 200
@@ -249,7 +249,7 @@ class TestGenerateVerdictConvenience:
     @pytest.mark.asyncio
     async def test_generate_verdict_function(self):
         """Test the generate_verdict convenience function."""
-        with patch("backend.llm_client.VerdictLLMClient") as MockClient:
+        with patch("dashboard.backend.llm_client.VerdictLLMClient") as MockClient:
             mock_instance = AsyncMock()
             mock_instance.generate_verdict = AsyncMock(
                 return_value=VerdictExplanation(
@@ -296,7 +296,7 @@ class TestPromptBuilding:
     @pytest.fixture
     def client(self):
         """Create a client instance."""
-        with patch("backend.llm_client.QwenLLMClient.__init__") as mock_init:
+        with patch("dashboard.backend.llm_client.QwenLLMClient.__init__") as mock_init:
             mock_init.return_value = None
             c = VerdictLLMClient.__new__(VerdictLLMClient)
             c.api_key = "test"

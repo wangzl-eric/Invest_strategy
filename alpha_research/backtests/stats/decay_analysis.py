@@ -9,7 +9,7 @@ References:
 - Square-root market impact model (Almgren & Chriss, 2000)
 
 Usage:
-    from backtests.stats.decay_analysis import (
+    from alpha_research.backtests.stats.decay_analysis import (
         rolling_sharpe,
         strategy_half_life,
         correlation_with_existing,

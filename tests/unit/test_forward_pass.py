@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pytest
 
-from backtests.forward_pass import (
+from alpha_research.backtests.forward_pass import (
     ComparisonView,
     ForwardPassTracker,
     SignalHistory,

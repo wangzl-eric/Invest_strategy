@@ -11,18 +11,18 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from cerebro.config import CerebroConfig, cerebro_config
-from cerebro.processing.deduplicator import SemanticDeduplicator
-from cerebro.processing.llm_summarizer import CerebroLLMClient
-from cerebro.processing.structured_extractor import PaperSummary, extract_paper_summary
-from cerebro.scoring.feasibility_scorer import FeasibilityScorer
-from cerebro.scoring.novelty_detector import NoveltyDetector
-from cerebro.scoring.quality_scorer import QualityScorer
-from cerebro.scoring.relevance_scorer import RelevanceScorer
-from cerebro.sources.base import BaseSource, RawPaper
-from cerebro.storage.models import ResearchPaper
-from cerebro.storage.provenance import ProvenanceTracker
-from cerebro.storage.vector_store import CerebroVectorStore
+from alpha_research.cerebro.config import CerebroConfig, cerebro_config
+from alpha_research.cerebro.processing.deduplicator import SemanticDeduplicator
+from alpha_research.cerebro.processing.llm_summarizer import CerebroLLMClient
+from alpha_research.cerebro.processing.structured_extractor import PaperSummary, extract_paper_summary
+from alpha_research.cerebro.scoring.feasibility_scorer import FeasibilityScorer
+from alpha_research.cerebro.scoring.novelty_detector import NoveltyDetector
+from alpha_research.cerebro.scoring.quality_scorer import QualityScorer
+from alpha_research.cerebro.scoring.relevance_scorer import RelevanceScorer
+from alpha_research.cerebro.sources.base import BaseSource, RawPaper
+from alpha_research.cerebro.storage.models import ResearchPaper
+from alpha_research.cerebro.storage.provenance import ProvenanceTracker
+from alpha_research.cerebro.storage.vector_store import CerebroVectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -107,28 +107,28 @@ class CerebroPipeline:
         sources: List[BaseSource] = []
 
         try:
-            from cerebro.sources.arxiv import ArxivSource
+            from alpha_research.cerebro.sources.arxiv import ArxivSource
 
             sources.append(ArxivSource())
         except Exception as exc:
             logger.warning("Failed to load ArxivSource: %s", exc)
 
         try:
-            from cerebro.sources.ssrn import SSRNSource
+            from alpha_research.cerebro.sources.ssrn import SSRNSource
 
             sources.append(SSRNSource())
         except Exception as exc:
             logger.warning("Failed to load SSRNSource: %s", exc)
 
         try:
-            from cerebro.sources.blog_feeds import BlogFeedSource
+            from alpha_research.cerebro.sources.blog_feeds import BlogFeedSource
 
             sources.append(BlogFeedSource())
         except Exception as exc:
             logger.warning("Failed to load BlogFeedSource: %s", exc)
 
         try:
-            from cerebro.sources.kaggle import KaggleSource
+            from alpha_research.cerebro.sources.kaggle import KaggleSource
 
             sources.append(KaggleSource())
         except Exception as exc:
@@ -136,7 +136,7 @@ class CerebroPipeline:
 
         if self._config.sources.reddit_enabled:
             try:
-                from cerebro.sources.reddit import RedditSource
+                from alpha_research.cerebro.sources.reddit import RedditSource
 
                 sources.append(RedditSource())
             except Exception as exc:
@@ -253,7 +253,7 @@ class CerebroPipeline:
         Returns:
             List of file paths to generated proposal markdown files.
         """
-        from cerebro.proposal_generator import ProposalGenerator
+        from alpha_research.cerebro.proposal_generator import ProposalGenerator
 
         generator = ProposalGenerator()
         proposals: List[str] = []

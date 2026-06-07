@@ -8,8 +8,8 @@ from sqlalchemy import and_, desc, inspect
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
-from backend.database import get_db_context
-from backend.models import (
+from dashboard.backend.database import get_db_context
+from dashboard.backend.models import (
     AccountSnapshot,
     Alert,
     AlertChannel,
@@ -18,7 +18,7 @@ from backend.models import (
     PnLHistory,
     Position,
 )
-from backend.notifications import NotificationService
+from dashboard.backend.notifications import NotificationService
 
 logger = logging.getLogger(__name__)
 

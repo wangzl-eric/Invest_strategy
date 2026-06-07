@@ -4,9 +4,9 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from backend.config import settings
-from backend.data_fetcher import DataFetcher
-from backend.ibkr_client import IBKRClient
+from dashboard.backend.config import settings
+from dashboard.backend.data_fetcher import DataFetcher
+from dashboard.backend.ibkr_client import IBKRClient
 
 logger = logging.getLogger(__name__)
 
@@ -110,9 +110,9 @@ from typing import Optional
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
-from backend.config import settings
-from backend.data_fetcher import DataFetcher
-from backend.data_processor import DataProcessor
+from dashboard.backend.config import settings
+from dashboard.backend.data_fetcher import DataFetcher
+from dashboard.backend.data_processor import DataProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +142,7 @@ class Scheduler:
 
             # Evaluate alert rules after data update
             try:
-                from backend.alert_scheduler import alert_scheduler
+                from dashboard.backend.alert_scheduler import alert_scheduler
 
                 await alert_scheduler.evaluate_and_notify(account_id)
             except Exception as e:

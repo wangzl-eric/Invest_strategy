@@ -5,9 +5,9 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from backend.config import settings
-from backend.llm_client import MarketMoversLLMClient, generate_movers_news_summary
-from backend.news_service import NewsService
+from dashboard.backend.config import settings
+from dashboard.backend.llm_client import MarketMoversLLMClient, generate_movers_news_summary
+from dashboard.backend.news_service import NewsService
 
 logger = logging.getLogger(__name__)
 

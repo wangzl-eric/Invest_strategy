@@ -13,8 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import FrozenSet, Optional, Tuple
 
-from cerebro.config import cerebro_config
-from cerebro.processing.llm_summarizer import CerebroLLMClient
+from alpha_research.cerebro.config import cerebro_config
+from alpha_research.cerebro.processing.llm_summarizer import CerebroLLMClient
 
 logger = logging.getLogger(__name__)
 

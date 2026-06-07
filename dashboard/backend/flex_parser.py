@@ -5,7 +5,7 @@ Parses IBKR Flex Query CSV/TSV and XML reports into structured DataFrames
 for trade history, performance analysis, and P&L recording.
 
 Usage:
-    from backend.flex_parser import FlexParser
+    from dashboard.backend.flex_parser import FlexParser
 
     parser = FlexParser()
 

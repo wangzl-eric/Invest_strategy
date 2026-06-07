@@ -16,7 +16,7 @@ import pandas as pd
 
 # Import data provider manager for IBKR integration
 try:
-    from backend.data_providers import data_provider_manager
+    from dashboard.backend.data_providers import data_provider_manager
 
     HAS_DATA_PROVIDERS = True
 except ImportError:
@@ -799,7 +799,7 @@ def _fetch_with_ibkr_fallback(
 def _get_fred():
     """Return a Fred client if an API key is configured, else None."""
     try:
-        from backend.config import settings
+        from dashboard.backend.config import settings
 
         api_key = settings.market_data.fred_api_key
         if not api_key:
@@ -1605,7 +1605,7 @@ class MarketDataService:
         if cached is not None:
             return cached
 
-        from backend.cb_meeting_schedule import (
+        from dashboard.backend.cb_meeting_schedule import (
             get_next_fomc_meeting,
             get_upcoming_fomc_meetings,
         )
@@ -1812,7 +1812,7 @@ class MarketDataService:
         Returns:
             Dict with keys: data, source_used, fallback_reason, success
         """
-        from backend.data_source_manager import (
+        from dashboard.backend.data_source_manager import (
             DataSource,
             data_source_manager,
             record_failure,
@@ -1822,7 +1822,7 @@ class MarketDataService:
         # Try IBKR first for equities/fx
         if asset_class in ["equity", "fx", "commodities"]:
             try:
-                from backend.data_providers import data_provider_manager
+                from dashboard.backend.data_providers import data_provider_manager
 
                 result = data_provider_manager.get_historical_data_with_fallback(
                     symbol=symbol,
@@ -1840,7 +1840,7 @@ class MarketDataService:
         # Try Parquet store
         if asset_class in ["equity", "equity_index", "fx", "commodities", "rates"]:
             try:
-                from backend.market_data_store import market_data_store
+                from dashboard.backend.market_data_store import market_data_store
 
                 df = market_data_store.query(
                     asset_class=asset_class,
@@ -1894,7 +1894,7 @@ class MarketDataService:
             Dict with source information and health status
         """
         try:
-            from backend.data_source_manager import data_source_manager
+            from dashboard.backend.data_source_manager import data_source_manager
 
             return data_source_manager.get_source_info()
         except ImportError:

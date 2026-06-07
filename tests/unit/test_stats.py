@@ -12,7 +12,7 @@ import pytest
 class TestProbabilisticSharpeRatio:
     def test_psr_range(self):
         """PSR should be in [0, 1]."""
-        from backtests.stats.sharpe_tests import probabilistic_sharpe_ratio
+        from alpha_research.backtests.stats.sharpe_tests import probabilistic_sharpe_ratio
 
         rng = np.random.RandomState(42)
         returns = rng.normal(0.0005, 0.01, 500)
@@ -21,7 +21,7 @@ class TestProbabilisticSharpeRatio:
 
     def test_psr_zero_for_negative_sharpe(self):
         """PSR should be low for a strategy with negative expected returns."""
-        from backtests.stats.sharpe_tests import probabilistic_sharpe_ratio
+        from alpha_research.backtests.stats.sharpe_tests import probabilistic_sharpe_ratio
 
         rng = np.random.RandomState(42)
         returns = rng.normal(-0.002, 0.01, 500)  # Negative expected return
@@ -30,7 +30,7 @@ class TestProbabilisticSharpeRatio:
 
     def test_psr_high_for_strong_strategy(self):
         """PSR should be high for a strategy with clear positive Sharpe."""
-        from backtests.stats.sharpe_tests import probabilistic_sharpe_ratio
+        from alpha_research.backtests.stats.sharpe_tests import probabilistic_sharpe_ratio
 
         rng = np.random.RandomState(42)
         returns = rng.normal(0.003, 0.01, 1000)  # Strong positive Sharpe
@@ -41,7 +41,7 @@ class TestProbabilisticSharpeRatio:
 class TestDeflatedSharpeRatio:
     def test_dsr_leq_psr(self):
         """DSR should always be <= PSR (more conservative)."""
-        from backtests.stats.sharpe_tests import (
+        from alpha_research.backtests.stats.sharpe_tests import (
             deflated_sharpe_ratio,
             probabilistic_sharpe_ratio,
         )
@@ -54,7 +54,7 @@ class TestDeflatedSharpeRatio:
 
     def test_dsr_decreases_with_more_trials(self):
         """More trials should reduce DSR (higher multiple testing penalty)."""
-        from backtests.stats.sharpe_tests import deflated_sharpe_ratio
+        from alpha_research.backtests.stats.sharpe_tests import deflated_sharpe_ratio
 
         rng = np.random.RandomState(42)
         returns = rng.normal(0.001, 0.01, 500)
@@ -64,7 +64,7 @@ class TestDeflatedSharpeRatio:
 
     def test_random_strategy_near_zero(self):
         """DSR of a random strategy with many trials should be near 0."""
-        from backtests.stats.sharpe_tests import deflated_sharpe_ratio
+        from alpha_research.backtests.stats.sharpe_tests import deflated_sharpe_ratio
 
         rng = np.random.RandomState(42)
         returns = rng.normal(0.0, 0.01, 252)  # Zero-mean returns
@@ -75,7 +75,7 @@ class TestDeflatedSharpeRatio:
 class TestSharpeConfidenceInterval:
     def test_ci_contains_point_estimate(self):
         """Point estimate should be within confidence interval."""
-        from backtests.stats.sharpe_tests import sharpe_confidence_interval
+        from alpha_research.backtests.stats.sharpe_tests import sharpe_confidence_interval
 
         rng = np.random.RandomState(42)
         returns = rng.normal(0.001, 0.01, 500)
@@ -84,7 +84,7 @@ class TestSharpeConfidenceInterval:
 
     def test_wider_ci_with_less_data(self):
         """CI should be wider with less data."""
-        from backtests.stats.sharpe_tests import sharpe_confidence_interval
+        from alpha_research.backtests.stats.sharpe_tests import sharpe_confidence_interval
 
         rng = np.random.RandomState(42)
         returns_long = rng.normal(0.001, 0.01, 1000)
@@ -108,7 +108,7 @@ class TestSharpeConfidenceInterval:
 class TestBonferroniCorrection:
     def test_bonferroni_most_conservative(self):
         """Bonferroni should reject fewer than FDR."""
-        from backtests.stats.multiple_testing import (
+        from alpha_research.backtests.stats.multiple_testing import (
             bonferroni_correction,
             fdr_correction,
         )
@@ -120,7 +120,7 @@ class TestBonferroniCorrection:
 
     def test_bonferroni_adjusted_pvalues(self):
         """Adjusted p-values should be original * n, capped at 1."""
-        from backtests.stats.multiple_testing import bonferroni_correction
+        from alpha_research.backtests.stats.multiple_testing import bonferroni_correction
 
         p_values = np.array([0.01, 0.10, 0.50])
         _, adjusted = bonferroni_correction(p_values)
@@ -130,7 +130,7 @@ class TestBonferroniCorrection:
 class TestFDRCorrection:
     def test_fdr_rejects_more_than_bonferroni(self):
         """FDR should generally reject at least as many as Bonferroni."""
-        from backtests.stats.multiple_testing import (
+        from alpha_research.backtests.stats.multiple_testing import (
             bonferroni_correction,
             fdr_correction,
         )
@@ -144,7 +144,7 @@ class TestFDRCorrection:
 class TestWhitesRealityCheck:
     def test_random_strategies_high_pvalue(self):
         """Random strategies should have high p-value (fail to reject null)."""
-        from backtests.stats.multiple_testing import whites_reality_check
+        from alpha_research.backtests.stats.multiple_testing import whites_reality_check
 
         rng = np.random.RandomState(42)
         n_days = 500
@@ -166,7 +166,7 @@ class TestWhitesRealityCheck:
 class TestPurgedKFold:
     def test_no_overlap_with_embargo(self):
         """Train and test sets should not overlap, even with embargo."""
-        from backtests.stats.cross_validation import purged_kfold_split
+        from alpha_research.backtests.stats.cross_validation import purged_kfold_split
 
         dates = pd.bdate_range("2020-01-01", periods=500)
         splits = purged_kfold_split(dates, n_splits=5, embargo_pct=0.02)
@@ -178,7 +178,7 @@ class TestPurgedKFold:
 
     def test_embargo_excludes_adjacent(self):
         """Embargo should exclude observations adjacent to test set."""
-        from backtests.stats.cross_validation import purged_kfold_split
+        from alpha_research.backtests.stats.cross_validation import purged_kfold_split
 
         dates = pd.bdate_range("2020-01-01", periods=1000)
         splits = purged_kfold_split(dates, n_splits=5, embargo_pct=0.02)
@@ -195,7 +195,7 @@ class TestPurgedKFold:
 class TestCPCV:
     def test_cpcv_more_paths_than_kfold(self):
         """CPCV should produce more paths than standard K-fold."""
-        from backtests.stats.cross_validation import cpcv_split, purged_kfold_split
+        from alpha_research.backtests.stats.cross_validation import cpcv_split, purged_kfold_split
 
         dates = pd.bdate_range("2020-01-01", periods=500)
         kfold_splits = purged_kfold_split(dates, n_splits=6)
@@ -209,7 +209,7 @@ class TestCPCV:
 class TestWalkForwardSplit:
     def test_non_overlapping_test_windows(self):
         """With default step = test_window, test windows should not overlap."""
-        from backtests.stats.cross_validation import walk_forward_split
+        from alpha_research.backtests.stats.cross_validation import walk_forward_split
 
         dates = pd.bdate_range("2020-01-01", periods=1000)
         splits = walk_forward_split(dates, train_window=252, test_window=63)
@@ -230,7 +230,7 @@ class TestWalkForwardSplit:
 class TestBlockBootstrap:
     def test_bootstrap_preserves_mean(self):
         """Bootstrapped mean should be close to sample mean."""
-        from backtests.stats.bootstrap import block_bootstrap
+        from alpha_research.backtests.stats.bootstrap import block_bootstrap
 
         rng = np.random.RandomState(42)
         data = rng.normal(5.0, 1.0, 500)
@@ -247,7 +247,7 @@ class TestBlockBootstrap:
 class TestMinimumBacktestLength:
     def test_more_trials_needs_longer_backtest(self):
         """More trials should require longer minimum backtest."""
-        from backtests.stats.minimum_backtest import minimum_backtest_length
+        from alpha_research.backtests.stats.minimum_backtest import minimum_backtest_length
 
         # Use high Sharpe so it exceeds expected max even with many trials
         min_bt_5 = minimum_backtest_length(observed_sharpe=3.0, n_trials=5)
@@ -256,7 +256,7 @@ class TestMinimumBacktestLength:
 
     def test_higher_sharpe_needs_shorter_backtest(self):
         """Higher Sharpe should require shorter minimum backtest."""
-        from backtests.stats.minimum_backtest import minimum_backtest_length
+        from alpha_research.backtests.stats.minimum_backtest import minimum_backtest_length
 
         # Keep n_trials low so both Sharpes exceed the expected max
         min_bt_low = minimum_backtest_length(observed_sharpe=1.5, n_trials=3)
@@ -265,7 +265,7 @@ class TestMinimumBacktestLength:
 
     def test_negative_sharpe_returns_large(self):
         """Negative Sharpe should return very large minimum."""
-        from backtests.stats.minimum_backtest import minimum_backtest_length
+        from alpha_research.backtests.stats.minimum_backtest import minimum_backtest_length
 
         result = minimum_backtest_length(observed_sharpe=-0.5, n_trials=10)
         assert result >= 100000
@@ -279,7 +279,7 @@ class TestMinimumBacktestLength:
 class TestCostModels:
     def test_proportional_cost(self):
         """10bps on $150 * 100 shares = $15."""
-        from backtests.costs.transaction_costs import ProportionalCostModel
+        from alpha_research.backtests.costs.transaction_costs import ProportionalCostModel
 
         model = ProportionalCostModel(cost_bps=10.0)
         cost = model.calculate_cost(quantity=100, price=150.0)
@@ -287,7 +287,7 @@ class TestCostModels:
 
     def test_fixed_cost(self):
         """Fixed cost should be constant regardless of trade size."""
-        from backtests.costs.transaction_costs import FixedCostModel
+        from alpha_research.backtests.costs.transaction_costs import FixedCostModel
 
         model = FixedCostModel(cost_per_trade=5.0)
         assert model.calculate_cost(1, 100) == 5.0
@@ -296,7 +296,7 @@ class TestCostModels:
 
     def test_composite_cost_additive(self):
         """Composite cost should sum individual models."""
-        from backtests.costs.transaction_costs import (
+        from alpha_research.backtests.costs.transaction_costs import (
             CompositeCostModel,
             FixedCostModel,
             ProportionalCostModel,
@@ -310,7 +310,7 @@ class TestCostModels:
 
     def test_market_impact_increases_with_size(self):
         """Market impact should increase with order size."""
-        from backtests.costs.transaction_costs import MarketImpactModel
+        from alpha_research.backtests.costs.transaction_costs import MarketImpactModel
 
         model = MarketImpactModel(volatility=0.20, adv=1_000_000)
         cost_small = model.calculate_cost(100, 150.0)
@@ -321,7 +321,7 @@ class TestCostModels:
 class TestSlippageModels:
     def test_buy_slippage_above_market(self):
         """BUY slippage should give fill price above market."""
-        from backtests.costs.slippage import FixedSlippageModel
+        from alpha_research.backtests.costs.slippage import FixedSlippageModel
 
         model = FixedSlippageModel(slippage_bps=5.0)
         fill = model.calculate_slippage(150.0, 100, "BUY")
@@ -329,7 +329,7 @@ class TestSlippageModels:
 
     def test_sell_slippage_below_market(self):
         """SELL slippage should give fill price below market."""
-        from backtests.costs.slippage import FixedSlippageModel
+        from alpha_research.backtests.costs.slippage import FixedSlippageModel
 
         model = FixedSlippageModel(slippage_bps=5.0)
         fill = model.calculate_slippage(150.0, 100, "SELL")
@@ -337,7 +337,7 @@ class TestSlippageModels:
 
     def test_volume_weighted_larger_order_worse_fill(self):
         """Larger orders should get worse fills."""
-        from backtests.costs.slippage import VolumeWeightedSlippageModel
+        from alpha_research.backtests.costs.slippage import VolumeWeightedSlippageModel
 
         model = VolumeWeightedSlippageModel(adv=1_000_000)
         fill_small = model.calculate_slippage(150.0, 100, "BUY")

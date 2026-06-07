@@ -5,7 +5,7 @@ import time
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from backend.metrics import track_api_request
+from dashboard.backend.metrics import track_api_request
 
 logger = logging.getLogger(__name__)
 

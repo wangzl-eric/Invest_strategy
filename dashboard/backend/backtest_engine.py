@@ -6,4 +6,4 @@ place so existing imports like `backend.backtest_engine` continue to work
 during the layout transition.
 """
 
-from backtests.event_driven.backtest_engine import *  # noqa: F401,F403
+from alpha_research.backtests.event_driven.backtest_engine import *  # noqa: F401,F403

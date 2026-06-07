@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Union
 import duckdb
 import pandas as pd
 
-from backend.config import settings
+from dashboard.backend.config import settings
 
 logger = logging.getLogger(__name__)
 

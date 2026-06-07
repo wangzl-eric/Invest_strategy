@@ -10,7 +10,7 @@ from typing import Optional
 
 import pandas as pd
 
-from quant_data.connectors.base import FxRequest
+from alpha_research.quant_data.connectors.base import FxRequest
 
 
 @dataclass(frozen=True)

@@ -8,11 +8,11 @@ from typing import Callable, Dict, Optional
 
 import pandas as pd
 
-from execution.broker import Broker
-from execution.risk import RiskEngine, RiskLimits
-from execution.runner import ExecutionRunner, RunnerConfig
-from execution.types import OrderRequest
-from portfolio.optimizer import OptimizationConfig, weights_from_alpha
+from alpha_research.execution.broker import Broker
+from alpha_research.execution.risk import RiskEngine, RiskLimits
+from alpha_research.execution.runner import ExecutionRunner, RunnerConfig
+from alpha_research.execution.types import OrderRequest
+from alpha_research.portfolio.optimizer import OptimizationConfig, weights_from_alpha
 
 logger = logging.getLogger(__name__)
 

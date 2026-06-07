@@ -23,8 +23,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from quant_data.connectors.base import BarsRequest
-from quant_data.connectors.stooq import StooqBarsConnector
+from alpha_research.quant_data.connectors.base import BarsRequest
+from alpha_research.quant_data.connectors.stooq import StooqBarsConnector
 
 
 def _scale_price_to_qc_int(x: float) -> int:

@@ -6,8 +6,8 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.main import app
-from backend.models import AccountSnapshot, PnLHistory, Position, Trade
+from dashboard.backend.main import app
+from dashboard.backend.models import AccountSnapshot, PnLHistory, Position, Trade
 
 
 @pytest.fixture

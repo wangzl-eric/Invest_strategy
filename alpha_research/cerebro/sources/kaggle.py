@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 from typing import List, Optional
 
-from cerebro.sources.base import BaseSource, RawPaper
+from alpha_research.cerebro.sources.base import BaseSource, RawPaper
 
 logger = logging.getLogger(__name__)
 

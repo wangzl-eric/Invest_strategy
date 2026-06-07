@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from portfolio.blend import Signal, blend_signals, zscore
+from alpha_research.portfolio.blend import Signal, blend_signals, zscore
 
 
 class TestZScore:

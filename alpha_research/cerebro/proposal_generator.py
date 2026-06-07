@@ -11,7 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from cerebro.config import cerebro_config
+from alpha_research.cerebro.config import cerebro_config
 
 logger = logging.getLogger(__name__)
 
@@ -279,7 +279,7 @@ class ProposalGenerator:
         Returns:
             Markdown string for feasibility section.
         """
-        from cerebro.scoring.feasibility_scorer import FeasibilityScorer
+        from alpha_research.cerebro.scoring.feasibility_scorer import FeasibilityScorer
 
         scorer = FeasibilityScorer()
         result = scorer.assess(summary)

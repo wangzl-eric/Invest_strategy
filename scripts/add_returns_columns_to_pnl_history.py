@@ -17,8 +17,8 @@ sys.path.insert(0, str(project_root))
 
 from sqlalchemy import text
 
-from backend.database import get_db_context
-from backend.models import PnLHistory
+from dashboard.backend.database import get_db_context
+from dashboard.backend.models import PnLHistory
 
 
 def migrate_pnl_history_table():
@@ -73,7 +73,7 @@ def migrate_pnl_history_table():
 
         # Optionally calculate returns for existing data
         print("\nCalculating returns for existing data...")
-        from backend.flex_importer import calculate_and_update_returns
+        from dashboard.backend.flex_importer import calculate_and_update_returns
 
         # Get all unique account IDs
         account_ids = db.query(PnLHistory.account_id).distinct().all()

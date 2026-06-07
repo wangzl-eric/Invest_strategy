@@ -7,8 +7,8 @@ from typing import Optional
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
-from backend.realtime_broadcaster import broadcaster
-from backend.websocket_manager import manager
+from dashboard.backend.realtime_broadcaster import broadcaster
+from dashboard.backend.websocket_manager import manager
 
 logger = logging.getLogger(__name__)
 
