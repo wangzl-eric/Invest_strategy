@@ -57,6 +57,14 @@ without first rewriting the corresponding imports/path references.
 - `alpha_research/quant_data/` (importable as `quant_data`) is the Python package that fetches, validates, normalizes, and registers those datasets.
 - The names overlap semantically, but they represent different layers: storage vs code.
 
+### `data/` vs `data_lake/`
+
+- `data/` is the primary runtime storage root used by the dashboard and most pipelines
+  (Flex reports, market-data Parquet under `data/market_data/`, `catalog.json`).
+- `data_lake/` is the DuckDB-backed research lake used by `alpha_research/quant_data`
+  (default `data_lake/research.duckdb`, overridable via `DATA_LAKE_ROOT`/`QDATA_DUCKDB_PATH`).
+- They are separate stores by design; consolidating them is a possible future cleanup.
+
 ### `alpha_research/backtests/` vs `dashboard/backend/backtest_engine.py`
 
 - `alpha_research/backtests/` is the research framework: signals, portfolio builder, walk-forward analysis, statistics, reporting.
