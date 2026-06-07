@@ -189,7 +189,7 @@ This platform follows a **discretionary-systematic hybrid** approach:
 
 1. **Signals drive decisions, not black boxes** — The system encodes your views (momentum, carry, mean-reversion) as signals, but you retain full control over allocation and risk.
 
-2. **Research and production share the same code** — Signals defined in `backtests/strategies/` are used directly in backtesting and live trading via Backtrader integration. No drift between research and execution.
+2. **Research and production share the same code** — Signals defined in `alpha_research/backtests/strategies/` are used directly in backtesting and live trading via Backtrader integration. No drift between research and execution.
 
 3. **Dual-tracking PnL attribution** — For every trade, we track:
    - **Forward-pass**: What the strategy predicted at entry (signal context, confidence)
@@ -251,23 +251,24 @@ This platform follows a **discretionary-systematic hybrid** approach:
 
 ## Repo Layout
 
-The repo is easier to understand as two primary product surfaces that share domain libraries:
+The repo is organized into three product components that share domain libraries:
 
-| Surface | Main Paths | Purpose |
-|---------|------------|---------|
-| **Investment dashboard application** | `apps/dashboard/backend/`, `apps/dashboard/frontend/`, `data/` | API, broker/account workflows, monitoring UI, stored operational data |
-| **Quant research workstation** | `workstation/backtests/`, `workstation/portfolio/`, `workstation/execution/`, `quant_data/`, `workstation/research/`, `workstation/notebooks/` | data ingestion, signal research, strategy testing, optimization, paper-trading preparation |
-| **Optional extensions** | `alpha_research/cerebro/` | separate research tooling |
+| Component | Main Paths | Purpose |
+|-----------|------------|---------|
+| **Dashboard application** | `dashboard/backend/`, `dashboard/frontend/`, `data/` | API, broker/account workflows, monitoring UI, stored operational data |
+| **Alpha research & backtesting** | `alpha_research/{backtests,portfolio,execution,quant_data,cerebro,research,notebooks}/` | data ingestion, signal research, strategy testing, optimization, paper-trading prep |
+| **Book notes** | `book_notes/{playground,books_and_papers}/` | reading studies and learning material |
 
-For compatibility, the legacy root paths like `backend/`, `frontend/`, `backtests/`, and `quant_data/` are currently symlinks to the grouped locations above.
+Imports use the full component-qualified path — `from dashboard.backend... import`,
+`from alpha_research.portfolio... import`. Repo root is on `PYTHONPATH` (pytest sets
+`pythonpath = .`; the Makefile and `bin/` launchers run from root). There are **no
+compatibility symlinks**.
 
-The two confusing overlaps are intentional once viewed this way:
+A few intentional overlaps:
 
-- `data/` stores files on disk for the dashboard and research flows.
-- `quant_data/` is the code package that ingests and manages those files for the research workstation.
-- `backtests/` is the research framework.
-- `workstation/backtests/event_driven/backtest_engine.py` is the canonical event-driven Backtrader adapter.
-- `backend/backtest_engine.py` is now a compatibility shim for existing imports.
+- `data/` stores files on disk; `alpha_research/quant_data/` is the code package that ingests/manages them.
+- `data_lake/` is the DuckDB research lake (`research.duckdb`), separate from `data/`.
+- `alpha_research/backtests/` is the research framework; `alpha_research/backtests/event_driven/backtest_engine.py` is the canonical event-driven engine, and `dashboard/backend/backtest_engine.py` is a thin compatibility shim.
 
 See [`docs/repo_layout.md`](./docs/repo_layout.md) for the maintained stack map and cleanup guidance.
 
@@ -277,7 +278,7 @@ See [`docs/repo_layout.md`](./docs/repo_layout.md) for the maintained stack map 
 
 ### 1. Backend API Service
 
-**Entry point:** `backend/main.py`
+**Entry point:** `dashboard/backend/main.py`
 
 FastAPI application that wires together all routers, middleware, and lifecycle hooks.
 
@@ -324,31 +325,31 @@ FastAPI application that wires together all routers, middleware, and lifecycle h
 
 Three complementary data paths connect to Interactive Brokers:
 
-**a) Live TWS/Gateway connection** (`backend/ibkr_client.py`)
+**a) Live TWS/Gateway connection** (`dashboard/backend/ibkr_client.py`)
 
 - Wraps `ib_insync` with automatic reconnection (exponential back-off up to 5 retries).
 - Event-driven handlers for connect, disconnect, and error.
-- Circuit breaker protection (`backend/circuit_breaker.py`) to avoid cascading failures when TWS is down.
+- Circuit breaker protection (`dashboard/backend/circuit_breaker.py`) to avoid cascading failures when TWS is down.
 - Methods: `connect`, `disconnect`, `get_account_summary`, `get_positions`, `get_pnl`, `place_order`.
 
-**b) Flex Query Web Service** (`backend/flex_query_client.py`)
+**b) Flex Query Web Service** (`dashboard/backend/flex_query_client.py`)
 
 - Async client using aiohttp to call IBKR's Flex Query REST API.
 - Two-phase flow: request statement → poll for result → parse XML/CSV response.
 - Parses into typed dataclasses (`FlexTrade`, `FlexPosition`, `FlexQueryResult`).
 - Query IDs and token configured in `config/app_config.yaml`.
 
-**c) Flex / Portfolio Analyst CSV Import** (`backend/flex_importer.py`)
+**c) Flex / Portfolio Analyst CSV Import** (`dashboard/backend/flex_importer.py`)
 
 - Imports mark-to-market PnL CSV files into `pnl_history`.
 - Imports trade execution history from Flex Query XML/CSV into the `trades` table.
 - Calculates and backfills `daily_return` and `cumulative_return` columns.
 
-**Broker abstraction** (`backend/broker_interface.py`): adapter pattern so the execution framework can target IBKR, a simulator, or future brokers through the same interface.
+**Broker abstraction** (`dashboard/backend/broker_interface.py`): adapter pattern so the execution framework can target IBKR, a simulator, or future brokers through the same interface.
 
 ### 3. Database & Models
 
-**ORM models** (`backend/models.py`) — 17 tables:
+**ORM models** (`dashboard/backend/models.py`) — 17 tables:
 
 | Model | Table | Description |
 |-------|-------|-------------|
@@ -371,15 +372,15 @@ Three complementary data paths connect to Interactive Brokers:
 | `AlertHistory` | `alert_history` | Historical audit of alert lifecycle events |
 | `AlertChannel` | `alert_channels` | Notification channel configurations |
 
-**Database utilities** (`backend/db_utils.py`): CLI interface for importing Flex data, querying trades, viewing daily PnL, and running ad-hoc SQL from the command line.
+**Database utilities** (`dashboard/backend/db_utils.py`): CLI interface for importing Flex data, querying trades, viewing daily PnL, and running ad-hoc SQL from the command line.
 
-**Time-series DB** (`backend/timeseries_db.py`): abstraction layer supporting TimescaleDB and InfluxDB for high-frequency time-range queries.
+**Time-series DB** (`dashboard/backend/timeseries_db.py`): abstraction layer supporting TimescaleDB and InfluxDB for high-frequency time-range queries.
 
 ### 4. Frontend Dashboard
 
 **Technology:** Plotly Dash with Dash Bootstrap Components (Cyborg dark theme), custom CSS.
 
-**Entry point:** `frontend/app.py` — a single-page app with tab-based navigation.
+**Entry point:** `dashboard/frontend/app.py` — a single-page app with tab-based navigation.
 
 **Pages:**
 
@@ -392,7 +393,7 @@ Three complementary data paths connect to Interactive Brokers:
 | **Markets** | Cross-asset dashboard: rates (UST curve, TIPS, inflation), FX (G10 + DXY), equities (global indices + VIX), commodities (energy + metals). Yield curve / forward rate charts, Fed QE/QT monitor, macro pulse. All tables include 30-day sparklines, 1W/1M change columns, and click-to-expand 1Y historical charts |
 | **Data** | Data Manager: catalog of stored Parquet datasets, pull form (yfinance/FRED, ticker/date selection), data viewer with time-series chart and table preview. "Update All" for incremental backfill |
 
-**Components** (`frontend/components/`):
+**Components** (`dashboard/frontend/components/`):
 
 - `charts.py` — reusable Plotly chart builders
 - `metrics_cards.py` — KPI card layout
@@ -403,36 +404,36 @@ Three complementary data paths connect to Interactive Brokers:
 - `market_panels.py` — Markets tab: sparklines, rate/FX/equity/commodity panels, curves, Fed QE/QT monitor
 - `data_manager.py` — Data Manager tab: catalog table, pull form, data viewer
 
-**Real-time:** `frontend/websocket_client.py` and `frontend/realtime_integration.js` connect to the backend WebSocket for live PnL/position updates.
+**Real-time:** `dashboard/frontend/websocket_client.py` and `dashboard/frontend/realtime_integration.js` connect to the backend WebSocket for live PnL/position updates.
 
 ### 5. Portfolio Construction
 
-The `portfolio/` package implements a research-to-execution pipeline:
+The `alpha_research/portfolio/` package implements a research-to-execution pipeline:
 
-**Signal blending** (`portfolio/blend.py`):
+**Signal blending** (`alpha_research/portfolio/blend.py`):
 - `Signal` dataclass carrying per-asset scores with a weight.
 - `blend_signals()` z-scores each signal and produces a weighted composite alpha.
 
-**Optimization** (`portfolio/optimizer.py`):
+**Optimization** (`alpha_research/portfolio/optimizer.py`):
 - Solves a convex program via cvxpy: maximize expected return minus risk penalty minus turnover penalty.
 - Constraints: fully invested (sum = 1), per-asset weight bounds, optional gross exposure limit.
 - `weights_from_alpha()` convenience function to go from alpha scores to optimal weights in one call.
 
-**Risk models** (`portfolio/risk.py`):
+**Risk models** (`alpha_research/portfolio/risk.py`):
 - Sample covariance and Ledoit-Wolf shrinkage estimators.
 - `StressScenario` for scenario-based PnL approximation.
 
-**Risk analytics** (`portfolio/risk_analytics.py`):
+**Risk analytics** (`alpha_research/portfolio/risk_analytics.py`):
 - Extended risk calculations for VaR, CVaR, factor exposures.
 
-**Advanced analytics** (`portfolio/advanced_analytics.py`):
+**Advanced analytics** (`alpha_research/portfolio/advanced_analytics.py`):
 - Extended analytics for portfolio-level metrics.
 
-**Rebalancer** (`portfolio/rebalancer.py`):
+**Rebalancer** (`alpha_research/portfolio/rebalancer.py`):
 - Automated rebalancing with configurable drift threshold, minimum interval, and dry-run mode.
 - Computes target weights, diffs against current positions, generates orders, and routes them through the execution runner.
 
-**Backend analytics** (`backend/advanced_analytics.py`):
+**Backend analytics** (`dashboard/backend/advanced_analytics.py`):
 - `PortfolioOptimizer` with four strategies: Markowitz, risk parity, Black-Litterman, minimum variance.
 - `MonteCarloSimulator` for forward-looking return distribution estimation.
 - `FactorAnalyzer` for PCA-based factor decomposition of returns.
@@ -441,48 +442,48 @@ The `portfolio/` package implements a research-to-execution pipeline:
 
 The platform uses Backtrader for event-driven backtesting:
 
-**BacktestEngine** (`workstation/backtests/event_driven/backtest_engine.py`) — for realistic simulation.
-Existing imports via `backend.backtest_engine` still work through a compatibility shim:
+**BacktestEngine** (`alpha_research/backtests/event_driven/backtest_engine.py`) — for realistic simulation.
+Existing imports via `dashboard.backend.backtest_engine` still work through a compatibility shim:
 - Implements full backtesting workflow with order execution
 - Supports multiple data feeds for multi-asset strategies
 - Custom strategies extend `bt.Strader.Strategy`
 - Returns comprehensive metrics including Sharpe, max drawdown, total return
 
-**Metrics** (`backtests/metrics.py`): `annualized_sharpe`, `max_drawdown`, `total_return`.
+**Metrics** (`alpha_research/backtests/metrics.py`): `annualized_sharpe`, `max_drawdown`, `total_return`.
 
-**Core types** (`backtests/core.py`): `CostModel`, `SlippageModel`, `BacktestResult`.
+**Core types** (`alpha_research/backtests/core.py`): `CostModel`, `SlippageModel`, `BacktestResult`.
 
 ### 7. Execution Framework
 
-The `execution/` package bridges backtesting signals to real/paper trading:
+The `alpha_research/execution/` package bridges backtesting signals to real/paper trading:
 
-**Types** (`execution/types.py`): `OrderRequest`, `Fill` dataclasses.
+**Types** (`alpha_research/execution/types.py`): `OrderRequest`, `Fill` dataclasses.
 
-**Risk engine** (`execution/risk.py`):
+**Risk engine** (`alpha_research/execution/risk.py`):
 - Pre-trade checks: max position notional, max gross notional, max daily loss, environment kill switch.
 - Returns `RiskDecision(allowed, reason, context)`.
 
-**Broker interface** (`execution/broker.py`): abstract `Broker` protocol + `IBKRBroker` implementation.
+**Broker interface** (`alpha_research/execution/broker.py`): abstract `Broker` protocol + `IBKRBroker` implementation.
 
-**Simulated broker** (`execution/sim_broker.py`): in-memory order matching for paper trading.
+**Simulated broker** (`alpha_research/execution/sim_broker.py`): in-memory order matching for paper trading.
 
-**Runner** (`execution/runner.py`):
+**Runner** (`alpha_research/execution/runner.py`):
 - `ExecutionRunner` takes a broker, price getter, and risk engine.
 - `submit_orders()`: validates each order through risk engine, submits to broker, records to DB.
 - `poll_and_record_fills()`: fetches fills from broker and writes to `execution_fills`.
 
-**Audit** (`execution/audit.py`): `record_order()`, `record_fill()`, `record_risk_event()` persist every action to the database for compliance and debugging.
+**Audit** (`alpha_research/execution/audit.py`): `record_order()`, `record_fill()`, `record_risk_event()` persist every action to the database for compliance and debugging.
 
 ### 8. Quantitative Data Lake
 
-The `quant_data/` package provides a vendor-agnostic research data layer:
+The `alpha_research/quant_data/` package provides a vendor-agnostic research data layer:
 
-**Canonical schema** (`quant_data/spec.py`):
+**Canonical schema** (`alpha_research/quant_data/spec.py`):
 - Enums for `DatasetLayer` (raw/clean/features), `DatasetFrequency`, `MarketDataKind`.
 - Standardized column definitions for bars, trades, and quotes.
 - `DatasetId` for partition-path generation: `{provider}/{kind}/{universe}/{frequency}`.
 
-**Connectors** (`quant_data/connectors/`):
+**Connectors** (`alpha_research/quant_data/connectors/`):
 
 | Connector | Source | Data |
 |-----------|--------|------|
@@ -496,21 +497,21 @@ The `quant_data/` package provides a vendor-agnostic research data layer:
 - `duckdb_store.py` — creates DuckDB views over Parquet globs for fast ad-hoc SQL.
 - `meta_db.py` / `meta_models.py` — metadata catalog tracking ingested datasets.
 
-**Pipelines** (`quant_data/pipelines/ingest_bars.py`): orchestrates fetch → normalize → validate → write for bar data.
+**Pipelines** (`alpha_research/quant_data/pipelines/ingest_bars.py`): orchestrates fetch → normalize → validate → write for bar data.
 
-**Configuration** (`quant_data/qconfig.py`): `QuantDataSettings` loaded from environment variables, defining paths and DuckDB location.
+**Configuration** (`alpha_research/quant_data/qconfig.py`): `QuantDataSettings` loaded from environment variables, defining paths and DuckDB location.
 
 ### 9. Alert & Notification System
 
-**Alert engine** (`backend/alert_engine.py`):
+**Alert engine** (`dashboard/backend/alert_engine.py`):
 - Evaluates all enabled `AlertRule` records on a schedule.
 - Rule types: `PNL_THRESHOLD`, `POSITION_SIZE`, `DRAWDOWN`, `VOLATILITY`, `CORRELATION`.
 - Respects per-rule cooldown to prevent duplicate alerts.
 - Supports escalation after a configurable timeout.
 
-**Alert scheduler** (`backend/alert_scheduler.py`): APScheduler job that periodically calls `alert_engine.evaluate_all_rules()`.
+**Alert scheduler** (`dashboard/backend/alert_scheduler.py`): APScheduler job that periodically calls `alert_engine.evaluate_all_rules()`.
 
-**Notification channels** (`backend/notifications.py`):
+**Notification channels** (`dashboard/backend/notifications.py`):
 
 | Channel | Implementation |
 |---------|---------------|
@@ -525,30 +526,30 @@ The `quant_data/` package provides a vendor-agnostic research data layer:
 
 ### 10. Reporting & Export
 
-**PDF reports** (`backend/reporting.py`):
+**PDF reports** (`dashboard/backend/reporting.py`):
 - `ReportGenerator` builds multi-page PDF documents using ReportLab.
 - Sections: title page, account summary table, PnL breakdown, performance metrics, trade history.
 - Custom paragraph styles for professional formatting.
 
-**Excel export** (`backend/export.py`):
+**Excel export** (`dashboard/backend/export.py`):
 - `export_trades_excel()`, `export_performance_excel()`, `export_pnl_excel()` — single-concern exports.
 - `export_combined_report()` — multi-sheet workbook with trades, positions, PnL, and performance.
 - Date/symbol filtering on all exports.
 
-**API routes** (`backend/api/reporting_routes.py`): endpoints return `StreamingResponse` with correct content type and filename headers.
+**API routes** (`dashboard/backend/api/reporting_routes.py`): endpoints return `StreamingResponse` with correct content type and filename headers.
 
 ### 11. Observability
 
 | Concern | Module | Details |
 |---------|--------|---------|
-| **Metrics** | `backend/metrics.py` | Prometheus client; `/metrics` endpoint for scraping |
-| **Logging** | `backend/logging_config.py` | Configurable structured JSON or plaintext logging |
-| **Error tracking** | `backend/error_tracking.py` | Sentry SDK integration (optional, via `SENTRY_DSN`) |
-| **Tracing** | `backend/tracing.py` | OpenTelemetry with OTLP exporter; instruments FastAPI and SQLAlchemy |
-| **Circuit breaker** | `backend/circuit_breaker.py` | Protects IBKR calls; states: closed → open → half-open |
-| **Caching** | `backend/cache.py` | Redis-backed cache manager with TTL; `@cached` decorator for endpoints |
-| **Health checks** | `backend/main.py` | `/health`, `/api/health`, `/api/health/detailed` (DB, IBKR, cache, alerts status) |
-| **Real-time** | `backend/websocket_manager.py` / `backend/realtime_broadcaster.py` | WebSocket connection manager with pub/sub channels |
+| **Metrics** | `dashboard/backend/metrics.py` | Prometheus client; `/metrics` endpoint for scraping |
+| **Logging** | `dashboard/backend/logging_config.py` | Configurable structured JSON or plaintext logging |
+| **Error tracking** | `dashboard/backend/error_tracking.py` | Sentry SDK integration (optional, via `SENTRY_DSN`) |
+| **Tracing** | `dashboard/backend/tracing.py` | OpenTelemetry with OTLP exporter; instruments FastAPI and SQLAlchemy |
+| **Circuit breaker** | `dashboard/backend/circuit_breaker.py` | Protects IBKR calls; states: closed → open → half-open |
+| **Caching** | `dashboard/backend/cache.py` | Redis-backed cache manager with TTL; `@cached` decorator for endpoints |
+| **Health checks** | `dashboard/backend/main.py` | `/health`, `/api/health`, `/api/health/detailed` (DB, IBKR, cache, alerts status) |
+| **Real-time** | `dashboard/backend/websocket_manager.py` / `dashboard/backend/realtime_broadcaster.py` | WebSocket connection manager with pub/sub channels |
 
 ### 12. Research Notebooks
 
@@ -854,49 +855,36 @@ pytest tests/integration/
 
 ```
 Invest_strategy/
-├── apps/
-│   ├── dashboard/
-│   │   ├── backend/            # Investment dashboard backend app
-│   │   └── frontend/           # Investment dashboard frontend app
-│   └── README.md
-├── workstation/
-│   ├── backtests/             # Research workstation: backtests and stats
-│   ├── portfolio/             # Research workstation: blending and optimization
-│   ├── execution/             # Research workstation: paper/live execution path
-│   ├── quant_data/            # Research workstation: ingestion code and registry
-│   ├── research/              # Strategy notes, audits, reviews, trackers
-│   ├── notebooks/             # Exploratory notebooks and templates
-│   ├── playground/            # Fast-iteration sandbox
-│   ├── books_and_papers/      # Reference library
-│   └── README.md
-├── extensions/
-│   ├── cerebro/               # Optional research-ingestion extension
-│   └── README.md
-├── data/                       # Stored operational and market datasets
+├── dashboard/                  # Component 1 — IBKR analytics + market-data app
+│   ├── backend/                # FastAPI service, IBKR integration, persistence, APIs
+│   └── frontend/               # Plotly Dash monitoring UI
+├── alpha_research/             # Component 2 — alpha research & backtesting
+│   ├── backtests/              # Backtests, walk-forward, event-driven engine, stats
+│   ├── portfolio/              # Blending and optimization
+│   ├── execution/              # Paper/live execution path
+│   ├── quant_data/             # Ingestion code, connectors, registry, DuckDB
+│   ├── cerebro/                # Optional research-ingestion extension
+│   ├── research/               # Strategy notes, audits, reviews, trackers
+│   └── notebooks/              # Exploratory notebooks and templates
+├── book_notes/                 # Component 3 — learning material
+│   ├── playground/             # Reading-study sandbox (studies, agents, skills)
+│   └── books_and_papers/       # Reference PDFs
 │
-├── backend/                    # Compatibility symlink -> apps/dashboard/backend
-├── frontend/                   # Compatibility symlink -> apps/dashboard/frontend
-├── backtests/                  # Compatibility symlink -> workstation/backtests
-├── portfolio/                  # Compatibility symlink -> workstation/portfolio
-├── execution/                  # Compatibility symlink -> workstation/execution
-├── quant_data/                 # Real directory — canonical data layer
-├── research/                   # Compatibility symlink -> workstation/research
-├── notebooks/                  # Compatibility symlink -> workstation/notebooks
-├── playground/                 # Compatibility symlink -> workstation/playground
-├── books_and_papers/           # Compatibility symlink -> workstation/books_and_papers
-├── cerebro/                    # Compatibility symlink -> extensions/cerebro
-│
+├── bin/                        # Entry scripts & launchers (start.sh/.bat, stop.sh, …)
 ├── scripts/                    # Automation and CLI entry points
 ├── tests/                      # Unit and integration tests
 ├── docs/                       # Specs, guides, architecture notes
 ├── infrastructure/             # Docker and deployment assets
 ├── config/                     # Application configuration
+├── data/                       # Stored operational and market datasets
+├── data_lake/                  # DuckDB research lake (research.duckdb)
 ├── requirements.txt
 ├── environment.yml
+├── CLAUDE.md
 └── AGENTS.md
 ```
 
-Directory-level READMEs are provided for the ambiguous top-level areas. Start with [`docs/repo_layout.md`](./docs/repo_layout.md) if you want the current stack map.
+Imports use the real component-qualified paths (no symlinks). Start with [`docs/repo_layout.md`](./docs/repo_layout.md) for the maintained stack map.
 
 ---
 
