@@ -31,8 +31,7 @@ This is a **full-stack quantitative analytics platform** for Interactive Brokers
 - **Performance Analytics**: Calculate returns, Sharpe ratio, Sortino ratio, maximum drawdown, and trade statistics
 - **Interactive Dashboard**: Web-based visualization with real-time updates
 - **Scheduled Updates**: Automatic intraday data refresh at configurable intervals
-- **Backtesting**: Both Backtrader (event-driven) and research backtesting
-- **QuantConnect Lean**: Professional-grade backtesting engine integration
+- **Backtesting**: In-house engine (vectorized builder, walk-forward, event-driven, stats) under `alpha_research/backtests/`
 - **Portfolio Optimization**: Mean-variance optimization with CVXPY
 - **Execution Framework**: Paper/live trading with risk controls
 - **Market Data Infrastructure**: Standardized pipelines for multi-source data
@@ -67,8 +66,8 @@ This is a **full-stack quantitative analytics platform** for Interactive Brokers
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                      RESEARCH & BACKTESTING                                  │
 ├─────────────────────┬─────────────────────┬─────────────────────────────────┤
-│  Jupyter Notebooks  │  Vectorized BT      │  QuantConnect Lean              │
-│                     │  (Fast Iteration)   │  (Production Grade)             │
+│  Jupyter Notebooks  │  Vectorized BT      │  Event-Driven Engine            │
+│                     │  (Fast Iteration)   │  (Realistic Fills)             │
 │                     │                     │                                 │
 │                     │  MLflow             │                                 │
 │                     │  (Experiment Track) │                                 │
@@ -115,15 +114,14 @@ The repo is best understood as two primary product surfaces that share libraries
 |---------|------------|---------|
 | **Investment dashboard application** | `apps/dashboard/backend/`, `apps/dashboard/frontend/`, `data/` | broker/account workflows, APIs, UI, stored operational data |
 | **Quant research workstation** | `workstation/backtests/`, `workstation/portfolio/`, `workstation/execution/`, `quant_data/`, `workstation/research/`, `workstation/notebooks/` | ingestion, strategy research, backtesting, optimization, paper-trading prep |
-| **Optional extensions** | `extensions/cerebro/`, `qc_lean/` | separate research tooling and external-engine experiments |
+| **Optional extensions** | `alpha_research/cerebro/` | separate research tooling |
 
 Legacy root paths such as `backend/`, `frontend/`, `backtests/`, and `quant_data/` are currently kept as compatibility symlinks.
 
 Important distinctions:
 
 - `data/` stores files. `quant_data/` is the Python package that manages those files.
-- `backtests/` is the research framework. `workstation/backtests/event_driven/backtest_engine.py` is the canonical event-driven execution adapter, and `backend/backtest_engine.py` is kept as a compatibility shim.
-- `qc_lean/` is an optional local Lean workspace, not part of the core Python package graph.
+- `alpha_research/backtests/` is the research framework. `alpha_research/backtests/event_driven/backtest_engine.py` is the canonical event-driven execution adapter, and `dashboard/backend/backtest_engine.py` is kept as a compatibility shim.
 
 See `docs/repo_layout.md` for the maintained stack map.
 
@@ -293,51 +291,7 @@ class BacktestResult:
     metadata: Dict[str, str]
 ```
 
-### 2.4 QuantConnect Lean Integration (`qc_lean/`)
-
-Optional QuantConnect Lean integration for local experimentation. Treat this directory as an isolated external-engine workspace:
-
-**Directory Structure**:
-```
-qc_lean/
-├── Lean/                    # Lean engine source / vendor subtree
-├── Data/                    # Lean-formatted market data
-├── Results/                 # Generated backtest output
-├── config.json              # Lean configuration
-├── MomentumDemoAlgorithm.py # Example strategy
-└── .dotnet/                 # Local .NET runtime
-```
-
-**Example Strategy** (`MomentumDemoAlgorithm.py`):
-
-```python
-from AlgorithmImports import *
-
-class MomentumDemoAlgorithm(QCAlgorithm):
-    def Initialize(self):
-        self.SetStartDate(2018, 1, 1)
-        self.SetEndDate(2024, 12, 31)
-        self.SetCash(100000)
-
-        self.symbol = self.AddEquity("SPY", Resolution.Daily).Symbol
-        self.roc = self.ROC(self.symbol, 63, Resolution.Daily)  # 3-month momentum
-        self.SetWarmUp(63, Resolution.Daily)
-
-    def OnData(self, data):
-        if self.IsWarmingUp or not self.roc.IsReady:
-            return
-
-        target = 1.0 if self.roc.Current.Value > 0 else 0.0
-        self.SetHoldings(self.symbol, target)
-```
-
-**Notebook Demo**: `notebooks/qc_lean_momentum_demo.ipynb`
-- Running Lean backtests from Python
-- Loading results JSON
-- Plotting equity curves and drawdowns
-- Extracting performance statistics
-
-### 2.5 Portfolio Optimization (`portfolio/`)
+### 2.4 Portfolio Optimization (`portfolio/`)
 
 **Mean-Variance Optimizer** (`portfolio/optimizer.py`):
 
@@ -376,7 +330,7 @@ weights = mean_variance_optimize(
 **Rebalancing** (`portfolio/rebalancer.py`):
 - Convert target weights to orders
 
-### 2.6 Execution Framework (`execution/`)
+### 2.5 Execution Framework (`execution/`)
 
 For paper/live trading deployment:
 
@@ -420,7 +374,7 @@ order_ids = runner.submit_orders([
 ])
 ```
 
-### 2.7 Quant Data Infrastructure (`quant_data/`)
+### 2.6 Quant Data Infrastructure (`quant_data/`)
 
 **Purpose**: Standardized market data pipelines for research
 
@@ -965,8 +919,6 @@ docker-compose -f docker-compose.research.yml up
 | `scripts/import_portfolio_analyst.py` | Import PA CSV to database |
 | `scripts/ingest_stooq_bars.py` | Ingest Stooq OHLCV data |
 | `scripts/ingest_binance_bars.py` | Ingest Binance crypto bars |
-| `scripts/qc_build_equity_daily.py` | Build QC Lean equity data |
-| `scripts/qc_plot_backtest.py` | Plot QC backtest results |
 | `scripts/run_paper_trader.py` | Start paper trading runner |
 | `scripts/setup_ibkr.py` | IBKR setup helper |
 | `scripts/pa_scheduler.py` | PA automation daemon |
@@ -1030,13 +982,6 @@ Invest_strategy/
 │
 ├── extensions/
 │   └── cerebro/             # Optional research-ingestion extension
-│
-├── qc_lean/                  # Optional external Lean workspace
-│   ├── Lean/                 # Lean engine source
-│   ├── Data/                 # Lean-formatted market data
-│   ├── Results/              # Generated backtest output
-│   ├── config.json           # Lean config
-│   └── *.py                  # Strategy files
 │
 ├── scripts/                  # Utility scripts
 │   ├── init_db.py

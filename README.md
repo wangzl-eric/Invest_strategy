@@ -221,7 +221,6 @@ This platform follows a **discretionary-systematic hybrid** approach:
 | **Observability** | Prometheus metrics, Sentry error tracking, OpenTelemetry tracing, structured JSON logging, circuit breaker |
 | **Data Lake** | Parquet partitions, DuckDB SQL views, pandera validation, MLflow experiment tracking |
 | **Automation** | Playwright-based PA download, daily cron scheduler, Flex Query scheduled fetches |
-| **QuantConnect** | Local Lean engine integration for C#/Python algorithm backtests |
 | **News Pipeline** | IBKR News API integration for equities, forex, futures, indices, and market bulletins |
 | **LLM Attribution** | Qwen (DashScope) powered PnL attribution with strategy context and historical summaries |
 | **Forward-Pass Tracking** | Dual-tracking: forward-pass signal interpretation (no look-ahead) + post-trade attribution comparison |
@@ -247,7 +246,6 @@ This platform follows a **discretionary-systematic hybrid** approach:
 | PDF/Excel | ReportLab, openpyxl |
 | Browser Automation | Playwright |
 | Containerization | Docker, Docker Compose |
-| QuantConnect | Lean Engine (.NET SDK) |
 
 ---
 
@@ -259,7 +257,7 @@ The repo is easier to understand as two primary product surfaces that share doma
 |---------|------------|---------|
 | **Investment dashboard application** | `apps/dashboard/backend/`, `apps/dashboard/frontend/`, `data/` | API, broker/account workflows, monitoring UI, stored operational data |
 | **Quant research workstation** | `workstation/backtests/`, `workstation/portfolio/`, `workstation/execution/`, `quant_data/`, `workstation/research/`, `workstation/notebooks/` | data ingestion, signal research, strategy testing, optimization, paper-trading preparation |
-| **Optional extensions** | `extensions/cerebro/`, `qc_lean/` | separate research tooling and external-engine experiments |
+| **Optional extensions** | `alpha_research/cerebro/` | separate research tooling |
 
 For compatibility, the legacy root paths like `backend/`, `frontend/`, `backtests/`, and `quant_data/` are currently symlinks to the grouped locations above.
 
@@ -454,8 +452,6 @@ Existing imports via `backend.backtest_engine` still work through a compatibilit
 
 **Core types** (`backtests/core.py`): `CostModel`, `SlippageModel`, `BacktestResult`.
 
-**QuantConnect / Lean** (`qc_lean/`): optional local Lean integration. Treat this as an isolated external-engine workspace rather than a core Python package.
-
 ### 7. Execution Framework
 
 The `execution/` package bridges backtesting signals to real/paper trading:
@@ -560,7 +556,6 @@ The `quant_data/` package provides a vendor-agnostic research data layer:
 |----------|---------|
 | `notebooks/analysis.ipynb` | Exploratory data analysis on account and trade data |
 | `notebooks/pnl_query_tutorial.ipynb` | Tutorial for querying PnL history with advanced filters and visualizations |
-| `notebooks/qc_lean_momentum_demo.ipynb` | QuantConnect Lean momentum strategy backtest demo |
 | `notebooks/test_connection.py` | Quick IBKR connection smoke test |
 
 **Research experiments** (`research/experiments/`):
@@ -584,8 +579,6 @@ The `quant_data/` package provides a vendor-agnostic research data layer:
 | `scripts/ingest_binance_bars.py` | Ingest crypto bars from Binance into the data lake |
 | `scripts/ingest_stooq_bars.py` | Ingest equity bars from Stooq into the data lake |
 | `scripts/init_quant_data_meta_db.py` | Initialize the quant data metadata database |
-| `scripts/qc_build_equity_daily.py` | Build daily equity curves from QuantConnect results |
-| `scripts/qc_plot_backtest.py` | Plot QuantConnect backtest results |
 | `scripts/run_paper_trader.py` | Start the paper trading execution runner |
 | `bin/start_scheduler.py` | Start the PnL data fetch scheduler |
 | `scripts/test_ibkr_connection.py` | Test IBKR TWS/Gateway connectivity |
@@ -879,7 +872,6 @@ Invest_strategy/
 ├── extensions/
 │   ├── cerebro/               # Optional research-ingestion extension
 │   └── README.md
-├── qc_lean/                    # Optional QuantConnect Lean workspace
 ├── data/                       # Stored operational and market datasets
 │
 ├── backend/                    # Compatibility symlink -> apps/dashboard/backend

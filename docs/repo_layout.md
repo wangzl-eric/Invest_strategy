@@ -26,7 +26,6 @@ The project runs on a flat `PYTHONPATH=.` import namespace (`from backend...`, `
 | `book_notes/playground/` | Book notes | Active | Playground study environment (studies, agents, skills) |
 | `book_notes/books_and_papers/` | Book notes | Active | Source PDFs of books and papers |
 | `data/` | Shared runtime data | Active | Pulled datasets, market data files, broker exports, catalogs |
-| `qc_lean/` | Optional external integration | Isolated | Local QuantConnect Lean runtime, engine source, results |
 | `docs/` | Documentation | Active | Guides, specs, architecture notes |
 | `scripts/` | Tooling | Active | CLI entry points, ingestion jobs, automation |
 | `tests/` | Verification | Active | Unit and integration coverage |
@@ -76,11 +75,12 @@ without first rewriting the corresponding imports/path references.
 - `dashboard/backend/` and `dashboard/frontend/` are the deployable app.
 - `backtests/`, `portfolio/`, `execution/`, and `quant_data/` (under `alpha_research/`) are shared domain libraries used by the app and scripts.
 
-### `qc_lean/`
+### Backtesting engine
 
-- `qc_lean/` should be treated as an optional external engine, not a first-class peer of the Python packages.
-- It contains vendor source, local runtime files, example algorithms, and generated outputs.
-- A deeper physical cleanup target is `external/qc_lean/` or a separate sibling repository.
+- The in-house engine under `alpha_research/backtests/` is the single supported
+  backtesting framework (vectorized builder, walk-forward, event-driven engine, stats).
+- The former QuantConnect Lean workspace (`qc_lean/`) has been **removed/deprecated**;
+  do not reintroduce an external engine without a deliberate decision.
 
 ## Recommended Boundaries
 
@@ -90,13 +90,11 @@ without first rewriting the corresponding imports/path references.
 - Put strategy notes and exploratory notebooks in `alpha_research/{research,notebooks}/`.
 - Put book/paper learning material in `book_notes/`.
 - Put raw or generated files in `data/`.
-- Keep optional or experimental integrations clearly marked (`alpha_research/cerebro/`, `qc_lean/`).
+- Keep optional or experimental integrations clearly marked (`alpha_research/cerebro/`).
 
 ## Follow-Up Refactors
 
 Reasonable next steps, intentionally not done because they are import- and path-sensitive:
 
-1. Move `qc_lean/` under `external/` or out of the repo entirely.
-2. Replace the `dashboard/backend/backtest_engine.py` compatibility shim with direct imports once downstream callers are updated.
-3. Replace the compatibility symlinks with updated imports and path references once the new component layout has settled.
-4. Extract a shared `core` (DB models, IBKR client, market-data store) to break the dashboard↔research import coupling, if true module isolation becomes desirable.
+1. Replace the `dashboard/backend/backtest_engine.py` compatibility shim with direct imports once downstream callers are updated.
+2. Extract a shared `core` (DB models, IBKR client, market-data store) to break the dashboard↔research import coupling, if true module isolation becomes desirable.
