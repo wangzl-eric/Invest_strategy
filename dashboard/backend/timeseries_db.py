@@ -53,7 +53,7 @@ class TimeSeriesDB:
                 self.engine = create_engine(connection_string)
             else:
                 # Use default from settings
-                from dashboard.backend.config import settings
+                from core.config import settings
 
                 db_url = settings.database.url
                 if db_url.startswith("sqlite"):
@@ -235,7 +235,7 @@ def get_timeseries_db() -> Optional[TimeSeriesDB]:
 
     if _timeseries_db is None:
         # Try to initialize from config
-        from dashboard.backend.config import settings
+        from core.config import settings
 
         db_url = settings.database.url
 

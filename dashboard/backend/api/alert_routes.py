@@ -19,8 +19,8 @@ from dashboard.backend.api.schemas import (
     AlertRuleResponse,
     AlertRuleUpdate,
 )
-from dashboard.backend.database import get_db
-from dashboard.backend.models import Alert, AlertChannel, AlertHistory, AlertRule
+from core.database import get_db
+from core.models import Alert, AlertChannel, AlertHistory, AlertRule
 from dashboard.backend.notifications import NotificationService
 
 logger = logging.getLogger(__name__)

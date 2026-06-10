@@ -8,8 +8,8 @@ from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from dashboard.backend.auth import get_current_user_or_api_key
-from dashboard.backend.database import get_db
-from dashboard.backend.models import ExecutionFill, ExecutionOrder, PnLHistory, Position
+from core.database import get_db
+from core.models import ExecutionFill, ExecutionOrder, PnLHistory, Position
 
 logger = logging.getLogger(__name__)
 

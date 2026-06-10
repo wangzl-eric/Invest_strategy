@@ -17,9 +17,9 @@ from dashboard.backend.advanced_analytics import (
     PortfolioOptimizer,
     RegimeDetector,
 )
-from dashboard.backend.data_processor import DataProcessor
-from dashboard.backend.database import get_db
-from dashboard.backend.models import AccountSnapshot, PnLHistory
+from core.data_processor import DataProcessor
+from core.database import get_db
+from core.models import AccountSnapshot, PnLHistory
 
 logger = logging.getLogger(__name__)
 

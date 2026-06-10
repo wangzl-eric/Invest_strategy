@@ -4,7 +4,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_market_data_store_uses_repo_root_data_dir():
-    from dashboard.backend import market_data_store
+    from core import market_data_store
 
     assert market_data_store._BASE_DIR == REPO_ROOT / "data" / "market_data"
 

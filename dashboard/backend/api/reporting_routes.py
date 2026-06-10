@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from dashboard.backend.auth import get_current_user_or_api_key
-from dashboard.backend.database import get_db
+from core.database import get_db
 from dashboard.backend.reporting import report_generator, scheduled_report_service
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ async def generate_performance_report(
         if not account_id:
             from sqlalchemy import desc
 
-            from dashboard.backend.models import AccountSnapshot
+            from core.models import AccountSnapshot
 
             latest = (
                 db.query(AccountSnapshot)
@@ -75,7 +75,7 @@ async def generate_trade_report(
         if not account_id:
             from sqlalchemy import desc
 
-            from dashboard.backend.models import AccountSnapshot
+            from core.models import AccountSnapshot
 
             latest = (
                 db.query(AccountSnapshot)

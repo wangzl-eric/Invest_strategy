@@ -29,7 +29,7 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from dashboard.backend.market_data_service import (
+from core.market_data_service import (
     COMMODITY_TICKERS,
     EQUITY_TICKERS,
     FED_LIQUIDITY_SERIES,
@@ -41,8 +41,8 @@ from dashboard.backend.market_data_service import (
 
 logger = logging.getLogger(__name__)
 
-# Real file at {repo}/dashboard/backend/market_data_store.py -> parents[2] == repo root.
-_BASE_DIR = Path(__file__).resolve().parents[2] / "data" / "market_data"
+# Real file at {repo}/core/market_data_store.py -> parents[1] == repo root.
+_BASE_DIR = Path(__file__).resolve().parents[1] / "data" / "market_data"
 _PRICES_DIR = _BASE_DIR / "prices"
 _FRED_DIR = _BASE_DIR / "fred"
 _CATALOG_PATH = _BASE_DIR / "catalog.json"
@@ -336,7 +336,7 @@ class MarketDataStore:
         category: str,
     ) -> int:
         """Bulk-download from FRED and append to Parquet."""
-        from dashboard.backend.market_data_service import _get_fred
+        from core.market_data_service import _get_fred
 
         fred = _get_fred()
         if fred is None:
@@ -432,7 +432,7 @@ class MarketDataStore:
 
         # Get IBKR client
         try:
-            from dashboard.backend.ibkr_client import IBKRClient
+            from core.ibkr_client import IBKRClient
         except ImportError:
             logger.error("IBKR client not available")
             return 0

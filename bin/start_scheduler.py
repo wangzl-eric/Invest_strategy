@@ -9,7 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from dashboard.backend.scheduler import scheduler
-from dashboard.backend.ibkr_client import IBKRClient
+from core.ibkr_client import IBKRClient
 
 logging.basicConfig(
     level=logging.INFO,

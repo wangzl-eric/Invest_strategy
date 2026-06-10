@@ -8,7 +8,7 @@ This module provides easy-to-use functions for:
 - Future: Market data storage
 
 Usage:
-    from dashboard.backend.db_utils import (
+    from core.db_utils import (
         import_trades_from_flex,
         get_trades_df,
         get_daily_pnl,
@@ -35,9 +35,9 @@ import pandas as pd
 from sqlalchemy import and_, desc, func, or_, text
 from sqlalchemy.orm import Session
 
-from dashboard.backend.database import engine, get_db_context, init_db
-from dashboard.backend.flex_parser import FlexParser, load_all_flex_reports
-from dashboard.backend.models import (
+from core.database import engine, get_db_context, init_db
+from core.flex_parser import FlexParser, load_all_flex_reports
+from core.models import (
     AccountSnapshot,
     Base,
     PerformanceMetric,
@@ -313,7 +313,7 @@ def import_all_flex_data(
 
     # Calculate and update returns after importing PnL data
     if pnl_imported:
-        from dashboard.backend.flex_importer import calculate_and_update_returns
+        from core.flex_importer import calculate_and_update_returns
 
         with get_db_context() as db:
             try:
@@ -773,7 +773,7 @@ def get_daily_returns(
             return df
     else:
         # Calculate returns from Account Snapshots (equity values)
-        from dashboard.backend.data_processor import DataProcessor
+        from core.data_processor import DataProcessor
 
         processor = DataProcessor()
 

@@ -7,8 +7,8 @@ from typing import Any, Dict, List, Optional
 import httpx
 from pydantic import BaseModel
 
-from dashboard.backend.config import settings
-from dashboard.backend.token_tracker import get_token_tracker
+from core.config import settings
+from core.token_tracker import get_token_tracker
 
 logger = logging.getLogger(__name__)
 

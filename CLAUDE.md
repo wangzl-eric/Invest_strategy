@@ -33,18 +33,27 @@ Flake8 config: `--max-line-length=120 --ignore=E501,W503`
 
 ## Architecture
 
-The repo is organized into three product components plus shared support dirs.
-See `docs/repo_layout.md` for the full stack map.
+The repo is a three-layer DAG — `core/` (infrastructure) at the bottom, then the
+three product components. `core/` depends on nothing internal; `alpha_research/`
+and `dashboard/` depend on `core/`; `dashboard/` may also use `alpha_research/`
+(one-way). See `docs/repo_layout.md` for the full stack map.
 
 ```
+core/                Shared infrastructure (bottom layer — imports nothing internal)
+  config.py          Pydantic BaseSettings (env prefix: IBKR_, DB_, APP_)
+  models.py          SQLAlchemy models (AccountSnapshot, Position, PnLHistory, Trade, PerformanceMetric)
+  database.py        Engine creation, session management
+  db_utils.py, data_processor.py        Persistence helpers + account-data processing
+  flex_*.py          IBKR Flex Query ingestion (parser, query_client, importer)
+  ibkr_client.py, circuit_breaker.py    Broker connectivity
+  market_data_store.py, market_data_service.py, data_providers.py,
+    data_source_manager.py, cb_meeting_schedule.py   Market-data platform
+  llm_client.py, token_tracker.py, llm_verdict.py    LLM plumbing + verdicts
 dashboard/           Component 1 — IBKR portfolio analytics + market-data app
-  backend/           FastAPI API service + data processing + IBKR integration
+  backend/           FastAPI API service (imports core.* for infra)
     api/             Route handlers (15+ routers: auth, backtest, data, market, news, research, etc.)
     research/        Feature engineering (features.py), DuckDB helpers
     main.py          App entry point — CORS, metrics, rate limiting, APScheduler
-    config.py        Pydantic BaseSettings (env prefix: IBKR_, DB_, APP_)
-    models.py        SQLAlchemy models (AccountSnapshot, Position, PnLHistory, Trade, PerformanceMetric)
-    database.py      Engine creation, session management
     backtest_engine.py  Compatibility shim → alpha_research/backtests/event_driven
   frontend/          Dash web dashboard (CYBORG dark theme)
     app.py           Entry point, callbacks, tab rendering
@@ -78,10 +87,15 @@ tests/               Unit + integration tests
 ```
 
 **Imports**: components are imported by their full, component-qualified path —
-`from dashboard.backend... import`, `from alpha_research.portfolio... import`, etc.
-Repo root must be on `PYTHONPATH` (pytest sets `pythonpath = .`; the Makefile/bin
-launchers run from repo root). There are **no compatibility symlinks** — import
-the real paths. `config/` and `data/` are not Python packages.
+`from core.config import settings`, `from core.database import ...`,
+`from core.models import ...`, `from alpha_research.portfolio... import`, etc.
+Shared infrastructure (config, DB, broker, market data, LLM) lives in `core/` —
+**never** import it from `dashboard.backend`. Layering rule: `core` imports
+nothing internal; `alpha_research` and `dashboard` import `core`; `dashboard` may
+import `alpha_research` (not vice-versa). Repo root must be on `PYTHONPATH`
+(pytest sets `pythonpath = .`; the Makefile/bin launchers run from repo root).
+There are **no compatibility symlinks**. `config/`, `data/`, `data_lake/` are not
+Python packages (the settings package is `core.config`).
 
 ## Data Flow
 
@@ -106,12 +120,12 @@ When writing signals in backtesting code:
 
 ## Adding Market Data
 
-1. Add FRED series ID + metadata to the appropriate dict in `dashboard/backend/market_data_service.py`
+1. Add FRED series ID + metadata to the appropriate dict in `core/market_data_service.py`
 2. Add instrument definition (tooltip) to `DEFINITIONS` in `dashboard/frontend/components/market_panels.py`
 3. If new category, add to `CATEGORY_ORDER` in `dashboard/frontend/components/market_panels.py`
 4. Test: `curl http://localhost:8000/api/market/overview | python3 -m json.tool`
 
-For Parquet data lake: define tickers in `dashboard/backend/market_data_store.py`, map to file path, use Data Manager UI or `POST /api/data/pull`.
+For Parquet data lake: define tickers in `core/market_data_store.py`, map to file path, use Data Manager UI or `POST /api/data/pull`.
 
 ## Research Work Tracking (MANDATORY)
 

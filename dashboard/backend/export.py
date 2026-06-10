@@ -8,9 +8,9 @@ import pandas as pd
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 
-from dashboard.backend.data_processor import DataProcessor
-from dashboard.backend.database import get_db_context
-from dashboard.backend.models import PerformanceMetric, PnLHistory, Position, Trade
+from core.data_processor import DataProcessor
+from core.database import get_db_context
+from core.models import PerformanceMetric, PnLHistory, Position, Trade
 
 logger = logging.getLogger(__name__)
 

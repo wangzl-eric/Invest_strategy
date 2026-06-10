@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from dashboard.backend.llm_verdict import (
+from core.llm_verdict import (
     _apply_override_policy,
     _build_summary,
     _get_verdict_severity,
@@ -273,7 +273,7 @@ class TestGenerateHybridVerdict:
         mock_report = create_mock_report()
 
         # Mock the LLM call
-        with patch("dashboard.backend.llm_verdict.llm_generate_verdict") as mock_llm:
+        with patch("core.llm_verdict.llm_generate_verdict") as mock_llm:
             mock_llm_result = MagicMock()
             mock_llm_result.final_verdict = "PROCEED"
             mock_llm_result.reasoning = "Test reasoning"
@@ -301,7 +301,7 @@ class TestGenerateHybridVerdict:
         )
 
         # LLM says PROCEED but should be overridden to NEEDS WORK
-        with patch("dashboard.backend.llm_verdict.llm_generate_verdict") as mock_llm:
+        with patch("core.llm_verdict.llm_generate_verdict") as mock_llm:
             mock_llm_result = MagicMock()
             mock_llm_result.final_verdict = "PROCEED"  # Loosening
             mock_llm_result.reasoning = "Test"
@@ -336,7 +336,7 @@ class TestRunVerdict:
         benchmarks = {"SPY": np.random.randn(100) * 0.01}
 
         # Mock the LLM to avoid API call
-        with patch("dashboard.backend.llm_verdict.generate_hybrid_verdict") as mock_hybrid:
+        with patch("core.llm_verdict.generate_hybrid_verdict") as mock_hybrid:
             mock_hybrid.return_value = {
                 "rule_based": {
                     "significance": {
@@ -393,7 +393,7 @@ class TestRunVerdict:
         returns = pd.Series(np.random.randn(100) * 0.01)
         benchmarks = {"SPY": pd.Series(np.random.randn(100) * 0.01)}
 
-        with patch("dashboard.backend.llm_verdict.generate_hybrid_verdict") as mock_hybrid:
+        with patch("core.llm_verdict.generate_hybrid_verdict") as mock_hybrid:
             mock_hybrid.return_value = {
                 "rule_based": {
                     "significance": {
@@ -448,7 +448,7 @@ class TestRunVerdict:
         """Test without benchmark data."""
         returns = np.random.randn(100) * 0.01
 
-        with patch("dashboard.backend.llm_verdict.generate_hybrid_verdict") as mock_hybrid:
+        with patch("core.llm_verdict.generate_hybrid_verdict") as mock_hybrid:
             mock_hybrid.return_value = {
                 "rule_based": {
                     "significance": {
@@ -505,7 +505,7 @@ class TestVerdictSync:
         """Test that verdict() works as sync wrapper."""
         returns = np.random.randn(100) * 0.01
 
-        with patch("dashboard.backend.llm_verdict.run_verdict") as mock_run:
+        with patch("core.llm_verdict.run_verdict") as mock_run:
             mock_run.return_value = {
                 "verdict": "PROCEED",
                 "summary": "test",

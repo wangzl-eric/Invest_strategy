@@ -16,9 +16,9 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 from fastapi import APIRouter, Body, HTTPException, Query
 
-from dashboard.backend.config import settings
+from core.config import settings
 from dashboard.backend.data_pipeline import data_pipeline
-from dashboard.backend.llm_verdict import generate_hybrid_verdict, run_verdict
+from core.llm_verdict import generate_hybrid_verdict, run_verdict
 from dashboard.backend.research.duckdb_utils import get_research_db
 from dashboard.backend.research.features import compute_features, get_feature_registry
 

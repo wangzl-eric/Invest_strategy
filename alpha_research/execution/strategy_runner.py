@@ -50,7 +50,7 @@ def _load_prices(
     end_str = end.strftime("%Y-%m-%d")
 
     try:
-        from dashboard.backend.market_data_store import market_data_store
+        from core.market_data_store import market_data_store
 
         df = market_data_store.query(
             asset_class=asset_class,
@@ -106,8 +106,8 @@ def _get_current_positions_from_db(account_id: str) -> Dict[str, float]:
     try:
         from sqlalchemy import desc
 
-        from dashboard.backend.database import get_db_context
-        from dashboard.backend.models import Position
+        from core.database import get_db_context
+        from core.models import Position
 
         with get_db_context() as db:
             query = (

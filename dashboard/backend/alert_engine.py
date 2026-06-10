@@ -8,8 +8,8 @@ from sqlalchemy import and_, desc, inspect
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
-from dashboard.backend.database import get_db_context
-from dashboard.backend.models import (
+from core.database import get_db_context
+from core.models import (
     AccountSnapshot,
     Alert,
     AlertChannel,

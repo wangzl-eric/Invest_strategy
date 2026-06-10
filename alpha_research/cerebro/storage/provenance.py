@@ -39,17 +39,17 @@ class ProvenanceTracker:
 
         Args:
             db_session_factory: SQLAlchemy session factory. If None,
-                attempts to import from dashboard.backend.database.
+                attempts to import from core.database.
         """
         self._session_factory = db_session_factory
         if self._session_factory is None:
             try:
-                from dashboard.backend.database import SessionLocal
+                from core.database import SessionLocal
 
                 self._session_factory = SessionLocal
             except ImportError:
                 logger.warning(
-                    "dashboard.backend.database not available. "
+                    "core.database not available. "
                     "ProvenanceTracker requires a session factory."
                 )
 

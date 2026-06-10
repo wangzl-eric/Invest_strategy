@@ -26,11 +26,11 @@ from dashboard.backend.auth import (
     require_role,
 )
 from dashboard.backend.cache import cache_manager, cached
-from dashboard.backend.config import settings
+from core.config import settings
 from dashboard.backend.data_fetcher import DataFetcher
-from dashboard.backend.data_processor import DataProcessor
-from dashboard.backend.database import get_db
-from dashboard.backend.db_utils import import_all_flex_data, import_trades_from_flex_result
+from core.data_processor import DataProcessor
+from core.database import get_db
+from core.db_utils import import_all_flex_data, import_trades_from_flex_result
 from dashboard.backend.export import (
     export_combined_report,
     export_performance_excel,
@@ -38,14 +38,14 @@ from dashboard.backend.export import (
     export_trades_excel,
     get_export_filename,
 )
-from dashboard.backend.flex_importer import (
+from core.flex_importer import (
     import_flex_query_result,
     import_mark_to_market_performance_csv,
     import_trades_from_flex,
 )
-from dashboard.backend.flex_query_client import FlexQueryClient, FlexQueryError
-from dashboard.backend.ibkr_client import IBKRClient
-from dashboard.backend.models import (
+from core.flex_query_client import FlexQueryClient, FlexQueryError
+from core.ibkr_client import IBKRClient
+from core.models import (
     AccountSnapshot,
     PerformanceMetric,
     PnLHistory,

@@ -6,9 +6,9 @@ from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
-from dashboard.backend.database import SessionLocal
-from dashboard.backend.llm_client import QwenLLMClient
-from dashboard.backend.models import PnLAttribution, PnLHistory
+from core.database import SessionLocal
+from core.llm_client import QwenLLMClient
+from core.models import PnLAttribution, PnLHistory
 from dashboard.backend.news_service import NewsService
 from alpha_research.backtests.strategies import SIGNAL_METADATA, get_signal_metadata
 

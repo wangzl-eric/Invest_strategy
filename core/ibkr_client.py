@@ -10,11 +10,11 @@ import pandas as pd
 from ib_insync import IB, AccountValue, Contract, Forex, Future, Position, Stock, Trade
 from ib_insync.objects import PortfolioItem
 
-from dashboard.backend.config import settings
+from core.config import settings
 
 # Import circuit breaker if available
 try:
-    from dashboard.backend.circuit_breaker import CircuitState, ibkr_circuit_breaker
+    from core.circuit_breaker import CircuitState, ibkr_circuit_breaker
 except ImportError:
     ibkr_circuit_breaker = None
     CircuitState = None

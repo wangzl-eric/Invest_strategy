@@ -9,8 +9,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from dashboard.backend.config import settings
-from dashboard.backend.models import Base
+from core.config import settings
+from core.models import Base
 
 
 @pytest.fixture(scope="function")

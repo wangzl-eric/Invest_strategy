@@ -200,14 +200,14 @@ class TestNewsProviders:
 
     def test_news_providers_defined(self):
         """Test that NEWS_PROVIDERS is defined."""
-        from dashboard.backend.ibkr_client import NEWS_PROVIDERS
+        from core.ibkr_client import NEWS_PROVIDERS
 
         assert isinstance(NEWS_PROVIDERS, dict)
         assert "IBKR" in NEWS_PROVIDERS
 
     def test_ibkr_provider_description(self):
         """Test IBKR provider has a description."""
-        from dashboard.backend.ibkr_client import NEWS_PROVIDERS
+        from core.ibkr_client import NEWS_PROVIDERS
 
         assert "IBKR" in NEWS_PROVIDERS
         assert isinstance(NEWS_PROVIDERS["IBKR"], str)

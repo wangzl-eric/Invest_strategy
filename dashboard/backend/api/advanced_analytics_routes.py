@@ -27,9 +27,9 @@ from dashboard.backend.api.schemas import (
     OptimizationWeightsResponse,
     StyleAnalysisResponse,
 )
-from dashboard.backend.data_processor import DataProcessor
-from dashboard.backend.database import get_db
-from dashboard.backend.models import AccountSnapshot, PnLHistory, Position, Trade
+from core.data_processor import DataProcessor
+from core.database import get_db
+from core.models import AccountSnapshot, PnLHistory, Position, Trade
 
 # Try to import from alpha_research.portfolio.advanced_analytics if available (for compatibility)
 try:
@@ -74,7 +74,7 @@ def get_position_returns(
     Falls back to trade data if position snapshots are unavailable.
     """
     if db is None:
-        from dashboard.backend.database import get_db_context
+        from core.database import get_db_context
 
         with get_db_context() as db_session:
             return _get_position_returns_impl(

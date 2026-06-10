@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
-from dashboard.backend.market_data_service import market_data_service
+from core.market_data_service import market_data_service
 
 logger = logging.getLogger(__name__)
 
@@ -243,7 +243,7 @@ async def get_source_status():
 @router.get("/market/data-source-info")
 async def get_data_source_info():
     """Get information about data source priorities and capabilities."""
-    from dashboard.backend.data_source_manager import (
+    from core.data_source_manager import (
         DEFAULT_PRIORITY_ORDER,
         SOURCE_CAPABILITIES,
         data_source_manager,
@@ -277,7 +277,7 @@ async def get_llm_usage():
     - Usage by endpoint
     - Recent request history
     """
-    from dashboard.backend.token_tracker import get_token_tracker
+    from core.token_tracker import get_token_tracker
 
     tracker = get_token_tracker()
     stats = tracker.get_stats()
@@ -307,7 +307,7 @@ async def get_llm_usage():
 @router.post("/llm/usage/reset")
 async def reset_llm_usage():
     """Reset all token usage statistics."""
-    from dashboard.backend.token_tracker import get_token_tracker
+    from core.token_tracker import get_token_tracker
 
     tracker = get_token_tracker()
     tracker.reset()

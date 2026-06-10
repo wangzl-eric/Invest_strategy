@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 
-from dashboard.backend.database import get_db_context
-from dashboard.backend.models import ExecutionFill, ExecutionOrder, RiskEvent
+from core.database import get_db_context
+from core.models import ExecutionFill, ExecutionOrder, RiskEvent
 from alpha_research.execution.types import Fill, OrderRequest
 
 

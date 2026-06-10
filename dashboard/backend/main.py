@@ -21,7 +21,7 @@ from dashboard.backend.api.reporting_routes import router as reporting_router
 from dashboard.backend.api.research_routes import router as research_router
 from dashboard.backend.api.routes import router
 from dashboard.backend.broker_interface import IBKRBrokerAdapter, broker_manager
-from dashboard.backend.ibkr_client import IBKRClient
+from core.ibkr_client import IBKRClient
 
 try:
     from dashboard.backend.api.websocket_routes import router as websocket_router
@@ -31,7 +31,7 @@ except ImportError:
 import os
 
 from dashboard.backend.alert_engine import alert_engine
-from dashboard.backend.config import settings
+from core.config import settings
 from dashboard.backend.error_tracking import error_tracker
 from dashboard.backend.middleware import MetricsMiddleware
 from dashboard.backend.rate_limiter import rate_limit_middleware
@@ -235,8 +235,8 @@ async def ibkr_status_check():
 
     from sqlalchemy import desc, func
 
-    from dashboard.backend.database import engine
-    from dashboard.backend.models import AccountSnapshot, PnLHistory, Position
+    from core.database import engine
+    from core.models import AccountSnapshot, PnLHistory, Position
 
     host = settings.ibkr.host
     port = settings.ibkr.port
@@ -298,9 +298,9 @@ async def detailed_health_check():
     """Detailed health check with component-level status."""
     import socket
 
-    from dashboard.backend.config import settings
-    from dashboard.backend.database import engine
-    from dashboard.backend.ibkr_client import IBKRClient
+    from core.config import settings
+    from core.database import engine
+    from core.ibkr_client import IBKRClient
     from dashboard.backend.scheduler import PnLScheduler
 
     health_status = {

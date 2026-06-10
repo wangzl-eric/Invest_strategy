@@ -6,7 +6,7 @@ via IBKR's Flex Query Web Service API.
 Supports both XML and CSV/TSV response formats.
 
 Usage:
-    from dashboard.backend.flex_query_client import FlexQueryClient
+    from core.flex_query_client import FlexQueryClient
 
     client = FlexQueryClient(token="your_flex_token")
     trades = await client.fetch_trades(query_id="123456")

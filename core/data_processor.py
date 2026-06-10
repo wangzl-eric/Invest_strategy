@@ -8,8 +8,8 @@ import pandas as pd
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
-from dashboard.backend.database import get_db_context
-from dashboard.backend.models import AccountSnapshot, PerformanceMetric, PnLHistory, Trade
+from core.database import get_db_context
+from core.models import AccountSnapshot, PerformanceMetric, PnLHistory, Trade
 
 logger = logging.getLogger(__name__)
 

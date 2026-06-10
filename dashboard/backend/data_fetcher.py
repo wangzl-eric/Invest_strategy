@@ -5,9 +5,9 @@ from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
-from dashboard.backend.database import get_db_context
-from dashboard.backend.ibkr_client import IBKRClient
-from dashboard.backend.models import (
+from core.database import get_db_context
+from core.ibkr_client import IBKRClient
+from core.models import (
     AccountSnapshot,
     PerformanceMetric,
     PnLHistory,

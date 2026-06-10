@@ -325,21 +325,21 @@ FastAPI application that wires together all routers, middleware, and lifecycle h
 
 Three complementary data paths connect to Interactive Brokers:
 
-**a) Live TWS/Gateway connection** (`dashboard/backend/ibkr_client.py`)
+**a) Live TWS/Gateway connection** (`core/ibkr_client.py`)
 
 - Wraps `ib_insync` with automatic reconnection (exponential back-off up to 5 retries).
 - Event-driven handlers for connect, disconnect, and error.
-- Circuit breaker protection (`dashboard/backend/circuit_breaker.py`) to avoid cascading failures when TWS is down.
+- Circuit breaker protection (`core/circuit_breaker.py`) to avoid cascading failures when TWS is down.
 - Methods: `connect`, `disconnect`, `get_account_summary`, `get_positions`, `get_pnl`, `place_order`.
 
-**b) Flex Query Web Service** (`dashboard/backend/flex_query_client.py`)
+**b) Flex Query Web Service** (`core/flex_query_client.py`)
 
 - Async client using aiohttp to call IBKR's Flex Query REST API.
 - Two-phase flow: request statement → poll for result → parse XML/CSV response.
 - Parses into typed dataclasses (`FlexTrade`, `FlexPosition`, `FlexQueryResult`).
 - Query IDs and token configured in `config/app_config.yaml`.
 
-**c) Flex / Portfolio Analyst CSV Import** (`dashboard/backend/flex_importer.py`)
+**c) Flex / Portfolio Analyst CSV Import** (`core/flex_importer.py`)
 
 - Imports mark-to-market PnL CSV files into `pnl_history`.
 - Imports trade execution history from Flex Query XML/CSV into the `trades` table.
@@ -349,7 +349,7 @@ Three complementary data paths connect to Interactive Brokers:
 
 ### 3. Database & Models
 
-**ORM models** (`dashboard/backend/models.py`) — 17 tables:
+**ORM models** (`core/models.py`) — 17 tables:
 
 | Model | Table | Description |
 |-------|-------|-------------|
@@ -372,7 +372,7 @@ Three complementary data paths connect to Interactive Brokers:
 | `AlertHistory` | `alert_history` | Historical audit of alert lifecycle events |
 | `AlertChannel` | `alert_channels` | Notification channel configurations |
 
-**Database utilities** (`dashboard/backend/db_utils.py`): CLI interface for importing Flex data, querying trades, viewing daily PnL, and running ad-hoc SQL from the command line.
+**Database utilities** (`core/db_utils.py`): CLI interface for importing Flex data, querying trades, viewing daily PnL, and running ad-hoc SQL from the command line.
 
 **Time-series DB** (`dashboard/backend/timeseries_db.py`): abstraction layer supporting TimescaleDB and InfluxDB for high-frequency time-range queries.
 
@@ -546,7 +546,7 @@ The `alpha_research/quant_data/` package provides a vendor-agnostic research dat
 | **Logging** | `dashboard/backend/logging_config.py` | Configurable structured JSON or plaintext logging |
 | **Error tracking** | `dashboard/backend/error_tracking.py` | Sentry SDK integration (optional, via `SENTRY_DSN`) |
 | **Tracing** | `dashboard/backend/tracing.py` | OpenTelemetry with OTLP exporter; instruments FastAPI and SQLAlchemy |
-| **Circuit breaker** | `dashboard/backend/circuit_breaker.py` | Protects IBKR calls; states: closed → open → half-open |
+| **Circuit breaker** | `core/circuit_breaker.py` | Protects IBKR calls; states: closed → open → half-open |
 | **Caching** | `dashboard/backend/cache.py` | Redis-backed cache manager with TTL; `@cached` decorator for endpoints |
 | **Health checks** | `dashboard/backend/main.py` | `/health`, `/api/health`, `/api/health/detailed` (DB, IBKR, cache, alerts status) |
 | **Real-time** | `dashboard/backend/websocket_manager.py` / `dashboard/backend/realtime_broadcaster.py` | WebSocket connection manager with pub/sub channels |

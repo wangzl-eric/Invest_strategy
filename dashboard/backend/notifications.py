@@ -8,7 +8,7 @@ from typing import Optional
 
 import aiohttp
 
-from dashboard.backend.models import Alert, AlertChannel, AlertRule
+from core.models import Alert, AlertChannel, AlertRule
 
 logger = logging.getLogger(__name__)
 

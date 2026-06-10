@@ -4,9 +4,9 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from dashboard.backend.config import settings
+from core.config import settings
 from dashboard.backend.data_fetcher import DataFetcher
-from dashboard.backend.ibkr_client import IBKRClient
+from core.ibkr_client import IBKRClient
 
 logger = logging.getLogger(__name__)
 
@@ -110,9 +110,9 @@ from typing import Optional
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
-from dashboard.backend.config import settings
+from core.config import settings
 from dashboard.backend.data_fetcher import DataFetcher
-from dashboard.backend.data_processor import DataProcessor
+from core.data_processor import DataProcessor
 
 logger = logging.getLogger(__name__)
 

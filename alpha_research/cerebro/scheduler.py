@@ -149,7 +149,7 @@ async def _run_cerebro_discovery(
     try:
         from alpha_research.cerebro.pipeline import CerebroPipeline
 
-        # Attempt to get DB session factory from dashboard.backend
+        # Attempt to get DB session factory from core
         db_session_factory = _get_db_session_factory()
 
         pipeline = CerebroPipeline(
@@ -308,11 +308,11 @@ def _get_db_session_factory() -> Any:
         SessionLocal factory or None if unavailable.
     """
     try:
-        from dashboard.backend.database import SessionLocal
+        from core.database import SessionLocal
 
         return SessionLocal
     except ImportError:
-        logger.debug("dashboard.backend.database not available for Cerebro scheduler")
+        logger.debug("core.database not available for Cerebro scheduler")
         return None
 
 

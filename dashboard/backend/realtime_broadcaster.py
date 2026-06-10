@@ -8,9 +8,9 @@ from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from dashboard.backend.data_fetcher import DataFetcher
-from dashboard.backend.database import get_db_context
-from dashboard.backend.ibkr_client import IBKRClient
-from dashboard.backend.models import AccountSnapshot, PnLHistory, Position, Trade
+from core.database import get_db_context
+from core.ibkr_client import IBKRClient
+from core.models import AccountSnapshot, PnLHistory, Position, Trade
 from dashboard.backend.websocket_manager import manager
 
 logger = logging.getLogger(__name__)

@@ -135,7 +135,7 @@ class IBKRDataFetcher:
 
     async def _get_client(self):
         if self._client is None:
-            from dashboard.backend.ibkr_client import IBKRClient
+            from core.ibkr_client import IBKRClient
 
             self._client = IBKRClient()
         return self._client
@@ -602,7 +602,7 @@ def get_last_date_for_ticker(parquet_path: Path, ticker: str) -> Optional[dateti
 
 def get_ibkr_data_path(asset_class: str) -> Path:
     """Get the parquet file path for an IBKR asset class."""
-    from dashboard.backend.market_data_store import _IBKR_ASSET_FILES
+    from core.market_data_store import _IBKR_ASSET_FILES
 
     return _IBKR_ASSET_FILES.get(asset_class)
 

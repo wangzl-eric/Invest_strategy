@@ -19,8 +19,8 @@ from dashboard.backend.auth import (
     security,
     verify_password,
 )
-from dashboard.backend.database import get_db
-from dashboard.backend.models import APIKey, Role, User, UserAccount, UserPreferences, UserRole
+from core.database import get_db
+from core.models import APIKey, Role, User, UserAccount, UserPreferences, UserRole
 
 logger = logging.getLogger(__name__)
 

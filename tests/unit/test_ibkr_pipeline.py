@@ -15,12 +15,12 @@ class TestIBKRClientHistoricalData:
     @pytest.fixture
     def mock_ib_client(self):
         """Create a mock IB client."""
-        with patch("dashboard.backend.ibkr_client.IB") as mock_ib:
+        with patch("core.ibkr_client.IB") as mock_ib:
             yield mock_ib
 
     def test_create_contract_stock(self):
         """Test creating a stock contract."""
-        from dashboard.backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         client = IBKRClient()
         contract = client._create_contract("AAPL", "STK", "SMART", "USD")
@@ -32,7 +32,7 @@ class TestIBKRClientHistoricalData:
 
     def test_create_contract_forex(self):
         """Test creating a forex contract."""
-        from dashboard.backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         client = IBKRClient()
         # For forex, ib_insync uses the quote currency as symbol (e.g., EURUSD -> symbol=USD)
@@ -44,7 +44,7 @@ class TestIBKRClientHistoricalData:
 
     def test_create_contract_futures(self):
         """Test creating a futures contract."""
-        from dashboard.backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         client = IBKRClient()
         contract = client._create_contract("ES", "FUT", "CME", "USD", expiry="202403")
@@ -54,7 +54,7 @@ class TestIBKRClientHistoricalData:
 
     def test_valid_historical_durations(self):
         """Test that valid durations are defined."""
-        from dashboard.backend.ibkr_client import HISTORICAL_DURATIONS
+        from core.ibkr_client import HISTORICAL_DURATIONS
 
         assert "1 D" in HISTORICAL_DURATIONS
         assert "1 W" in HISTORICAL_DURATIONS
@@ -64,7 +64,7 @@ class TestIBKRClientHistoricalData:
 
     def test_valid_historical_intervals(self):
         """Test that valid intervals are defined."""
-        from dashboard.backend.ibkr_client import HISTORICAL_INTERVALS
+        from core.ibkr_client import HISTORICAL_INTERVALS
 
         assert "1 min" in HISTORICAL_INTERVALS
         assert "5 mins" in HISTORICAL_INTERVALS
@@ -77,7 +77,7 @@ class TestIBKRProvider:
 
     def test_ibkr_provider_init(self):
         """Test IBKR provider initialization."""
-        from dashboard.backend.data_providers import IBKRProvider
+        from core.data_providers import IBKRProvider
 
         provider = IBKRProvider(host="127.0.0.1", port=7497, client_id=1)
 
@@ -87,14 +87,14 @@ class TestIBKRProvider:
 
     def test_ibkr_provider_name(self):
         """Test provider name."""
-        from dashboard.backend.data_providers import IBKRProvider
+        from core.data_providers import IBKRProvider
 
         provider = IBKRProvider()
         assert provider.get_provider_name() == "Interactive Brokers"
 
     def test_interval_mapping(self):
         """Test interval mapping from standard to IBKR format."""
-        from dashboard.backend.data_providers import IBKRProvider
+        from core.data_providers import IBKRProvider
 
         provider = IBKRProvider()
 
@@ -248,7 +248,7 @@ class TestMarketDataStoreIBKR:
 
     def test_ibkr_asset_files_defined(self):
         """Test that IBKR asset files are defined."""
-        from dashboard.backend.market_data_store import _IBKR_ASSET_FILES
+        from core.market_data_store import _IBKR_ASSET_FILES
 
         assert isinstance(_IBKR_ASSET_FILES, dict)
         assert "ibkr_equities" in _IBKR_ASSET_FILES
@@ -258,7 +258,7 @@ class TestMarketDataStoreIBKR:
 
     def test_ibkr_tickers_defined(self):
         """Test that IBKR ticker lists are defined."""
-        from dashboard.backend.market_data_store import _IBKR_ASSET_TICKERS
+        from core.market_data_store import _IBKR_ASSET_TICKERS
 
         assert isinstance(_IBKR_ASSET_TICKERS, dict)
         assert "ibkr_equities" in _IBKR_ASSET_TICKERS
@@ -336,7 +336,7 @@ class TestIBKRClientEdgeCases:
 
     def test_create_contract_with_none_currency(self):
         """Test creating contract with None currency defaults to USD."""
-        from dashboard.backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         client = IBKRClient()
         contract = client._create_contract("AAPL", "STK", "SMART", None)
@@ -345,7 +345,7 @@ class TestIBKRClientEdgeCases:
 
     def test_create_contract_with_empty_exchange(self):
         """Test creating contract with empty exchange."""
-        from dashboard.backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         client = IBKRClient()
         contract = client._create_contract("EURUSD", "CASH", "", "USD")
@@ -355,7 +355,7 @@ class TestIBKRClientEdgeCases:
 
     def test_create_contract_unknown_sec_type(self):
         """Test creating contract with unknown security type defaults to stock."""
-        from dashboard.backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         client = IBKRClient()
         contract = client._create_contract("UNKNOWN", "UNKNOWN", "SMART", "USD")
@@ -367,7 +367,7 @@ class TestIBKRClientEdgeCases:
         """Test filtering with datetime.date objects."""
         import pandas as pd
 
-        from dashboard.backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         client = IBKRClient()
 
@@ -397,7 +397,7 @@ class TestIBKRClientEdgeCases:
 
     def test_duration_mapping_short_period(self):
         """Test duration mapping for short periods."""
-        from dashboard.backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         client = IBKRClient()
 
@@ -410,7 +410,7 @@ class TestIBKRClientEdgeCases:
 
     def test_duration_mapping_1_month(self):
         """Test duration mapping for 1 month."""
-        from dashboard.backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         start = datetime(2024, 1, 1)
         end = datetime(2024, 2, 1)
@@ -421,7 +421,7 @@ class TestIBKRClientEdgeCases:
 
     def test_duration_mapping_1_year(self):
         """Test duration mapping for 1 year."""
-        from dashboard.backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         start = datetime(2024, 1, 1)
         end = datetime(2025, 1, 1)
@@ -431,7 +431,7 @@ class TestIBKRClientEdgeCases:
 
     def test_duration_mapping_2_years(self):
         """Test duration mapping for 2+ years."""
-        from dashboard.backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         start = datetime(2022, 1, 1)
         end = datetime(2024, 12, 31)

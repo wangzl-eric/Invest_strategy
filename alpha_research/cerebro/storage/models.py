@@ -1,7 +1,7 @@
 """SQLAlchemy models for Cerebro research paper storage.
 
 Follows the same patterns as backend/models.py:
-- Uses the shared Base from dashboard.backend.models
+- Uses the shared Base from core.models
 - Consistent column naming and type conventions
 - Index on frequently queried fields
 """
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 # Import the shared Base — this ensures Cerebro tables are created
 # alongside existing backend tables when init_db() is called.
 try:
-    from dashboard.backend.models import Base
+    from core.models import Base
 except ImportError:
     # Standalone usage: create a local Base
     from sqlalchemy.ext.declarative import declarative_base

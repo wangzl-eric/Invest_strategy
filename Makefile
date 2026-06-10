@@ -29,26 +29,26 @@ test:
 
 # Run tests with coverage
 test-cov:
-	python -m pytest tests/unit/ --cov=dashboard.backend --cov=alpha_research.portfolio --cov=alpha_research.backtests --cov=alpha_research.execution --cov-report=term-missing
+	python -m pytest tests/unit/ --cov=core --cov=dashboard.backend --cov=alpha_research.portfolio --cov=alpha_research.backtests --cov=alpha_research.execution --cov-report=term-missing
 
 # Run linters
 lint:
 	@echo "Running flake8..."
-	flake8 dashboard/ alpha_research/ --max-line-length=120 --ignore=E501,W503
+	flake8 core/ dashboard/ alpha_research/ --max-line-length=120 --ignore=E501,W503
 	@echo ""
 	@echo "Running black check..."
-	black --check dashboard/ alpha_research/ --diff
+	black --check core/ dashboard/ alpha_research/ --diff
 
 # Format code
 format:
 	@echo "Running black..."
-	black dashboard/ alpha_research/
+	black core/ dashboard/ alpha_research/
 	@echo "Running isort..."
-	isort dashboard/ alpha_research/ --profile black
+	isort core/ dashboard/ alpha_research/ --profile black
 
 # Type checking
 typecheck:
-	mypy dashboard/backend/ --ignore-missing-imports
+	mypy core/ dashboard/backend/ --ignore-missing-imports
 
 # Clean cache files
 clean:

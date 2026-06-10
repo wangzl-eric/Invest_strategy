@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from dashboard.backend.main import app
-from dashboard.backend.models import AccountSnapshot, PnLHistory, Position, Trade
+from core.models import AccountSnapshot, PnLHistory, Position, Trade
 
 
 @pytest.fixture

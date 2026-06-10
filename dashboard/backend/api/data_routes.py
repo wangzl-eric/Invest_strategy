@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from dashboard.backend.data_pipeline import data_pipeline
-from dashboard.backend.market_data_store import market_data_store
+from core.market_data_store import market_data_store
 
 router = APIRouter()
 
@@ -188,7 +188,7 @@ async def pull_ibkr_historical(req: IBKRPullRequest):
 @router.get("/data/ibkr/subscription-status")
 async def ibkr_subscription_status():
     """Check if IBKR Gateway/TWS is connected and get subscription info."""
-    from dashboard.backend.ibkr_client import IBKRClient
+    from core.ibkr_client import IBKRClient
 
     client = IBKRClient()
 
@@ -230,7 +230,7 @@ async def ibkr_symbol_search(
     symbol: str = Query(..., description="Symbol to search for")
 ):
     """Search for symbols in IBKR's database."""
-    from dashboard.backend.ibkr_client import IBKRClient
+    from core.ibkr_client import IBKRClient
 
     client = IBKRClient()
 
@@ -254,7 +254,7 @@ async def pull_ibkr_options(
     exchange: str = Query("SMART", description="Exchange"),
 ):
     """Get options chain for an underlying symbol."""
-    from dashboard.backend.ibkr_client import IBKRClient
+    from core.ibkr_client import IBKRClient
 
     client = IBKRClient()
 
@@ -285,7 +285,7 @@ async def ibkr_tickers(
     )
 ):
     """Get default ticker list for an IBKR asset class."""
-    from dashboard.backend.market_data_store import _IBKR_ASSET_TICKERS
+    from core.market_data_store import _IBKR_ASSET_TICKERS
 
     tickers = _IBKR_ASSET_TICKERS.get(asset_class, [])
     return {"asset_class": asset_class, "tickers": tickers, "count": len(tickers)}
@@ -298,7 +298,7 @@ async def ibkr_quote(
     exchange: str = Query("SMART", description="Exchange"),
 ):
     """Get real-time quote from IBKR."""
-    from dashboard.backend.ibkr_client import IBKRClient
+    from core.ibkr_client import IBKRClient
 
     client = IBKRClient()
 

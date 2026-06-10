@@ -127,7 +127,7 @@ class IBKRProvider(MarketDataProvider):
     def _get_client(self):
         """Get or create the IBKR client."""
         if self._client is None:
-            from dashboard.backend.ibkr_client import IBKRClient
+            from core.ibkr_client import IBKRClient
 
             self._client = IBKRClient()
         return self._client
@@ -566,7 +566,7 @@ class DataProviderManager:
         Tries to use the data_source_manager if available, otherwise uses defaults.
         """
         try:
-            from dashboard.backend.data_source_manager import DataSource, data_source_manager
+            from core.data_source_manager import DataSource, data_source_manager
 
             # Map provider IDs to data sources
             source_to_provider = {
@@ -612,7 +612,7 @@ except Exception as e:
 
 # Register IBKR provider (requires IB Gateway/TWS to be running)
 try:
-    from dashboard.backend.config import settings
+    from core.config import settings
 
     ibkr_provider = IBKRProvider(
         host=settings.ibkr.host,

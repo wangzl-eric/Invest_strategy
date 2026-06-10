@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from dashboard.backend.ibkr_client import NEWS_PROVIDERS, IBKRClient
+from core.ibkr_client import NEWS_PROVIDERS, IBKRClient
 
 logger = logging.getLogger(__name__)
 

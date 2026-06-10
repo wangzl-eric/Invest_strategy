@@ -1,20 +1,22 @@
 # Repository Layout
 
-This repository is organized into **three product components**, each a top-level directory:
+This repository is a **layered architecture**: a shared infrastructure package at the bottom, then three product components.
 
-1. **`dashboard/`** — IBKR portfolio analytics & market-price application (FastAPI backend + Dash frontend)
-2. **`alpha_research/`** — alpha research & backtesting infrastructure (signal/backtest/portfolio/execution libraries, data ingestion, research notes, notebooks, and the Cerebro discovery pipeline)
-3. **`book_notes/`** — learning material: notes on books/papers and the playground study environment
+- **`core/`** — shared infrastructure: config, DB (models/database/persistence), IBKR broker client, market-data platform, Flex ingestion, LLM plumbing. Depends on nothing internal.
+- **`dashboard/`** — IBKR portfolio analytics & market-price application (FastAPI backend + Dash frontend)
+- **`alpha_research/`** — alpha research & backtesting infrastructure (signal/backtest/portfolio/execution libraries, data ingestion, research notes, notebooks, and the Cerebro discovery pipeline)
+- **`book_notes/`** — learning material: notes on books/papers and the playground study environment
 
 For the end-to-end research flow, see [`docs/data_backtest_report_pipeline.md`](./data_backtest_report_pipeline.md).
 
-The project runs on a flat `PYTHONPATH=.` import namespace (`from backend...`, `from portfolio...`, etc.). To keep that namespace working after the physical grouping, root-level **compatibility symlinks** point each importable package name at its new location inside a component. This is a physical/organizational grouping, not enforced module isolation — the dashboard and research libraries still import each other freely.
+Imports use real, component-qualified paths (`from core.config import settings`, `from alpha_research.portfolio... import`) with repo root on `PYTHONPATH` (pytest sets `pythonpath = .`). There are **no compatibility symlinks** — the packages are real directories and the dependency graph is a DAG (see Import Layering below).
 
 ## Stack Map
 
 | Path | Component | Status | Purpose |
 |------|-----------|--------|---------|
-| `dashboard/backend/` | Dashboard | Active | FastAPI service, IBKR integration, persistence, APIs |
+| `core/` | Infrastructure | Active | Config, DB/persistence, IBKR client, market-data platform, Flex ingestion, LLM plumbing (bottom layer) |
+| `dashboard/backend/` | Dashboard | Active | FastAPI service, IBKR integration, APIs (imports `core.*`) |
 | `dashboard/frontend/` | Dashboard | Active | Dash dashboard for monitoring and controls |
 | `alpha_research/backtests/` | Alpha research | Active | Signal research, walk-forward analysis, stats, reporting |
 | `alpha_research/portfolio/` | Alpha research | Active | Alpha blending, optimization, risk analytics, rebalancing |
@@ -30,23 +32,25 @@ The project runs on a flat `PYTHONPATH=.` import namespace (`from backend...`, `
 | `scripts/` | Tooling | Active | CLI entry points, ingestion jobs, automation |
 | `tests/` | Verification | Active | Unit and integration coverage |
 
-## Compatibility symlinks
+## Import Layering
 
-These root paths are symlinks that preserve the flat import namespace. Do not delete them
-without first rewriting the corresponding imports/path references.
+The dependency graph is a DAG with `core/` at the bottom:
 
-| Symlink | Target |
-|---------|--------|
-| `backend/` | `dashboard/backend/` |
-| `frontend/` | `dashboard/frontend/` |
-| `backtests/` | `alpha_research/backtests/` |
-| `portfolio/` | `alpha_research/portfolio/` |
-| `execution/` | `alpha_research/execution/` |
-| `quant_data/` | `alpha_research/quant_data/` |
-| `research/` | `alpha_research/research/` |
-| `notebooks/` | `alpha_research/notebooks/` |
-| `cerebro/` | `alpha_research/cerebro/` |
-| `books_and_papers/` | `book_notes/books_and_papers/` |
+```
+            core/                  (imports nothing internal)
+           /      \
+   alpha_research/   dashboard/    (both import core/)
+                \    /
+        dashboard/ → alpha_research/   (one-way: the app uses research libs)
+```
+
+Rules:
+- `core/` must not import `dashboard` or `alpha_research`.
+- `alpha_research/` may import `core/` only (never `dashboard`).
+- `dashboard/` may import `core/` and `alpha_research/`.
+
+This keeps the components independently testable/deployable. (There are no
+compatibility symlinks; an earlier transition used them but imports are now explicit.)
 
 ## Naming Decisions
 

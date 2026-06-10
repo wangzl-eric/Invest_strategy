@@ -17,9 +17,9 @@ router = APIRouter(prefix="/api/cerebro", tags=["cerebro"])
 
 
 def _get_db_session_factory():
-    """Get DB session factory from dashboard.backend."""
+    """Get DB session factory from core."""
     try:
-        from dashboard.backend.database import SessionLocal
+        from core.database import SessionLocal
 
         return SessionLocal
     except ImportError:
