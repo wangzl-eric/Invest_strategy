@@ -13,10 +13,9 @@ Usage:
 """
 import asyncio
 import logging
-import os
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import datetime
 from enum import Enum
 from io import StringIO
 from pathlib import Path

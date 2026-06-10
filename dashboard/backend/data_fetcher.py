@@ -3,13 +3,11 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy.orm import Session
 
 from core.database import get_db_context
 from core.ibkr_client import IBKRClient
 from core.models import (
     AccountSnapshot,
-    PerformanceMetric,
     PnLHistory,
     Position,
     Trade,

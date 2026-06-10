@@ -3,12 +3,11 @@ import asyncio
 import logging
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
-from ib_insync import IB, AccountValue, Contract, Forex, Future, Position, Stock, Trade
-from ib_insync.objects import PortfolioItem
+from ib_insync import IB, Contract, Forex, Future, Stock
 
 from core.config import settings
 

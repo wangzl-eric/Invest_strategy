@@ -7,7 +7,7 @@ search, and managing auto-generated proposals.
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 
@@ -244,7 +244,7 @@ async def list_proposals():
     the auto_*.md pattern.
     """
     try:
-        from pathlib import Path
+        pass
 
         from alpha_research.cerebro.config import cerebro_config
 

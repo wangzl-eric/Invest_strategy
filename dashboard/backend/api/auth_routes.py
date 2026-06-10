@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
@@ -14,13 +13,10 @@ from dashboard.backend.auth import (
     get_current_user,
     get_password_hash,
     get_user_accounts,
-    get_user_primary_account,
-    hash_api_key,
-    security,
     verify_password,
 )
 from core.database import get_db
-from core.models import APIKey, Role, User, UserAccount, UserPreferences, UserRole
+from core.models import APIKey, User, UserAccount, UserPreferences
 
 logger = logging.getLogger(__name__)
 

@@ -5,8 +5,6 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-from sqlalchemy import desc, func
-from sqlalchemy.orm import Session
 
 from core.database import get_db_context
 from core.models import AccountSnapshot, PerformanceMetric, PnLHistory, Trade

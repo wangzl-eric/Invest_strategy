@@ -28,19 +28,15 @@ Usage:
 import logging
 import uuid
 from datetime import date, datetime
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import pandas as pd
-from sqlalchemy import and_, desc, func, or_, text
-from sqlalchemy.orm import Session
+from sqlalchemy import desc, func
 
 from core.database import engine, get_db_context, init_db
-from core.flex_parser import FlexParser, load_all_flex_reports
+from core.flex_parser import load_all_flex_reports
 from core.models import (
     AccountSnapshot,
-    Base,
-    PerformanceMetric,
     PnLHistory,
     Position,
     Trade,

@@ -14,12 +14,11 @@ Usage:
     count = import_trades_from_flex(result.trades)
 """
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
-from sqlalchemy import func
 
 from core.database import get_db_context
 from core.models import PnLHistory, Position, Trade

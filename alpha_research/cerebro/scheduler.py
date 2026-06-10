@@ -7,7 +7,6 @@ Provides two modes:
 Follows the same patterns as backend/scheduler.py.
 """
 
-import asyncio
 import logging
 from datetime import datetime
 from typing import Any, Optional
@@ -359,7 +358,6 @@ def _save_digest(content: str, config: CerebroConfig) -> None:
         content: Markdown content string.
         config: CerebroConfig for project root.
     """
-    from pathlib import Path
 
     digest_dir = config.project_root / "research" / "digests"
     digest_dir.mkdir(parents=True, exist_ok=True)

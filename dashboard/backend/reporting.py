@@ -1,19 +1,17 @@
 """PDF report generation and scheduled reporting."""
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from io import BytesIO
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
-import pandas as pd
 
 try:
     from reportlab.lib import colors
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-    from reportlab.lib.pagesizes import A4, letter
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.lib.pagesizes import letter
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import inch
     from reportlab.platypus import (
-        Image,
         PageBreak,
         Paragraph,
         SimpleDocTemplate,

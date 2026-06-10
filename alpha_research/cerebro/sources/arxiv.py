@@ -60,7 +60,7 @@ class ArxivSource(BaseSource):
             ImportError: If the arxiv library is not installed.
         """
         try:
-            import arxiv
+            pass
         except ImportError:
             self.logger.error("arxiv library not installed. Run: pip install arxiv")
             return []

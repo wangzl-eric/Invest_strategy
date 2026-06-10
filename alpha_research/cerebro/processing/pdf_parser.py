@@ -7,7 +7,7 @@ logical sections (Abstract, Introduction, Methodology, Results, etc.).
 import logging
 import re
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 

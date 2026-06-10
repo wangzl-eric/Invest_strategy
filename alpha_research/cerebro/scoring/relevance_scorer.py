@@ -9,7 +9,7 @@ Scores 0-100 based on:
 
 import logging
 from dataclasses import dataclass
-from typing import FrozenSet, Optional, Tuple
+from typing import FrozenSet
 
 from alpha_research.cerebro.config import cerebro_config
 from alpha_research.cerebro.processing.structured_extractor import PaperSummary

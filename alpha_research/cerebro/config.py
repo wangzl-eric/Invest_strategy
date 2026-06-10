@@ -4,9 +4,8 @@ Follows the Pydantic BaseSettings pattern from backend/config.py.
 All settings load from environment variables with CEREBRO_ prefix.
 """
 
-import os
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 
 from pydantic import Field
 from pydantic_settings import BaseSettings

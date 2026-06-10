@@ -1,7 +1,7 @@
 """Time-series database integration for efficient time-range queries."""
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Dict, Optional
 
 import pandas as pd
 
@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 # Try to import TimescaleDB/PostgreSQL extensions
 try:
     from sqlalchemy import create_engine, text
-    from sqlalchemy.dialects.postgresql import insert
 
     HAS_POSTGRES = True
 except ImportError:

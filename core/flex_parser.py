@@ -20,9 +20,7 @@ Usage:
     positions_df = result.positions
     performance_df = result.performance
 """
-import glob
 import logging
-import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from datetime import datetime

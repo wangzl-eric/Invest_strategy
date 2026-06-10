@@ -14,11 +14,7 @@ try:
 
     from core.config import settings
     from core.models import (
-        AccountSnapshot,
-        PerformanceMetric,
         PnLHistory,
-        Position,
-        Trade,
     )
 
     print("✓ All imports successful")

@@ -113,7 +113,6 @@ async def refresh_mover_news(
 
     Same as /market/mover-news but always fetches fresh data.
     """
-    from dashboard.backend.mover_news_service import get_mover_news_service
 
     # Get movers
     movers_data = market_data_service.get_what_changed(sigma_threshold=sigma)

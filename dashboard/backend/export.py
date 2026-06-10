@@ -2,15 +2,14 @@
 import io
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 import pandas as pd
 from fastapi import HTTPException
-from fastapi.responses import StreamingResponse
 
 from core.data_processor import DataProcessor
 from core.database import get_db_context
-from core.models import PerformanceMetric, PnLHistory, Position, Trade
+from core.models import PerformanceMetric, Trade
 
 logger = logging.getLogger(__name__)
 

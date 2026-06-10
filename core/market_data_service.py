@@ -1814,7 +1814,6 @@ class MarketDataService:
         """
         from core.data_source_manager import (
             DataSource,
-            data_source_manager,
             record_failure,
             record_success,
         )

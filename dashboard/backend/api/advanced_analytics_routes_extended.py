@@ -1,9 +1,8 @@
 """Extended advanced analytics routes using the new advanced_analytics module."""
 import logging
-from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from datetime import datetime
+from typing import Optional
 
-import numpy as np
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc
@@ -19,7 +18,7 @@ from dashboard.backend.advanced_analytics import (
 )
 from core.data_processor import DataProcessor
 from core.database import get_db
-from core.models import AccountSnapshot, PnLHistory
+from core.models import AccountSnapshot
 
 logger = logging.getLogger(__name__)
 

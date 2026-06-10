@@ -1,6 +1,6 @@
 """API routes for report generation and scheduling."""
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query

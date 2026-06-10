@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from core.config import settings
-from core.llm_client import MarketMoversLLMClient, generate_movers_news_summary
+from core.llm_client import MarketMoversLLMClient
 from dashboard.backend.news_service import NewsService
 
 logger = logging.getLogger(__name__)

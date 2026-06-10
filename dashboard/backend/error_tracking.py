@@ -1,6 +1,5 @@
 """Error tracking and monitoring integration."""
 import logging
-from datetime import datetime
 from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)

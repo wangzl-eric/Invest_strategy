@@ -1,7 +1,6 @@
 """Circuit breaker pattern for external service calls."""
 import logging
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, Optional
 

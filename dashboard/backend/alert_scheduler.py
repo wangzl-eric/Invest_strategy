@@ -1,7 +1,5 @@
 """Alert evaluation scheduler integration."""
-import asyncio
 import logging
-from typing import Optional
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger

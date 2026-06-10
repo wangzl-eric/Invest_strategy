@@ -2781,7 +2781,6 @@ def create_positions_tab(data):
                         timestamps.append(ts)
                 except Exception as e:
                     logger.debug(f"Could not parse timestamp {ts}: {e}")
-                    pass
 
         if timestamps:
             latest_timestamp = max(timestamps)

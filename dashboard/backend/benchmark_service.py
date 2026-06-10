@@ -5,7 +5,6 @@ for portfolio performance comparison.
 """
 import logging
 from datetime import datetime, timedelta
-from functools import lru_cache
 from typing import Any, Dict, List, Optional
 
 import numpy as np

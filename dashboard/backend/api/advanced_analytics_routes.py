@@ -1,7 +1,7 @@
 """API routes for advanced analytics: optimization, factor analysis, attribution, Monte Carlo."""
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -10,12 +10,10 @@ from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from dashboard.backend.advanced_analytics import (
-    AnomalyDetector,
     AttributionAnalyzer,
     FactorAnalyzer,
     MonteCarloSimulator,
     PortfolioOptimizer,
-    RegimeDetector,
 )
 from dashboard.backend.api.schemas import (
     AttributionResponse,
@@ -29,7 +27,7 @@ from dashboard.backend.api.schemas import (
 )
 from core.data_processor import DataProcessor
 from core.database import get_db
-from core.models import AccountSnapshot, PnLHistory, Position, Trade
+from core.models import AccountSnapshot, Position, Trade
 
 # Try to import from alpha_research.portfolio.advanced_analytics if available (for compatibility)
 try:
@@ -41,8 +39,6 @@ try:
         monte_carlo_portfolio_simulation,
         monte_carlo_simulation,
         risk_parity_optimize,
-        sector_attribution,
-        security_attribution,
         style_analysis,
     )
 

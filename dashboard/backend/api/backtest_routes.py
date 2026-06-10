@@ -3,11 +3,10 @@ import logging
 from typing import Any, Dict, Optional
 
 import pandas as pd
-from fastapi import APIRouter, Body, HTTPException, Query
+from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 
 # Note: Vectorized backtest has been deprecated. Use BacktestEngine with Backtrader.
-from alpha_research.portfolio.blend import Signal, blend_signals
 
 logger = logging.getLogger(__name__)
 

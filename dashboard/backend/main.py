@@ -30,13 +30,11 @@ except ImportError:
 # Configure logging
 import os
 
-from dashboard.backend.alert_engine import alert_engine
 from core.config import settings
 from dashboard.backend.error_tracking import error_tracker
 from dashboard.backend.middleware import MetricsMiddleware
 from dashboard.backend.rate_limiter import rate_limit_middleware
 from dashboard.backend.realtime_broadcaster import broadcaster
-from dashboard.backend.scheduler import PnLScheduler
 from dashboard.backend.tracing import tracing_service
 
 try:
@@ -233,7 +231,7 @@ async def ibkr_status_check():
     """IBKR reachability check + data freshness report."""
     import socket
 
-    from sqlalchemy import desc, func
+    from sqlalchemy import func
 
     from core.database import engine
     from core.models import AccountSnapshot, PnLHistory, Position
@@ -301,7 +299,6 @@ async def detailed_health_check():
     from core.config import settings
     from core.database import engine
     from core.ibkr_client import IBKRClient
-    from dashboard.backend.scheduler import PnLScheduler
 
     health_status = {
         "status": "healthy",

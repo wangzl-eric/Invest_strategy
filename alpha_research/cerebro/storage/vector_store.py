@@ -7,7 +7,7 @@ No API cost — all embeddings computed locally.
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from alpha_research.cerebro.config import cerebro_config
 

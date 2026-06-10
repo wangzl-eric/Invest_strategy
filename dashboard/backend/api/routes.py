@@ -23,14 +23,13 @@ from dashboard.backend.auth import (
     get_current_user_or_api_key,
     get_user_accounts,
     get_user_primary_account,
-    require_role,
 )
-from dashboard.backend.cache import cache_manager, cached
+from dashboard.backend.cache import cache_manager
 from core.config import settings
 from dashboard.backend.data_fetcher import DataFetcher
 from core.data_processor import DataProcessor
 from core.database import get_db
-from core.db_utils import import_all_flex_data, import_trades_from_flex_result
+from core.db_utils import import_all_flex_data
 from dashboard.backend.export import (
     export_combined_report,
     export_performance_excel,
@@ -41,7 +40,6 @@ from dashboard.backend.export import (
 from core.flex_importer import (
     import_flex_query_result,
     import_mark_to_market_performance_csv,
-    import_trades_from_flex,
 )
 from core.flex_query_client import FlexQueryClient, FlexQueryError
 from core.ibkr_client import IBKRClient
@@ -1099,7 +1097,7 @@ async def get_stress_test(
 ):
     """Perform stress testing with various shock scenarios."""
     try:
-        import numpy as np
+        pass
 
         returns_df = data_processor.calculate_daily_returns(account_id)
 
@@ -1516,6 +1514,8 @@ async def get_sp500_benchmark(
     ),
 ):
     """Get S&P 500 benchmark data for comparison charts."""
+    import pandas as pd
+
     from dashboard.backend.api.schemas import SP500DataPoint, SP500DataResponse
     from dashboard.backend.benchmark_service import get_sp500_data
 

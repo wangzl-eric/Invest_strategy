@@ -2,15 +2,14 @@
 import json
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Dict, Optional
 
-from sqlalchemy import and_, desc, inspect
+from sqlalchemy import desc, inspect
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from core.database import get_db_context
 from core.models import (
-    AccountSnapshot,
     Alert,
     AlertChannel,
     AlertHistory,

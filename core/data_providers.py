@@ -1,8 +1,8 @@
 """Data provider interfaces for market data from multiple sources."""
 import logging
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
-from typing import Callable, Dict, List, Optional
+from datetime import datetime
+from typing import Dict, List, Optional
 
 import pandas as pd
 
@@ -21,17 +21,14 @@ class MarketDataProvider(ABC):
         interval: str = "1d",
     ) -> pd.DataFrame:
         """Get historical price data."""
-        pass
 
     @abstractmethod
     def get_quote(self, symbol: str) -> Dict:
         """Get current quote for a symbol."""
-        pass
 
     @abstractmethod
     def get_provider_name(self) -> str:
         """Get the name of this provider."""
-        pass
 
 
 class YahooFinanceProvider(MarketDataProvider):

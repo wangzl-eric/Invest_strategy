@@ -61,7 +61,7 @@ class SSRNSource(BaseSource):
             List of RawPaper instances, newest first.
         """
         try:
-            import feedparser
+            pass
         except ImportError:
             self.logger.error(
                 "feedparser library not installed. Run: pip install feedparser"
@@ -213,7 +213,6 @@ class SSRNSource(BaseSource):
         Returns:
             Parsed datetime or None.
         """
-        import time as time_mod
 
         date_fields = ["published_parsed", "updated_parsed", "created_parsed"]
         for field in date_fields:

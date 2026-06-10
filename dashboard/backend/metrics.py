@@ -1,6 +1,5 @@
 """Prometheus metrics collection for monitoring."""
 import time
-from typing import Optional
 
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
