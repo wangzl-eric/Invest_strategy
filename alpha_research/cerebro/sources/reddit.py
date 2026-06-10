@@ -11,8 +11,8 @@ import time
 from datetime import datetime
 from typing import List, Optional, Tuple
 
-from cerebro.config import cerebro_config
-from cerebro.sources.base import BaseSource, RawPaper
+from alpha_research.cerebro.config import cerebro_config
+from alpha_research.cerebro.sources.base import BaseSource, RawPaper
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +147,7 @@ class RedditSource(BaseSource):
 
     def _fetch_subreddit(
         self,
-        reddit: "praw.Reddit",
+        reddit: "praw.Reddit",  # noqa: F821
         subreddit_name: str,
         since_timestamp: float,
         limit: int,
@@ -185,7 +185,7 @@ class RedditSource(BaseSource):
 
     def _post_to_raw_paper(
         self,
-        post: "praw.models.Submission",
+        post: "praw.models.Submission",  # noqa: F821
         subreddit_name: str,
     ) -> Optional[RawPaper]:
         """Convert a Reddit submission to a RawPaper.

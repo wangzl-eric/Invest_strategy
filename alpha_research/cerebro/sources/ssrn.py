@@ -10,8 +10,8 @@ import time
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
-from cerebro.config import cerebro_config
-from cerebro.sources.base import BaseSource, RawPaper
+from alpha_research.cerebro.config import cerebro_config
+from alpha_research.cerebro.sources.base import BaseSource, RawPaper
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ class SSRNSource(BaseSource):
             List of RawPaper instances, newest first.
         """
         try:
-            import feedparser
+            pass
         except ImportError:
             self.logger.error(
                 "feedparser library not installed. Run: pip install feedparser"
@@ -156,7 +156,7 @@ class SSRNSource(BaseSource):
 
     def _entry_to_raw_paper(
         self,
-        entry: "feedparser.FeedParserDict",
+        entry: "feedparser.FeedParserDict",  # noqa: F821
         feed_name: str,
     ) -> Optional[RawPaper]:
         """Convert a feedparser entry to a RawPaper.
@@ -213,7 +213,6 @@ class SSRNSource(BaseSource):
         Returns:
             Parsed datetime or None.
         """
-        import time as time_mod
 
         date_fields = ["published_parsed", "updated_parsed", "created_parsed"]
         for field in date_fields:

@@ -1,9 +1,9 @@
 """Scoring engines for research paper evaluation."""
 
-from cerebro.scoring.feasibility_scorer import FeasibilityScorer
-from cerebro.scoring.novelty_detector import NoveltyDetector
-from cerebro.scoring.quality_scorer import QualityScorer
-from cerebro.scoring.relevance_scorer import RelevanceScorer
+from alpha_research.cerebro.scoring.feasibility_scorer import FeasibilityScorer
+from alpha_research.cerebro.scoring.novelty_detector import NoveltyDetector
+from alpha_research.cerebro.scoring.quality_scorer import QualityScorer
+from alpha_research.cerebro.scoring.relevance_scorer import RelevanceScorer
 
 __all__ = [
     "RelevanceScorer",

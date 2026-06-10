@@ -10,7 +10,7 @@ rows are included in resampled data.
 
 Usage::
 
-    from backtests.calendar import align_to_trading_days, get_trading_days
+    from alpha_research.backtests.calendar import align_to_trading_days, get_trading_days
 
     aligned_prices = align_to_trading_days(prices_df, exchange="XNYS")
     days = get_trading_days("2020-01-01", "2024-12-31", exchange="XNYS")

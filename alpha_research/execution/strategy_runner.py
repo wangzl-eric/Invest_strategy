@@ -8,13 +8,13 @@ from typing import Callable, Dict, List, Optional
 
 import pandas as pd
 
-from execution.audit import record_risk_event
-from execution.broker import Broker
-from execution.risk import RiskEngine, RiskLimits
-from execution.runner import ExecutionRunner, RunnerConfig
-from execution.types import OrderRequest
-from portfolio.blend import Signal, blend_signals
-from portfolio.optimizer import weights_from_alpha
+from alpha_research.execution.audit import record_risk_event
+from alpha_research.execution.broker import Broker
+from alpha_research.execution.risk import RiskEngine, RiskLimits
+from alpha_research.execution.runner import ExecutionRunner, RunnerConfig
+from alpha_research.execution.types import OrderRequest
+from alpha_research.portfolio.blend import Signal, blend_signals
+from alpha_research.portfolio.optimizer import weights_from_alpha
 
 PriceGetter = Callable[[str], float]
 
@@ -50,7 +50,7 @@ def _load_prices(
     end_str = end.strftime("%Y-%m-%d")
 
     try:
-        from backend.market_data_store import market_data_store
+        from core.market_data_store import market_data_store
 
         df = market_data_store.query(
             asset_class=asset_class,
@@ -106,8 +106,8 @@ def _get_current_positions_from_db(account_id: str) -> Dict[str, float]:
     try:
         from sqlalchemy import desc
 
-        from backend.database import get_db_context
-        from backend.models import Position
+        from core.database import get_db_context
+        from core.models import Position
 
         with get_db_context() as db:
             query = (

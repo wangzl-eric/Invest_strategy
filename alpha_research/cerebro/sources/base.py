@@ -72,7 +72,7 @@ class BaseSource(ABC):
 
     def __init__(self, name: str) -> None:
         self.name = name
-        self.logger = logging.getLogger(f"cerebro.sources.{name}")
+        self.logger = logging.getLogger(f"alpha_research.cerebro.sources.{name}")
 
     @abstractmethod
     async def fetch_recent(

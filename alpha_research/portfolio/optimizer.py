@@ -98,11 +98,11 @@ def weights_from_alpha(
 
     # Build covariance
     if cov_method == "ledoit_wolf":
-        from portfolio.risk import ledoit_wolf_cov
+        from alpha_research.portfolio.risk import ledoit_wolf_cov
 
         cov = ledoit_wolf_cov(returns)
     elif cov_method == "sample":
-        from portfolio.risk import sample_cov
+        from alpha_research.portfolio.risk import sample_cov
 
         cov = sample_cov(returns)
     else:

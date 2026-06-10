@@ -38,7 +38,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 # Import shared helpers
-from quant_data.api import calculate_volatility, get_prices  # noqa: E402
+from alpha_research.quant_data.api import calculate_volatility, get_prices  # noqa: E402
 from workstation.playground.shared.viz_helpers import (  # noqa: E402
     plot_distribution,
     plot_regime_overlay,

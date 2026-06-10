@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import duckdb
 
-from quant_data.qconfig import QuantDataSettings
+from alpha_research.quant_data.qconfig import QuantDataSettings
 
 
 def connect(settings: QuantDataSettings | None = None) -> duckdb.DuckDBPyConnection:

@@ -7,12 +7,11 @@ Provides two modes:
 Follows the same patterns as backend/scheduler.py.
 """
 
-import asyncio
 import logging
 from datetime import datetime
 from typing import Any, Optional
 
-from cerebro.config import CerebroConfig, cerebro_config
+from alpha_research.cerebro.config import CerebroConfig, cerebro_config
 
 logger = logging.getLogger(__name__)
 
@@ -147,9 +146,9 @@ async def _run_cerebro_discovery(
     start_time = datetime.utcnow()
 
     try:
-        from cerebro.pipeline import CerebroPipeline
+        from alpha_research.cerebro.pipeline import CerebroPipeline
 
-        # Attempt to get DB session factory from backend
+        # Attempt to get DB session factory from core
         db_session_factory = _get_db_session_factory()
 
         pipeline = CerebroPipeline(
@@ -206,7 +205,7 @@ async def _generate_weekly_digest(
     logger.info("Generating weekly Cerebro digest")
 
     try:
-        from cerebro.storage.models import ResearchPaper
+        from alpha_research.cerebro.storage.models import ResearchPaper
 
         db_session_factory = _get_db_session_factory()
         if db_session_factory is None:
@@ -308,11 +307,11 @@ def _get_db_session_factory() -> Any:
         SessionLocal factory or None if unavailable.
     """
     try:
-        from backend.database import SessionLocal
+        from core.database import SessionLocal
 
         return SessionLocal
     except ImportError:
-        logger.debug("backend.database not available for Cerebro scheduler")
+        logger.debug("core.database not available for Cerebro scheduler")
         return None
 
 
@@ -359,7 +358,6 @@ def _save_digest(content: str, config: CerebroConfig) -> None:
         content: Markdown content string.
         config: CerebroConfig for project root.
     """
-    from pathlib import Path
 
     digest_dir = config.project_root / "research" / "digests"
     digest_dir.mkdir(parents=True, exist_ok=True)

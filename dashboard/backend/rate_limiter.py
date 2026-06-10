@@ -4,7 +4,7 @@ import time
 from collections import defaultdict, deque
 from typing import Dict, Optional
 
-from fastapi import HTTPException, Request, status
+from fastapi import Request, status
 from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)

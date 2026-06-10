@@ -29,26 +29,26 @@ test:
 
 # Run tests with coverage
 test-cov:
-	python -m pytest tests/unit/ --cov=backend --cov=portfolio --cov=backtests --cov=execution --cov-report=term-missing
+	python -m pytest tests/unit/ --cov=core --cov=dashboard.backend --cov=alpha_research.portfolio --cov=alpha_research.backtests --cov=alpha_research.execution --cov-report=term-missing
 
 # Run linters
 lint:
 	@echo "Running flake8..."
-	flake8 backend/ frontend/ portfolio/ backtests/ execution/ --max-line-length=120 --ignore=E501,W503
+	flake8 core/ dashboard/ alpha_research/ --max-line-length=120 --ignore=E501,W503,E203
 	@echo ""
 	@echo "Running black check..."
-	black --check backend/ frontend/ portfolio/ backtests/ execution/ --diff
+	black --check core/ dashboard/ alpha_research/ --diff
 
 # Format code
 format:
 	@echo "Running black..."
-	black backend/ frontend/ portfolio/ backtests/ execution/
+	black core/ dashboard/ alpha_research/
 	@echo "Running isort..."
-	isort backend/ frontend/ portfolio/ backtests/ execution/ --profile black
+	isort core/ dashboard/ alpha_research/ --profile black
 
 # Type checking
 typecheck:
-	mypy backend/ --ignore-missing-imports
+	mypy core/ dashboard/backend/ --ignore-missing-imports
 
 # Clean cache files
 clean:
@@ -59,20 +59,20 @@ clean:
 	find . -type f -name ".coverage" -delete 2>/dev/null || true
 	find . -type f -name "coverage.json" -delete 2>/dev/null || true
 
-# Start backend server
+# Start backend server (run from repo root so absolute imports resolve)
 serve-backend:
-	cd backend && python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+	python -m uvicorn dashboard.backend.main:app --reload --host 0.0.0.0 --port 8000
 
-# Start frontend server
+# Start frontend server (PYTHONPATH=. so `import dashboard...` resolves)
 serve-frontend:
-	cd frontend && python app.py
+	PYTHONPATH=. python dashboard/frontend/app.py
 
 # Start both servers (in background)
 serve-all:
 	@echo "Starting backend on port 8000..."
-	cd backend && python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000 &
+	python -m uvicorn dashboard.backend.main:app --reload --host 0.0.0.0 --port 8000 &
 	@echo "Starting frontend on port 8050..."
-	cd frontend && python app.py &
+	PYTHONPATH=. python dashboard/frontend/app.py &
 
 # Run pre-commit hooks
 pre-commit:

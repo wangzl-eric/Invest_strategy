@@ -9,10 +9,10 @@ Scores 0-100 based on:
 
 import logging
 from dataclasses import dataclass
-from typing import FrozenSet, Optional, Tuple
+from typing import FrozenSet
 
-from cerebro.config import cerebro_config
-from cerebro.processing.structured_extractor import PaperSummary
+from alpha_research.cerebro.config import cerebro_config
+from alpha_research.cerebro.processing.structured_extractor import PaperSummary
 
 logger = logging.getLogger(__name__)
 
@@ -242,7 +242,6 @@ class RelevanceScorer:
             "tick": {"ibkr", "polygon"},
         }
 
-        reqs_text = " ".join(summary.data_requirements).lower()
         total_reqs = len(summary.data_requirements)
         matched_reqs = 0
 

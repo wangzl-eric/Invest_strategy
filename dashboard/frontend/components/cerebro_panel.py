@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 import dash_bootstrap_components as dbc
 import requests
-from dash import Input, Output, State, callback, dash_table, dcc, html
+from dash import Input, Output, State, dash_table, html
 
 logger = logging.getLogger(__name__)
 
@@ -262,7 +262,7 @@ def create_cerebro_tab() -> html.Div:
                 style_cell={
                     "backgroundColor": BG_CARD,
                     "color": TEXT_PRIMARY,
-                    "border": f"1px solid #22262b",
+                    "border": "1px solid #22262b",
                     "fontSize": "0.82rem",
                     "padding": "0.5rem 0.75rem",
                     "fontFamily": "Inter, sans-serif",
@@ -717,7 +717,7 @@ def _build_proposal_rows(proposals: List[Dict]) -> List[html.Div]:
                     "justifyContent": "space-between",
                     "alignItems": "flex-start",
                     "padding": "0.5rem 0",
-                    "borderBottom": f"1px solid #22262b",
+                    "borderBottom": "1px solid #22262b",
                 },
             )
         )

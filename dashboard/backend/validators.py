@@ -12,8 +12,6 @@ logger = logging.getLogger(__name__)
 class ValidationError(Exception):
     """Exception raised when data validation fails."""
 
-    pass
-
 
 class DataValidator:
     """Validator for IBKR account data."""

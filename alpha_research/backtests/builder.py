@@ -4,7 +4,7 @@ Portfolio Builder: Connect Signals → Optimization → Backtest
 A unified pipeline for multi-asset quantitative strategy development.
 
 Usage:
-    from backtests.builder import PortfolioBuilder
+    from alpha_research.backtests.builder import PortfolioBuilder
 
     builder = PortfolioBuilder()
     builder.set_universe(['SPY', 'TLT', 'GLD', 'UUP'])
@@ -115,7 +115,7 @@ class PortfolioBuilder:
         # Strip non-trading days (holidays, weekends) to avoid look-ahead
         # artifacts from calendar gaps in resampled daily data.
         if align_calendar and not self.prices.empty:
-            from backtests.calendar import align_to_trading_days
+            from alpha_research.backtests.calendar import align_to_trading_days
 
             n_before = len(self.prices)
             self.prices = align_to_trading_days(self.prices, exchange=exchange)
@@ -137,7 +137,10 @@ class PortfolioBuilder:
         Args:
             signal_config: Dict of signal_name -> params
         """
-        from backtests.strategies.signals import compute_signal_pandas, get_signal
+        from alpha_research.backtests.strategies.signals import (
+            compute_signal_pandas,
+            get_signal,
+        )
 
         signal_config = signal_config or {}
 
@@ -222,8 +225,11 @@ class PortfolioBuilder:
             as_of_date: Only use data up to this date for estimation (avoids look-ahead).
                         If None, uses all available data.
         """
-        from portfolio.optimizer import OptimizationConfig, mean_variance_optimize
-        from portfolio.risk import ledoit_wolf_cov
+        from alpha_research.portfolio.optimizer import (
+            OptimizationConfig,
+            mean_variance_optimize,
+        )
+        from alpha_research.portfolio.risk import ledoit_wolf_cov
 
         method = method or self.config.optimization
 
@@ -282,7 +288,7 @@ class PortfolioBuilder:
         Uses ledoit_wolf_cov() for consistency with the mean_variance path and
         to avoid instability when sample size is small relative to asset count.
         """
-        from portfolio.risk import ledoit_wolf_cov
+        from alpha_research.portfolio.risk import ledoit_wolf_cov
 
         cov = ledoit_wolf_cov(returns)
         vol = np.sqrt(np.diag(cov.values))
@@ -319,8 +325,11 @@ class PortfolioBuilder:
         Returns:
             pd.Series of portfolio weights indexed by asset name.
         """
-        from portfolio.optimizer import OptimizationConfig, mean_variance_optimize
-        from portfolio.risk import ledoit_wolf_cov
+        from alpha_research.portfolio.optimizer import (
+            OptimizationConfig,
+            mean_variance_optimize,
+        )
+        from alpha_research.portfolio.risk import ledoit_wolf_cov
 
         method = self.config.optimization
         prices_to_date = self.prices.loc[:as_of_date, common_assets]

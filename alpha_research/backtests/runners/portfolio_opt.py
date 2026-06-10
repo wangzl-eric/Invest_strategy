@@ -11,7 +11,10 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from portfolio.optimizer import OptimizationConfig, weights_from_alpha  # noqa: E402
+from alpha_research.portfolio.optimizer import (  # noqa: E402
+    OptimizationConfig,
+    weights_from_alpha,
+)
 
 
 def main() -> int:

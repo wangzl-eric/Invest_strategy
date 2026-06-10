@@ -104,9 +104,6 @@ def create_performance_metrics(performance_data):
         record.get("cumulative_return", 0) * 100
         for record in reversed(performance_data)
     ]
-    daily_returns = [
-        record.get("daily_return", 0) * 100 for record in reversed(performance_data)
-    ]
 
     returns_chart = dcc.Graph(
         figure={

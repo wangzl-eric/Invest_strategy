@@ -54,7 +54,7 @@ The Feature Registry provides centralized definitions for quantitative features 
 ## Using Features in Python
 
 ```python
-from backend.research.features import compute_features, get_feature_registry
+from alpha_research.features.features import compute_features, get_feature_registry
 
 # Get registry
 registry = get_feature_registry()
@@ -102,7 +102,7 @@ curl -X POST "http://localhost:8000/api/research/features/compute" \
 ## Adding Custom Features
 
 ```python
-from backend.research.features import FeatureRegistry, FeatureDefinition, FeatureCategory
+from alpha_research.features.features import FeatureRegistry, FeatureDefinition, FeatureCategory
 
 # Create custom feature
 custom_feature = FeatureDefinition(

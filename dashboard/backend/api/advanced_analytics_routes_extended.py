@@ -1,15 +1,14 @@
 """Extended advanced analytics routes using the new advanced_analytics module."""
 import logging
-from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from datetime import datetime
+from typing import Optional
 
-import numpy as np
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from backend.advanced_analytics import (
+from dashboard.backend.advanced_analytics import (
     AnomalyDetector,
     AttributionAnalyzer,
     FactorAnalyzer,
@@ -17,9 +16,9 @@ from backend.advanced_analytics import (
     PortfolioOptimizer,
     RegimeDetector,
 )
-from backend.data_processor import DataProcessor
-from backend.database import get_db
-from backend.models import AccountSnapshot, PnLHistory
+from core.data_processor import DataProcessor
+from core.database import get_db
+from core.models import AccountSnapshot
 
 logger = logging.getLogger(__name__)
 

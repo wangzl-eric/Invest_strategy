@@ -21,12 +21,12 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from backtests.reporting import (
+from alpha_research.backtests.reporting import (
     ReviewConfig,
     build_review_bundle_from_run,
     load_series_from_file,
 )
-from backtests.run_manager import RunManager
+from alpha_research.backtests.run_manager import RunManager
 
 
 def parse_args() -> argparse.Namespace:

@@ -14,8 +14,8 @@ from urllib.request import urlopen
 
 import pandas as pd
 
-from quant_data.connectors.base import BarsRequest
-from quant_data.spec import DatasetFrequency, DatasetId, MarketDataKind
+from alpha_research.quant_data.connectors.base import BarsRequest
+from alpha_research.quant_data.spec import DatasetFrequency, DatasetId, MarketDataKind
 
 
 @dataclass(frozen=True)

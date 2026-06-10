@@ -3,7 +3,7 @@ from contextlib import contextmanager
 
 import pandas as pd
 
-from backend.data_pipeline import LocalDataRequest, UnifiedDataPipeline
+from dashboard.backend.data_pipeline import LocalDataRequest, UnifiedDataPipeline
 
 
 def test_resolve_dataset_from_legacy_selector():
@@ -29,7 +29,7 @@ def test_query_local_builds_duckdb_query(monkeypatch):
     def fake_research_db():
         yield FakeDB()
 
-    monkeypatch.setattr("backend.data_pipeline.get_research_db", fake_research_db)
+    monkeypatch.setattr("dashboard.backend.data_pipeline.get_research_db", fake_research_db)
 
     req = LocalDataRequest(
         dataset="ibkr_equities",

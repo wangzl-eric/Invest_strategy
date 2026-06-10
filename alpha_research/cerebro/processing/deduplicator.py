@@ -10,8 +10,8 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 
-from cerebro.config import cerebro_config
-from cerebro.sources.base import RawPaper
+from alpha_research.cerebro.config import cerebro_config
+from alpha_research.cerebro.sources.base import RawPaper
 
 logger = logging.getLogger(__name__)
 

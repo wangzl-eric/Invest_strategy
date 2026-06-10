@@ -128,7 +128,7 @@ def sharpe_confidence_interval(
     Returns:
         (lower_bound, point_estimate, upper_bound) — all annualized.
     """
-    from backtests.stats.bootstrap import block_bootstrap
+    from alpha_research.backtests.stats.bootstrap import block_bootstrap
 
     returns = np.asarray(returns, dtype=float)
     returns = returns[~np.isnan(returns)]

@@ -38,8 +38,6 @@ def create_pnl_chart(pnl_data):
     dates.reverse()  # Show oldest to newest
 
     total_pnl = [record["total_pnl"] or 0 for record in reversed(pnl_data)]
-    realized_pnl = [record["realized_pnl"] or 0 for record in reversed(pnl_data)]
-    unrealized_pnl = [record["unrealized_pnl"] or 0 for record in reversed(pnl_data)]
     net_liquidation = [record["net_liquidation"] or 0 for record in reversed(pnl_data)]
 
     # Create traces

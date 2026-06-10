@@ -1,15 +1,15 @@
 """API routes for execution orders, fills, and strategy monitor."""
 
 import logging
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from backend.auth import get_current_user_or_api_key
-from backend.database import get_db
-from backend.models import ExecutionFill, ExecutionOrder, PnLHistory, Position
+from dashboard.backend.auth import get_current_user_or_api_key
+from core.database import get_db
+from core.models import ExecutionFill, ExecutionOrder, PnLHistory, Position
 
 logger = logging.getLogger(__name__)
 

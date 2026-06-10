@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from quant_data.spec import DatasetId, DatasetLayer
+from alpha_research.quant_data.spec import DatasetId, DatasetLayer
 
 
 @dataclass(frozen=True)

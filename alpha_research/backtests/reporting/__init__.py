@@ -1,6 +1,6 @@
 """Reporting and validation helpers for backtest review workflows."""
 
-from backtests.reporting.review import (
+from alpha_research.backtests.reporting.review import (
     ReviewConfig,
     build_review_bundle_from_run,
     build_review_payload,

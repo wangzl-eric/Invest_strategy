@@ -2,9 +2,8 @@
 import hashlib
 import json
 import logging
-from datetime import timedelta
 from functools import wraps
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 try:
     import redis

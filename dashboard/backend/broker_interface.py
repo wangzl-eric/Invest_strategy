@@ -3,7 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -56,24 +56,20 @@ class BrokerInterface(ABC):
     @abstractmethod
     async def connect(self) -> bool:
         """Connect to the broker."""
-        pass
 
     @abstractmethod
     async def disconnect(self):
         """Disconnect from the broker."""
-        pass
 
     @abstractmethod
     async def get_account_summary(
         self, account_id: Optional[str] = None
     ) -> AccountSummary:
         """Get account summary."""
-        pass
 
     @abstractmethod
     async def get_positions(self, account_id: Optional[str] = None) -> List[Position]:
         """Get current positions."""
-        pass
 
     @abstractmethod
     async def get_trades(
@@ -83,12 +79,10 @@ class BrokerInterface(ABC):
         end_date: Optional[datetime] = None,
     ) -> List[Trade]:
         """Get trade history."""
-        pass
 
     @abstractmethod
     def get_broker_name(self) -> str:
         """Get the name of this broker."""
-        pass
 
 
 class IBKRBrokerAdapter(BrokerInterface):

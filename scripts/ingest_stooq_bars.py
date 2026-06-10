@@ -11,10 +11,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from quant_data.connectors.base import BarsRequest
-from quant_data.connectors.stooq import StooqBarsConnector
-from quant_data.pipelines.ingest_bars import ingest_bars_to_lake
-from quant_data.spec import DatasetLayer
+from alpha_research.quant_data.connectors.base import BarsRequest
+from alpha_research.quant_data.connectors.stooq import StooqBarsConnector
+from alpha_research.quant_data.pipelines.ingest_bars import ingest_bars_to_lake
+from alpha_research.quant_data.spec import DatasetLayer
 
 
 def main() -> int:

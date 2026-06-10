@@ -11,8 +11,8 @@ from typing import Optional
 
 import pandas as pd
 
-from quant_data.connectors.base import BarsRequest
-from quant_data.spec import (
+from alpha_research.quant_data.connectors.base import BarsRequest
+from alpha_research.quant_data.spec import (
     DatasetFrequency,
     DatasetId,
     MarketDataKind,

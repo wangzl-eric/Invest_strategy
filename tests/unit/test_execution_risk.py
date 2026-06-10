@@ -3,8 +3,8 @@ import os
 
 import pytest
 
-from execution.risk import RiskDecision, RiskEngine, RiskLimits, RiskState
-from execution.types import OrderRequest
+from alpha_research.execution.risk import RiskDecision, RiskEngine, RiskLimits, RiskState
+from alpha_research.execution.types import OrderRequest
 
 
 class TestRiskLimits:

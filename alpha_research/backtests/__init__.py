@@ -1,15 +1,15 @@
 """Backtesting framework using Backtrader."""
 
-from backtests.cache import SignalCache
-from backtests.forward_pass import (
+from alpha_research.backtests.cache import SignalCache
+from alpha_research.backtests.forward_pass import (
     ComparisonView,
     ForwardPassTracker,
     SignalHistory,
     TradeRecord,
     create_tracker,
 )
-from backtests.parallel import ParallelBacktester
-from backtests.run_manager import BacktestRun, RunManager
+from alpha_research.backtests.parallel import ParallelBacktester
+from alpha_research.backtests.run_manager import BacktestRun, RunManager
 
 __all__ = [
     # Forward pass tracking

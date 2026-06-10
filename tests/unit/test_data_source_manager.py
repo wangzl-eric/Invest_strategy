@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pandas as pd
 import pytest
 
-from backend.data_source_manager import (
+from core.data_source_manager import (
     DEFAULT_PRIORITY_ORDER,
     SOURCE_CAPABILITIES,
     DataSource,

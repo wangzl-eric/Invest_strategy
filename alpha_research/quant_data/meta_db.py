@@ -8,8 +8,8 @@ from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from quant_data.meta_models import QuantMetaBase
-from quant_data.qconfig import QuantDataSettings
+from alpha_research.quant_data.meta_models import QuantMetaBase
+from alpha_research.quant_data.qconfig import QuantDataSettings
 
 
 def create_meta_engine(settings: QuantDataSettings | None = None):

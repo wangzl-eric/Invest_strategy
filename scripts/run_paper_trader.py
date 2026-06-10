@@ -18,9 +18,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from execution.runner import ExecutionRunner, RunnerConfig
-from execution.sim_broker import SimBrokerImpl, SimMarket
-from execution.types import OrderRequest
+from alpha_research.execution.runner import ExecutionRunner, RunnerConfig
+from alpha_research.execution.sim_broker import SimBrokerImpl, SimMarket
+from alpha_research.execution.types import OrderRequest
 
 
 def parse_orders(s: str) -> list[OrderRequest]:

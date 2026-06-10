@@ -12,8 +12,8 @@ from typing import Any, Optional
 
 from sqlalchemy.orm import Session
 
-from quant_data.meta_models import Dataset, DatasetVersion, IngestionRun
-from quant_data.spec import DatasetId
+from alpha_research.quant_data.meta_models import Dataset, DatasetVersion, IngestionRun
+from alpha_research.quant_data.spec import DatasetId
 
 
 def _utc_now_tag() -> str:

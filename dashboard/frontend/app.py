@@ -6,10 +6,18 @@ from datetime import datetime
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objs as go
 import requests
-from dash import ALL, MATCH, Input, Output, State, callback, ctx, dcc, html
+from dash import ALL, Input, Output, State, callback, ctx, dcc, html
+
+from dashboard.frontend.components.cerebro_panel import (
+    create_cerebro_tab,
+    register_cerebro_callbacks,
+)
+from dashboard.frontend.components.data_manager import build_data_manager_layout
+from dashboard.frontend.components.market_panels import build_markets_layout
+from dashboard.frontend.components.strategy_monitor import build_strategy_monitor_layout
+from dashboard.frontend.websocket_client import create_websocket_client_component
 
 logger = logging.getLogger(__name__)
 
@@ -107,22 +115,6 @@ CUSTOM_STYLES = """<style>
         margin-bottom: var(--spacing-lg);
     }
 </style>"""
-from frontend.components.cerebro_panel import (
-    create_cerebro_tab,
-    register_cerebro_callbacks,
-)
-from frontend.components.data_manager import build_data_manager_layout
-
-# Import market panels
-from frontend.components.market_panels import (
-    build_markets_layout,
-    build_mover_news_panel,
-)
-from frontend.components.strategy_monitor import build_strategy_monitor_layout
-
-# Import WebSocket client
-from frontend.websocket_client import create_websocket_client_component
-
 # App layout
 app.layout = html.Div(
     [
@@ -808,7 +800,6 @@ def fetch_flex_query_on_demand(n_clicks):
         # Handle new multi-report response format
         successful = flex_data.get("successful", 0)
         total = flex_data.get("total_queries", 0)
-        results = flex_data.get("results", [])
         db_stats = flex_data.get("database", {})
 
         # Build summary message with database import stats
@@ -971,7 +962,7 @@ def update_summary_metrics(data, flex_store):
 
     data = data or {}
 
-    # Use flex from dedicated store if available, otherwise from portfolio store
+    # Use flex from dedicated store if available, otherwise from alpha_research.portfolio store
     flex = flex_store or data.get("flex") or {}
     db = data.get("db") or {}
     account = db.get("account") or {}
@@ -992,10 +983,8 @@ def update_summary_metrics(data, flex_store):
     if pnl_history:
         latest_pnl = pnl_history[0]
         total_pnl = latest_pnl.get("total_pnl", 0) or 0
-        unrealized_pnl = latest_pnl.get("unrealized_pnl", 0) or 0
     else:
         total_pnl = 0
-        unrealized_pnl = 0
 
     # Format values
     def format_currency(val):
@@ -1338,7 +1327,6 @@ def expand_historical_chart(n_clicks_list):
 
         period_buttons = []
         for label, days in _HIST_PERIODS:
-            subset_dates = dates[-days:] if len(dates) > days else dates
             is_active = label == "1Y"
             period_buttons.append(
                 html.Button(
@@ -1681,7 +1669,6 @@ def create_portfolio_tab(data):
         qty = pos.get("quantity", 0)
         price = pos.get("market_price", 0) or 0
         value = qty * price if price else pos.get("market_value", 0) or 0
-        pnl = pos.get("unrealized_pnl", 0) or 0
 
         holdings_list.append(
             html.Div(
@@ -1801,7 +1788,7 @@ def create_portfolio_tab(data):
 
 
 def fetch_performance_analytics(start_date=None, end_date=None):
-    """Fetch comprehensive performance analytics from backend with optional date range.
+    """Fetch comprehensive performance analytics from dashboard.backend with optional date range.
 
     Args:
         start_date: Start date string in format 'YYYY-MM-DD' or None
@@ -2515,11 +2502,6 @@ def create_performance_tab(data, start_date=None, end_date=None):
     # =========================================================================
     # Date Range Controls
     # =========================================================================
-    from datetime import datetime, timedelta
-
-    # Calculate default date ranges
-    today = datetime.now()
-
     # Display current date range
     date_range_display = ""
     if start_date and end_date:
@@ -2799,7 +2781,6 @@ def create_positions_tab(data):
                         timestamps.append(ts)
                 except Exception as e:
                     logger.debug(f"Could not parse timestamp {ts}: {e}")
-                    pass
 
         if timestamps:
             latest_timestamp = max(timestamps)
@@ -2849,17 +2830,13 @@ def create_positions_tab(data):
             pnl = pos.get("unrealized_pnl")  # Keep None if not present
             currency = pos.get("currency", "USD")
 
-            # Determine P&L display class (handle None explicitly)
+            # Determine P&L display (handle None explicitly)
             if pnl is not None:
-                pnl_class = (
-                    "positive" if pnl > 0 else "negative" if pnl < 0 else "neutral"
-                )
                 pnl_display = f"${pnl:,.2f}"
                 pnl_color = (
                     "#34d399" if pnl > 0 else "#f87171" if pnl < 0 else "#9094a1"
                 )
             else:
-                pnl_class = "neutral"
                 pnl_display = "N/A"
                 pnl_color = "#9094a1"
 

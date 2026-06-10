@@ -1,12 +1,12 @@
 """Statistical tests and anti-overfitting tools for backtesting."""
 
-from backtests.stats.bootstrap import block_bootstrap
-from backtests.stats.cross_validation import (
+from alpha_research.backtests.stats.bootstrap import block_bootstrap
+from alpha_research.backtests.stats.cross_validation import (
     cpcv_split,
     purged_kfold_split,
     walk_forward_split,
 )
-from backtests.stats.decay_analysis import (
+from alpha_research.backtests.stats.decay_analysis import (
     correlation_with_existing,
     regime_conditional_sharpe,
     rolling_sharpe,
@@ -14,13 +14,13 @@ from backtests.stats.decay_analysis import (
     strategy_capacity_estimate,
     strategy_half_life,
 )
-from backtests.stats.minimum_backtest import minimum_backtest_length
-from backtests.stats.multiple_testing import (
+from alpha_research.backtests.stats.minimum_backtest import minimum_backtest_length
+from alpha_research.backtests.stats.multiple_testing import (
     bonferroni_correction,
     fdr_correction,
     whites_reality_check,
 )
-from backtests.stats.sharpe_tests import (
+from alpha_research.backtests.stats.sharpe_tests import (
     deflated_sharpe_ratio,
     probabilistic_sharpe_ratio,
     sharpe_confidence_interval,

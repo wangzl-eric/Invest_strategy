@@ -7,8 +7,8 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from backend.attribution_engine import AttributionEngine
-from backend.config import settings
+from dashboard.backend.attribution_engine import AttributionEngine
+from core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -222,8 +222,8 @@ async def get_attribution_history(
 ):
     """Get attribution history."""
     try:
-        from backend.database import SessionLocal
-        from backend.models import PnLAttribution
+        from core.database import SessionLocal
+        from core.models import PnLAttribution
 
         db = SessionLocal()
         try:
@@ -295,7 +295,7 @@ async def get_attribution_history(
 @router.get("/signals", response_model=SignalListResponse)
 async def get_available_signals():
     """Get list of available signals with their metadata."""
-    from backtests.strategies import SIGNAL_METADATA
+    from alpha_research.backtests.strategies import SIGNAL_METADATA
 
     return SignalListResponse(signals=SIGNAL_METADATA)
 
@@ -303,7 +303,7 @@ async def get_available_signals():
 @router.get("/config/status", response_model=LLMCreditsResponse)
 async def get_llm_status():
     """Check if LLM is configured."""
-    from backend.llm_client import QwenLLMClient
+    from core.llm_client import QwenLLMClient
 
     client = QwenLLMClient()
 
@@ -316,8 +316,8 @@ async def get_llm_status():
 @router.get("/health")
 async def health_check():
     """Health check for attribution service."""
-    from backend.llm_client import QwenLLMClient
-    from backtests.strategies import SIGNAL_METADATA
+    from core.llm_client import QwenLLMClient
+    from alpha_research.backtests.strategies import SIGNAL_METADATA
 
     client = QwenLLMClient()
 

@@ -15,7 +15,7 @@ sys.path.insert(0, str(project_root))
 
 import pandas as pd
 
-from backend.db_utils import (
+from core.db_utils import (
     get_account_pnl_totals,
     get_daily_pnl,
     get_trade_summary,

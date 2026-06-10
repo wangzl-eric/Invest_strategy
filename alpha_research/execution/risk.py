@@ -9,7 +9,7 @@ import os
 from dataclasses import dataclass
 from typing import Dict, Optional
 
-from execution.types import OrderRequest
+from alpha_research.execution.types import OrderRequest
 
 
 @dataclass(frozen=True)

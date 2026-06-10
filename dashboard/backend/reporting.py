@@ -1,19 +1,16 @@
 """PDF report generation and scheduled reporting."""
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from io import BytesIO
-from typing import Any, Dict, List, Optional
-
-import pandas as pd
+from typing import Optional
 
 try:
     from reportlab.lib import colors
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-    from reportlab.lib.pagesizes import A4, letter
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.lib.pagesizes import letter
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import inch
     from reportlab.platypus import (
-        Image,
         PageBreak,
         Paragraph,
         SimpleDocTemplate,
@@ -229,11 +226,11 @@ class ScheduledReportService:
         """Generate a report and send via email."""
         try:
             if report_type == "performance":
-                pdf_buffer = self.report_generator.generate_performance_report(
+                self.report_generator.generate_performance_report(
                     account_id, start_date, end_date
                 )
             elif report_type == "trades":
-                pdf_buffer = self.report_generator.generate_trade_report(
+                self.report_generator.generate_trade_report(
                     account_id, start_date, end_date
                 )
             else:

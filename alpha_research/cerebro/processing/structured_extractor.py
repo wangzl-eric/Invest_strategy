@@ -9,8 +9,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-from cerebro.processing.llm_summarizer import CerebroLLMClient
-from cerebro.sources.base import RawPaper
+from alpha_research.cerebro.processing.llm_summarizer import CerebroLLMClient
+from alpha_research.cerebro.sources.base import RawPaper
 
 logger = logging.getLogger(__name__)
 

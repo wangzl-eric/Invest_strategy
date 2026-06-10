@@ -1,20 +1,22 @@
 # Repository Layout
 
-This repository is organized into **three product components**, each a top-level directory:
+This repository is a **layered architecture**: a shared infrastructure package at the bottom, then three product components.
 
-1. **`dashboard/`** — IBKR portfolio analytics & market-price application (FastAPI backend + Dash frontend)
-2. **`alpha_research/`** — alpha research & backtesting infrastructure (signal/backtest/portfolio/execution libraries, data ingestion, research notes, notebooks, and the Cerebro discovery pipeline)
-3. **`book_notes/`** — learning material: notes on books/papers and the playground study environment
+- **`core/`** — shared infrastructure: config, DB (models/database/persistence), IBKR broker client, market-data platform, Flex ingestion, LLM plumbing. Depends on nothing internal.
+- **`dashboard/`** — IBKR portfolio analytics & market-price application (FastAPI backend + Dash frontend)
+- **`alpha_research/`** — alpha research & backtesting infrastructure (signal/backtest/portfolio/execution libraries, data ingestion, research notes, notebooks, and the Cerebro discovery pipeline)
+- **`book_notes/`** — learning material: notes on books/papers and the playground study environment
 
 For the end-to-end research flow, see [`docs/data_backtest_report_pipeline.md`](./data_backtest_report_pipeline.md).
 
-The project runs on a flat `PYTHONPATH=.` import namespace (`from backend...`, `from portfolio...`, etc.). To keep that namespace working after the physical grouping, root-level **compatibility symlinks** point each importable package name at its new location inside a component. This is a physical/organizational grouping, not enforced module isolation — the dashboard and research libraries still import each other freely.
+Imports use real, component-qualified paths (`from core.config import settings`, `from alpha_research.portfolio... import`) with repo root on `PYTHONPATH` (pytest sets `pythonpath = .`). There are **no compatibility symlinks** — the packages are real directories and the dependency graph is a DAG (see Import Layering below).
 
 ## Stack Map
 
 | Path | Component | Status | Purpose |
 |------|-----------|--------|---------|
-| `dashboard/backend/` | Dashboard | Active | FastAPI service, IBKR integration, persistence, APIs |
+| `core/` | Infrastructure | Active | Config, DB/persistence, IBKR client, market-data platform, Flex ingestion, LLM plumbing (bottom layer) |
+| `dashboard/backend/` | Dashboard | Active | FastAPI service, IBKR integration, APIs (imports `core.*`) |
 | `dashboard/frontend/` | Dashboard | Active | Dash dashboard for monitoring and controls |
 | `alpha_research/backtests/` | Alpha research | Active | Signal research, walk-forward analysis, stats, reporting |
 | `alpha_research/portfolio/` | Alpha research | Active | Alpha blending, optimization, risk analytics, rebalancing |
@@ -26,28 +28,29 @@ The project runs on a flat `PYTHONPATH=.` import namespace (`from backend...`, `
 | `book_notes/playground/` | Book notes | Active | Playground study environment (studies, agents, skills) |
 | `book_notes/books_and_papers/` | Book notes | Active | Source PDFs of books and papers |
 | `data/` | Shared runtime data | Active | Pulled datasets, market data files, broker exports, catalogs |
-| `qc_lean/` | Optional external integration | Isolated | Local QuantConnect Lean runtime, engine source, results |
 | `docs/` | Documentation | Active | Guides, specs, architecture notes |
 | `scripts/` | Tooling | Active | CLI entry points, ingestion jobs, automation |
 | `tests/` | Verification | Active | Unit and integration coverage |
 
-## Compatibility symlinks
+## Import Layering
 
-These root paths are symlinks that preserve the flat import namespace. Do not delete them
-without first rewriting the corresponding imports/path references.
+The dependency graph is a DAG with `core/` at the bottom:
 
-| Symlink | Target |
-|---------|--------|
-| `backend/` | `dashboard/backend/` |
-| `frontend/` | `dashboard/frontend/` |
-| `backtests/` | `alpha_research/backtests/` |
-| `portfolio/` | `alpha_research/portfolio/` |
-| `execution/` | `alpha_research/execution/` |
-| `quant_data/` | `alpha_research/quant_data/` |
-| `research/` | `alpha_research/research/` |
-| `notebooks/` | `alpha_research/notebooks/` |
-| `cerebro/` | `alpha_research/cerebro/` |
-| `books_and_papers/` | `book_notes/books_and_papers/` |
+```
+            core/                  (imports nothing internal)
+           /      \
+   alpha_research/   dashboard/    (both import core/)
+                \    /
+        dashboard/ → alpha_research/   (one-way: the app uses research libs)
+```
+
+Rules:
+- `core/` must not import `dashboard` or `alpha_research`.
+- `alpha_research/` may import `core/` only (never `dashboard`).
+- `dashboard/` may import `core/` and `alpha_research/`.
+
+This keeps the components independently testable/deployable. (There are no
+compatibility symlinks; an earlier transition used them but imports are now explicit.)
 
 ## Naming Decisions
 
@@ -57,22 +60,30 @@ without first rewriting the corresponding imports/path references.
 - `alpha_research/quant_data/` (importable as `quant_data`) is the Python package that fetches, validates, normalizes, and registers those datasets.
 - The names overlap semantically, but they represent different layers: storage vs code.
 
-### `alpha_research/backtests/` vs `dashboard/backend/backtest_engine.py`
+### `data/` vs `data_lake/`
+
+- `data/` is the primary runtime storage root used by the dashboard and most pipelines
+  (Flex reports, market-data Parquet under `data/market_data/`, `catalog.json`).
+- `data_lake/` is the DuckDB-backed research lake used by `alpha_research/quant_data`
+  (default `data_lake/research.duckdb`, overridable via `DATA_LAKE_ROOT`/`QDATA_DUCKDB_PATH`).
+- They are separate stores by design; consolidating them is a possible future cleanup.
+
+### Backtesting
 
 - `alpha_research/backtests/` is the research framework: signals, portfolio builder, walk-forward analysis, statistics, reporting.
-- `alpha_research/backtests/event_driven/backtest_engine.py` is the canonical event-driven execution adapter around Backtrader.
-- `dashboard/backend/backtest_engine.py` is kept only as a compatibility shim for existing imports.
+- `alpha_research/backtests/event_driven/backtest_engine.py` is the canonical event-driven execution adapter around Backtrader. Import it directly (the former `dashboard/backend/backtest_engine.py` shim has been removed).
 
 ### `dashboard/`
 
 - `dashboard/backend/` and `dashboard/frontend/` are the deployable app.
 - `backtests/`, `portfolio/`, `execution/`, and `quant_data/` (under `alpha_research/`) are shared domain libraries used by the app and scripts.
 
-### `qc_lean/`
+### Backtesting engine
 
-- `qc_lean/` should be treated as an optional external engine, not a first-class peer of the Python packages.
-- It contains vendor source, local runtime files, example algorithms, and generated outputs.
-- A deeper physical cleanup target is `external/qc_lean/` or a separate sibling repository.
+- The in-house engine under `alpha_research/backtests/` is the single supported
+  backtesting framework (vectorized builder, walk-forward, event-driven engine, stats).
+- The former QuantConnect Lean workspace (`qc_lean/`) has been **removed/deprecated**;
+  do not reintroduce an external engine without a deliberate decision.
 
 ## Recommended Boundaries
 
@@ -82,13 +93,13 @@ without first rewriting the corresponding imports/path references.
 - Put strategy notes and exploratory notebooks in `alpha_research/{research,notebooks}/`.
 - Put book/paper learning material in `book_notes/`.
 - Put raw or generated files in `data/`.
-- Keep optional or experimental integrations clearly marked (`alpha_research/cerebro/`, `qc_lean/`).
+- Keep optional or experimental integrations clearly marked (`alpha_research/cerebro/`).
 
-## Follow-Up Refactors
+## Completed Refactors
 
-Reasonable next steps, intentionally not done because they are import- and path-sensitive:
+The major structural cleanups are done:
 
-1. Move `qc_lean/` under `external/` or out of the repo entirely.
-2. Replace the `dashboard/backend/backtest_engine.py` compatibility shim with direct imports once downstream callers are updated.
-3. Replace the compatibility symlinks with updated imports and path references once the new component layout has settled.
-4. Extract a shared `core` (DB models, IBKR client, market-data store) to break the dashboard↔research import coupling, if true module isolation becomes desirable.
+- Three-component split (`dashboard/`, `alpha_research/`, `book_notes/`) with explicit imports (no symlinks).
+- `core/` extracted as the shared-infrastructure bottom layer — the dashboard↔research cycle is broken.
+- `dashboard/backend/backtest_engine.py` shim removed; import `alpha_research.backtests.event_driven.backtest_engine` directly.
+- QuantConnect Lean (`qc_lean/`) removed in favor of the in-house engine.

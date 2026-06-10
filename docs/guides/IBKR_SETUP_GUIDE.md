@@ -96,7 +96,7 @@ curl -X POST "http://localhost:8000/api/fetch-data?account_id=YOUR_ACCOUNT_ID"
 Create a script to start the scheduler (or add it to your startup):
 
 ```python
-# start_scheduler.py
+# bin/start_scheduler.py
 import asyncio
 from backend.scheduler import scheduler
 from backend.ibkr_client import IBKRClient
@@ -127,7 +127,7 @@ if __name__ == "__main__":
 
 Run it:
 ```bash
-python start_scheduler.py
+python bin/start_scheduler.py
 ```
 
 ### Step 7: View Your Data

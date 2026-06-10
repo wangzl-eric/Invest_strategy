@@ -11,7 +11,7 @@ from typing import Any, Dict, Optional
 
 import httpx
 
-from cerebro.config import cerebro_config
+from alpha_research.cerebro.config import cerebro_config
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +87,7 @@ class CerebroLLMClient:
         """
         # Import backend config for API key (shared across platform)
         try:
-            from backend.config import settings as backend_settings
+            from core.config import settings as backend_settings
 
             self._api_key = api_key or backend_settings.llm.qwen_api_key
             self._base_url = base_url or backend_settings.llm.qwen_base_url
@@ -211,7 +211,7 @@ class CerebroLLMClient:
             response_data: Full API response JSON.
         """
         try:
-            from backend.token_tracker import get_token_tracker
+            from core.token_tracker import get_token_tracker
 
             usage = response_data.get("usage", {})
             tracker = get_token_tracker()
@@ -232,7 +232,7 @@ class CerebroLLMClient:
             error: Error message string.
         """
         try:
-            from backend.token_tracker import get_token_tracker
+            from core.token_tracker import get_token_tracker
 
             tracker = get_token_tracker()
             tracker.record_usage(

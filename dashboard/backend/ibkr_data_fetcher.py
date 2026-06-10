@@ -5,7 +5,7 @@ and storing it in the parquet data lake.
 
 Usage:
     # Fetch equities
-    from backend.ibkr_data_fetcher import fetch_equities, fetch_forex, fetch_futures
+    from dashboard.backend.ibkr_data_fetcher import fetch_equities, fetch_forex, fetch_futures
 
     # Pull data for a few symbols
     result = await fetch_equities(["AAPL", "MSFT", "GOOGL"], "1 Y")
@@ -17,7 +17,7 @@ Usage:
     result = await batch_fetch("ibkr_equities", ["AAPL", "MSFT"], "1 Y")
 
     # Validate data quality
-    from backend.ibkr_data_fetcher import validate_data, DataQualityReport
+    from dashboard.backend.ibkr_data_fetcher import validate_data, DataQualityReport
     report = validate_data(df)
 """
 
@@ -27,7 +27,6 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional
 
-import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -135,7 +134,7 @@ class IBKRDataFetcher:
 
     async def _get_client(self):
         if self._client is None:
-            from backend.ibkr_client import IBKRClient
+            from core.ibkr_client import IBKRClient
 
             self._client = IBKRClient()
         return self._client
@@ -602,7 +601,7 @@ def get_last_date_for_ticker(parquet_path: Path, ticker: str) -> Optional[dateti
 
 def get_ibkr_data_path(asset_class: str) -> Path:
     """Get the parquet file path for an IBKR asset class."""
-    from backend.market_data_store import _IBKR_ASSET_FILES
+    from core.market_data_store import _IBKR_ASSET_FILES
 
     return _IBKR_ASSET_FILES.get(asset_class)
 

@@ -81,7 +81,7 @@ class TestBug1AnnualizedReturnMapping:
 class TestBug2GridSearchCV:
     def test_time_series_splits_no_leakage(self):
         """Expanding-window CV splits: no overlap, test always after train."""
-        from backtests.walkforward import GridSearch
+        from alpha_research.backtests.walkforward import GridSearch
 
         prices = make_prices(500)
 
@@ -105,7 +105,7 @@ class TestBug2GridSearchCV:
 
     def test_purged_cv_splits_no_overlap(self):
         """Purged K-fold CV splits: train and test must not overlap."""
-        from backtests.walkforward import GridSearch
+        from alpha_research.backtests.walkforward import GridSearch
 
         prices = make_prices(500)
 
@@ -125,7 +125,7 @@ class TestBug2GridSearchCV:
 
     def test_cv_folds_default_5(self):
         """Default cv_folds should be 5."""
-        from backtests.walkforward import GridSearch
+        from alpha_research.backtests.walkforward import GridSearch
 
         prices = make_prices(1000)
         gs = GridSearch(
@@ -145,7 +145,7 @@ class TestBug2GridSearchCV:
 class TestBug3BuilderUsesWeights:
     def test_different_weights_different_results(self):
         """Changing weights should change backtest results (static mode)."""
-        from backtests.builder import PortfolioBuilder, PortfolioConfig
+        from alpha_research.backtests.builder import PortfolioBuilder, PortfolioConfig
 
         prices = make_prices(300, tickers=["SPY", "TLT", "GLD"])
 
@@ -176,7 +176,7 @@ class TestBug3BuilderUsesWeights:
 
     def test_equal_weight_produces_uniform(self):
         """Equal weight should give each asset 1/N allocation."""
-        from backtests.builder import PortfolioBuilder, PortfolioConfig
+        from alpha_research.backtests.builder import PortfolioBuilder, PortfolioConfig
 
         prices = make_prices(300, tickers=["A", "B", "C"])
         config = PortfolioConfig(universe=["A", "B", "C"])
@@ -192,7 +192,7 @@ class TestBug3BuilderUsesWeights:
 
     def test_dynamic_reoptimize_produces_different_result_than_static(self):
         """Dynamic re-optimization changes the equity curve vs static weights."""
-        from backtests.builder import PortfolioBuilder, PortfolioConfig
+        from alpha_research.backtests.builder import PortfolioBuilder, PortfolioConfig
 
         prices = make_prices(500, tickers=["SPY", "TLT", "GLD"])
         config = PortfolioConfig(
@@ -232,7 +232,7 @@ class TestBug3BuilderUsesWeights:
 class TestBug4SignalBlenderLookAhead:
     def test_expanding_window_normalization(self):
         """Blended signal at time T should use only data up to T."""
-        from backtests.strategies.signals import (
+        from alpha_research.backtests.strategies.signals import (
             MeanReversionSignal,
             MomentumSignal,
             SignalBlender,
@@ -273,7 +273,7 @@ class TestBug4SignalBlenderLookAhead:
 class TestBug5SharpeRiskFreeAdjusted:
     def test_regime_analyzer_accepts_risk_free(self):
         """RegimeAnalyzer._compute_metrics should accept risk_free_rate."""
-        from backtests.walkforward import RegimeAnalyzer
+        from alpha_research.backtests.walkforward import RegimeAnalyzer
 
         returns = pd.Series(np.random.normal(0.001, 0.01, 252))
 
@@ -299,7 +299,7 @@ class TestBug5SharpeRiskFreeAdjusted:
 class TestBug6WarmupEnforcement:
     def test_momentum_signal_nan_during_warmup(self):
         """Signal should produce NaN during warmup period."""
-        from backtests.strategies.signals import MomentumSignal
+        from alpha_research.backtests.strategies.signals import MomentumSignal
 
         prices = make_prices(300)
         sig = MomentumSignal(lookback=60, skip=5)
@@ -313,7 +313,7 @@ class TestBug6WarmupEnforcement:
 
     def test_mean_reversion_nan_during_warmup(self):
         """MeanReversionSignal should enforce full lookback warmup."""
-        from backtests.strategies.signals import MeanReversionSignal
+        from alpha_research.backtests.strategies.signals import MeanReversionSignal
 
         prices = make_prices(200)
         sig = MeanReversionSignal(lookback=63)
@@ -333,7 +333,7 @@ class TestBug6WarmupEnforcement:
 class TestBug7CovarianceLookAhead:
     def test_as_of_date_limits_data(self):
         """optimize_weights(as_of_date=X) should only use data up to X."""
-        from backtests.builder import PortfolioBuilder, PortfolioConfig
+        from alpha_research.backtests.builder import PortfolioBuilder, PortfolioConfig
 
         prices = make_prices(500, tickers=["SPY", "TLT"])
         midpoint = str(prices.index[250].date())
@@ -363,7 +363,7 @@ class TestBug7CovarianceLookAhead:
 class TestBug8TransactionCosts:
     def test_signal_research_with_costs(self):
         """run_signal_research with cost_bps > 0 should reduce returns."""
-        from backtests.strategies.signals import run_signal_research
+        from alpha_research.backtests.strategies.signals import run_signal_research
 
         prices = make_prices(500)
 
@@ -383,8 +383,8 @@ class TestBug8TransactionCosts:
 
     def test_event_driven_engine_has_costs(self):
         """EventDrivenBacktester should apply commission and slippage."""
-        from backtests.event_driven.engine import EventDrivenBacktester
-        from backtests.event_driven.events import OrderEvent
+        from alpha_research.backtests.event_driven.engine import EventDrivenBacktester
+        from alpha_research.backtests.event_driven.events import OrderEvent
 
         engine = EventDrivenBacktester(
             initial_cash=100000, commission_rate=0.001, slippage_bps=10.0
@@ -417,7 +417,7 @@ class TestBug8TransactionCosts:
 class TestBug9RegimeAnalyzerNoMutation:
     def test_analyze_does_not_mutate_equity(self):
         """RegimeAnalyzer.analyze() should not modify the input equity DataFrame."""
-        from backtests.walkforward import RegimeAnalyzer
+        from alpha_research.backtests.walkforward import RegimeAnalyzer
 
         dates = pd.bdate_range("2020-01-01", periods=300)
         rng = np.random.RandomState(42)
@@ -456,7 +456,7 @@ class TestBug10RebalanceFreqPassthrough:
 
     def _build(self, freq: str, n: int = 500, seed: int = 42) -> int:
         """Return the number of rebalance dates for the given frequency string."""
-        from backtests.builder import PortfolioBuilder, PortfolioConfig
+        from alpha_research.backtests.builder import PortfolioBuilder, PortfolioConfig
 
         prices = make_prices(n, seed=seed, tickers=["SPY", "TLT", "GLD"])
         config = PortfolioConfig(
@@ -476,7 +476,7 @@ class TestBug10RebalanceFreqPassthrough:
 
     def test_bimonthly_fewer_rebalances_than_monthly(self):
         """backtest(rebalance_freq="2M") must produce fewer rebalance dates than "M"."""
-        from backtests.builder import PortfolioBuilder, PortfolioConfig
+        from alpha_research.backtests.builder import PortfolioBuilder, PortfolioConfig
 
         prices = make_prices(500, tickers=["SPY", "TLT", "GLD"])
 
@@ -508,7 +508,7 @@ class TestBug10RebalanceFreqPassthrough:
 
     def test_arbitrary_freq_produces_valid_result(self):
         """backtest() with rebalance_frequency="2M" must return a valid result dict."""
-        from backtests.builder import PortfolioBuilder, PortfolioConfig
+        from alpha_research.backtests.builder import PortfolioBuilder, PortfolioConfig
 
         prices = make_prices(500, tickers=["SPY", "TLT", "GLD"])
         config = PortfolioConfig(
@@ -537,7 +537,7 @@ class TestBug11TargetVol:
     """target_vol=X should reduce max drawdown vs target_vol=None on volatile data."""
 
     def _run(self, target_vol, seed=42, n=800):
-        from backtests.builder import PortfolioBuilder, PortfolioConfig
+        from alpha_research.backtests.builder import PortfolioBuilder, PortfolioConfig
 
         rng = np.random.RandomState(seed)
         dates = pd.bdate_range("2018-01-01", periods=n)

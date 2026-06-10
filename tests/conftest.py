@@ -9,8 +9,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from backend.config import settings
-from backend.models import Base
+from core.config import settings
+from core.models import Base
 
 
 @pytest.fixture(scope="function")
@@ -97,7 +97,7 @@ def sample_equity_series():
 @pytest.fixture
 def sample_signals():
     """Sample Signal objects for testing signal blending."""
-    from portfolio.blend import Signal
+    from alpha_research.portfolio.blend import Signal
 
     symbols = ["AAPL", "MSFT", "GOOGL", "AMZN"]
     np.random.seed(42)

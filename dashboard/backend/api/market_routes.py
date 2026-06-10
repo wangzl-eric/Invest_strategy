@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
-from backend.market_data_service import market_data_service
+from core.market_data_service import market_data_service
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ async def get_mover_news(
     - IBKR TWS/Gateway running with news subscriptions
     - QWEN_API_KEY configured in .env for LLM summarization
     """
-    from backend.mover_news_service import get_mover_news_service
+    from dashboard.backend.mover_news_service import get_mover_news_service
 
     # First get the movers
     movers_data = market_data_service.get_what_changed(sigma_threshold=sigma)
@@ -113,7 +113,6 @@ async def refresh_mover_news(
 
     Same as /market/mover-news but always fetches fresh data.
     """
-    from backend.mover_news_service import get_mover_news_service
 
     # Get movers
     movers_data = market_data_service.get_what_changed(sigma_threshold=sigma)
@@ -128,7 +127,7 @@ async def refresh_mover_news(
         }
 
     # Create fresh service instance to bypass any caching
-    from backend.mover_news_service import MoverNewsService
+    from dashboard.backend.mover_news_service import MoverNewsService
 
     mover_news_service = MoverNewsService()
 
@@ -243,7 +242,7 @@ async def get_source_status():
 @router.get("/market/data-source-info")
 async def get_data_source_info():
     """Get information about data source priorities and capabilities."""
-    from backend.data_source_manager import (
+    from core.data_source_manager import (
         DEFAULT_PRIORITY_ORDER,
         SOURCE_CAPABILITIES,
         data_source_manager,
@@ -277,7 +276,7 @@ async def get_llm_usage():
     - Usage by endpoint
     - Recent request history
     """
-    from backend.token_tracker import get_token_tracker
+    from core.token_tracker import get_token_tracker
 
     tracker = get_token_tracker()
     stats = tracker.get_stats()
@@ -307,7 +306,7 @@ async def get_llm_usage():
 @router.post("/llm/usage/reset")
 async def reset_llm_usage():
     """Reset all token usage statistics."""
-    from backend.token_tracker import get_token_tracker
+    from core.token_tracker import get_token_tracker
 
     tracker = get_token_tracker()
     tracker.reset()

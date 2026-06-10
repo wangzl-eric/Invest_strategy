@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from execution.types import Fill, OrderRequest
+from alpha_research.execution.types import Fill, OrderRequest
 
 
 class Broker(Protocol):

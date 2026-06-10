@@ -13,8 +13,8 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 
-from cerebro.config import cerebro_config
-from cerebro.processing.structured_extractor import PaperSummary
+from alpha_research.cerebro.config import cerebro_config
+from alpha_research.cerebro.processing.structured_extractor import PaperSummary
 
 logger = logging.getLogger(__name__)
 

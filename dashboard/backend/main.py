@@ -5,42 +5,42 @@ from datetime import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.advanced_analytics_routes import router as advanced_analytics_router
-from backend.api.advanced_analytics_routes_extended import (
+from core.ibkr_client import IBKRClient
+from dashboard.backend.api.advanced_analytics_routes import (
+    router as advanced_analytics_router,
+)
+from dashboard.backend.api.advanced_analytics_routes_extended import (
     router as advanced_analytics_extended_router,
 )
-from backend.api.alert_routes import router as alert_router
-from backend.api.attribution_routes import router as attribution_router
-from backend.api.auth_routes import router as auth_router
-from backend.api.backtest_routes import router as backtest_router
-from backend.api.data_routes import router as data_router
-from backend.api.execution_routes import router as execution_router
-from backend.api.market_routes import router as market_router
-from backend.api.news_routes import router as news_router
-from backend.api.reporting_routes import router as reporting_router
-from backend.api.research_routes import router as research_router
-from backend.api.routes import router
-from backend.broker_interface import IBKRBrokerAdapter, broker_manager
-from backend.ibkr_client import IBKRClient
+from dashboard.backend.api.alert_routes import router as alert_router
+from dashboard.backend.api.attribution_routes import router as attribution_router
+from dashboard.backend.api.auth_routes import router as auth_router
+from dashboard.backend.api.backtest_routes import router as backtest_router
+from dashboard.backend.api.data_routes import router as data_router
+from dashboard.backend.api.execution_routes import router as execution_router
+from dashboard.backend.api.market_routes import router as market_router
+from dashboard.backend.api.news_routes import router as news_router
+from dashboard.backend.api.reporting_routes import router as reporting_router
+from dashboard.backend.api.research_routes import router as research_router
+from dashboard.backend.api.routes import router
+from dashboard.backend.broker_interface import IBKRBrokerAdapter, broker_manager
 
 try:
-    from backend.api.websocket_routes import router as websocket_router
+    from dashboard.backend.api.websocket_routes import router as websocket_router
 except ImportError:
     websocket_router = None
 # Configure logging
 import os
 
-from backend.alert_engine import alert_engine
-from backend.config import settings
-from backend.error_tracking import error_tracker
-from backend.middleware import MetricsMiddleware
-from backend.rate_limiter import rate_limit_middleware
-from backend.realtime_broadcaster import broadcaster
-from backend.scheduler import PnLScheduler
-from backend.tracing import tracing_service
+from core.config import settings
+from dashboard.backend.error_tracking import error_tracker
+from dashboard.backend.middleware import MetricsMiddleware
+from dashboard.backend.rate_limiter import rate_limit_middleware
+from dashboard.backend.realtime_broadcaster import broadcaster
+from dashboard.backend.tracing import tracing_service
 
 try:
-    from backend.logging_config import setup_logging
+    from dashboard.backend.logging_config import setup_logging
 
     use_json_logging = os.getenv("LOG_FORMAT", "").lower() == "json"
     setup_logging(log_level=settings.app.log_level, use_json=use_json_logging)
@@ -76,7 +76,7 @@ app.add_middleware(MetricsMiddleware)
 app.middleware("http")(rate_limit_middleware)
 
 # Initialize error tracking
-import os
+import os  # noqa: E402
 
 sentry_dsn = os.getenv("SENTRY_DSN")
 if sentry_dsn:
@@ -118,7 +118,7 @@ if websocket_router:
     app.include_router(websocket_router, prefix="/api", tags=["websocket"])
 
 try:
-    from cerebro.api.cerebro_routes import router as cerebro_router
+    from alpha_research.cerebro.api.cerebro_routes import router as cerebro_router
 
     app.include_router(cerebro_router, prefix="/api/cerebro", tags=["cerebro"])
 except ImportError:
@@ -131,7 +131,7 @@ async def metrics():
     """Prometheus metrics endpoint."""
     from fastapi import Response
 
-    from backend.metrics import get_metrics, get_metrics_content_type
+    from dashboard.backend.metrics import get_metrics, get_metrics_content_type
 
     return Response(content=get_metrics(), media_type=get_metrics_content_type())
 
@@ -145,7 +145,7 @@ def get_pnl_scheduler():
     """Get or create the PnL scheduler instance."""
     global pnl_scheduler
     if pnl_scheduler is None:
-        from backend.scheduler import PnLScheduler
+        from dashboard.backend.scheduler import PnLScheduler
 
         pnl_scheduler = PnLScheduler()
     return pnl_scheduler
@@ -168,7 +168,7 @@ async def startup_event():
     logger.info("Real-time broadcaster started")
     # Start alert evaluation scheduler
     try:
-        from backend.alert_scheduler import start_alert_scheduler
+        from dashboard.backend.alert_scheduler import start_alert_scheduler
 
         start_alert_scheduler()
         logger.info("Alert scheduler started")
@@ -202,7 +202,7 @@ async def shutdown_event():
     logger.info("Real-time broadcaster stopped")
     # Stop alert scheduler
     try:
-        from backend.alert_scheduler import stop_alert_scheduler
+        from dashboard.backend.alert_scheduler import stop_alert_scheduler
 
         stop_alert_scheduler()
         logger.info("Alert scheduler stopped")
@@ -233,10 +233,10 @@ async def ibkr_status_check():
     """IBKR reachability check + data freshness report."""
     import socket
 
-    from sqlalchemy import desc, func
+    from sqlalchemy import func
 
-    from backend.database import engine
-    from backend.models import AccountSnapshot, PnLHistory, Position
+    from core.database import engine
+    from core.models import AccountSnapshot, PnLHistory, Position
 
     host = settings.ibkr.host
     port = settings.ibkr.port
@@ -298,10 +298,9 @@ async def detailed_health_check():
     """Detailed health check with component-level status."""
     import socket
 
-    from backend.config import settings
-    from backend.database import engine
-    from backend.ibkr_client import IBKRClient
-    from backend.scheduler import PnLScheduler
+    from core.config import settings
+    from core.database import engine
+    from core.ibkr_client import IBKRClient
 
     health_status = {
         "status": "healthy",
@@ -375,7 +374,7 @@ async def detailed_health_check():
 
     # Cache health
     try:
-        from backend.cache import cache_manager
+        from dashboard.backend.cache import cache_manager
 
         health_status["components"]["cache"] = {
             "status": "healthy" if cache_manager.enabled else "disabled",
@@ -386,7 +385,7 @@ async def detailed_health_check():
 
     # Alert system health
     try:
-        from backend.alert_scheduler import scheduler as alert_scheduler
+        from dashboard.backend.alert_scheduler import scheduler as alert_scheduler
 
         health_status["components"]["alerts"] = {
             "status": "healthy" if alert_scheduler.running else "stopped",
@@ -404,7 +403,7 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "backend.main:app",
+        "dashboard.backend.main:app",
         host="0.0.0.0",
         port=8000,
         reload=settings.app.debug,

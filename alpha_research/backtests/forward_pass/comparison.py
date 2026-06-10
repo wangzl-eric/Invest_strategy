@@ -393,7 +393,6 @@ def create_comparison_view(
 
         # Would need to reconstruct tracker from saved data
         # For now, return empty
-        pass
 
     if attribution_path:
         attribution = pd.read_csv(attribution_path)

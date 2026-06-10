@@ -23,7 +23,7 @@ class TestSignalCache:
 
     def test_put_and_get(self):
         """Cache put then get should return same data."""
-        from backtests.cache import SignalCache
+        from alpha_research.backtests.cache import SignalCache
 
         cache = SignalCache(cache_dir=self.tmpdir)
         df = pd.DataFrame({"signal": [1.0, 2.0, 3.0]})
@@ -35,7 +35,7 @@ class TestSignalCache:
 
     def test_cache_miss(self):
         """Cache get on non-existent key returns None."""
-        from backtests.cache import SignalCache
+        from alpha_research.backtests.cache import SignalCache
 
         cache = SignalCache(cache_dir=self.tmpdir)
         result = cache.get("nonexistent", {}, "xyz")
@@ -43,7 +43,7 @@ class TestSignalCache:
 
     def test_invalidate_specific(self):
         """Invalidate specific signal should remove only that signal."""
-        from backtests.cache import SignalCache
+        from alpha_research.backtests.cache import SignalCache
 
         cache = SignalCache(cache_dir=self.tmpdir)
         df = pd.DataFrame({"a": [1.0]})
@@ -57,7 +57,7 @@ class TestSignalCache:
 
     def test_invalidate_all(self):
         """Invalidate with no signal name should remove all."""
-        from backtests.cache import SignalCache
+        from alpha_research.backtests.cache import SignalCache
 
         cache = SignalCache(cache_dir=self.tmpdir)
         df = pd.DataFrame({"a": [1.0]})
@@ -69,7 +69,7 @@ class TestSignalCache:
 
     def test_compute_data_hash_deterministic(self):
         """Same DataFrame should produce same hash."""
-        from backtests.cache import SignalCache
+        from alpha_research.backtests.cache import SignalCache
 
         df = pd.DataFrame({"a": [1.0, 2.0], "b": [3.0, 4.0]})
         h1 = SignalCache.compute_data_hash(df)
@@ -78,7 +78,7 @@ class TestSignalCache:
 
     def test_compute_data_hash_different(self):
         """Different DataFrames should produce different hashes."""
-        from backtests.cache import SignalCache
+        from alpha_research.backtests.cache import SignalCache
 
         df1 = pd.DataFrame({"a": [1.0, 2.0]})
         df2 = pd.DataFrame({"a": [1.0, 3.0]})
@@ -86,7 +86,7 @@ class TestSignalCache:
 
     def test_stats(self):
         """Stats should reflect cache contents."""
-        from backtests.cache import SignalCache
+        from alpha_research.backtests.cache import SignalCache
 
         cache = SignalCache(cache_dir=self.tmpdir)
         df = pd.DataFrame({"a": range(100)})
@@ -111,7 +111,7 @@ class TestRunManager:
 
     def test_create_and_load_run(self):
         """Create a run, then load it back."""
-        from backtests.run_manager import RunManager
+        from alpha_research.backtests.run_manager import RunManager
 
         mgr = RunManager(output_dir=self.tmpdir)
         cfg = mgr.create_run("momentum_60", {"lookback": 60}, "test run")
@@ -130,7 +130,7 @@ class TestRunManager:
 
     def test_save_run_one_step(self):
         """One-step save_run should create a complete record."""
-        from backtests.run_manager import RunManager
+        from alpha_research.backtests.run_manager import RunManager
 
         mgr = RunManager(output_dir=self.tmpdir)
         run = mgr.save_run(
@@ -144,7 +144,7 @@ class TestRunManager:
 
     def test_list_runs(self):
         """list_runs should return a DataFrame of saved runs."""
-        from backtests.run_manager import RunManager
+        from alpha_research.backtests.run_manager import RunManager
 
         mgr = RunManager(output_dir=self.tmpdir)
         mgr.save_run("strat_a", {"p": 1}, {"sharpe_ratio": 1.0})
@@ -156,7 +156,7 @@ class TestRunManager:
 
     def test_list_runs_filter_by_strategy(self):
         """list_runs with strategy filter should return only matching runs."""
-        from backtests.run_manager import RunManager
+        from alpha_research.backtests.run_manager import RunManager
 
         mgr = RunManager(output_dir=self.tmpdir)
         mgr.save_run("strat_a", {}, {"sharpe_ratio": 1.0})
@@ -168,7 +168,7 @@ class TestRunManager:
 
     def test_compare_runs(self):
         """compare_runs should produce a side-by-side DataFrame."""
-        from backtests.run_manager import RunManager
+        from alpha_research.backtests.run_manager import RunManager
 
         mgr = RunManager(output_dir=self.tmpdir)
         r1 = mgr.save_run("momentum", {"lb": 20}, {"sharpe_ratio": 1.0})
@@ -180,7 +180,7 @@ class TestRunManager:
 
     def test_save_and_load_equity_curve(self):
         """Equity curve should be persisted and loadable."""
-        from backtests.run_manager import RunManager
+        from alpha_research.backtests.run_manager import RunManager
 
         mgr = RunManager(output_dir=self.tmpdir)
         eq = pd.DataFrame(
@@ -197,7 +197,7 @@ class TestRunManager:
 
     def test_delete_run(self):
         """delete_run should remove the run directory."""
-        from backtests.run_manager import RunManager
+        from alpha_research.backtests.run_manager import RunManager
 
         mgr = RunManager(output_dir=self.tmpdir)
         run = mgr.save_run("test", {}, {"sr": 1.0})
@@ -213,7 +213,7 @@ class TestRunManager:
 class TestRollingSharpe:
     def test_output_length(self):
         """Rolling Sharpe should have same length as input."""
-        from backtests.stats.decay_analysis import rolling_sharpe
+        from alpha_research.backtests.stats.decay_analysis import rolling_sharpe
 
         rng = np.random.RandomState(42)
         returns = pd.Series(rng.normal(0.001, 0.01, 500))
@@ -222,7 +222,7 @@ class TestRollingSharpe:
 
     def test_warmup_is_nan(self):
         """First window-1 values should be NaN."""
-        from backtests.stats.decay_analysis import rolling_sharpe
+        from alpha_research.backtests.stats.decay_analysis import rolling_sharpe
 
         rng = np.random.RandomState(42)
         returns = pd.Series(rng.normal(0.001, 0.01, 500))
@@ -234,7 +234,7 @@ class TestRollingSharpe:
 class TestStrategyHalfLife:
     def test_decaying_strategy(self):
         """A strategy with decaying Sharpe should return finite half-life."""
-        from backtests.stats.decay_analysis import strategy_half_life
+        from alpha_research.backtests.stats.decay_analysis import strategy_half_life
 
         # Create a decaying Sharpe series
         t = np.arange(500, dtype=float)
@@ -246,7 +246,7 @@ class TestStrategyHalfLife:
 
     def test_improving_strategy(self):
         """A strategy with improving Sharpe should return None."""
-        from backtests.stats.decay_analysis import strategy_half_life
+        from alpha_research.backtests.stats.decay_analysis import strategy_half_life
 
         sharpes = pd.Series(np.linspace(0.5, 2.0, 300))
         hl = strategy_half_life(sharpes)
@@ -256,7 +256,7 @@ class TestStrategyHalfLife:
 class TestCorrelationWithExisting:
     def test_perfectly_correlated(self):
         """Identical strategies should have correlation ~1."""
-        from backtests.stats.decay_analysis import correlation_with_existing
+        from alpha_research.backtests.stats.decay_analysis import correlation_with_existing
 
         rng = np.random.RandomState(42)
         idx = pd.date_range("2020-01-01", periods=500, freq="B")
@@ -267,7 +267,7 @@ class TestCorrelationWithExisting:
 
     def test_uncorrelated(self):
         """Independent strategies should have low correlation."""
-        from backtests.stats.decay_analysis import correlation_with_existing
+        from alpha_research.backtests.stats.decay_analysis import correlation_with_existing
 
         rng = np.random.RandomState(42)
         idx = pd.date_range("2020-01-01", periods=500, freq="B")
@@ -281,7 +281,7 @@ class TestCorrelationWithExisting:
 class TestCapacityEstimate:
     def test_positive_alpha_has_capacity(self):
         """Strategy with positive returns should have non-zero capacity."""
-        from backtests.stats.decay_analysis import strategy_capacity_estimate
+        from alpha_research.backtests.stats.decay_analysis import strategy_capacity_estimate
 
         rng = np.random.RandomState(42)
         returns = pd.Series(rng.normal(0.001, 0.01, 500))
@@ -290,7 +290,7 @@ class TestCapacityEstimate:
 
     def test_negative_alpha_zero_capacity(self):
         """Strategy with negative returns should have zero capacity."""
-        from backtests.stats.decay_analysis import strategy_capacity_estimate
+        from alpha_research.backtests.stats.decay_analysis import strategy_capacity_estimate
 
         rng = np.random.RandomState(42)
         returns = pd.Series(rng.normal(-0.001, 0.01, 500))
@@ -308,7 +308,7 @@ class TestParallelBacktester:
         """Worker count should be clamped to CPU count."""
         import os
 
-        from backtests.parallel import ParallelBacktester
+        from alpha_research.backtests.parallel import ParallelBacktester
 
         cpu_count = os.cpu_count() or 4
         pb = ParallelBacktester(n_workers=9999)
@@ -316,7 +316,7 @@ class TestParallelBacktester:
 
     def test_empty_param_grid(self):
         """Empty param grid produces single empty combo (product of nothing)."""
-        from backtests.parallel import _build_param_combos
+        from alpha_research.backtests.parallel import _build_param_combos
 
         combos = _build_param_combos({})
         # product() of empty lists yields one empty dict

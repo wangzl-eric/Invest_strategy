@@ -9,7 +9,7 @@ Provides robust backtesting methods:
 - Transaction cost sensitivity
 
 Usage:
-    from backtests.walkforward import WalkForwardAnalyzer, GridSearch, RegimeAnalyzer
+    from alpha_research.backtests.walkforward import WalkForwardAnalyzer, GridSearch, RegimeAnalyzer
 
     # Walk-forward
     wfa = WalkForwardAnalyzer(engine_class=BacktestEngine, ...)
@@ -302,7 +302,7 @@ class WalkForwardAnalyzer:
         df = df.reset_index(drop=True)
         df.columns = ["date", "open", "high", "low", "close", "volume"]
 
-        from backtests.event_driven.backtest_engine import IBKRDataFeed
+        from alpha_research.backtests.event_driven.backtest_engine import IBKRDataFeed
 
         data_feed = IBKRDataFeed(dataname=df)
         engine.add_data(data_feed, name="asset")
@@ -464,7 +464,7 @@ class GridSearch:
 
     def _purged_splits(self, n_folds: int) -> List[Tuple[pd.DataFrame, pd.DataFrame]]:
         """Purged K-fold splits using backtests.stats.cross_validation."""
-        from backtests.stats.cross_validation import purged_kfold_split
+        from alpha_research.backtests.stats.cross_validation import purged_kfold_split
 
         dates = pd.to_datetime(self.data.index)
 
@@ -537,7 +537,7 @@ class GridSearch:
         df = df.reset_index(drop=True)
         df.columns = ["date", "open", "high", "low", "close", "volume"]
 
-        from backtests.event_driven.backtest_engine import IBKRDataFeed
+        from alpha_research.backtests.event_driven.backtest_engine import IBKRDataFeed
 
         data_feed = IBKRDataFeed(dataname=df)
         engine.add_data(data_feed, name="asset")
@@ -765,7 +765,7 @@ class CostSensitivityAnalyzer:
         df = df.reset_index(drop=True)
         df.columns = ["date", "open", "high", "low", "close", "volume"]
 
-        from backtests.event_driven.backtest_engine import IBKRDataFeed
+        from alpha_research.backtests.event_driven.backtest_engine import IBKRDataFeed
 
         data_feed = IBKRDataFeed(dataname=df)
         engine.add_data(data_feed, name="asset")

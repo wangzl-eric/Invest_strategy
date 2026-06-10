@@ -15,12 +15,12 @@ class TestIBKRClientHistoricalData:
     @pytest.fixture
     def mock_ib_client(self):
         """Create a mock IB client."""
-        with patch("backend.ibkr_client.IB") as mock_ib:
+        with patch("core.ibkr_client.IB") as mock_ib:
             yield mock_ib
 
     def test_create_contract_stock(self):
         """Test creating a stock contract."""
-        from backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         client = IBKRClient()
         contract = client._create_contract("AAPL", "STK", "SMART", "USD")
@@ -32,7 +32,7 @@ class TestIBKRClientHistoricalData:
 
     def test_create_contract_forex(self):
         """Test creating a forex contract."""
-        from backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         client = IBKRClient()
         # For forex, ib_insync uses the quote currency as symbol (e.g., EURUSD -> symbol=USD)
@@ -44,7 +44,7 @@ class TestIBKRClientHistoricalData:
 
     def test_create_contract_futures(self):
         """Test creating a futures contract."""
-        from backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         client = IBKRClient()
         contract = client._create_contract("ES", "FUT", "CME", "USD", expiry="202403")
@@ -54,7 +54,7 @@ class TestIBKRClientHistoricalData:
 
     def test_valid_historical_durations(self):
         """Test that valid durations are defined."""
-        from backend.ibkr_client import HISTORICAL_DURATIONS
+        from core.ibkr_client import HISTORICAL_DURATIONS
 
         assert "1 D" in HISTORICAL_DURATIONS
         assert "1 W" in HISTORICAL_DURATIONS
@@ -64,7 +64,7 @@ class TestIBKRClientHistoricalData:
 
     def test_valid_historical_intervals(self):
         """Test that valid intervals are defined."""
-        from backend.ibkr_client import HISTORICAL_INTERVALS
+        from core.ibkr_client import HISTORICAL_INTERVALS
 
         assert "1 min" in HISTORICAL_INTERVALS
         assert "5 mins" in HISTORICAL_INTERVALS
@@ -77,7 +77,7 @@ class TestIBKRProvider:
 
     def test_ibkr_provider_init(self):
         """Test IBKR provider initialization."""
-        from backend.data_providers import IBKRProvider
+        from core.data_providers import IBKRProvider
 
         provider = IBKRProvider(host="127.0.0.1", port=7497, client_id=1)
 
@@ -87,14 +87,14 @@ class TestIBKRProvider:
 
     def test_ibkr_provider_name(self):
         """Test provider name."""
-        from backend.data_providers import IBKRProvider
+        from core.data_providers import IBKRProvider
 
         provider = IBKRProvider()
         assert provider.get_provider_name() == "Interactive Brokers"
 
     def test_interval_mapping(self):
         """Test interval mapping from standard to IBKR format."""
-        from backend.data_providers import IBKRProvider
+        from core.data_providers import IBKRProvider
 
         provider = IBKRProvider()
 
@@ -111,7 +111,7 @@ class TestIBKRDataFetcher:
 
     def test_default_equity_tickers_defined(self):
         """Test that default equity tickers are defined."""
-        from backend.ibkr_data_fetcher import DEFAULT_US_EQUITIES
+        from dashboard.backend.ibkr_data_fetcher import DEFAULT_US_EQUITIES
 
         assert isinstance(DEFAULT_US_EQUITIES, list)
         assert len(DEFAULT_US_EQUITIES) > 0
@@ -120,7 +120,7 @@ class TestIBKRDataFetcher:
 
     def test_default_forex_pairs_defined(self):
         """Test that default forex pairs are defined."""
-        from backend.ibkr_data_fetcher import DEFAULT_FOREX_PAIRS
+        from dashboard.backend.ibkr_data_fetcher import DEFAULT_FOREX_PAIRS
 
         assert isinstance(DEFAULT_FOREX_PAIRS, list)
         assert "EURUSD" in DEFAULT_FOREX_PAIRS
@@ -128,7 +128,7 @@ class TestIBKRDataFetcher:
 
     def test_default_futures_defined(self):
         """Test that default futures are defined."""
-        from backend.ibkr_data_fetcher import DEFAULT_FUTURES
+        from dashboard.backend.ibkr_data_fetcher import DEFAULT_FUTURES
 
         assert isinstance(DEFAULT_FUTURES, list)
         assert "ES" in DEFAULT_FUTURES
@@ -141,7 +141,7 @@ class TestDataQualityValidation:
 
     def test_validate_empty_dataframe(self):
         """Test validation of empty DataFrame."""
-        from backend.ibkr_data_fetcher import DataQualityReport
+        from dashboard.backend.ibkr_data_fetcher import DataQualityReport
 
         df = pd.DataFrame()
         report = DataQualityReport(df)
@@ -151,7 +151,7 @@ class TestDataQualityValidation:
 
     def test_validate_dataframe_missing_columns(self):
         """Test validation with missing columns."""
-        from backend.ibkr_data_fetcher import DataQualityReport
+        from dashboard.backend.ibkr_data_fetcher import DataQualityReport
 
         df = pd.DataFrame(
             {"date": ["2024-01-01", "2024-01-02"], "close": [100.0, 101.0]}
@@ -163,7 +163,7 @@ class TestDataQualityValidation:
 
     def test_validate_valid_dataframe(self):
         """Test validation of valid DataFrame."""
-        from backend.ibkr_data_fetcher import DataQualityReport
+        from dashboard.backend.ibkr_data_fetcher import DataQualityReport
 
         df = pd.DataFrame(
             {
@@ -184,7 +184,7 @@ class TestDataQualityValidation:
 
     def test_validate_negative_prices(self):
         """Test detection of negative prices."""
-        from backend.ibkr_data_fetcher import DataQualityReport
+        from dashboard.backend.ibkr_data_fetcher import DataQualityReport
 
         df = pd.DataFrame(
             {
@@ -202,7 +202,7 @@ class TestDataQualityValidation:
 
     def test_validate_high_low_sanity(self):
         """Test high < low detection."""
-        from backend.ibkr_data_fetcher import DataQualityReport
+        from dashboard.backend.ibkr_data_fetcher import DataQualityReport
 
         # Create DataFrame with explicit high < low
         df = pd.DataFrame(
@@ -223,7 +223,7 @@ class TestDataQualityValidation:
 
     def test_validate_clean_data(self):
         """Test data cleaning function."""
-        from backend.ibkr_data_fetcher import validate_and_clean
+        from dashboard.backend.ibkr_data_fetcher import validate_and_clean
 
         df = pd.DataFrame(
             {
@@ -248,7 +248,7 @@ class TestMarketDataStoreIBKR:
 
     def test_ibkr_asset_files_defined(self):
         """Test that IBKR asset files are defined."""
-        from backend.market_data_store import _IBKR_ASSET_FILES
+        from core.market_data_store import _IBKR_ASSET_FILES
 
         assert isinstance(_IBKR_ASSET_FILES, dict)
         assert "ibkr_equities" in _IBKR_ASSET_FILES
@@ -258,7 +258,7 @@ class TestMarketDataStoreIBKR:
 
     def test_ibkr_tickers_defined(self):
         """Test that IBKR ticker lists are defined."""
-        from backend.market_data_store import _IBKR_ASSET_TICKERS
+        from core.market_data_store import _IBKR_ASSET_TICKERS
 
         assert isinstance(_IBKR_ASSET_TICKERS, dict)
         assert "ibkr_equities" in _IBKR_ASSET_TICKERS
@@ -272,7 +272,7 @@ class TestDataRoutesIBKR:
 
     def test_ibkr_pull_request_model(self):
         """Test IBKR pull request model."""
-        from backend.api.data_routes import IBKRPullRequest
+        from dashboard.backend.api.data_routes import IBKRPullRequest
 
         req = IBKRPullRequest(
             asset_class="ibkr_equities",
@@ -292,7 +292,7 @@ class TestDataRoutesIBKR:
     async def test_ibkr_subscription_status_endpoint_import(self):
         """Test that subscription status endpoint can be imported."""
         # Just verify the import works - actual connection testing requires IBKR running
-        from backend.api.data_routes import ibkr_subscription_status
+        from dashboard.backend.api.data_routes import ibkr_subscription_status
 
         assert ibkr_subscription_status is not None
         assert callable(ibkr_subscription_status)
@@ -336,7 +336,7 @@ class TestIBKRClientEdgeCases:
 
     def test_create_contract_with_none_currency(self):
         """Test creating contract with None currency defaults to USD."""
-        from backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         client = IBKRClient()
         contract = client._create_contract("AAPL", "STK", "SMART", None)
@@ -345,7 +345,7 @@ class TestIBKRClientEdgeCases:
 
     def test_create_contract_with_empty_exchange(self):
         """Test creating contract with empty exchange."""
-        from backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         client = IBKRClient()
         contract = client._create_contract("EURUSD", "CASH", "", "USD")
@@ -355,7 +355,7 @@ class TestIBKRClientEdgeCases:
 
     def test_create_contract_unknown_sec_type(self):
         """Test creating contract with unknown security type defaults to stock."""
-        from backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         client = IBKRClient()
         contract = client._create_contract("UNKNOWN", "UNKNOWN", "SMART", "USD")
@@ -367,7 +367,7 @@ class TestIBKRClientEdgeCases:
         """Test filtering with datetime.date objects."""
         import pandas as pd
 
-        from backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         client = IBKRClient()
 
@@ -397,7 +397,7 @@ class TestIBKRClientEdgeCases:
 
     def test_duration_mapping_short_period(self):
         """Test duration mapping for short periods."""
-        from backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         client = IBKRClient()
 
@@ -410,7 +410,7 @@ class TestIBKRClientEdgeCases:
 
     def test_duration_mapping_1_month(self):
         """Test duration mapping for 1 month."""
-        from backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         start = datetime(2024, 1, 1)
         end = datetime(2024, 2, 1)
@@ -421,7 +421,7 @@ class TestIBKRClientEdgeCases:
 
     def test_duration_mapping_1_year(self):
         """Test duration mapping for 1 year."""
-        from backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         start = datetime(2024, 1, 1)
         end = datetime(2025, 1, 1)
@@ -431,7 +431,7 @@ class TestIBKRClientEdgeCases:
 
     def test_duration_mapping_2_years(self):
         """Test duration mapping for 2+ years."""
-        from backend.ibkr_client import IBKRClient
+        from core.ibkr_client import IBKRClient
 
         start = datetime(2022, 1, 1)
         end = datetime(2024, 12, 31)
@@ -445,7 +445,7 @@ class TestDataValidationEdgeCases:
 
     def test_validate_all_nan_prices(self):
         """Test validation with all NaN prices."""
-        from backend.ibkr_data_fetcher import DataQualityReport
+        from dashboard.backend.ibkr_data_fetcher import DataQualityReport
 
         df = pd.DataFrame(
             {
@@ -463,7 +463,7 @@ class TestDataValidationEdgeCases:
 
     def test_validate_zero_prices(self):
         """Test zero prices are allowed (not flagged as error)."""
-        from backend.ibkr_data_fetcher import DataQualityReport
+        from dashboard.backend.ibkr_data_fetcher import DataQualityReport
 
         df = pd.DataFrame(
             {
@@ -482,7 +482,7 @@ class TestDataValidationEdgeCases:
 
     def test_validate_extreme_volume(self):
         """Test zero volume is allowed (not flagged as error)."""
-        from backend.ibkr_data_fetcher import DataQualityReport
+        from dashboard.backend.ibkr_data_fetcher import DataQualityReport
 
         df = pd.DataFrame(
             {
@@ -501,7 +501,7 @@ class TestDataValidationEdgeCases:
 
     def test_validate_missing_date_column(self):
         """Test validation with missing date column."""
-        from backend.ibkr_data_fetcher import DataQualityReport
+        from dashboard.backend.ibkr_data_fetcher import DataQualityReport
 
         df = pd.DataFrame(
             {
@@ -518,7 +518,7 @@ class TestDataValidationEdgeCases:
 
     def test_validate_duplicate_dates(self):
         """Test duplicates are detected as warnings."""
-        from backend.ibkr_data_fetcher import DataQualityReport
+        from dashboard.backend.ibkr_data_fetcher import DataQualityReport
 
         df = pd.DataFrame(
             {
@@ -541,7 +541,7 @@ class TestDataValidationEdgeCases:
         """Test future dates don't cause errors."""
         from datetime import date
 
-        from backend.ibkr_data_fetcher import DataQualityReport
+        from dashboard.backend.ibkr_data_fetcher import DataQualityReport
 
         # Use future dates
         future_date = date.today() + timedelta(days=30)
@@ -562,7 +562,7 @@ class TestDataValidationEdgeCases:
 
     def test_validate_close_outside_high_low(self):
         """Test close outside high-low range is detected as warning."""
-        from backend.ibkr_data_fetcher import DataQualityReport
+        from dashboard.backend.ibkr_data_fetcher import DataQualityReport
 
         df = pd.DataFrame(
             {
@@ -582,7 +582,7 @@ class TestDataValidationEdgeCases:
 
     def test_clean_removes_duplicates(self):
         """Test that clean removes duplicate rows."""
-        from backend.ibkr_data_fetcher import validate_and_clean
+        from dashboard.backend.ibkr_data_fetcher import validate_and_clean
 
         df = pd.DataFrame(
             {
@@ -610,7 +610,7 @@ class TestDataValidationEdgeCases:
 
     def test_clean_handles_empty_dataframe(self):
         """Test that clean handles empty DataFrame."""
-        from backend.ibkr_data_fetcher import validate_and_clean
+        from dashboard.backend.ibkr_data_fetcher import validate_and_clean
 
         df = pd.DataFrame()
         cleaned = validate_and_clean(df)
@@ -619,7 +619,7 @@ class TestDataValidationEdgeCases:
 
     def test_clean_handles_single_row(self):
         """Test that clean handles single row."""
-        from backend.ibkr_data_fetcher import validate_and_clean
+        from dashboard.backend.ibkr_data_fetcher import validate_and_clean
 
         df = pd.DataFrame(
             {
@@ -645,7 +645,7 @@ class TestAPIValidation:
         """Test pull request with empty tickers list."""
         from pydantic import ValidationError
 
-        from backend.api.data_routes import IBKRPullRequest
+        from dashboard.backend.api.data_routes import IBKRPullRequest
 
         try:
             req = IBKRPullRequest(
@@ -664,7 +664,7 @@ class TestAPIValidation:
         """Test pull request with invalid date format."""
         from pydantic import ValidationError
 
-        from backend.api.data_routes import IBKRPullRequest
+        from dashboard.backend.api.data_routes import IBKRPullRequest
 
         # Should handle invalid date format
         try:
@@ -682,7 +682,7 @@ class TestAPIValidation:
 
     def test_pull_request_end_before_start(self):
         """Test pull request with end date before start date."""
-        from backend.api.data_routes import IBKRPullRequest
+        from dashboard.backend.api.data_routes import IBKRPullRequest
 
         # This should be allowed at validation level
         req = IBKRPullRequest(
@@ -698,7 +698,7 @@ class TestAPIValidation:
 
     def test_pull_request_default_values(self):
         """Test pull request default values."""
-        from backend.api.data_routes import IBKRPullRequest
+        from dashboard.backend.api.data_routes import IBKRPullRequest
 
         req = IBKRPullRequest(
             asset_class="ibkr_equities",
@@ -713,7 +713,7 @@ class TestAPIValidation:
 
     def test_pull_request_with_custom_exchange(self):
         """Test pull request with custom exchange."""
-        from backend.api.data_routes import IBKRPullRequest
+        from dashboard.backend.api.data_routes import IBKRPullRequest
 
         req = IBKRPullRequest(
             asset_class="ibkr_fx",

@@ -24,8 +24,8 @@ def _fake_price_frame(ticker: str, start_value: float) -> pd.DataFrame:
 
 
 def test_field_study_template_executes_with_stubbed_helpers(monkeypatch):
-    # field_study_template.py imports directly from quant_data.api
-    import quant_data.api as _api
+    # field_study_template.py imports directly from alpha_research.quant_data.api
+    import alpha_research.quant_data.api as _api
     monkeypatch.setattr(
         _api, "calculate_volatility",
         lambda returns, window=20, annualize=True, method="rolling": pd.Series(

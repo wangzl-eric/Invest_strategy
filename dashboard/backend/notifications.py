@@ -4,11 +4,10 @@ import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Optional
 
 import aiohttp
 
-from backend.models import Alert, AlertChannel, AlertRule
+from core.models import Alert, AlertChannel, AlertRule
 
 logger = logging.getLogger(__name__)
 

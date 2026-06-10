@@ -1,15 +1,15 @@
 """API routes for report generation and scheduling."""
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from backend.auth import get_current_user_or_api_key
-from backend.database import get_db
-from backend.reporting import report_generator, scheduled_report_service
+from dashboard.backend.auth import get_current_user_or_api_key
+from core.database import get_db
+from dashboard.backend.reporting import report_generator, scheduled_report_service
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ async def generate_performance_report(
         if not account_id:
             from sqlalchemy import desc
 
-            from backend.models import AccountSnapshot
+            from core.models import AccountSnapshot
 
             latest = (
                 db.query(AccountSnapshot)
@@ -75,7 +75,7 @@ async def generate_trade_report(
         if not account_id:
             from sqlalchemy import desc
 
-            from backend.models import AccountSnapshot
+            from core.models import AccountSnapshot
 
             latest = (
                 db.query(AccountSnapshot)

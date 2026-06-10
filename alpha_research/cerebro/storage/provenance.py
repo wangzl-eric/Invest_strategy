@@ -10,7 +10,7 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from cerebro.storage.models import IdeaProvenance, ResearchPaper
+from alpha_research.cerebro.storage.models import IdeaProvenance, ResearchPaper
 
 logger = logging.getLogger(__name__)
 
@@ -39,17 +39,17 @@ class ProvenanceTracker:
 
         Args:
             db_session_factory: SQLAlchemy session factory. If None,
-                attempts to import from backend.database.
+                attempts to import from core.database.
         """
         self._session_factory = db_session_factory
         if self._session_factory is None:
             try:
-                from backend.database import SessionLocal
+                from core.database import SessionLocal
 
                 self._session_factory = SessionLocal
             except ImportError:
                 logger.warning(
-                    "backend.database not available. "
+                    "core.database not available. "
                     "ProvenanceTracker requires a session factory."
                 )
 

@@ -1,12 +1,10 @@
 """Alert evaluation scheduler integration."""
-import asyncio
 import logging
-from typing import Optional
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
-from backend.alert_engine import alert_engine
+from dashboard.backend.alert_engine import alert_engine
 
 logger = logging.getLogger(__name__)
 

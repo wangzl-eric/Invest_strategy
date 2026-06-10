@@ -104,7 +104,6 @@ def build_strategy_monitor_layout(data: dict) -> html.Div:
     )
 
     # PnL summary
-    daily_pnl = pnl_summary.get("daily") or []
     total_recent = pnl_summary.get("total_recent") or 0
     pnl_class = "positive" if total_recent >= 0 else "negative"
     pnl_cards = html.Div(

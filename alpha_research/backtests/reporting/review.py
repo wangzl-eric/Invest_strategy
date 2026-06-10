@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Sequence
 import numpy as np
 import pandas as pd
 
-from backtests.run_manager import BacktestRun, RunManager
+from alpha_research.backtests.run_manager import BacktestRun, RunManager
 
 logger = logging.getLogger(__name__)
 

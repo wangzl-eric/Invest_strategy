@@ -13,7 +13,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from backend.flex_importer import import_mark_to_market_performance_csv
+from core.flex_importer import import_mark_to_market_performance_csv
 
 
 def backfill_mtm_from_csv():

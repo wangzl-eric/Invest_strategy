@@ -1,7 +1,7 @@
 """API routes for advanced analytics: optimization, factor analysis, attribution, Monte Carlo."""
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -9,15 +9,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from backend.advanced_analytics import (
-    AnomalyDetector,
+from dashboard.backend.advanced_analytics import (
     AttributionAnalyzer,
     FactorAnalyzer,
     MonteCarloSimulator,
     PortfolioOptimizer,
-    RegimeDetector,
 )
-from backend.api.schemas import (
+from dashboard.backend.api.schemas import (
     AttributionResponse,
     FactorAnalysisResponse,
     FactorLoadingResponse,
@@ -27,13 +25,13 @@ from backend.api.schemas import (
     OptimizationWeightsResponse,
     StyleAnalysisResponse,
 )
-from backend.data_processor import DataProcessor
-from backend.database import get_db
-from backend.models import AccountSnapshot, PnLHistory, Position, Trade
+from core.data_processor import DataProcessor
+from core.database import get_db
+from core.models import AccountSnapshot, Position, Trade
 
-# Try to import from portfolio.advanced_analytics if available (for compatibility)
+# Try to import from alpha_research.portfolio.advanced_analytics if available (for compatibility)
 try:
-    from portfolio.advanced_analytics import (
+    from alpha_research.portfolio.advanced_analytics import (
         black_litterman_optimize,
         factor_attribution,
         fama_french_analysis,
@@ -41,8 +39,6 @@ try:
         monte_carlo_portfolio_simulation,
         monte_carlo_simulation,
         risk_parity_optimize,
-        sector_attribution,
-        security_attribution,
         style_analysis,
     )
 
@@ -74,7 +70,7 @@ def get_position_returns(
     Falls back to trade data if position snapshots are unavailable.
     """
     if db is None:
-        from backend.database import get_db_context
+        from core.database import get_db_context
 
         with get_db_context() as db_session:
             return _get_position_returns_impl(
@@ -557,7 +553,7 @@ async def analyze_fama_french(
             )
 
         # Get market returns (S&P 500 proxy)
-        from backend.benchmark_service import get_sp500_data
+        from dashboard.backend.benchmark_service import get_sp500_data
 
         if end_date is None:
             end_date = datetime.now()
@@ -643,7 +639,7 @@ async def analyze_style(
 
         # Get style benchmarks (simplified - use S&P 500 sectors or indices)
         # In practice, you'd fetch actual style benchmark data
-        from backend.benchmark_service import get_sp500_data
+        from dashboard.backend.benchmark_service import get_sp500_data
 
         if end_date is None:
             end_date = datetime.now()
@@ -732,7 +728,7 @@ async def attribute_factor(
             raise HTTPException(status_code=400, detail="Insufficient position data")
 
         # Get market returns
-        from backend.benchmark_service import get_sp500_data
+        from dashboard.backend.benchmark_service import get_sp500_data
 
         if end_date is None:
             end_date = datetime.now()

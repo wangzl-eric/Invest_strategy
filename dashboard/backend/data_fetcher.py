@@ -3,17 +3,9 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy.orm import Session
-
-from backend.database import get_db_context
-from backend.ibkr_client import IBKRClient
-from backend.models import (
-    AccountSnapshot,
-    PerformanceMetric,
-    PnLHistory,
-    Position,
-    Trade,
-)
+from core.database import get_db_context
+from core.ibkr_client import IBKRClient
+from core.models import AccountSnapshot, PnLHistory, Position, Trade
 
 logger = logging.getLogger(__name__)
 
@@ -234,17 +226,6 @@ class DataFetcher:
         except Exception as e:
             logger.error(f"Error fetching/storing trades: {e}")
             raise
-
-    def _model_to_dict(
-        self, model_instance, exclude_fields: Optional[List[str]] = None
-    ):
-        """Convert SQLAlchemy model to dict."""
-        exclude_fields = exclude_fields or []
-        return {
-            c.name: getattr(model_instance, c.name)
-            for c in model_instance.__table__.columns
-            if c.name not in exclude_fields
-        }
 
     async def fetch_all(
         self, account_id: Optional[str] = None, store_pnl: bool = False

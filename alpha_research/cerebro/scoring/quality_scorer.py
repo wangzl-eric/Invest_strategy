@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass
 from typing import Optional
 
-from cerebro.processing.structured_extractor import PaperSummary
+from alpha_research.cerebro.processing.structured_extractor import PaperSummary
 
 logger = logging.getLogger(__name__)
 

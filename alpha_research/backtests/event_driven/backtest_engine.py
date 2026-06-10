@@ -25,7 +25,7 @@ import backtrader as bt
 import numpy as np
 import pandas as pd
 
-from backend.ibkr_client import IBKRClient
+from core.ibkr_client import IBKRClient
 
 
 class IBKRDataFeed(bt.feeds.PandasData):

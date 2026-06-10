@@ -9,8 +9,8 @@ import logging
 from datetime import datetime
 from typing import List
 
-from cerebro.config import cerebro_config
-from cerebro.sources.base import BaseSource, RawPaper
+from alpha_research.cerebro.config import cerebro_config
+from alpha_research.cerebro.sources.base import BaseSource, RawPaper
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class ArxivSource(BaseSource):
             ImportError: If the arxiv library is not installed.
         """
         try:
-            import arxiv
+            pass
         except ImportError:
             self.logger.error("arxiv library not installed. Run: pip install arxiv")
             return []
@@ -142,7 +142,7 @@ class ArxivSource(BaseSource):
 
     def _result_to_raw_paper(
         self,
-        result: "arxiv.Result",
+        result: "arxiv.Result",  # noqa: F821
         published: datetime,
     ) -> RawPaper:
         """Convert an arxiv.Result to a RawPaper.

@@ -7,7 +7,7 @@ search, and managing auto-generated proposals.
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 
@@ -17,9 +17,9 @@ router = APIRouter(prefix="/api/cerebro", tags=["cerebro"])
 
 
 def _get_db_session_factory():
-    """Get DB session factory from backend."""
+    """Get DB session factory from core."""
     try:
-        from backend.database import SessionLocal
+        from core.database import SessionLocal
 
         return SessionLocal
     except ImportError:
@@ -28,7 +28,7 @@ def _get_db_session_factory():
 
 def _get_pipeline():
     """Create a CerebroPipeline instance."""
-    from cerebro.pipeline import CerebroPipeline
+    from alpha_research.cerebro.pipeline import CerebroPipeline
 
     return CerebroPipeline(db_session_factory=_get_db_session_factory())
 
@@ -66,7 +66,7 @@ async def list_papers(
             detail="Database not available",
         )
 
-    from cerebro.storage.models import ResearchPaper
+    from alpha_research.cerebro.storage.models import ResearchPaper
 
     session = session_factory()
     try:
@@ -119,8 +119,8 @@ async def get_paper(paper_id: int):
     if session_factory is None:
         raise HTTPException(status_code=503, detail="Database not available")
 
-    from cerebro.storage.models import ResearchPaper
-    from cerebro.storage.provenance import ProvenanceTracker
+    from alpha_research.cerebro.storage.models import ResearchPaper
+    from alpha_research.cerebro.storage.provenance import ProvenanceTracker
 
     session = session_factory()
     try:
@@ -210,7 +210,7 @@ async def semantic_search(
     keyword matching.
     """
     try:
-        from cerebro.storage.vector_store import CerebroVectorStore
+        from alpha_research.cerebro.storage.vector_store import CerebroVectorStore
 
         store = CerebroVectorStore()
         results = store.search(query=q, n_results=n_results)
@@ -244,9 +244,9 @@ async def list_proposals():
     the auto_*.md pattern.
     """
     try:
-        from pathlib import Path
+        pass
 
-        from cerebro.config import cerebro_config
+        from alpha_research.cerebro.config import cerebro_config
 
         strategies_dir = cerebro_config.project_root / "research" / "strategies"
         if not strategies_dir.exists():
@@ -291,7 +291,7 @@ async def generate_proposal(paper_id: int):
     if session_factory is None:
         raise HTTPException(status_code=503, detail="Database not available")
 
-    from cerebro.storage.models import ResearchPaper
+    from alpha_research.cerebro.storage.models import ResearchPaper
 
     session = session_factory()
     try:
@@ -315,14 +315,14 @@ async def generate_proposal(paper_id: int):
                 detail="Failed to reconstruct paper for proposal generation",
             )
 
-        from cerebro.proposal_generator import ProposalGenerator
+        from alpha_research.cerebro.proposal_generator import ProposalGenerator
 
         generator = ProposalGenerator()
         content = generator.generate(scored)
         path = generator.save_proposal(content, scored)
 
         # Record provenance
-        from cerebro.storage.provenance import ProvenanceTracker
+        from alpha_research.cerebro.storage.provenance import ProvenanceTracker
 
         tracker = ProvenanceTracker(db_session_factory=session_factory)
         tracker.record_stage(
@@ -372,7 +372,7 @@ async def get_stats():
     if session_factory is not None:
         session = session_factory()
         try:
-            from cerebro.storage.models import ResearchPaper
+            from alpha_research.cerebro.storage.models import ResearchPaper
 
             stats["db"] = {
                 "total_papers": session.query(ResearchPaper).count(),
@@ -396,7 +396,7 @@ async def get_stats():
 
     # Get vector store count
     try:
-        from cerebro.storage.vector_store import CerebroVectorStore
+        from alpha_research.cerebro.storage.vector_store import CerebroVectorStore
 
         store = CerebroVectorStore()
         stats["vector_store"] = {"document_count": store.count}

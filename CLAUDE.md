@@ -29,48 +29,72 @@ make serve-backend                     # FastAPI on :8000 (with --reload)
 make serve-frontend                    # Dash on :8050
 ```
 
-Flake8 config: `--max-line-length=120 --ignore=E501,W503`
+Flake8 config: `--max-line-length=120 --ignore=E501,W503,E203` (E203 ignored — it conflicts with black's slice formatting; matches `.pre-commit-config.yaml`)
 
 ## Architecture
 
+The repo is a three-layer DAG — `core/` (infrastructure) at the bottom, then the
+three product components. `core/` depends on nothing internal; `alpha_research/`
+and `dashboard/` depend on `core/`; `dashboard/` may also use `alpha_research/`
+(one-way). See `docs/repo_layout.md` for the full stack map.
+
 ```
-backend/           FastAPI API service + data processing + IBKR integration
-  api/             Route handlers (15+ routers: auth, backtest, data, market, news, research, etc.)
-  research/        Feature engineering (features.py), DuckDB helpers
-  main.py          App entry point — CORS, metrics, rate limiting, APScheduler
-  config.py        Pydantic BaseSettings (env prefix: IBKR_, DB_, APP_)
-  models.py        SQLAlchemy models (AccountSnapshot, Position, PnLHistory, Trade, PerformanceMetric)
-  database.py      Engine creation, session management
-frontend/          Dash web dashboard (CYBORG dark theme)
-  app.py           Entry point, callbacks, tab rendering
-  components/      UI panels (charts, positions table, market panels, data manager, cerebro)
-portfolio/         Portfolio optimization (CVXPY mean-variance, risk parity, rebalancing)
-backtests/         Backtesting engines
-  builder.py       Vectorized backtesting
-  walkforward.py   Walk-forward analysis
-  event_driven/    Event-driven engine (realistic fills/slippage)
-  forward_pass/    Forward-pass tracking & comparison
-  strategies/      Signal framework, Backtrader compatibility
-  stats/           Statistical tests (PSR, deflated Sharpe, CPCV, bootstrap)
-  costs/           Transaction cost & slippage models
-cerebro/           AI-powered research discovery (arXiv, SSRN, blogs, scoring, proposals)
-execution/         Trade execution framework
-  runner.py        Order execution loop
-  risk.py          Risk controls (position limits, drawdown stops)
-  sim_broker.py    Paper trading simulator
-  audit.py         Trade audit logging
-quant_data/        Data lake & market data pipelines
-  connectors/      Data sources (Binance, Stooq, Polygon, ECB FX)
-  pipelines/       Ingestion pipelines
-  duckdb_store.py  DuckDB queries on Parquet files
-  registry.py      Dataset registry
-research/          Strategy research notes, tracker, external ideas (docs only)
-scripts/           Automation (PA downloads, data ingestion, backfill, scheduling, tests)
-docs/              Documentation and setup guides
-  guides/          Setup and usage guides (IBKR, alerts, backtesting, etc.)
-config/            App config YAML, ticker universe
-data/              Flex reports (CSV), market data (Parquet), catalog.json
+core/                Shared infrastructure (bottom layer — imports nothing internal)
+  config.py          Pydantic BaseSettings (env prefix: IBKR_, DB_, APP_)
+  models.py          SQLAlchemy models (AccountSnapshot, Position, PnLHistory, Trade, PerformanceMetric)
+  database.py        Engine creation, session management
+  db_utils.py, data_processor.py        Persistence helpers + account-data processing
+  flex_*.py          IBKR Flex Query ingestion (parser, query_client, importer)
+  ibkr_client.py, circuit_breaker.py    Broker connectivity
+  market_data_store.py, market_data_service.py, data_providers.py,
+    data_source_manager.py, cb_meeting_schedule.py   Market-data platform
+  llm_client.py, token_tracker.py, llm_verdict.py    LLM plumbing + verdicts
+dashboard/           Component 1 — IBKR portfolio analytics + market-data app
+  backend/           FastAPI API service (imports core.* for infra)
+    api/             Route handlers (15+ routers: auth, backtest, data, market, news, research, etc.)
+    research/        Feature engineering (features.py), DuckDB helpers
+    main.py          App entry point — CORS, metrics, rate limiting, APScheduler
+  frontend/          Dash web dashboard (CYBORG dark theme)
+    app.py           Entry point, callbacks, tab rendering
+    components/      UI panels (charts, positions table, market panels, data manager, cerebro)
+alpha_research/      Component 2 — alpha research & backtesting infrastructure
+  backtests/         Backtesting engines
+    builder.py       Vectorized backtesting
+    walkforward.py   Walk-forward analysis
+    event_driven/    Event-driven engine (realistic fills/slippage) — canonical engine
+    forward_pass/    Forward-pass tracking & comparison
+    strategies/      Signal framework, Backtrader compatibility
+    stats/           Statistical tests (PSR, deflated Sharpe, CPCV, bootstrap)
+    costs/           Transaction cost & slippage models
+  portfolio/         Portfolio optimization (CVXPY mean-variance, risk parity, rebalancing)
+  execution/         Trade execution framework (runner, risk, sim_broker, audit)
+  quant_data/        Data lake & market data pipelines (connectors, pipelines, duckdb_store, registry)
+  cerebro/           AI-powered research discovery (arXiv, SSRN, blogs, scoring, proposals)
+  research/          Strategy research notes, tracker, external ideas (docs only)
+  notebooks/         Exploratory research notebooks and templates
+book_notes/          Component 3 — learning material
+  playground/        Playground study environment (studies, agents, skills)
+  books_and_papers/  Source PDFs of books and papers
+bin/                 Entry scripts & launchers (start.sh/.bat, stop.sh, start_scheduler.py, .app/.command)
+scripts/             Automation (PA downloads, data ingestion, backfill, scheduling, agent-deck teams)
+config/              App config YAML, ticker universe
+data/                Flex reports (CSV), market data (Parquet), catalog.json
+data_lake/           DuckDB research lake (research.duckdb)
+docs/                Documentation and setup guides (docs/guides/)
+infrastructure/      Docker / docker-compose deployment configs
+tests/               Unit + integration tests
 ```
+
+**Imports**: components are imported by their full, component-qualified path —
+`from core.config import settings`, `from core.database import ...`,
+`from core.models import ...`, `from alpha_research.portfolio... import`, etc.
+Shared infrastructure (config, DB, broker, market data, LLM) lives in `core/` —
+**never** import it from `dashboard.backend`. Layering rule: `core` imports
+nothing internal; `alpha_research` and `dashboard` import `core`; `dashboard` may
+import `alpha_research` (not vice-versa). Repo root must be on `PYTHONPATH`
+(pytest sets `pythonpath = .`; the Makefile/bin launchers run from repo root).
+There are **no compatibility symlinks**. `config/`, `data/`, `data_lake/` are not
+Python packages (the settings package is `core.config`).
 
 ## Data Flow
 
@@ -82,7 +106,7 @@ IBKR TWS/Gateway (real-time) + Flex Query (historical CSV) + External APIs (yfin
 
 - **Config**: Pydantic BaseSettings with env prefixes (`IBKR_HOST`, `DB_URL`, `APP_DEBUG`, `FLEX_TOKEN`, `FRED_API_KEY`). Loads `.env` from project root.
 - **Database**: SQLAlchemy 2.0 declarative base. Default SQLite (`ibkr_analytics.db`), PostgreSQL in production.
-- **API responses**: Pydantic schemas in `backend/api/schemas.py`. Consistent envelope (success, data, error, metadata).
+- **API responses**: Pydantic schemas in `dashboard/backend/api/schemas.py`. Consistent envelope (success, data, error, metadata).
 - **Parquet schema**: prices = `(date, ticker, open, high, low, close, volume)`, FRED = `(date, series_id, value)`. `catalog.json` auto-updated on pull — don't edit manually.
 - **Test fixtures**: `tests/conftest.py` provides `test_db` (in-memory SQLite), `mock_ibkr_client`, sample data series. Markers: `unit`, `integration`, `slow`, `requires_ibkr`, `requires_db`.
 
@@ -95,12 +119,12 @@ When writing signals in backtesting code:
 
 ## Adding Market Data
 
-1. Add FRED series ID + metadata to the appropriate dict in `market_data_service.py`
-2. Add instrument definition (tooltip) to `DEFINITIONS` in `frontend/components/market_panels.py`
-3. If new category, add to `CATEGORY_ORDER` in `market_panels.py`
+1. Add FRED series ID + metadata to the appropriate dict in `core/market_data_service.py`
+2. Add instrument definition (tooltip) to `DEFINITIONS` in `dashboard/frontend/components/market_panels.py`
+3. If new category, add to `CATEGORY_ORDER` in `dashboard/frontend/components/market_panels.py`
 4. Test: `curl http://localhost:8000/api/market/overview | python3 -m json.tool`
 
-For Parquet data lake: define tickers in `market_data_store.py`, map to file path, use Data Manager UI or `POST /api/data/pull`.
+For Parquet data lake: define tickers in `core/market_data_store.py`, map to file path, use Data Manager UI or `POST /api/data/pull`.
 
 ## Research Work Tracking (MANDATORY)
 
