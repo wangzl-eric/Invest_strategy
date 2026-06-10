@@ -118,7 +118,7 @@ class KaggleSource(BaseSource):
 
     def _fetch_competition_notebooks(
         self,
-        api: "KaggleApi",
+        api: "KaggleApi",  # noqa: F821
         competition: str,
         since: datetime,
     ) -> List[RawPaper]:
@@ -155,7 +155,7 @@ class KaggleSource(BaseSource):
 
     def _kernel_to_raw_paper(
         self,
-        kernel: "KaggleApi.KernelMetadata",
+        kernel: "KaggleApi.KernelMetadata",  # noqa: F821
         competition: str,
     ) -> Optional[RawPaper]:
         """Convert a Kaggle kernel metadata object to RawPaper.

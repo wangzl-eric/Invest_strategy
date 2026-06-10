@@ -13,7 +13,6 @@ class ValidationError(Exception):
     """Exception raised when data validation fails."""
 
 
-
 class DataValidator:
     """Validator for IBKR account data."""
 

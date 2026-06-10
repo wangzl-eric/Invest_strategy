@@ -11,6 +11,17 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
+from core.config import settings
+from core.data_processor import DataProcessor
+from core.database import get_db
+from core.db_utils import import_all_flex_data
+from core.flex_importer import (
+    import_flex_query_result,
+    import_mark_to_market_performance_csv,
+)
+from core.flex_query_client import FlexQueryClient, FlexQueryError
+from core.ibkr_client import IBKRClient
+from core.models import AccountSnapshot, PerformanceMetric, PnLHistory, Position, Trade
 from dashboard.backend.api.schemas import (
     AccountSummaryResponse,
     PerformanceMetricResponse,
@@ -25,30 +36,13 @@ from dashboard.backend.auth import (
     get_user_primary_account,
 )
 from dashboard.backend.cache import cache_manager
-from core.config import settings
 from dashboard.backend.data_fetcher import DataFetcher
-from core.data_processor import DataProcessor
-from core.database import get_db
-from core.db_utils import import_all_flex_data
 from dashboard.backend.export import (
     export_combined_report,
     export_performance_excel,
     export_pnl_excel,
     export_trades_excel,
     get_export_filename,
-)
-from core.flex_importer import (
-    import_flex_query_result,
-    import_mark_to_market_performance_csv,
-)
-from core.flex_query_client import FlexQueryClient, FlexQueryError
-from core.ibkr_client import IBKRClient
-from core.models import (
-    AccountSnapshot,
-    PerformanceMetric,
-    PnLHistory,
-    Position,
-    Trade,
 )
 
 logger = logging.getLogger(__name__)
@@ -1021,7 +1015,10 @@ async def get_var(
 ):
     """Calculate Value at Risk (VaR) for the portfolio."""
     try:
-        from alpha_research.portfolio.risk_analytics import historical_var, parametric_var
+        from alpha_research.portfolio.risk_analytics import (
+            historical_var,
+            parametric_var,
+        )
 
         returns_df = data_processor.calculate_daily_returns(account_id)
 

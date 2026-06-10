@@ -4,7 +4,10 @@ Signal definitions for backtesting and live trading.
 All signals extend bt.Indicator for native Backtrader compatibility.
 """
 from alpha_research.backtests.strategies.labeling import TripleBarrierLabeler
-from alpha_research.backtests.strategies.metadata import SIGNAL_METADATA, get_signal_metadata
+from alpha_research.backtests.strategies.metadata import (
+    SIGNAL_METADATA,
+    get_signal_metadata,
+)
 from alpha_research.backtests.strategies.signals import (
     BaseSignal,
     BollingerPositionSignal,

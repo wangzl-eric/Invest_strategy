@@ -46,7 +46,7 @@ class AlertEngine:
                     # If inspection fails, try querying directly and catch OperationalError
                     pass
 
-                query = db.query(AlertRule).filter(AlertRule.enabled == True)
+                query = db.query(AlertRule).filter(AlertRule.enabled.is_(True))
 
                 if account_id:
                     query = query.filter(AlertRule.account_id == account_id)
@@ -310,7 +310,6 @@ class AlertEngine:
         self, rule: AlertRule, config: Dict, db: Session
     ) -> tuple[bool, str, Dict]:
         """Evaluate correlation rule."""
-        min_correlation = config.get("min_correlation", 0.7)
         symbols = config.get("symbols", [])
 
         if len(symbols) < 2:
@@ -333,7 +332,7 @@ class AlertEngine:
 
         channels = (
             db.query(AlertChannel)
-            .filter(AlertChannel.id.in_(channel_ids), AlertChannel.enabled == True)
+            .filter(AlertChannel.id.in_(channel_ids), AlertChannel.enabled.is_(True))
             .all()
         )
 

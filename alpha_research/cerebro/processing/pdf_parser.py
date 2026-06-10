@@ -128,7 +128,7 @@ def extract_text_from_bytes(pdf_bytes: bytes) -> ParsedPDF:
         doc.close()
 
 
-def _extract_full_text(doc: "fitz.Document") -> str:
+def _extract_full_text(doc: "fitz.Document") -> str:  # noqa: F821
     """Extract full text from all pages of a PDF document.
 
     Args:
@@ -217,7 +217,7 @@ def _split_into_sections(text: str) -> Dict[str, str]:
     return sections
 
 
-def _extract_metadata(doc: "fitz.Document") -> Dict[str, str]:
+def _extract_metadata(doc: "fitz.Document") -> Dict[str, str]:  # noqa: F821
     """Extract PDF metadata (title, author, subject, etc.).
 
     Args:

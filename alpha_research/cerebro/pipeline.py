@@ -14,7 +14,10 @@ from typing import Any, Dict, List, Optional
 from alpha_research.cerebro.config import CerebroConfig, cerebro_config
 from alpha_research.cerebro.processing.deduplicator import SemanticDeduplicator
 from alpha_research.cerebro.processing.llm_summarizer import CerebroLLMClient
-from alpha_research.cerebro.processing.structured_extractor import PaperSummary, extract_paper_summary
+from alpha_research.cerebro.processing.structured_extractor import (
+    PaperSummary,
+    extract_paper_summary,
+)
 from alpha_research.cerebro.scoring.feasibility_scorer import FeasibilityScorer
 from alpha_research.cerebro.scoring.novelty_detector import NoveltyDetector
 from alpha_research.cerebro.scoring.quality_scorer import QualityScorer
@@ -807,9 +810,9 @@ class CerebroPipeline:
                 if f.strip()
             )
             limitations = tuple(
-                l.strip()
-                for l in (data.get("limitations") or "").split("|")
-                if l.strip()
+                item.strip()
+                for item in (data.get("limitations") or "").split("|")
+                if item.strip()
             )
 
             summary = PaperSummary(

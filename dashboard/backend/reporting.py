@@ -4,7 +4,6 @@ from datetime import datetime
 from io import BytesIO
 from typing import Optional
 
-
 try:
     from reportlab.lib import colors
     from reportlab.lib.enums import TA_CENTER
@@ -227,11 +226,11 @@ class ScheduledReportService:
         """Generate a report and send via email."""
         try:
             if report_type == "performance":
-                pdf_buffer = self.report_generator.generate_performance_report(
+                self.report_generator.generate_performance_report(
                     account_id, start_date, end_date
                 )
             elif report_type == "trades":
-                pdf_buffer = self.report_generator.generate_trade_report(
+                self.report_generator.generate_trade_report(
                     account_id, start_date, end_date
                 )
             else:

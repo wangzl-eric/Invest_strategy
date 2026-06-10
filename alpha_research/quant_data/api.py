@@ -33,7 +33,10 @@ from alpha_research.quant_data.analytics import (  # re-exported for convenience
     compute_drawdown,
     compute_rolling_sharpe,
 )
-from alpha_research.quant_data.ticker_map import TickerInfo, resolve_strict  # noqa: E402
+from alpha_research.quant_data.ticker_map import (  # noqa: E402
+    TickerInfo,
+    resolve_strict,
+)
 
 log = logging.getLogger(__name__)
 

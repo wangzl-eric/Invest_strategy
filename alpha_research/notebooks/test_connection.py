@@ -13,9 +13,7 @@ try:
     from sqlalchemy.orm import sessionmaker
 
     from core.config import settings
-    from core.models import (
-        PnLHistory,
-    )
+    from core.models import PnLHistory
 
     print("✓ All imports successful")
     print(f"✓ Database URL: {settings.database.url}")
@@ -34,7 +32,7 @@ try:
     with engine.connect() as conn:
         inspector = inspect(engine)
         tables = inspector.get_table_names()
-        print(f"✓ Database connection successful")
+        print("✓ Database connection successful")
         print(f'✓ Available tables: {", ".join(tables)}')
 
         # Check if pnl_history table exists and has data

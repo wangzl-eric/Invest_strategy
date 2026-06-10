@@ -142,7 +142,7 @@ class ArxivSource(BaseSource):
 
     def _result_to_raw_paper(
         self,
-        result: "arxiv.Result",
+        result: "arxiv.Result",  # noqa: F821
         published: datetime,
     ) -> RawPaper:
         """Convert an arxiv.Result to a RawPaper.

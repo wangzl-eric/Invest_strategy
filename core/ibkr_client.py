@@ -419,7 +419,6 @@ class IBKRClient:
 
             net_liquidation = account_summary.get("NetLiquidation", 0)
             total_cash = account_summary.get("TotalCashValue", 0)
-            gross_position_value = account_summary.get("GrossPositionValue", 0)
 
             # Calculate realized PnL
             # Realized PnL = NetLiquidation - TotalCash - GrossPositionValue + (GrossPositionValue - Cost basis)
@@ -1142,7 +1141,7 @@ class IBKRClient:
         if self.connected:
             try:
                 asyncio.create_task(self.disconnect())
-            except:
+            except Exception:
                 pass
 
 

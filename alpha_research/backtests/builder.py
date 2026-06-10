@@ -137,7 +137,10 @@ class PortfolioBuilder:
         Args:
             signal_config: Dict of signal_name -> params
         """
-        from alpha_research.backtests.strategies.signals import compute_signal_pandas, get_signal
+        from alpha_research.backtests.strategies.signals import (
+            compute_signal_pandas,
+            get_signal,
+        )
 
         signal_config = signal_config or {}
 
@@ -222,7 +225,10 @@ class PortfolioBuilder:
             as_of_date: Only use data up to this date for estimation (avoids look-ahead).
                         If None, uses all available data.
         """
-        from alpha_research.portfolio.optimizer import OptimizationConfig, mean_variance_optimize
+        from alpha_research.portfolio.optimizer import (
+            OptimizationConfig,
+            mean_variance_optimize,
+        )
         from alpha_research.portfolio.risk import ledoit_wolf_cov
 
         method = method or self.config.optimization
@@ -319,7 +325,10 @@ class PortfolioBuilder:
         Returns:
             pd.Series of portfolio weights indexed by asset name.
         """
-        from alpha_research.portfolio.optimizer import OptimizationConfig, mean_variance_optimize
+        from alpha_research.portfolio.optimizer import (
+            OptimizationConfig,
+            mean_variance_optimize,
+        )
         from alpha_research.portfolio.risk import ledoit_wolf_cov
 
         method = self.config.optimization

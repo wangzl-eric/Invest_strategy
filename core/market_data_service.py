@@ -224,11 +224,6 @@ FX_TICKERS = {
     "USDTWD=X": {"name": "USD/TWD", "pair": "USDTWD"},
     # Asian Currencies
     "USDKRW=X": {"name": "USD/KRW", "pair": "USDKRW"},
-    "USDJPY=X": {"name": "USD/JPY", "pair": "USDJPY"},
-    "USDTHB=X": {"name": "USD/THB", "pair": "USDTHB"},
-    "USDIDR=X": {"name": "USD/IDR", "pair": "USDIDR"},
-    "USDMYR=X": {"name": "USD/MYR", "pair": "USDMYR"},
-    "USDPHP=X": {"name": "USD/PHP", "pair": "USDPHP"},
     "USDVND=X": {"name": "USD/VND", "pair": "USDVND"},
     # Crypto (via forex pairs)
     "BTC-USD": {"name": "Bitcoin/USD", "pair": "BTCUSD"},
@@ -323,7 +318,6 @@ ETF_TICKERS = {
     # Thematic ETFs
     "SMH": {"name": "Semiconductors", "category": "thematic"},
     "XBI": {"name": "Biotech", "category": "thematic"},
-    "ARKK": {"name": "Innovation", "category": "thematic"},
     "VNQ": {"name": "Real Estate (Vanguard)", "category": "thematic"},
     # International
     "VXUS": {"name": "Total International", "category": "intl"},
@@ -401,13 +395,7 @@ COMMODITY_TICKERS = {
     "ZL=F": {"name": "Soybean Oil", "group": "Agriculture"},
     "ZM=F": {"name": "Soybean Meal", "group": "Agriculture"},
     "KE=F": {"name": "Kansas Wheat", "group": "Agriculture"},
-    "CT=F": {"name": "Cotton", "group": "Agriculture"},
-    "CC=F": {"name": "Cocoa", "group": "Agriculture"},
-    "KC=F": {"name": "Coffee", "group": "Agriculture"},
     "SB=F": {"name": "Sugar", "group": "Agriculture"},
-    "OJ=F": {"name": "Orange Juice", "group": "Agriculture"},
-    "HE=F": {"name": "Lean Hogs", "group": "Agriculture"},
-    "LE=F": {"name": "Live Cattle", "group": "Agriculture"},
     "GF=F": {"name": "Feeder Cattle", "group": "Agriculture"},
     # Livestock
     "LE=F": {"name": "Live Cattle", "group": "Livestock"},
@@ -1812,11 +1800,7 @@ class MarketDataService:
         Returns:
             Dict with keys: data, source_used, fallback_reason, success
         """
-        from core.data_source_manager import (
-            DataSource,
-            record_failure,
-            record_success,
-        )
+        from core.data_source_manager import DataSource, record_failure, record_success
 
         # Try IBKR first for equities/fx
         if asset_class in ["equity", "fx", "commodities"]:

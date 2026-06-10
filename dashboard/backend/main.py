@@ -5,7 +5,10 @@ from datetime import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from dashboard.backend.api.advanced_analytics_routes import router as advanced_analytics_router
+from core.ibkr_client import IBKRClient
+from dashboard.backend.api.advanced_analytics_routes import (
+    router as advanced_analytics_router,
+)
 from dashboard.backend.api.advanced_analytics_routes_extended import (
     router as advanced_analytics_extended_router,
 )
@@ -21,7 +24,6 @@ from dashboard.backend.api.reporting_routes import router as reporting_router
 from dashboard.backend.api.research_routes import router as research_router
 from dashboard.backend.api.routes import router
 from dashboard.backend.broker_interface import IBKRBrokerAdapter, broker_manager
-from core.ibkr_client import IBKRClient
 
 try:
     from dashboard.backend.api.websocket_routes import router as websocket_router
@@ -74,7 +76,7 @@ app.add_middleware(MetricsMiddleware)
 app.middleware("http")(rate_limit_middleware)
 
 # Initialize error tracking
-import os
+import os  # noqa: E402
 
 sentry_dsn = os.getenv("SENTRY_DSN")
 if sentry_dsn:

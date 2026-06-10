@@ -130,7 +130,7 @@ async def get_user_from_api_key(
     api_key_hash = hash_api_key(api_key)
     api_key_obj = (
         db.query(APIKey)
-        .filter(APIKey.key_hash == api_key_hash, APIKey.is_active == True)
+        .filter(APIKey.key_hash == api_key_hash, APIKey.is_active.is_(True))
         .first()
     )
 
@@ -235,7 +235,7 @@ def get_user_accounts(user: User, db: Session) -> List[UserAccount]:
     """Get all accounts for a user."""
     return (
         db.query(UserAccount)
-        .filter(UserAccount.user_id == user.id, UserAccount.is_active == True)
+        .filter(UserAccount.user_id == user.id, UserAccount.is_active.is_(True))
         .all()
     )
 
@@ -246,8 +246,8 @@ def get_user_primary_account(user: User, db: Session) -> Optional[UserAccount]:
         db.query(UserAccount)
         .filter(
             UserAccount.user_id == user.id,
-            UserAccount.is_primary == True,
-            UserAccount.is_active == True,
+            UserAccount.is_primary.is_(True),
+            UserAccount.is_active.is_(True),
         )
         .first()
     )

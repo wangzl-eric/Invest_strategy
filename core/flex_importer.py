@@ -199,7 +199,6 @@ def import_mark_to_market_performance_csv(
                 i += 2
                 continue
 
-            starting = _to_float(row.get("StartingValue", ""))
             ending = _to_float(row.get("EndingValue", ""))
             mtm = _to_float(row.get("Mtm", "")) or 0.0
             realized = _to_float(row.get("Realized", "")) or 0.0
@@ -590,7 +589,7 @@ def import_trades_from_flex(trades: List["FlexTrade"]) -> int:
 
             # Skip trades with no meaningful data
             if not flex_trade.symbol or flex_trade.symbol == "nan":
-                logger.debug(f"Skipping trade with no symbol")
+                logger.debug("Skipping trade with no symbol")
                 continue
 
             # Skip trades with zero quantity and zero price (summary rows)

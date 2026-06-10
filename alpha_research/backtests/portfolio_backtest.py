@@ -8,7 +8,11 @@ import numpy as np
 import pandas as pd
 
 from alpha_research.backtests.core import BacktestResult, CostModel
-from alpha_research.backtests.metrics import annualized_sharpe, max_drawdown, total_return
+from alpha_research.backtests.metrics import (
+    annualized_sharpe,
+    max_drawdown,
+    total_return,
+)
 from alpha_research.portfolio.blend import Signal, blend_signals
 from alpha_research.portfolio.optimizer import weights_from_alpha
 

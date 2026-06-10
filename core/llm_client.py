@@ -602,7 +602,7 @@ async def generate_attribution(
 # Backtest Rigor Verdict
 # ============================================================================
 
-from pydantic import BaseModel
+from pydantic import BaseModel  # noqa: E402
 
 
 class VerdictExplanation(BaseModel):

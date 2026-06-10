@@ -156,7 +156,7 @@ class SSRNSource(BaseSource):
 
     def _entry_to_raw_paper(
         self,
-        entry: "feedparser.FeedParserDict",
+        entry: "feedparser.FeedParserDict",  # noqa: F821
         feed_name: str,
     ) -> Optional[RawPaper]:
         """Convert a feedparser entry to a RawPaper.

@@ -242,7 +242,6 @@ class RelevanceScorer:
             "tick": {"ibkr", "polygon"},
         }
 
-        reqs_text = " ".join(summary.data_requirements).lower()
         total_reqs = len(summary.data_requirements)
         matched_reqs = 0
 

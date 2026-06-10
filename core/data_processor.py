@@ -163,7 +163,6 @@ class DataProcessor:
 
             # Group trades by symbol and calculate PnL per trade
             # This is simplified - in reality, you'd need to track entry/exit pairs
-            trade_pnls = []
             for trade in trades:
                 # Simplified: assume we can calculate PnL from trade data
                 # In practice, you'd need to match buy/sell pairs

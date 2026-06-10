@@ -581,16 +581,6 @@ class FlexQueryClient:
         """Parse trades from CSV DataFrame."""
         trades = []
 
-        # Find rows that look like trades (have TradeID or Symbol columns)
-        trade_cols = [
-            "Symbol",
-            "TradeID",
-            "IBExecID",
-            "Buy/Sell",
-            "Quantity",
-            "TradePrice",
-        ]
-
         # Check if this looks like a trade section
         if not any(col in df.columns for col in ["Symbol", "TradeID"]):
             return trades
@@ -798,7 +788,7 @@ class FlexQueryClient:
                 # Try to read as TSV first, then CSV
                 try:
                     df = pd.read_csv(StringIO(section_text), sep="\t", dtype=str)
-                except:
+                except Exception:
                     df = pd.read_csv(StringIO(section_text), dtype=str)
 
                 if df.empty:

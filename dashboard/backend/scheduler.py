@@ -5,8 +5,8 @@ from datetime import datetime
 from typing import Optional
 
 from core.config import settings
-from dashboard.backend.data_fetcher import DataFetcher
 from core.ibkr_client import IBKRClient
+from dashboard.backend.data_fetcher import DataFetcher
 
 logger = logging.getLogger(__name__)
 
@@ -103,16 +103,16 @@ class PnLScheduler:
 
 
 """Scheduled jobs for data updates."""
-import asyncio
-import logging
-from typing import Optional
+import asyncio  # noqa: E402,F811
+import logging  # noqa: E402
+from typing import Optional  # noqa: E402
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.schedulers.asyncio import AsyncIOScheduler  # noqa: E402
+from apscheduler.triggers.interval import IntervalTrigger  # noqa: E402
 
-from core.config import settings
-from dashboard.backend.data_fetcher import DataFetcher
-from core.data_processor import DataProcessor
+from core.config import settings  # noqa: E402,F811
+from core.data_processor import DataProcessor  # noqa: E402
+from dashboard.backend.data_fetcher import DataFetcher  # noqa: E402,F811
 
 logger = logging.getLogger(__name__)
 

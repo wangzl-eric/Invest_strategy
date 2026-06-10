@@ -182,7 +182,7 @@ class DataSourceManager:
             if asset_class in SOURCE_CAPABILITIES.get(source, []):
                 if check_health and not _health_tracker.is_available(source):
                     continue
-                return source, f"Fallback: preferred sources unavailable"
+                return source, "Fallback: preferred sources unavailable"
 
         return DataSource.NONE, "No available data source"
 

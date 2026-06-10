@@ -5,7 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from alpha_research.quant_data.connectors.base import BarsConnector, BarsRequest
-from alpha_research.quant_data.io.parquet_writer import ParquetWriteResult, write_bars_partitioned
+from alpha_research.quant_data.io.parquet_writer import (
+    ParquetWriteResult,
+    write_bars_partitioned,
+)
 from alpha_research.quant_data.meta_db import get_meta_db_context
 from alpha_research.quant_data.paths import DataLakeConfig
 from alpha_research.quant_data.qconfig import QuantDataSettings

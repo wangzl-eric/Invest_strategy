@@ -761,7 +761,7 @@ if __name__ == "__main__":
     data_dir = sys.argv[1] if len(sys.argv) > 1 else "data/flex_reports"
 
     print(f"\n{'='*60}")
-    print(f"IBKR Flex Query Parser")
+    print("IBKR Flex Query Parser")
     print(f"{'='*60}\n")
 
     # Parse all files

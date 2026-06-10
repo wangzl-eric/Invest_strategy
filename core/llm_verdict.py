@@ -461,24 +461,24 @@ def _print_result(result: Dict[str, Any]) -> None:
         print()
 
         if llm.get("reasoning"):
-            print(f"  Reasoning:")
+            print("  Reasoning:")
             print(f"    {llm['reasoning'][:200]}...")
             print()
 
         if llm.get("flags"):
-            print(f"  Flags:")
+            print("  Flags:")
             for flag in llm["flags"]:
                 print(f"    • {flag}")
             print()
 
         if llm.get("suggestions"):
-            print(f"  Suggestions:")
+            print("  Suggestions:")
             for suggestion in llm["suggestions"]:
                 print(f"    → {suggestion}")
             print()
 
         if details.get("final", {}).get("override_applied"):
-            print(f"  ⚠️  LLM verdict overridden (kept rule-based)")
+            print("  ⚠️  LLM verdict overridden (kept rule-based)")
             print()
 
     print("=" * 60)

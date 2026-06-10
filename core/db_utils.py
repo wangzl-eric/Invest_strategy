@@ -35,12 +35,7 @@ from sqlalchemy import desc, func
 
 from core.database import engine, get_db_context, init_db
 from core.flex_parser import load_all_flex_reports
-from core.models import (
-    AccountSnapshot,
-    PnLHistory,
-    Position,
-    Trade,
-)
+from core.models import AccountSnapshot, PnLHistory, Position, Trade
 
 logger = logging.getLogger(__name__)
 
@@ -396,7 +391,7 @@ def init_database():
     init_db()
     print("✓ Database initialized successfully")
     print(
-        f"  Tables: trades, positions, pnl_history, account_snapshots, performance_metrics"
+        "  Tables: trades, positions, pnl_history, account_snapshots, performance_metrics"
     )
 
 

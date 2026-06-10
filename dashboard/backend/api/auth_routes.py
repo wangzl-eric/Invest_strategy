@@ -7,6 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
+from core.database import get_db
+from core.models import APIKey, User, UserAccount, UserPreferences
 from dashboard.backend.auth import (
     create_access_token,
     generate_api_key,
@@ -15,8 +17,6 @@ from dashboard.backend.auth import (
     get_user_accounts,
     verify_password,
 )
-from core.database import get_db
-from core.models import APIKey, User, UserAccount, UserPreferences
 
 logger = logging.getLogger(__name__)
 
@@ -202,7 +202,8 @@ async def add_account(
     # If this is set as primary, unset other primary accounts
     if account_data.is_primary:
         db.query(UserAccount).filter(
-            UserAccount.user_id == current_user.id, UserAccount.is_primary == True
+            UserAccount.user_id == current_user.id,
+            UserAccount.is_primary.is_(True),
         ).update({"is_primary": False})
 
     # Create account
