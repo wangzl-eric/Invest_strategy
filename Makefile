@@ -34,7 +34,7 @@ test-cov:
 # Run linters
 lint:
 	@echo "Running flake8..."
-	flake8 core/ dashboard/ alpha_research/ --max-line-length=120 --ignore=E501,W503
+	flake8 core/ dashboard/ alpha_research/ --max-line-length=120 --ignore=E501,W503,E203
 	@echo ""
 	@echo "Running black check..."
 	black --check core/ dashboard/ alpha_research/ --diff

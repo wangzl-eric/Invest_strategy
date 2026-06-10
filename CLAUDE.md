@@ -29,7 +29,7 @@ make serve-backend                     # FastAPI on :8000 (with --reload)
 make serve-frontend                    # Dash on :8050
 ```
 
-Flake8 config: `--max-line-length=120 --ignore=E501,W503`
+Flake8 config: `--max-line-length=120 --ignore=E501,W503,E203` (E203 ignored — it conflicts with black's slice formatting; matches `.pre-commit-config.yaml`)
 
 ## Architecture
 
