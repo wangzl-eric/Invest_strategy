@@ -19,8 +19,8 @@ from fastapi import APIRouter, Body, HTTPException, Query
 from core.config import settings
 from dashboard.backend.data_pipeline import data_pipeline
 from core.llm_verdict import generate_hybrid_verdict, run_verdict
-from dashboard.backend.research.duckdb_utils import get_research_db
-from dashboard.backend.research.features import compute_features, get_feature_registry
+from alpha_research.features.duckdb_utils import get_research_db
+from alpha_research.features.features import compute_features, get_feature_registry
 
 # Get the project root and optional skill path.
 project_root = Path(__file__).resolve().parents[3]
@@ -29,7 +29,7 @@ if skill_path.exists() and str(skill_path) not in sys.path:
     sys.path.insert(0, str(skill_path))
 
 try:
-    from dashboard.backend.research.backtest import (
+    from alpha_research.features.backtest import (
         BacktestConfig,
         run_backtest,
         run_factor_backtest,
@@ -238,7 +238,7 @@ async def list_features(
         registry = get_feature_registry()
 
         if category:
-            from dashboard.backend.research.features import FeatureCategory
+            from alpha_research.features.features import FeatureCategory
 
             cat = FeatureCategory(category.lower())
             features = registry.list_features(cat)

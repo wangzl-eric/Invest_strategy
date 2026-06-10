@@ -10,7 +10,7 @@ def test_market_data_store_uses_repo_root_data_dir():
 
 
 def test_research_duckdb_uses_repo_root_data_dir():
-    from dashboard.backend.research import duckdb_utils
+    from alpha_research.features import duckdb_utils
 
     assert duckdb_utils.DATA_DIR == REPO_ROOT / "data" / "market_data"
 

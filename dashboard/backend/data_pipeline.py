@@ -23,7 +23,7 @@ import pandas as pd
 
 from core.market_data_store import get_job_status as get_legacy_job_status
 from core.market_data_store import market_data_store
-from dashboard.backend.research.duckdb_utils import get_research_db
+from alpha_research.features.duckdb_utils import get_research_db
 
 logger = logging.getLogger(__name__)
 

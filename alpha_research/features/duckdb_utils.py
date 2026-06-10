@@ -17,8 +17,8 @@ from core.config import settings
 logger = logging.getLogger(__name__)
 
 # Default data directory shared across dashboard and workstation flows.
-# Real file at {repo}/dashboard/backend/research/duckdb_utils.py -> parents[3] == repo root.
-DATA_DIR = Path(__file__).resolve().parents[3] / "data" / "market_data"
+# Real file at {repo}/alpha_research/features/duckdb_utils.py -> parents[2] == repo root.
+DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "market_data"
 PRICES_DIR = DATA_DIR / "prices"
 FRED_DIR = DATA_DIR / "fred"
 

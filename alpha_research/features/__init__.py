@@ -7,11 +7,11 @@ This module provides:
 - Experiment tracking integration with MLflow
 """
 
-from dashboard.backend.research.duckdb_utils import ResearchDB
-from dashboard.backend.research.features import FeatureRegistry, compute_features
+from alpha_research.features.duckdb_utils import ResearchDB
+from alpha_research.features.features import FeatureRegistry, compute_features
 
 try:
-    from dashboard.backend.research.backtest import BacktestExperiment, EventDrivenBacktest
+    from alpha_research.features.backtest import BacktestExperiment, EventDrivenBacktest
 except ModuleNotFoundError:
     BacktestExperiment = None
     EventDrivenBacktest = None
