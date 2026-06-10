@@ -32,7 +32,7 @@ class TestIBKRDataFeed:
 
     def test_ibkr_datafeed_creation(self):
         """Test IBKRDataFeed can be created."""
-        from dashboard.backend.backtest_engine import IBKRDataFeed
+        from alpha_research.backtests.event_driven.backtest_engine import IBKRDataFeed
 
         # Create sample data
         df = pd.DataFrame(
@@ -55,7 +55,7 @@ class TestParquetDataFeed:
 
     def test_parquet_datafeed_creation(self):
         """Test ParquetDataFeed can be created."""
-        from dashboard.backend.backtest_engine import ParquetDataFeed
+        from alpha_research.backtests.event_driven.backtest_engine import ParquetDataFeed
 
         df = pd.DataFrame(
             {
@@ -77,28 +77,28 @@ class TestMakeIBKRDataName:
 
     def test_stock_contract(self):
         """Test stock contract format."""
-        from dashboard.backend.backtest_engine import make_ibkr_dataname
+        from alpha_research.backtests.event_driven.backtest_engine import make_ibkr_dataname
 
         result = make_ibkr_dataname("AAPL", "STK", "SMART", "USD")
         assert result == "AAPL-STK-SMART-USD"
 
     def test_index_contract(self):
         """Test index contract format."""
-        from dashboard.backend.backtest_engine import make_ibkr_dataname
+        from alpha_research.backtests.event_driven.backtest_engine import make_ibkr_dataname
 
         result = make_ibkr_dataname("VIX", "IND", "CBOE", "USD")
         assert result == "VIX-IND-CBOE-USD"
 
     def test_future_contract(self):
         """Test futures contract format."""
-        from dashboard.backend.backtest_engine import make_ibkr_dataname
+        from alpha_research.backtests.event_driven.backtest_engine import make_ibkr_dataname
 
         result = make_ibkr_dataname("ES", "FUT", "GLOBEX", "USD", "202412")
         assert result == "ES-FUT-GLOBEX-USD-202412"
 
     def test_option_contract(self):
         """Test option contract format."""
-        from dashboard.backend.backtest_engine import make_ibkr_dataname
+        from alpha_research.backtests.event_driven.backtest_engine import make_ibkr_dataname
 
         result = make_ibkr_dataname(
             "SPX", "OPT", "CBOE", "USD", "20241220", 5000, "CALL"
@@ -107,7 +107,7 @@ class TestMakeIBKRDataName:
 
     def test_minimal_params(self):
         """Test with only symbol (default STK, SMART, USD applied)."""
-        from dashboard.backend.backtest_engine import make_ibkr_dataname
+        from alpha_research.backtests.event_driven.backtest_engine import make_ibkr_dataname
 
         # With only symbol, defaults are applied: STK, SMART, USD
         result = make_ibkr_dataname("AAPL")
@@ -147,7 +147,7 @@ class TestBacktestEngine:
 
     def test_engine_initialization(self):
         """Test engine initializes with correct defaults."""
-        from dashboard.backend.backtest_engine import BacktestEngine
+        from alpha_research.backtests.event_driven.backtest_engine import BacktestEngine
 
         engine = BacktestEngine(cash=50000, commission=0.002)
         assert engine.cash == 50000
@@ -156,7 +156,7 @@ class TestBacktestEngine:
 
     def test_add_data_creates_cerebro(self):
         """Test adding data creates cerebro."""
-        from dashboard.backend.backtest_engine import BacktestEngine, IBKRDataFeed
+        from alpha_research.backtests.event_driven.backtest_engine import BacktestEngine, IBKRDataFeed
 
         engine = BacktestEngine()
         df = pd.DataFrame(
@@ -177,7 +177,7 @@ class TestBacktestEngine:
 
     def test_add_strategy_creates_cerebro(self):
         """Test adding strategy creates cerebro."""
-        from dashboard.backend.backtest_engine import BacktestEngine, create_momentum_strategy
+        from alpha_research.backtests.event_driven.backtest_engine import BacktestEngine, create_momentum_strategy
 
         engine = BacktestEngine()
         engine.add_strategy(create_momentum_strategy("Test", {"period": 10}))
@@ -186,7 +186,7 @@ class TestBacktestEngine:
 
     def test_load_parquet_data_raises_on_empty(self):
         """Test loading non-existent parquet raises error."""
-        from dashboard.backend.backtest_engine import BacktestEngine
+        from alpha_research.backtests.event_driven.backtest_engine import BacktestEngine
 
         engine = BacktestEngine()
 
@@ -195,7 +195,7 @@ class TestBacktestEngine:
 
     def test_run_backtest_raises_without_cerebro(self):
         """Test run_backtest raises if no cerebro."""
-        from dashboard.backend.backtest_engine import BacktestEngine
+        from alpha_research.backtests.event_driven.backtest_engine import BacktestEngine
 
         engine = BacktestEngine()
 
@@ -204,7 +204,7 @@ class TestBacktestEngine:
 
     def test_plot_results_raises_without_run(self):
         """Test plot_results raises if backtest not run."""
-        from dashboard.backend.backtest_engine import BacktestEngine
+        from alpha_research.backtests.event_driven.backtest_engine import BacktestEngine
 
         engine = BacktestEngine()
 
@@ -217,7 +217,7 @@ class TestStrategyFactories:
 
     def test_create_momentum_strategy(self):
         """Test momentum strategy creation."""
-        from dashboard.backend.backtest_engine import create_momentum_strategy
+        from alpha_research.backtests.event_driven.backtest_engine import create_momentum_strategy
 
         StrategyClass = create_momentum_strategy(
             "TestMomentum", {"period": 20, "threshold": 0.5}
@@ -231,7 +231,7 @@ class TestStrategyFactories:
 
     def test_create_mean_reversion_strategy(self):
         """Test mean reversion strategy creation."""
-        from dashboard.backend.backtest_engine import create_mean_reversion_strategy
+        from alpha_research.backtests.event_driven.backtest_engine import create_mean_reversion_strategy
 
         StrategyClass = create_mean_reversion_strategy(
             "TestMR", {"period": 30, "std_dev": 1.5}
@@ -242,7 +242,7 @@ class TestStrategyFactories:
 
     def test_create_signal_strategy(self):
         """Test signal strategy creation."""
-        from dashboard.backend.backtest_engine import create_signal_strategy
+        from alpha_research.backtests.event_driven.backtest_engine import create_signal_strategy
 
         signals = pd.DataFrame(
             {"signal": [0, 1, 0, -1, 1]}, index=pd.date_range("2023-01-01", periods=5)
@@ -258,7 +258,7 @@ class TestQuickBacktest:
 
     def test_quick_backtest_basic(self):
         """Test basic quick backtest."""
-        from dashboard.backend.backtest_engine import quick_backtest
+        from alpha_research.backtests.event_driven.backtest_engine import quick_backtest
 
         # Create data
         dates = pd.date_range("2023-01-01", "2023-06-30", freq="D")
@@ -287,7 +287,7 @@ class TestQuickBacktest:
 
     def test_quick_backtest_returns_dict(self):
         """Test quick_backtest returns correct structure."""
-        from dashboard.backend.backtest_engine import quick_backtest
+        from alpha_research.backtests.event_driven.backtest_engine import quick_backtest
 
         data = pd.DataFrame(
             {
@@ -316,7 +316,7 @@ class TestLiveTradingEngine:
 
     def test_live_engine_init(self):
         """Test live engine initialization."""
-        from dashboard.backend.backtest_engine import LiveTradingEngine
+        from alpha_research.backtests.event_driven.backtest_engine import LiveTradingEngine
 
         engine = LiveTradingEngine(
             cash=100000, commission=0.001, host="127.0.0.1", port=7496, client_id=42
@@ -330,7 +330,7 @@ class TestLiveTradingEngine:
 
     def test_live_engine_default_params(self):
         """Test live engine default parameters."""
-        from dashboard.backend.backtest_engine import LiveTradingEngine
+        from alpha_research.backtests.event_driven.backtest_engine import LiveTradingEngine
 
         engine = LiveTradingEngine()
 
@@ -341,7 +341,7 @@ class TestLiveTradingEngine:
 
     def test_stop_sets_flag(self):
         """Test stop method sets is_running to False."""
-        from dashboard.backend.backtest_engine import LiveTradingEngine
+        from alpha_research.backtests.event_driven.backtest_engine import LiveTradingEngine
 
         engine = LiveTradingEngine()
         engine.is_running = True
@@ -356,7 +356,7 @@ class TestEdgeCases:
 
     def test_signal_strategy_with_empty_signals(self):
         """Test signal strategy with empty signals DataFrame."""
-        from dashboard.backend.backtest_engine import create_signal_strategy
+        from alpha_research.backtests.event_driven.backtest_engine import create_signal_strategy
 
         empty_signals = pd.DataFrame({"signal": []})
 
@@ -365,7 +365,7 @@ class TestEdgeCases:
 
     def test_signal_strategy_with_non_datetime_index(self):
         """Test signal strategy converts non-datetime index."""
-        from dashboard.backend.backtest_engine import create_signal_strategy
+        from alpha_research.backtests.event_driven.backtest_engine import create_signal_strategy
 
         signals = pd.DataFrame({"signal": [1, -1, 0]})  # No index set
 
@@ -374,14 +374,14 @@ class TestEdgeCases:
 
     def test_backtest_engine_zero_commission(self):
         """Test engine with zero commission."""
-        from dashboard.backend.backtest_engine import BacktestEngine
+        from alpha_research.backtests.event_driven.backtest_engine import BacktestEngine
 
         engine = BacktestEngine(cash=100000, commission=0)
         assert engine.commission == 0
 
     def test_get_equity_curve_raises_without_run(self):
         """Test get_equity_curve raises if backtest not run."""
-        from dashboard.backend.backtest_engine import BacktestEngine
+        from alpha_research.backtests.event_driven.backtest_engine import BacktestEngine
 
         engine = BacktestEngine()
 
@@ -394,7 +394,7 @@ class TestLiveTradingEngineExtended:
 
     def test_init_store_and_broker(self):
         """Test _init_store_and_broker creates required objects."""
-        from dashboard.backend.backtest_engine import LiveTradingEngine
+        from alpha_research.backtests.event_driven.backtest_engine import LiveTradingEngine
 
         engine = LiveTradingEngine(cash=75000, commission=0.002)
 
@@ -409,7 +409,7 @@ class TestLiveTradingEngineExtended:
 
     def test_add_live_data_creates_cerebro(self):
         """Test add_live_data initializes cerebro if needed."""
-        from dashboard.backend.backtest_engine import LiveTradingEngine
+        from alpha_research.backtests.event_driven.backtest_engine import LiveTradingEngine
 
         engine = LiveTradingEngine()
 
@@ -426,7 +426,7 @@ class TestLiveTradingEngineExtended:
 
     def test_add_strategy_requires_cerebro(self):
         """Test add_strategy requires initialization."""
-        from dashboard.backend.backtest_engine import LiveTradingEngine, create_momentum_strategy
+        from alpha_research.backtests.event_driven.backtest_engine import LiveTradingEngine, create_momentum_strategy
 
         engine = LiveTradingEngine()
 
@@ -436,7 +436,7 @@ class TestLiveTradingEngineExtended:
 
     def test_run_live_raises_without_strategy(self):
         """Test run_live raises if no strategy added."""
-        from dashboard.backend.backtest_engine import LiveTradingEngine
+        from alpha_research.backtests.event_driven.backtest_engine import LiveTradingEngine
 
         engine = LiveTradingEngine()
 
@@ -450,7 +450,7 @@ class TestLoadIBKRData:
     @pytest.mark.asyncio
     async def test_load_ibkr_data_raises_on_connection_failure(self):
         """Test load_ibkr_data raises when IBKR not available."""
-        from dashboard.backend.backtest_engine import BacktestEngine
+        from alpha_research.backtests.event_driven.backtest_engine import BacktestEngine
 
         engine = BacktestEngine()
 
@@ -461,7 +461,7 @@ class TestLoadIBKRData:
     @pytest.mark.asyncio
     async def test_load_ibkr_data_with_custom_params(self):
         """Test load_ibkr_data with custom parameters."""
-        from dashboard.backend.backtest_engine import BacktestEngine
+        from alpha_research.backtests.event_driven.backtest_engine import BacktestEngine
 
         engine = BacktestEngine()
 
@@ -483,7 +483,7 @@ class TestEquityCurve:
 
     def test_get_equity_curve_returns_dataframe(self):
         """Test get_equity_curve returns DataFrame structure."""
-        from dashboard.backend.backtest_engine import (
+        from alpha_research.backtests.event_driven.backtest_engine import (
             BacktestEngine,
             IBKRDataFeed,
             create_momentum_strategy,
@@ -520,7 +520,7 @@ class TestLiveContracts:
 
     def test_add_live_data_stores_contract_info(self):
         """Test add_live_data stores contract info."""
-        from dashboard.backend.backtest_engine import LiveTradingEngine
+        from alpha_research.backtests.event_driven.backtest_engine import LiveTradingEngine
 
         engine = LiveTradingEngine()
 
@@ -533,7 +533,7 @@ class TestLiveContracts:
 
     def test_add_multiple_live_data_feeds(self):
         """Test adding multiple live data feeds."""
-        from dashboard.backend.backtest_engine import LiveTradingEngine
+        from alpha_research.backtests.event_driven.backtest_engine import LiveTradingEngine
 
         engine = LiveTradingEngine()
 
@@ -549,7 +549,7 @@ class TestRunLiveAsync:
     @pytest.mark.asyncio
     async def test_run_live_async(self):
         """Test async live trading method."""
-        from dashboard.backend.backtest_engine import LiveTradingEngine, create_momentum_strategy
+        from alpha_research.backtests.event_driven.backtest_engine import LiveTradingEngine, create_momentum_strategy
 
         engine = LiveTradingEngine()
         engine.add_strategy(create_momentum_strategy())
@@ -570,7 +570,7 @@ class TestAdditionalCoverage:
         import os
         import tempfile
 
-        from dashboard.backend.backtest_engine import BacktestEngine
+        from alpha_research.backtests.event_driven.backtest_engine import BacktestEngine
 
         # Create temp parquet file
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -594,7 +594,7 @@ class TestAdditionalCoverage:
 
     def test_strategy_notify_order_buy(self):
         """Test strategy order notification for buy."""
-        from dashboard.backend.backtest_engine import create_momentum_strategy
+        from alpha_research.backtests.event_driven.backtest_engine import create_momentum_strategy
 
         StrategyClass = create_momentum_strategy("Test", {"period": 1})
 
@@ -603,7 +603,7 @@ class TestAdditionalCoverage:
 
     def test_strategy_notify_order_sell(self):
         """Test strategy order notification for sell."""
-        from dashboard.backend.backtest_engine import (
+        from alpha_research.backtests.event_driven.backtest_engine import (
             create_mean_reversion_strategy,
             create_momentum_strategy,
         )
@@ -615,7 +615,7 @@ class TestAdditionalCoverage:
 
     def test_signal_strategy_with_series_signal(self):
         """Test signal strategy - just check class creation."""
-        from dashboard.backend.backtest_engine import create_signal_strategy
+        from alpha_research.backtests.event_driven.backtest_engine import create_signal_strategy
 
         # Create signals as a Series
         signals = pd.Series(
@@ -632,7 +632,7 @@ class TestMoreBacktestEngine:
 
     def test_add_data_with_name(self):
         """Test adding data with custom name."""
-        from dashboard.backend.backtest_engine import BacktestEngine, IBKRDataFeed
+        from alpha_research.backtests.event_driven.backtest_engine import BacktestEngine, IBKRDataFeed
 
         engine = BacktestEngine()
         df = pd.DataFrame(
@@ -654,7 +654,7 @@ class TestMoreBacktestEngine:
 
     def test_add_multiple_strategies(self):
         """Test adding multiple strategies."""
-        from dashboard.backend.backtest_engine import BacktestEngine, create_momentum_strategy
+        from alpha_research.backtests.event_driven.backtest_engine import BacktestEngine, create_momentum_strategy
 
         engine = BacktestEngine()
 
@@ -666,7 +666,7 @@ class TestMoreBacktestEngine:
 
     def test_backtest_engine_results_contains_all_fields(self):
         """Test that run_backtest returns all expected fields."""
-        from dashboard.backend.backtest_engine import quick_backtest
+        from alpha_research.backtests.event_driven.backtest_engine import quick_backtest
 
         data = pd.DataFrame(
             {

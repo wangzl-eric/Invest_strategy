@@ -268,7 +268,7 @@ A few intentional overlaps:
 
 - `data/` stores files on disk; `alpha_research/quant_data/` is the code package that ingests/manages them.
 - `data_lake/` is the DuckDB research lake (`research.duckdb`), separate from `data/`.
-- `alpha_research/backtests/` is the research framework; `alpha_research/backtests/event_driven/backtest_engine.py` is the canonical event-driven engine, and `dashboard/backend/backtest_engine.py` is a thin compatibility shim.
+- `alpha_research/backtests/` is the research framework; `alpha_research/backtests/event_driven/backtest_engine.py` is the canonical event-driven engine (import it directly).
 
 See [`docs/repo_layout.md`](./docs/repo_layout.md) for the maintained stack map and cleanup guidance.
 
@@ -442,8 +442,7 @@ The `alpha_research/portfolio/` package implements a research-to-execution pipel
 
 The platform uses Backtrader for event-driven backtesting:
 
-**BacktestEngine** (`alpha_research/backtests/event_driven/backtest_engine.py`) — for realistic simulation.
-Existing imports via `dashboard.backend.backtest_engine` still work through a compatibility shim:
+**BacktestEngine** (`alpha_research/backtests/event_driven/backtest_engine.py`) — for realistic simulation:
 - Implements full backtesting workflow with order execution
 - Supports multiple data feeds for multi-asset strategies
 - Custom strategies extend `bt.Strader.Strategy`

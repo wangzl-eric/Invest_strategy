@@ -68,11 +68,10 @@ compatibility symlinks; an earlier transition used them but imports are now expl
   (default `data_lake/research.duckdb`, overridable via `DATA_LAKE_ROOT`/`QDATA_DUCKDB_PATH`).
 - They are separate stores by design; consolidating them is a possible future cleanup.
 
-### `alpha_research/backtests/` vs `dashboard/backend/backtest_engine.py`
+### Backtesting
 
 - `alpha_research/backtests/` is the research framework: signals, portfolio builder, walk-forward analysis, statistics, reporting.
-- `alpha_research/backtests/event_driven/backtest_engine.py` is the canonical event-driven execution adapter around Backtrader.
-- `dashboard/backend/backtest_engine.py` is kept only as a compatibility shim for existing imports.
+- `alpha_research/backtests/event_driven/backtest_engine.py` is the canonical event-driven execution adapter around Backtrader. Import it directly (the former `dashboard/backend/backtest_engine.py` shim has been removed).
 
 ### `dashboard/`
 
@@ -96,9 +95,11 @@ compatibility symlinks; an earlier transition used them but imports are now expl
 - Put raw or generated files in `data/`.
 - Keep optional or experimental integrations clearly marked (`alpha_research/cerebro/`).
 
-## Follow-Up Refactors
+## Completed Refactors
 
-Reasonable next steps, intentionally not done because they are import- and path-sensitive:
+The major structural cleanups are done:
 
-1. Replace the `dashboard/backend/backtest_engine.py` compatibility shim with direct imports once downstream callers are updated.
-2. Extract a shared `core` (DB models, IBKR client, market-data store) to break the dashboard↔research import coupling, if true module isolation becomes desirable.
+- Three-component split (`dashboard/`, `alpha_research/`, `book_notes/`) with explicit imports (no symlinks).
+- `core/` extracted as the shared-infrastructure bottom layer — the dashboard↔research cycle is broken.
+- `dashboard/backend/backtest_engine.py` shim removed; import `alpha_research.backtests.event_driven.backtest_engine` directly.
+- QuantConnect Lean (`qc_lean/`) removed in favor of the in-house engine.

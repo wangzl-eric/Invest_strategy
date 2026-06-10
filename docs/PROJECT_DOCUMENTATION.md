@@ -121,7 +121,7 @@ Legacy root paths such as `backend/`, `frontend/`, `backtests/`, and `quant_data
 Important distinctions:
 
 - `data/` stores files. `quant_data/` is the Python package that manages those files.
-- `alpha_research/backtests/` is the research framework. `alpha_research/backtests/event_driven/backtest_engine.py` is the canonical event-driven execution adapter, and `dashboard/backend/backtest_engine.py` is kept as a compatibility shim.
+- `alpha_research/backtests/` is the research framework. `alpha_research/backtests/event_driven/backtest_engine.py` is the canonical event-driven execution adapter (import it directly).
 
 See `docs/repo_layout.md` for the maintained stack map.
 
@@ -234,7 +234,7 @@ Two complementary layers are available:
 | Layer | File(s) | Use Case |
 |-------|---------|----------|
 | **Research framework** | `backtests/builder.py`, `backtests/walkforward.py`, `backtests/stats/` | portfolio research, walk-forward validation, statistical tests |
-| **Event-driven engine** | `workstation/backtests/event_driven/backtest_engine.py` | Backtrader-based simulation with execution realism |
+| **Event-driven engine** | `alpha_research/backtests/event_driven/backtest_engine.py` | Backtrader-based simulation with execution realism |
 
 #### Using BacktestEngine (Backtrader)
 

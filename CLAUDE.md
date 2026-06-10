@@ -54,7 +54,6 @@ dashboard/           Component 1 — IBKR portfolio analytics + market-data app
     api/             Route handlers (15+ routers: auth, backtest, data, market, news, research, etc.)
     research/        Feature engineering (features.py), DuckDB helpers
     main.py          App entry point — CORS, metrics, rate limiting, APScheduler
-    backtest_engine.py  Compatibility shim → alpha_research/backtests/event_driven
   frontend/          Dash web dashboard (CYBORG dark theme)
     app.py           Entry point, callbacks, tab rendering
     components/      UI panels (charts, positions table, market panels, data manager, cerebro)
