@@ -251,18 +251,22 @@ This platform follows a **discretionary-systematic hybrid** approach:
 
 ## Repo Layout
 
-The repo is organized into three product components that share domain libraries:
+The repo is a **three-layer DAG**: a shared infrastructure package (`core/`) at the
+bottom, then three product components that build on it.
 
-| Component | Main Paths | Purpose |
-|-----------|------------|---------|
+| Layer / Component | Main Paths | Purpose |
+|-------------------|------------|---------|
+| **Core infrastructure** (bottom layer) | `core/` | Config, DB models/persistence, IBKR client + circuit breaker, market-data platform, Flex ingestion, LLM plumbing. Imports nothing internal |
 | **Dashboard application** | `dashboard/backend/`, `dashboard/frontend/`, `data/` | API, broker/account workflows, monitoring UI, stored operational data |
 | **Alpha research & backtesting** | `alpha_research/{backtests,portfolio,execution,quant_data,cerebro,research,notebooks}/` | data ingestion, signal research, strategy testing, optimization, paper-trading prep |
 | **Book notes** | `book_notes/{playground,books_and_papers}/` | reading studies and learning material |
 
-Imports use the full component-qualified path — `from dashboard.backend... import`,
-`from alpha_research.portfolio... import`. Repo root is on `PYTHONPATH` (pytest sets
-`pythonpath = .`; the Makefile and `bin/` launchers run from root). There are **no
-compatibility symlinks**.
+**Layering rule:** `core/` imports nothing internal; `alpha_research/` and
+`dashboard/` import `core/`; `dashboard/` may also import `alpha_research/` (one-way).
+Imports use the full component-qualified path — `from core.config import settings`,
+`from dashboard.backend... import`, `from alpha_research.portfolio... import`. Repo
+root is on `PYTHONPATH` (pytest sets `pythonpath = .`; the Makefile and `bin/`
+launchers run from root). There are **no compatibility symlinks**.
 
 A few intentional overlaps:
 
@@ -282,44 +286,60 @@ See [`docs/repo_layout.md`](./docs/repo_layout.md) for the maintained stack map 
 
 FastAPI application that wires together all routers, middleware, and lifecycle hooks.
 
-- **Routers** registered at startup: core routes (`/api`), auth (`/api/auth`), backtest (`/api`), advanced analytics (`/api/analytics`), alerts (`/api`), reporting (`/api`), WebSocket (`/api`).
+- **Routers** registered at startup: core routes, auth, backtest, advanced analytics, alerts, reporting, market data, news, attribution, data management, execution, research, and WebSocket — plus an optional Cerebro router. See the route table below for prefixes.
 - **Middleware:** CORS, custom metrics collection (`MetricsMiddleware`), rate limiting.
-- **Lifecycle hooks:** on startup the app launches the real-time broadcaster, alert scheduler, and registers the IBKR broker adapter. On shutdown it tears them down gracefully.
+- **Lifecycle hooks:** on startup the app launches the real-time broadcaster, alert/data schedulers (APScheduler), and registers the IBKR broker adapter. On shutdown it tears them down gracefully.
 
-**Key backend modules:**
+**Shared infrastructure** (`core/`) — imported by the backend, not owned by it:
 
 | Module | Purpose |
 |--------|---------|
-| `config.py` | Pydantic settings loaded from `app_config.yaml` and env vars |
-| `database.py` | SQLAlchemy engine/session factory, `get_db` dependency |
-| `models.py` | All ORM models (see [Database & Models](#3-database--models)) |
-| `data_fetcher.py` | Pulls account state, positions, PnL from IBKR in real time |
-| `data_processor.py` | Computes returns, Sharpe, Sortino, drawdown, win rate, profit factor |
-| `data_providers.py` | Abstract `MarketDataProvider` interface + Yahoo Finance implementation |
+| `core/config.py` | Pydantic settings loaded from `app_config.yaml` and env vars |
+| `core/database.py` | SQLAlchemy engine/session factory, `get_db` dependency |
+| `core/models.py` | All ORM models (see [Database & Models](#3-database--models)) |
+| `core/data_processor.py` | Computes returns, Sharpe, Sortino, drawdown, win rate, profit factor |
+| `core/data_providers.py` | Abstract `MarketDataProvider` interface + Yahoo Finance implementation |
+| `core/market_data_service.py` / `core/market_data_store.py` | FRED/yfinance market-data platform and Parquet store |
+| `core/llm_client.py` | Qwen (DashScope) LLM client for PnL attribution explanations |
+| `core/ibkr_client.py` / `core/circuit_breaker.py` | IBKR connectivity with circuit-breaker protection |
+| `core/flex_*.py` | Flex Query parser, client, importer |
+
+**Key backend modules** (`dashboard/backend/`):
+
+| Module | Purpose |
+|--------|---------|
+| `data_fetcher.py` / `ibkr_data_fetcher.py` | Pulls account state, positions, PnL from IBKR in real time |
+| `data_pipeline.py` | Account-data ingestion/processing pipeline |
 | `benchmark_service.py` | Fetches S&P 500 data via yfinance with in-memory TTL cache for comparison |
 | `validators.py` | Input validation utilities |
 | `middleware.py` | Request timing and Prometheus metric collection |
 | `rate_limiter.py` | Per-IP rate limiting middleware |
-| `news_service.py` | High-level news abstraction layer using IBKR API |
-| `llm_client.py` | Qwen (DashScope) LLM client for PnL attribution explanations |
+| `news_service.py` / `mover_news_service.py` | High-level news abstraction layer using IBKR API |
 | `attribution_engine.py` | Orchestrates PnL attribution workflow with news and LLM |
-| `drawdown_analyzer.py` | Analyzes drawdowns and correlates with news events |
+| `advanced_analytics.py` | Portfolio optimizer, Monte Carlo, factor analysis |
+| `scheduler.py` | APScheduler jobs registered at app startup |
 
-**API route files:**
+**API route files** (`dashboard/backend/api/`, all mounted under `/api`):
 
-| File | Prefix | Responsibilities |
-|------|--------|-----------------|
+| File | Effective prefix | Responsibilities |
+|------|------------------|-----------------|
 | `routes.py` | `/api` | Account summary, positions, PnL time-series, trades, Flex Query fetch, data export, benchmark comparison |
 | `auth_routes.py` | `/api/auth` | Register, login, token refresh, user management, API key CRUD |
 | `backtest_routes.py` | `/api` | Submit and retrieve backtest results |
 | `advanced_analytics_routes.py` | `/api/analytics` | Portfolio optimization, Monte Carlo simulation, factor analysis, correlation |
 | `advanced_analytics_routes_extended.py` | `/api/analytics` | ML predictions, regime detection, stress testing |
-| `alert_routes.py` | `/api` | CRUD for alert rules/channels, alert history, test notifications |
+| `alert_routes.py` | `/api/alerts` | CRUD for alert rules/channels, alert history, test notifications |
 | `reporting_routes.py` | `/api` | PDF/Excel report generation and download |
-| `websocket_routes.py` | `/api` | WebSocket endpoint for real-time PnL/position streaming |
+| `market_routes.py` | `/api/market` | Cross-asset market data (rates, FX, equities, commodities, curves, Fed liquidity) |
 | `news_routes.py` | `/api/news` | Equity, forex, futures, index news, market bulletins, portfolio news |
 | `attribution_routes.py` | `/api/attribution` | PnL attribution with LLM explanations, forward-pass tracking, history |
+| `data_routes.py` | `/api/data` | Parquet catalog, data pull/query, incremental update |
+| `execution_routes.py` | `/api/execution` | Order submission, fills, risk events |
+| `research_routes.py` | `/api/research` | Research/feature endpoints |
+| `websocket_routes.py` | `/api` | WebSocket endpoint for real-time PnL/position streaming |
 | `schemas.py` | — | Pydantic request/response models for all endpoints |
+
+> Cerebro's research-discovery router (`/api/cerebro`) is registered conditionally when the optional `alpha_research/cerebro/` package is available.
 
 ### 2. IBKR Integration
 
@@ -349,7 +369,7 @@ Three complementary data paths connect to Interactive Brokers:
 
 ### 3. Database & Models
 
-**ORM models** (`core/models.py`) — 17 tables:
+**ORM models** (`core/models.py`):
 
 | Model | Table | Description |
 |-------|-------|-------------|
@@ -445,7 +465,7 @@ The platform uses Backtrader for event-driven backtesting:
 **BacktestEngine** (`alpha_research/backtests/event_driven/backtest_engine.py`) — for realistic simulation:
 - Implements full backtesting workflow with order execution
 - Supports multiple data feeds for multi-asset strategies
-- Custom strategies extend `bt.Strader.Strategy`
+- Custom strategies extend `bt.Strategy`
 - Returns comprehensive metrics including Sharpe, max drawdown, total return
 
 **Metrics** (`alpha_research/backtests/metrics.py`): `annualized_sharpe`, `max_drawdown`, `total_return`.
@@ -552,15 +572,21 @@ The `alpha_research/quant_data/` package provides a vendor-agnostic research dat
 
 ### 12. Research Notebooks
 
+Exploratory notebooks live under `alpha_research/notebooks/` (with `templates/` and a
+`research/` subfolder):
+
 | Notebook | Purpose |
 |----------|---------|
-| `notebooks/analysis.ipynb` | Exploratory data analysis on account and trade data |
-| `notebooks/pnl_query_tutorial.ipynb` | Tutorial for querying PnL history with advanced filters and visualizations |
-| `notebooks/test_connection.py` | Quick IBKR connection smoke test |
+| `analysis.ipynb` | Exploratory data analysis on account and trade data |
+| `pnl_query_tutorial.ipynb` | Querying PnL history with advanced filters and visualizations |
+| `beginner_/intermediate_/advanced_research_tutorial.ipynb` | Progressive research workflow tutorials |
+| `signal_research_tutorial.ipynb` / `portfolio_builder_tutorial.ipynb` | Signal construction and portfolio building walkthroughs |
+| `backtest_robustness_tutorial.ipynb` | PSR, deflated Sharpe, CPCV and other robustness checks |
+| `vix_futures_options_research.ipynb` / `msft_btc_correlation.ipynb` | Worked cross-asset studies |
+| `test_connection.py` | Quick IBKR connection smoke test |
 
-**Research experiments** (`research/experiments/`):
-- `run_example_momentum.py` — end-to-end momentum strategy using BacktestEngine.
-- `run_example_portfolio_opt.py` — portfolio optimization example using the portfolio package.
+Strategy notes, audits, and the research tracker live under `alpha_research/research/`;
+book/paper learning material lives under `book_notes/`.
 
 ### 13. Automation Scripts
 
@@ -740,14 +766,18 @@ python scripts/init_db.py
 
 ### 4. Run
 
+Run from the repo root with `PYTHONPATH=.` (the Makefile targets handle this for you):
+
 **Backend** (port 8000):
 ```bash
-python backend/main.py
+make serve-backend
+# equivalent to: python -m uvicorn dashboard.backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 **Frontend** (port 8050):
 ```bash
-python frontend/app.py
+make serve-frontend
+# equivalent to: PYTHONPATH=. python dashboard/frontend/app.py
 ```
 
 Or use Docker:
@@ -820,10 +850,13 @@ A research-focused `docker-compose.research.yml` is also available for Jupyter-b
 
 ```bash
 # Run all tests
-pytest
+make test                  # or: pytest
 
-# With coverage
-pytest --cov=backend --cov=portfolio --cov=backtests --cov=execution
+# With coverage (core, dashboard backend, portfolio, backtests, execution)
+make test-cov
+# or: pytest tests/unit/ --cov=core --cov=dashboard.backend \
+#       --cov=alpha_research.portfolio --cov=alpha_research.backtests \
+#       --cov=alpha_research.execution --cov-report=term-missing
 
 # Unit tests only
 pytest tests/unit/
@@ -854,6 +887,12 @@ pytest tests/integration/
 
 ```
 Invest_strategy/
+├── core/                       # Shared infrastructure (bottom layer — imports nothing internal)
+│   ├── config.py, database.py, models.py     # Settings, DB engine, ORM models
+│   ├── ibkr_client.py, circuit_breaker.py    # Broker connectivity
+│   ├── flex_*.py                             # Flex Query ingestion
+│   ├── market_data_*.py, data_providers.py   # Market-data platform
+│   └── llm_client.py, token_tracker.py       # LLM plumbing
 ├── dashboard/                  # Component 1 — IBKR analytics + market-data app
 │   ├── backend/                # FastAPI service, IBKR integration, persistence, APIs
 │   └── frontend/               # Plotly Dash monitoring UI
