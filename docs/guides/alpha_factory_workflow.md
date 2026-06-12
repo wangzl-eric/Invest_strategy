@@ -77,9 +77,10 @@ All artifacts are files or DB rows — no knowledge lives only in a chat transcr
 | S6 | Promotion review | **Owner (human)** | pool state transition + reason |
 | S7 | Paper / live / monitor | ops jobs (Phase 3–4) | health JSON + monthly report |
 
-Stage owners map to agent-deck sessions; per-role model defaults and override env vars
-are in `docs/RESEARCH_TEAM_MODELS.md` (opus for cognitive roles, sonnet for Data, Codex
-for mechanical execution) — that mapping is the factory's per-stage cost lever.
+Stage owners map to agent-deck sessions; **role definitions and binding protocols live in
+`.claude/agents/*.md`** (source of truth), with model defaults/overrides in
+`docs/RESEARCH_TEAM_MODELS.md` (opus for cognitive roles, sonnet for Data, Codex for
+mechanical execution) — that mapping is the factory's per-stage cost lever.
 
 ### S0 — Intake & scan
 - **Sources:** literature (arXiv/SSRN/blogs), the idea graveyard (§4.4) after cooling,
@@ -105,11 +106,17 @@ for mechanical execution) — that mapping is the factory's per-stage cost lever
   and **trial counts accumulate across versions** (§4.1).
 - **Exit gate:** pre-registration hash recorded.
 
-### S3 — Adversarial review
-- PM agent challenges: economic mechanism, costs at our capital, data lags (PIT),
-  baseline beatability, lessons L1–L7 violations. Max **2 revision rounds** here.
+### S3 — Adversarial review (PM touchpoint 1: spec-level)
+- PM agent challenges the *pre-registered spec*: economic mechanism ("who loses money?"),
+  costs at our capital, data lags (PIT), baseline beatability, lessons L1–L7 and
+  KB known-failure-mode violations. Max **2 revision rounds** here.
+- **Mandatory hard-stops (from `.claude/agents/pm.md` — a review without them is
+  invalid):** PM must hold `[CEREBRO CONTRADICTION]` (devil's-advocate evidence) and
+  `[DATA ASSESSMENT]` (Data agent's coverage/quality verdict) before writing challenges.
+  Data returning NO/CONDITIONAL blocks approval until the gap is resolved.
 - **Exit gate:** PM verdict CONDITIONAL-or-better with explicit "requirements for
-  approval" checklist (the sector-rotation proposal is the template).
+  approval" checklist (the sector-rotation proposal is the template), plus the
+  researcher's completed `preflight_checklist.md` in the strategy folder.
 - **Kill:** REJECTED → graveyard with reason; lessons file updated if novel.
 
 ### S4 — Implementation
@@ -131,7 +138,11 @@ for mechanical execution) — that mapping is the factory's per-stage cost lever
   This is the information barrier: agents cannot grind against the gates (§4.2).
 - **Exit gate:** verdict PASS.
 
-### S6 — Promotion review (human-only)
+### S6 — Promotion review (human-only; PM touchpoint 2: results-level)
+- Before the owner decides, the PM agent reviews the **executed run bundle** (v2
+  protocol: actual results, never summaries — cross-check Sharpe/PSR/DSR/segments
+  against the artifacts, verify cost realism and look-ahead) and issues a promotion
+  recommendation. Same hard-stops apply as S3 if new evidence has emerged.
 - Owner reviews: `verdict.md`, `sensitivity.json`, the DAC score, capacity/granularity at
   current capital, and the PM agent's recommendation. Decision + reason → pool CLI.
 - **SLA:** ≤2 candidates per week reach this stage (WIP limit, §5). The factory's
@@ -142,7 +153,9 @@ for mechanical execution) — that mapping is the factory's per-stage cost lever
   days, reconciliation clean, returns within backtest PSR band, realized vol ±25% of design.
 - Monthly health job writes decay stats to the pool `health` JSON; **mechanical demotion
   rules** from the manifest fire without discussion. Demotions emit an S0 hypothesis
-  ("diagnose the decay") — the feedback loop that closes the factory.
+  ("diagnose the decay") — the feedback loop that closes the factory. Owner of that
+  loop: **Cerebro Function 3 (Active Monitoring)**, already defined in
+  `.claude/agents/cerebro.md`.
 
 ---
 
@@ -231,7 +244,9 @@ Every inter-agent handoff is a file/row with a schema. Chat is coordination, nev
 | Handoff | Artifact | Location |
 |---|---|---|
 | Cerebro → Researcher | `briefing.md` (FOR/AGAINST/decay/crowding) | `research/strategies/<name>/` |
-| Researcher → PM | `proposal.md` + pre-registration hash | same folder + ledger |
+| Cerebro → PM | `[CEREBRO CONTRADICTION]` evidence | same folder (S3/S6 hard-stop) |
+| Data → PM | `[DATA ASSESSMENT]` coverage/quality verdict | same folder (S3 hard-stop) |
+| Researcher → PM | `proposal.md` + pre-registration hash + `preflight_checklist.md` | same folder + ledger |
 | PM → Dev | approval checklist in `proposal.md` | same folder |
 | Dev → pipeline | `manifest.yaml` + entrypoint + tests | `research/pool/<id>/`, `backtests/runners/` |
 | Pipeline → everyone | run bundle (13 artifacts) | `data/backtest_runs/<run_id>/` |
@@ -255,6 +270,11 @@ The factory automates a loop that must first work manually. Phases gate on
   one hook) ·  `research/graveyard/` convention · hypothesis queue as
   `research/hypothesis_queue.yaml` with the §3 score fields. Run SENSE/DIAGNOSE yourself
   weekly (15 min): pool ρ matrix + queue review.
+- **Protocol sync:** update `.claude/agents/*.md` — they predate Phase 1 and still
+  describe Codex-executed notebooks as the canonical validation path. The manifest →
+  one-call review pipeline supersedes that for execution (notebooks remain for
+  exploration); PM's metric cross-checks point at the run bundle artifacts. Propagate
+  with `scripts/sync_agents.sh`.
 
 **F-1 (with Phase 2 — semi-automated):**
 - Conductor session (agent-deck) runs SENSE/DIAGNOSE and *proposes* dispatch; owner
