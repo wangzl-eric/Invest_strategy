@@ -307,4 +307,27 @@ All critical/high bugs fixed as of 2026-03-13. Tests: `tests/unit/test_bugfixes.
   `CLAUDE.md`, `docs/guides/strategy_pool_workflow.md` (cross-links)
 - Status: COMPLETE
 
+### 2026-06-12 — Alpha factory: goal-oriented agentic pipeline spec
+- Created `docs/guides/alpha_factory_workflow.md` — build spec for the automated research
+  pipeline (data in → validated low-correlation strategies out)
+- Key design commitments: objective = marginal blended Sharpe per unit of owner review
+  time under factory-wide FDR control; DAC (diversification-adjusted contribution) ranks
+  the hypothesis queue; SENSE→DIAGNOSE→DISPATCH→GATE→LEARN control loop dispatches work
+  against the binding constraint (pool risk > diversification gap > starvation > backlog);
+  stages S0–S7 each with owner agent, schema'd artifact, exit gate, and kill rule
+- Factory-level rigor beyond per-strategy DSR: global experiment_ledger (n_trials
+  machine-computed, not self-declared), iteration cap (3 review runs/version-family) +
+  90-day graveyard cooling as the information barrier, 18-month embargo window checked
+  only on the final review run, quarterly Benjamini–Hochberg FDR pass with a 25%
+  promotion-freeze threshold
+- Throughput sized to the owner (8–15 h/wk): WIP limits per stage, ≤2 promotion
+  decisions/week, backpressure blocks upstream dispatch; promotion authority never
+  automates
+- Build roadmap F-0 (ledger + graveyard + manual conductor, now) → F-1 (Conductor
+  proposes dispatch, embargo support, Cerebro unfrozen for S0/S1 only — D8 revisited) →
+  F-2 (decay→hypothesis feedback, FDR job, factory KPI panel), gated on EXECUTION_PLAN
+  phases
+- Files modified: `docs/guides/alpha_factory_workflow.md` (new), `research/README.md`
+  (cross-link)
+- Status: COMPLETE (spec) — F-0 build items pending owner go-ahead
 *Last updated: 2026-06-12*

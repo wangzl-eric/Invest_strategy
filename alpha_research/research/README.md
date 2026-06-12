@@ -5,6 +5,8 @@
 > statement of our research philosophy, rigor methodology, promotion gates, and the
 > lessons earned from rejected strategies. Workflow mechanics:
 > [`docs/guides/strategy_pool_workflow.md`](../../docs/guides/strategy_pool_workflow.md).
+> Agentic pipeline build spec:
+> [`docs/guides/alpha_factory_workflow.md`](../../docs/guides/alpha_factory_workflow.md).
 > History: [`STRATEGY_TRACKER.md`](./STRATEGY_TRACKER.md).
 
 ## Team
