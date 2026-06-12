@@ -68,14 +68,18 @@ All artifacts are files or DB rows — no knowledge lives only in a chat transcr
 
 | # | Stage | Owner | Output artifact |
 |---|-------|-------|-----------------|
-| S0 | Intake & scan | Cerebro | `hypothesis.yaml` in queue |
+| S0 | Intake & scan | Cerebro (+ Data: `data_readiness` assessment) | `hypothesis.yaml` in queue |
 | S1 | Briefing | Cerebro | `briefing.md` (evidence FOR + AGAINST) |
 | S2 | Proposal | Researcher (Elena/Marco) | `proposal.md` + frozen pre-registration |
 | S3 | Adversarial review | PM agent | challenge verdict in proposal |
-| S4 | Implementation | Dev | weights entrypoint + `manifest.yaml` + unit tests |
-| S5 | Mechanical validation | review pipeline (built) | `run_id` bundle + PASS/REVISE |
+| S4 | Implementation | Dev (Codex for sweeps/execution) | weights entrypoint + `manifest.yaml` + unit tests |
+| S5 | Mechanical validation | review pipeline (built); Data agent remediates QC failures | `run_id` bundle + PASS/REVISE |
 | S6 | Promotion review | **Owner (human)** | pool state transition + reason |
 | S7 | Paper / live / monitor | ops jobs (Phase 3–4) | health JSON + monthly report |
+
+Stage owners map to agent-deck sessions; per-role model defaults and override env vars
+are in `docs/RESEARCH_TEAM_MODELS.md` (opus for cognitive roles, sonnet for Data, Codex
+for mechanical execution) — that mapping is the factory's per-stage cost lever.
 
 ### S0 — Intake & scan
 - **Sources:** literature (arXiv/SSRN/blogs), the idea graveyard (§4.4) after cooling,
@@ -215,6 +219,8 @@ Sized to the real bottleneck — owner review time (8–15 h/wk) — not to comp
 **Backpressure rule:** a full downstream queue blocks upstream dispatch (Conductor skips
 to the next constraint). **Token/compute budget:** per-hypothesis LLM budget cap set in
 the Conductor config; exceeding it forces a human check-in rather than silent burn.
+Cost control per stage = model assignment (`docs/RESEARCH_TEAM_MODELS.md`): downgrade a
+role's model via `RESEARCH_<AGENT>_MODEL=` before downgrading the stage's rigor.
 
 ---
 
