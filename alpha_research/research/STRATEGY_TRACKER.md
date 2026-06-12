@@ -330,4 +330,29 @@ All critical/high bugs fixed as of 2026-03-13. Tests: `tests/unit/test_bugfixes.
 - Files modified: `docs/guides/alpha_factory_workflow.md` (new), `research/README.md`
   (cross-link)
 - Status: COMPLETE (spec) — F-0 build items pending owner go-ahead
+### 2026-06-12 — Alpha factory consolidated to v1.0 + F-0 operational scaffolding
+- Rewrote `docs/guides/alpha_factory_workflow.md` as consolidated v1.0: inherited
+  collaboration-model protocols folded into the stage specs (each stage now
+  self-contained: owner, hard-stops, artifacts, exit gate, kill rule); spanning-alpha
+  t-stat promoted to an automated S5 gate in F-1 (replaces pairwise |ρ| as the binding
+  diversification test; |ρ| stays as cheap pre-filter)
+- Created `alpha_research/research/factory/factory_config.yaml` — machine-readable
+  single source of truth for ALL tunables (gates incl. the 11-gate kill thresholds,
+  WIP limits, queue-score weights, rigor params, risk limits, stage definitions); rule:
+  config wins over doc, owner-only edits, agents may never modify gates/risk_limits;
+  manifests may tighten gates, never loosen
+- Created `alpha_research/research/factory/hypothesis_queue.yaml` — seeded with 5 real
+  entries (cta-trend [parked/BLOCKED on futures data], factor-etf-rotation [queued,
+  supersedes equity_momentum per D3], cta-carry [parked], fx-carry-momentum [queued,
+  CONDITIONAL data], quality-safe-haven [queued, carries 2026-03-18 Codex audit notes])
+- Created `alpha_research/research/graveyard/README.md` — kill-entry convention,
+  resurrection protocol, pre-factory kills migrated (vol_scaled_momentum, yield_curve,
+  commodity_momentum, vix_regime)
+- F-0 remaining: `experiment_ledger` table + run_review hook; `.claude/agents/*.md`
+  protocol sync (notebook-canonical → manifest-canonical)
+- Files: `docs/guides/alpha_factory_workflow.md` (rewritten),
+  `research/factory/{factory_config,hypothesis_queue}.yaml` (new),
+  `research/graveyard/README.md` (new)
+- Status: COMPLETE (consolidation) — factory is operable in F-0 manual mode
+
 *Last updated: 2026-06-12*
