@@ -2,7 +2,8 @@
 
 > Created 2026-06-12 (EXECUTION_PLAN.md Phase 1). This is the **mandatory** path from a
 > research idea to a registered strategy. There is no supported way into the pool that
-> bypasses the review battery.
+> bypasses the review battery. The *why* behind every gate:
+> `alpha_research/research/RESEARCH_PHILOSOPHY.md`.
 
 ```
 proposal.md ──► weights entrypoint ──► manifest.yaml ──► python -m alpha_research.review run

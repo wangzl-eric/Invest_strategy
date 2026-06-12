@@ -140,8 +140,9 @@ When writing signals in backtesting code:
 
 ## Strategy Pool & One-Call Review
 
-The mandatory path from idea to pool (full guide: `docs/guides/strategy_pool_workflow.md`;
-plan: `EXECUTION_PLAN.md`):
+The mandatory path from idea to pool (philosophy & methodology:
+`alpha_research/research/RESEARCH_PHILOSOPHY.md`; full guide:
+`docs/guides/strategy_pool_workflow.md`; plan: `EXECUTION_PLAN.md`):
 
 1. Write/refresh the proposal under `alpha_research/research/strategies/<name>/proposal.md`.
 2. Implement the weights-contract entrypoint under `alpha_research/backtests/runners/`:

@@ -293,4 +293,18 @@ All critical/high bugs fixed as of 2026-03-13. Tests: `tests/unit/test_bugfixes.
 - Docs: CLAUDE.md (commands, tree, new "Strategy Pool & One-Call Review" + weights-contract/PIT rules), `docs/repo_layout.md`, new `docs/guides/strategy_pool_workflow.md`
 - Status: COMPLETE (Phase 1 gate WP-1.7 pending: re-run reproducibility from clean checkout + owner sign-off)
 
+### 2026-06-12 — Research philosophy & methodology codified
+- Created `research/RESEARCH_PHILOSOPHY.md` — canonical overview of first principles
+  (backtest-as-null-hypothesis, costs-before-alpha, baseline-first, pre-commitment,
+  economic rationale requirement, process-over-outcome), the lifecycle, the rigor battery
+  and default promotion gates, lessons L1–L7 and where they are now structural, portfolio
+  and risk philosophy (strategies-as-assets, ~10% vol, correlation over count, 60/40 tax
+  tilt), paper/live promotion semantics (paper validates ops, not Sharpe), division of
+  labor (verdicts by pipeline, promotion by human), and standing red flags
+- Synthesized from `next_gen_investment_plan.md`, `EXECUTION_PLAN.md` (D1–D8), the
+  2026-03 PM review cycle, and the seven reviewed proposals
+- Files modified: `research/RESEARCH_PHILOSOPHY.md` (new), `research/README.md` (pointer),
+  `CLAUDE.md`, `docs/guides/strategy_pool_workflow.md` (cross-links)
+- Status: COMPLETE
+
 *Last updated: 2026-06-12*

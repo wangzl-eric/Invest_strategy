@@ -1,4 +1,11 @@
 # Zelin Investment Research
+<!-- 2026-06-12: Added pointer to RESEARCH_PHILOSOPHY.md -->
+
+> **Start here:** [`RESEARCH_PHILOSOPHY.md`](./RESEARCH_PHILOSOPHY.md) — the canonical
+> statement of our research philosophy, rigor methodology, promotion gates, and the
+> lessons earned from rejected strategies. Workflow mechanics:
+> [`docs/guides/strategy_pool_workflow.md`](../../docs/guides/strategy_pool_workflow.md).
+> History: [`STRATEGY_TRACKER.md`](./STRATEGY_TRACKER.md).
 
 ## Team
 
