@@ -2,9 +2,12 @@
 
 > Created 2026-06-12. Build spec for the automated quant research workflow: **data in,
 > validated low-correlation strategies out**. Grounded in `EXECUTION_PLAN.md` (D1–D8),
-> `alpha_research/research/RESEARCH_PHILOSOPHY.md`, and the v2 challenge loop
-> (`alpha_research/research/README.md`). This document is the contract between the
-> agents; change it deliberately and log the change in `STRATEGY_TRACKER.md`.
+> `alpha_research/research/RESEARCH_PHILOSOPHY.md`, the v2 challenge loop
+> (`alpha_research/research/README.md`), agent protocols (`.claude/agents/*.md`), and
+> the collaboration architecture (`docs/guides/RESEARCH_COLLABORATION_MODEL.md`) — the
+> factory *inherits* that model's working protocols (§2.1) rather than replacing them.
+> This document is the contract between the agents; change it deliberately and log the
+> change in `STRATEGY_TRACKER.md`.
 
 ---
 
@@ -82,9 +85,41 @@ Stage owners map to agent-deck sessions; **role definitions and binding protocol
 `docs/RESEARCH_TEAM_MODELS.md` (opus for cognitive roles, sonnet for Data, Codex for
 mechanical execution) — that mapping is the factory's per-stage cost lever.
 
+### 2.1 Inherited from the Research Collaboration Model
+
+These working protocols (`docs/guides/RESEARCH_COLLABORATION_MODEL.md`) carry over
+unchanged — the factory adds the dispatch loop and ledger *around* them:
+
+- **Strategy folder convention:** every hypothesis that reaches S2 gets
+  `research/strategies/{idea}_{YYYY-MM-DD}_{verdict}/` containing `proposal.md`,
+  `data_review.md`, `cerebro_briefing.md`, `pm_review.md`, `dev_review.md` (+ exploratory
+  notebooks). The folder is **renamed when the verdict changes** — the filesystem is the
+  pipeline state display.
+- **Phase-0 data check semantics:** Data's `data_review.md` carries a verdict —
+  **READY / CONDITIONAL / BLOCKED**. BLOCKED parks the hypothesis (queued, unscored on
+  data_readiness) until the pipeline gap is built; *no research proceeds on a wish*.
+  This check runs **before** the Cerebro briefing — coverage before literature.
+- **Two required questions before any code** (S2 entry): *"Who loses money?"* and
+  *"What is the economic mechanism?"* — with ≥2 papers + ≥1 book reference cited.
+- **The 11-gate PM checklist** is the results-level review rubric (S6 touchpoint).
+  Division of labor with the review pipeline: gates 1–8 (IS/OOS Sharpe, max DD, PSR,
+  DSR, IS/OOS ratio, MinBTL, 3× cost survival) are **automated in S5**; PM owns
+  gates 9–11 — **spanning-alpha t-stat vs the existing pool (< 1.96 kills; stronger
+  than the plain correlation gate), capacity vs AUM target, and economic rationale** —
+  plus narrative coherence between cells/artifacts.
+- **Knowledge capture:** after **every** verdict (incl. graveyard kills), run
+  `/learn-verdict {folder}` → KB Curator proposes entries to the domain knowledge bases
+  (`memory/knowledge/KNOWLEDGE_{FX|EQUITY|MACRO|VOL}.md`); owner confirms writes. S0
+  intake and PM reviews read these KBs (known-failure-modes check is a mandatory
+  challenge question).
+- **Playground → factory migration:** `book_notes/playground/` remains the no-rigor
+  exploration space; promising studies enter S0 via `/capture-finding` + the migration
+  path. The factory's gates start at S2 — never police the playground.
+
 ### S0 — Intake & scan
-- **Sources:** literature (arXiv/SSRN/blogs), the idea graveyard (§4.4) after cooling,
-  decay diagnostics from S7 ("X stopped working — why?" is a hypothesis), owner ideas.
+- **Sources:** literature (arXiv/SSRN/blogs), playground studies via `/capture-finding`
+  (§2.1), the idea graveyard (§4.4) after cooling, decay diagnostics from S7
+  ("X stopped working — why?" is a hypothesis), domain-KB open questions, owner ideas.
 - **Output `hypothesis.yaml`:** `{id, family (trend/carry/value/momentum/defensive/...),
   asset_track (D3 tracks only), one-line economic mechanism, predicted_correlation_family,
   data_readiness (have|cheap|blocked), evidence_score 1–5}`.
@@ -151,6 +186,10 @@ mechanical execution) — that mapping is the factory's per-stage cost lever.
 ### S7 — Paper / live / monitoring (Phase 3–4 infrastructure)
 - Paper validates **operations and consistency, not Sharpe** (philosophy §7): 20 unattended
   days, reconciliation clean, returns within backtest PSR band, realized vol ±25% of design.
+- **Risk limits per live strategy** (capital policy, collaboration model): max 20% of
+  portfolio per strategy, aggregate gross leverage ≤ 2.0×, per-strategy drawdown stop
+  −15%, portfolio drawdown stop −10%. Encoded in `execution/risk.py` limits, not in
+  anyone's memory.
 - Monthly health job writes decay stats to the pool `health` JSON; **mechanical demotion
   rules** from the manifest fire without discussion. Demotions emit an S0 hypothesis
   ("diagnose the decay") — the feedback loop that closes the factory. Owner of that
@@ -213,6 +252,9 @@ speed. Four controls:
   novel → L-numbered in the tracker). S0 must check the graveyard before queueing
   near-duplicates; resurrection requires materially new evidence + cooled-off 90 days.
   Rejections are training data for the factory, not embarrassments to delete.
+- Each kill also fires `/learn-verdict {folder}` (§2.1) so the lesson lands in the
+  domain KB the PM and researchers actually read — the graveyard is the archive, the
+  KBs are the working memory.
 
 ---
 
@@ -243,11 +285,12 @@ Every inter-agent handoff is a file/row with a schema. Chat is coordination, nev
 
 | Handoff | Artifact | Location |
 |---|---|---|
-| Cerebro → Researcher | `briefing.md` (FOR/AGAINST/decay/crowding) | `research/strategies/<name>/` |
+| Cerebro → Researcher | `cerebro_briefing.md` (FOR/AGAINST/decay/crowding) | `research/strategies/<name>/` |
 | Cerebro → PM | `[CEREBRO CONTRADICTION]` evidence | same folder (S3/S6 hard-stop) |
-| Data → PM | `[DATA ASSESSMENT]` coverage/quality verdict | same folder (S3 hard-stop) |
+| Data → Researcher/PM | `data_review.md` — READY/CONDITIONAL/BLOCKED | same folder (pre-S2 + S3 hard-stop) |
 | Researcher → PM | `proposal.md` + pre-registration hash + `preflight_checklist.md` | same folder + ledger |
-| PM → Dev | approval checklist in `proposal.md` | same folder |
+| PM → everyone | `pm_review.md` (challenges + verdict) | same folder |
+| PM → Dev | approval checklist in `proposal.md`; Dev replies `dev_review.md` | same folder |
 | Dev → pipeline | `manifest.yaml` + entrypoint + tests | `research/pool/<id>/`, `backtests/runners/` |
 | Pipeline → everyone | run bundle (13 artifacts) | `data/backtest_runs/<run_id>/` |
 | Pipeline → owner | `verdict.md` + DAC + PM recommendation | run bundle + notification |
