@@ -1,0 +1,66 @@
+# Strategy manifest — sector rotation via macro-linked momentum (Phase 1 reference)
+# Created 2026-06-12. Spec is canonical here; narrative/PM review lives in proposal_path.
+# Regime rules and signal weights are pre-committed from the 2026-03-13 proposal —
+# do NOT tune them post-hoc without bumping n_trials.
+schema_version: 1
+strategy_id: sector_rotation_v1
+name: Sector Rotation via Macro-Linked Momentum
+track: etf_rotation
+universe:
+  - XLK
+  - XLF
+  - XLE
+  - XLV
+  - XLC
+  - XLY
+  - XLP
+  - XLI
+  - XLB
+  - XLRE
+  - XLU
+entrypoint: alpha_research.backtests.runners.sector_rotation:build_weights
+params:
+  mom_lookback: 126
+  mom_skip: 21
+  rs_lookback: 63
+  macro_window: 63
+  tilt_scale: 0.6
+  max_weight: 0.20
+rebalance:
+  frequency: monthly
+  execution_convention: t_close
+cost_model:
+  id: proportional
+  bps: 5.0
+data_requirements:
+  - id: T10Y2Y
+    kind: macro
+    source: fred
+  - id: CPIAUCSL
+    kind: macro
+    source: fred
+  - id: BAMLH0A0HYM2
+    kind: macro
+    source: fred
+benchmark: SPY
+naive_baseline: equal_weight_11_sectors_monthly
+backtest_start: "2012-01-01"
+backtest_end: null
+# Honest trial count: proposal drafting + challenge-loop variations on signal
+# weights and lookbacks before this spec was frozen.
+n_trials: 10
+promotion_rules:
+  min_dsr: 0.95
+  min_psr: 0.90
+  cost_multiplier_survival: 2.0
+  max_abs_correlation: 0.4
+  min_paper_trading_days: 60
+  realized_vol_tolerance: 0.25
+proposal_path: alpha_research/research/strategies/sector_rotation_2026-03-13_conditional/proposal.md
+author: Zelin (spec), Elena (proposal)
+created: 2026-06-12
+description: >
+  Long-only monthly rotation across the 11 SPDR sector ETFs. Composite alpha =
+  0.5 z(6-1 momentum) + 0.3 pre-committed macro regime tilts (T10Y2Y steepening,
+  CPI YoY acceleration, HY OAS widening; PIT-shifted FRED inputs) + 0.2 z(3-month
+  return). PM expectation: 1-2% annual alpha vs SPY, Sharpe 0.4-0.6 gross.

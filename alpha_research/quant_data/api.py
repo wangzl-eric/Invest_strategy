@@ -33,6 +33,7 @@ from alpha_research.quant_data.analytics import (  # re-exported for convenience
     compute_drawdown,
     compute_rolling_sharpe,
 )
+from alpha_research.quant_data.pit import apply_publication_lag  # noqa: E402
 from alpha_research.quant_data.ticker_map import (  # noqa: E402
     TickerInfo,
     resolve_strict,
@@ -100,8 +101,19 @@ def _read_parquet_prices(ticker: str, start: str, end: str) -> Optional[pd.DataF
 
 
 def _read_parquet_macro(series_id: str, start: str, end: str) -> Optional[pd.DataFrame]:
-    """Try to read macro/FRED data for *series_id* from the local Parquet lake."""
+    """Try to read macro/FRED data for *series_id* from the local Parquet lake.
+
+    Searches both the prices dir and the FRED store
+    (``data/market_data/fred/*.parquet``, long format date/series_id/value).
+    """
     candidates = list(_PRICES_DIR.glob("*.parquet")) if _PRICES_DIR.exists() else []
+    fred_dir = _PRICES_DIR.parent / "fred"
+    if fred_dir.exists():
+        candidates += list(fred_dir.glob("*.parquet"))
+
+    # Multiple files can hold the same series (stale bundles vs refreshed
+    # per-series caches) — return the match with the freshest end date.
+    best: Optional[pd.DataFrame] = None
     for parquet_file in candidates:
         try:
             df = pd.read_parquet(parquet_file)
@@ -114,11 +126,13 @@ def _read_parquet_macro(series_id: str, start: str, end: str) -> Optional[pd.Dat
             sub = df[mask].copy()
             sub["date"] = pd.to_datetime(sub["date"])
             sub = sub[(sub["date"] >= start) & (sub["date"] <= end)]
-            if not sub.empty:
-                return sub
+            if sub.empty:
+                continue
+            if best is None or sub["date"].max() > best["date"].max():
+                best = sub
         except Exception:
             continue
-    return None
+    return best
 
 
 # ---------------------------------------------------------------------------
@@ -149,13 +163,38 @@ def _fetch_yfinance(ticker: str, start: str, end: str) -> pd.DataFrame:
 def _fetch_fred(series_id: str, start: str, end: str) -> pd.DataFrame:
     import os
 
-    import pandas_datareader.data as web
+    try:
+        import pandas_datareader.data as web
+    except ImportError:
+        return _fetch_fred_csv(series_id, start, end)
 
     api_key = os.getenv("FRED_API_KEY", "")
     kwargs = {"api_key": api_key} if api_key else {}
     raw = web.DataReader(series_id, "fred", start, end, **kwargs)
     raw = raw.reset_index()
     raw.columns = ["date", "value"]
+    raw["series_id"] = series_id
+    raw["date"] = pd.to_datetime(raw["date"])
+    return raw[["date", "series_id", "value"]]
+
+
+def _fetch_fred_csv(series_id: str, start: str, end: str) -> pd.DataFrame:
+    """Keyless fallback: FRED's public fredgraph CSV endpoint."""
+    import io
+
+    import requests
+
+    url = (
+        "https://fred.stlouisfed.org/graph/fredgraph.csv"
+        f"?id={series_id}&cosd={start}&coed={end}"
+    )
+    resp = requests.get(url, timeout=30)
+    resp.raise_for_status()
+    raw = pd.read_csv(io.StringIO(resp.text))
+    date_col = "observation_date" if "observation_date" in raw.columns else "DATE"
+    raw = raw.rename(columns={date_col: "date", series_id: "value"})
+    raw["value"] = pd.to_numeric(raw["value"], errors="coerce")
+    raw = raw.dropna(subset=["value"])
     raw["series_id"] = series_id
     raw["date"] = pd.to_datetime(raw["date"])
     return raw[["date", "series_id", "value"]]
@@ -239,33 +278,70 @@ def _today() -> str:
 def _fetch_single(
     info: TickerInfo, start: str, end: str, source: Optional[str]
 ) -> pd.DataFrame:
-    """Fetch one instrument: local first, then API fallback."""
+    """Fetch one instrument: local first, then API fallback.
+
+    The local cache is used only when it covers the requested *end* within
+    a per-source staleness tolerance (prices: 7 days, macro: 75 days to
+    accommodate monthly publication lags); otherwise the API is queried and
+    the cache refreshed. Start-side gaps are left to the QC layer — they
+    are usually genuine instrument inception, not cache problems.
+    """
     effective_source = source or info.source
 
     # Try local cache first
     if effective_source == "fred":
         local = _read_parquet_macro(info.canonical_id, start, end)
+        staleness_tolerance_days = 75
     else:
         local = _read_parquet_prices(info.canonical_id, start, end)
+        staleness_tolerance_days = 7
 
     if local is not None and not local.empty:
-        return local
+        cached_end = pd.to_datetime(local["date"]).max()
+        if cached_end >= pd.Timestamp(end) - pd.Timedelta(
+            days=staleness_tolerance_days
+        ):
+            return local
+        log.warning(
+            "local cache for %s ends %s but %s requested — refreshing from %s",
+            info.canonical_id,
+            cached_end.date(),
+            end,
+            effective_source,
+        )
 
-    # Cache miss — fetch from API
-    log.warning(
-        "cache miss for %s — fetching from %s",
-        info.canonical_id,
-        effective_source,
-    )
+    if local is None or local.empty:
+        # Cache miss — fetch from API
+        log.warning(
+            "cache miss for %s — fetching from %s",
+            info.canonical_id,
+            effective_source,
+        )
 
-    if effective_source == "fred":
-        df = _fetch_fred(info.canonical_id, start, end)
-    elif effective_source == "binance":
-        df = _fetch_binance(info.canonical_id, start, end)
-    else:
-        df = _fetch_yfinance(info.canonical_id, start, end)
+    try:
+        if effective_source == "fred":
+            df = _fetch_fred(info.canonical_id, start, end)
+        elif effective_source == "binance":
+            df = _fetch_binance(info.canonical_id, start, end)
+        else:
+            df = _fetch_yfinance(info.canonical_id, start, end)
+    except Exception as exc:
+        if local is not None and not local.empty:
+            log.warning(
+                "API refresh for %s failed (%s) — using stale local cache",
+                info.canonical_id,
+                exc,
+            )
+            return local
+        raise
 
     if df.empty:
+        if local is not None and not local.empty:
+            log.warning(
+                "API refresh for %s returned no rows — using stale local cache",
+                info.canonical_id,
+            )
+            return local
         return df
 
     # Write back to prices dir so next read hits cache
@@ -283,6 +359,7 @@ def get_data(
     end: Optional[str] = None,
     frequency: str = "1d",
     source: Optional[str] = None,
+    pit: bool = True,
 ) -> pd.DataFrame:
     """Unified market data interface.
 
@@ -295,10 +372,17 @@ def get_data(
                    fetched from APIs; resampling applied for others.
         source:    Force a specific connector: 'yfinance'|'fred'|'stooq'|
                    'ecb'|'binance'|'polygon'|'ibkr'. Auto-detected if None.
+        pit:       Point-in-time mode (default True). Macro/FRED results
+                   have their dates shifted from reference date to a
+                   conservative availability date (publication lag), with
+                   the original kept in a ``reference_date`` column. Price
+                   data is unaffected. Passing pit=False returns raw
+                   reference-dated macro data and logs a look-ahead warning.
 
     Returns:
         DataFrame with columns (date, ticker, open, high, low, close, volume)
-        for price data, or (date, series_id, value) for macro/FRED data.
+        for price data, or (date, series_id, value[, reference_date]) for
+        macro/FRED data.
     """
     if isinstance(tickers, str):
         tickers = [tickers]
@@ -308,8 +392,21 @@ def get_data(
     for query in tickers:
         info = resolve_strict(query)
         df = _fetch_single(info, start, end, source)
-        if not df.empty:
-            frames.append(df)
+        if df.empty:
+            continue
+        if "series_id" in df.columns:
+            if pit:
+                df = apply_publication_lag(df)
+                # Availability-dating can push observations past `end`;
+                # keep the window the caller asked for.
+                df = df[df["date"] <= pd.Timestamp(end)]
+            else:
+                log.warning(
+                    "get_data(pit=False): macro series %s returned with raw "
+                    "reference dates — look-ahead biased if used in a backtest.",
+                    df["series_id"].iloc[0],
+                )
+        frames.append(df)
 
     if not frames:
         return pd.DataFrame()
@@ -325,7 +422,9 @@ def get_data(
 
 def _resample(df: pd.DataFrame, frequency: str) -> pd.DataFrame:
     """Resample a daily price or macro DataFrame to weekly or monthly."""
-    freq_map = {"1w": "W-FRI", "1m": "ME"}
+    # pandas renamed the month-end alias "M" -> "ME" in 2.2
+    monthly = "ME" if pd.__version__ >= "2.2" else "M"
+    freq_map = {"1w": "W-FRI", "1m": monthly}
     rule = freq_map.get(frequency, "W-FRI")
 
     out_frames = []

@@ -280,9 +280,14 @@ def _build_registry() -> dict[str, TickerInfo]:
         _root = Path(__file__).resolve().parents[2]
         if str(_root) not in sys.path:
             sys.path.insert(0, str(_root))
-        from config.ticker_universe import HK_EQUITIES, US_LARGE_CAP, US_MID_SMALL_CAP
+        from config.ticker_universe import (
+            HK_EQUITIES,
+            US_ETFS,
+            US_LARGE_CAP,
+            US_MID_SMALL_CAP,
+        )
 
-        for ticker in US_LARGE_CAP + US_MID_SMALL_CAP:
+        for ticker in US_LARGE_CAP + US_MID_SMALL_CAP + US_ETFS:
             if ticker.lower() not in reg:
                 info = TickerInfo(
                     canonical_id=ticker,

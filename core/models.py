@@ -494,6 +494,34 @@ class AlertChannel(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class StrategyPoolEntry(Base):
+    """Strategy pool registry entry (lifecycle state machine).
+
+    The manifest YAML in git is the canonical spec; this row holds the
+    mutable state: lifecycle (candidate -> paper -> live -> retired),
+    latest review run, and health metrics written by monitoring jobs.
+    """
+
+    __tablename__ = "strategy_pool"
+
+    id = Column(Integer, primary_key=True, index=True)
+    strategy_id = Column(String, unique=True, nullable=False, index=True)
+    name = Column(String, default="")
+    track = Column(String, default="")  # etf_rotation / cta_futures / factor_etf
+    state = Column(
+        String, nullable=False, default="candidate", index=True
+    )  # candidate / paper / live / retired
+    manifest_path = Column(String, nullable=False)
+    latest_run_id = Column(String, default="", index=True)
+    latest_verdict = Column(String, default="")  # PASS / REVISE
+    # JSON list of {"state": ..., "at": ISO-8601, "reason": ...}
+    state_history_json = Column(Text, default="[]")
+    # JSON health metrics written by monitoring/refinement jobs (Phase 4)
+    health_json = Column(Text, default="{}")
+    registered_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class PnLAttribution(Base):
     """LLM-generated explanations for PnL movements."""
 

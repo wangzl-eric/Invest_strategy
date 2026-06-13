@@ -35,44 +35,34 @@ def minimum_backtest_length(
     """
     from scipy import stats
 
+    from alpha_research.backtests.stats.sharpe_tests import expected_max_z
+
     if observed_sharpe <= 0 or n_trials < 1:
         return int(1e6)  # Effectively infinite — strategy has no edge
 
     z_alpha = stats.norm.ppf(confidence)
 
-    # Expected maximum Sharpe under the null (same as DSR calculation)
-    if n_trials > 1:
-        euler_mascheroni = 0.5772156649
-        e_max_sr = np.sqrt(2 * np.log(n_trials)) - (
-            np.log(np.pi) + euler_mascheroni
-        ) / (2 * np.sqrt(2 * np.log(n_trials)))
-    else:
-        e_max_sr = 0.0
+    # Expected maximum of n_trials standard normals — z-score units.
+    # Under the null, the max-trial Sharpe estimate over n periods is
+    # ~ e_max_z / sqrt(n), so comparisons must use the per-period Sharpe.
+    e_max_z = expected_max_z(n_trials)
 
-    # If observed Sharpe doesn't beat the expected max, need infinite data
-    if observed_sharpe <= e_max_sr:
-        return int(1e6)
+    # Daily (per-period) Sharpe from the annualized input
+    sr_daily = observed_sharpe / np.sqrt(252)
 
-    # Excess kurtosis
+    # Excess kurtosis; non-normality adjustment on the SR standard error
+    # (Lo 2002 / Bailey & López de Prado), evaluated at the daily SR.
     excess_kurt = kurtosis - 3.0
-
-    # MinBTL formula (from Bailey & López de Prado)
-    # n >= (z_alpha / (SR - SR*))^2 * (1 - skew*SR + (kurt-1)/4 * SR^2)
-    # where SR is annualized Sharpe per sqrt(period)
-    sr = observed_sharpe
-    sr_star = e_max_sr
-
-    adjustment = 1 - skewness * sr + (excess_kurt / 4) * sr**2
+    adjustment = 1 - skewness * sr_daily + (excess_kurt / 4) * sr_daily**2
     if adjustment <= 0:
         adjustment = 1.0
 
-    min_n = (z_alpha / (sr - sr_star)) ** 2 * adjustment
+    # Require the observed daily SR to clear the expected max-trial null
+    # by z_alpha standard errors:
+    #   sr_daily >= (e_max_z + z_alpha * sqrt(adjustment)) / sqrt(n)
+    min_daily = ((e_max_z + z_alpha * np.sqrt(adjustment)) / sr_daily) ** 2
 
-    # Convert from "Sharpe periods" to daily observations
-    # The formula gives min observations in annualized units; scale to daily
-    min_daily = min_n * 252
-
-    return int(np.ceil(min_daily))
+    return int(np.ceil(min(min_daily, 1e6)))
 
 
 def min_track_record_length(
