@@ -1,5 +1,11 @@
 # Next-Gen Investment Plan
 
+> 📜 **Historical origin brief.** This is the original goal statement the platform grew
+> from — preserved as a reference, **not a live spec**. The current canon is
+> `alpha_research/research/RESEARCH_PHILOSOPHY.md` (the constitution / single source of
+> truth) → see its §0 Document Canon for the full map. Roadmap detail now lives in
+> `EXECUTION_PLAN.md`.
+
 ## Goal
 
 Refine the current quant research infrastructure into a **scalable, rigorous, and robust**

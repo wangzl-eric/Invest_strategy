@@ -8,9 +8,9 @@
 > source of truth for every threshold, limit, and tunable named here. If this doc and
 > the config disagree, the config wins; fix the doc. Changing either = tracker entry.
 >
-> Grounding: `EXECUTION_PLAN.md` (D1–D8) · `alpha_research/research/RESEARCH_PHILOSOPHY.md`
-> · `.claude/agents/*.md` (agent protocols, source of truth) ·
-> `docs/guides/RESEARCH_COLLABORATION_MODEL.md` (inherited working protocols) ·
+> Grounding: `alpha_research/research/RESEARCH_PHILOSOPHY.md` (**the constitution / single
+> source of truth** — principles, rigor battery, 11-gate checklist, capital policy) ·
+> `EXECUTION_PLAN.md` (D1–D8) · `.claude/agents/*.md` (agent protocols, source of truth) ·
 > `docs/RESEARCH_TEAM_MODELS.md` (per-role models = per-stage cost lever).
 
 ---
@@ -126,7 +126,7 @@ is **renamed on verdict change** — the filesystem is the pipeline state displa
 - `python -m alpha_research.review run <manifest>`: QC preflight → vectorized backtest +
   EW baseline → walk-forward segments → PSR/DSR/MinBTL/bootstrap CI → cost 1×/2×/3× →
   params ±20/40% → correlation vs pool → gates → 13-artifact bundle under `run_id`.
-- **Automated gates** (= collaboration-model 11-gate checklist, gates 1–8): IS/OOS
+- **Automated gates** (= the 11-gate checklist in `RESEARCH_PHILOSOPHY.md` §4, gates 1–8): IS/OOS
   Sharpe floors, max DD, PSR, DSR, IS/OOS ratio, MinBTL, 3× cost survival, |ρ| vs pool.
   **F-1 adds:** the 18-month embargo check (§4.3) and the **spanning-alpha t-stat vs
   pool return streams** (gate 9, automated — stronger than pairwise correlation; kills
@@ -242,7 +242,57 @@ suggested next step). **The Conductor — not the agent — decides dispatch.**
 
 ---
 
-## 7. Build roadmap
+## 7. Team collaboration & feedback loop
+
+The team is an **adversarial, artifact-mediated** loop, not a relay. Per-role behavior is
+specified in `.claude/agents/*.md` (**the source of truth for agent protocols**); this
+section is the loop those agents run, mapped onto the stages (§2). Chat coordinates;
+**artifacts are state** — every challenge, verdict, and revision is a file in the strategy
+folder, never a lost message.
+
+```
+ CEREBRO/DATA          RESEARCHER            PM (challenger)        DEV / PIPELINE
+ (S0–S1)               (S2)                  (S3, S6)               (S4–S5)
+     │                     │                      │                      │
+  briefing + data_review   │                      │                      │
+  (≥1 CONTRADICTION,       │                      │                      │
+   READY/COND/BLOCKED) ───►│                      │                      │
+     │              proposal.md + pre-reg hash ──►│                      │
+     │                     │            ADVERSARIAL REVIEW               │
+     │              ◄───── pm_review.md (challenges + approval checklist) │
+     │                     │  revise (≤2 rounds)  │                      │
+     │              re-submit ──────────────────►│                       │
+     │                     │     CONDITIONAL+  ───┼── implement ────────►│
+     │                     │                      │           manifest + tests + run
+     │                     │                      │       ◄── S5 verdict (which gate,
+     │                     │                      │            coarse — no distance)
+     │                     │                      │  PASS ─► S6 results review (human)
+     │                     │                      │  3×REVISE ─► graveyard + cooling
+     │                     │                      ▼
+     │                     │            VERDICT → /learn-verdict → domain KBs
+     └─────────── feedback: decay hypothesis (S7→S0) ──────────────────────┘
+```
+
+**Hard-stops (a review missing these is invalid):**
+- `[DATA ASSESSMENT]` — Data's `data_review.md` verdict (READY / CONDITIONAL / BLOCKED) in
+  hand **before S2**; a NO/CONDITIONAL blocks PM approval at S3 until resolved.
+- `[CEREBRO CONTRADICTION]` — the contradicting-evidence artifact in hand **before any S3 or
+  S6 challenge is written**. No briefing and no review without it.
+
+**Feedback discipline (the anti-gaming rules, §4.2):** agents see *which* gate failed, never
+a distance-to-passing target. Revision cap **2 rounds** (S3); iteration cap **3 runs** (S5),
+both ledger-enforced. A verdict **renames the strategy folder** (`…_REVISE` → `…_PASS` /
+`…_REJECTED`) — the filesystem shows the loop's state.
+
+**Closing the loop:** every verdict — pass *or* kill — fires `/learn-verdict {folder}` → KB
+Curator → domain KBs (`memory/knowledge/KNOWLEDGE_{FX|EQUITY|MACRO|VOL}.md`), and every kill
+also lands in the graveyard (§4.4). Completion protocol (§6) routes all of it through the
+Conductor, which decides the next dispatch. **No agent self-dispatches; no agent edits gates
+or `promotion_rules`.**
+
+---
+
+## 8. Build roadmap
 
 **F-0 (now — owner is the dispatcher; ~15 min/week SENSE/DIAGNOSE):**
 - ✅ S4–S6 machinery (manifest, review pipeline, pool, gates)
@@ -275,7 +325,7 @@ tracking error · blended pool Sharpe vs 0.8–1.2.
 
 ---
 
-## 8. Failure modes → guards
+## 9. Failure modes → guards
 
 | Failure mode | Guard |
 |---|---|
@@ -287,7 +337,7 @@ tracking error · blended pool Sharpe vs 0.8–1.2.
 | Throughput outrunning the human | WIP limits + backpressure sized to 8–15 h/wk (§5) |
 | Knowledge trapped in transcripts | schema'd artifacts (§6) + KB capture on every verdict |
 | Silent gate erosion | promotion_rules owner-only; config changes need tracker entries |
-| Building factory before product | F-0→F-2 gated on EXECUTION_PLAN phases (§7) |
+| Building factory before product | F-0→F-2 gated on EXECUTION_PLAN phases (§8) |
 
 ---
 

@@ -355,4 +355,28 @@ All critical/high bugs fixed as of 2026-03-13. Tests: `tests/unit/test_bugfixes.
   `research/graveyard/README.md` (new)
 - Status: COMPLETE (consolidation) — factory is operable in F-0 manual mode
 
-*Last updated: 2026-06-12*
+### 2026-06-13 — Doc consolidation: single source of truth for the investment approach
+- Established `RESEARCH_PHILOSOPHY.md` as the **constitution / single source of truth**
+  (science + art + the why). Added a §0 *Document Canon* mapping the delegated layers
+  (how→`alpha_factory_workflow.md`, numbers→`factory_config.yaml`,
+  commands→`strategy_pool_workflow.md`, build→`EXECUTION_PLAN.md`, history→this tracker,
+  origin→`next_gen_investment_plan.md`) with an explicit precedence rule.
+- Absorbed the canonical **11-gate kill checklist** into `RESEARCH_PHILOSOPHY.md` §4
+  (thresholds mirror `factory_config.yaml`, which wins on disagreement).
+- Archived two superseded docs to `docs/archive/` with tombstones:
+  `QUANT_PLATFORM_VISION.md` (Mar-2026 essay, 0 inbound refs) and
+  `RESEARCH_COLLABORATION_MODEL.md` (pre-factory notebook workflow; 11-gate + capital
+  policy salvaged first). Repointed the one inbound ref in `alpha_factory_workflow.md`.
+- Stamped `next_gen_investment_plan.md` as a historical origin brief (kept, not a live spec).
+- **Salvaged the team collaboration & feedback workflow** (RCM's multi-round challenge
+  loop) into `alpha_factory_workflow.md` §7 (new) — redrawn in S0–S6 stage terms with
+  hard-stops, anti-gaming feedback discipline, and the KB-capture loop; renumbered the
+  doc's Build roadmap→§8 / Failure modes→§9. Added a "Team collaboration & feedback" row
+  to `RESEARCH_PHILOSOPHY.md` §0 Canon (→ factory §7 + `.claude/agents/*.md`).
+- Files: `alpha_research/research/RESEARCH_PHILOSOPHY.md`,
+  `docs/guides/alpha_factory_workflow.md`, `next_gen_investment_plan.md`,
+  `docs/archive/{QUANT_PLATFORM_VISION,RESEARCH_COLLABORATION_MODEL}.md` (moved),
+  `alpha_research/research/STRATEGY_TRACKER.md`
+- Status: COMPLETE
+
+*Last updated: 2026-06-13*

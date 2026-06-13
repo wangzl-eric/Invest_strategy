@@ -9,6 +9,36 @@
 
 ---
 
+## 0. Document canon — this is the single source of truth
+
+**This document is the constitution for how we invest** (the *why* — the science and the
+art). It does not restate the logistics or the numbers; it **points** to them. When in
+doubt, start here, then follow the map. One subject, one owning document — no duplicated
+specs.
+
+| Layer | Question it answers | Owning document |
+|---|---|---|
+| **Why / principles** (science + art) | *Why this edge, what rigor, what discipline* | **this file** — the constitution |
+| **How it's orchestrated** (logistics) | *Which idea to work, stage flow, WIP, factory rigor* | `docs/guides/alpha_factory_workflow.md` |
+| **Team collaboration & feedback** | *The adversarial challenge loop, hard-stops, who-challenges-whom, knowledge capture* | `docs/guides/alpha_factory_workflow.md` §7 + `.claude/agents/*.md` (per-role protocols) |
+| **The numbers** (tunables) | *Every threshold, limit, weight, gate value* | `alpha_research/research/factory/factory_config.yaml` |
+| **The commands** (hands-on) | *How to actually run manifest → review → pool* | `docs/guides/strategy_pool_workflow.md` |
+| **The build plan** | *Locked decisions D1–D8, work packages, phase gates* | `EXECUTION_PLAN.md` |
+| **The history** | *What was decided/changed and why, dated* | `alpha_research/research/STRATEGY_TRACKER.md` |
+| **The origin brief** *(historical)* | *The original goal statement* | `next_gen_investment_plan.md` |
+
+**Precedence when documents disagree:** numbers → `factory_config.yaml` wins (fix the
+prose); locked decisions → `EXECUTION_PLAN.md` (D1–D8) wins; everything else →
+**this file** wins. Any change to a principle, gate, or tunable requires a
+`STRATEGY_TRACKER.md` entry.
+
+*Superseded docs are archived under `docs/archive/` with tombstones — they are history,
+not live specs: `QUANT_PLATFORM_VISION.md` (Mar-2026 platform essay) and
+`RESEARCH_COLLABORATION_MODEL.md` (pre-factory, notebook-era; its 11-gate checklist and
+capital policy were absorbed here and into `factory_config.yaml`).*
+
+---
+
 ## 1. What we are building, in one paragraph
 
 A solo-operated, milestone-gated multi-asset platform on IBKR targeting **3–4 genuinely
@@ -76,6 +106,23 @@ Every strategy enters the pool through one door —
 
 Default promotion gates (overridable per manifest, but pre-committed at registration):
 **DSR ≥ 0.95, PSR ≥ 0.90, Sharpe > 0 at 2× costs, |ρ| ≤ 0.4 vs pool.**
+
+**The 11-gate kill checklist** (gates 1–8 machine-checked in S5; 9–11 PM/owner judgment).
+Thresholds mirror `factory_config.yaml` — **config wins on any disagreement**:
+
+| # | Gate | Kill threshold | Owner |
+|---|------|----------------|-------|
+| 1 | Annualised Sharpe (IS) | < 0.5 | auto (S5) |
+| 2 | Annualised Sharpe (OOS walk-forward) | < 0.3 | auto (S5) |
+| 3 | Max drawdown | > −30% | auto (S5) |
+| 4 | PSR vs benchmark | < 95% confidence | auto (S5) |
+| 5 | Deflated Sharpe (multiple-testing corrected) | < 0 | auto (S5) |
+| 6 | IS/OOS Sharpe ratio | < 0.5 (overfitting proxy) | auto (S5) |
+| 7 | MinBTL (minimum backtest length) | exceeds available history | auto (S5) |
+| 8 | Cost sensitivity (3× costs) | Sharpe < 0 | auto (S5) |
+| 9 | Spanning-alpha t-stat vs existing streams | < 1.96 | auto (F-1) / PM until then |
+| 10 | Capacity estimate at our AUM | < AUM target | PM/owner |
+| 11 | Economic rationale | no credible mechanism | PM/owner |
 
 ## 5. Lessons we paid for (from rejected strategies — full detail in the tracker)
 
