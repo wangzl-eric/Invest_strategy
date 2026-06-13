@@ -27,6 +27,12 @@ make typecheck                         # mypy backend/
 # Servers
 make serve-backend                     # FastAPI on :8000 (with --reload)
 make serve-frontend                    # Dash on :8050
+
+# Strategy pool & one-call review (Phase 1, see EXECUTION_PLAN.md)
+python -m alpha_research.review run alpha_research/research/pool/<id>/manifest.yaml
+python -m alpha_research.pool list                                  # pool overview
+python -m alpha_research.pool show <strategy_id>                    # full entry JSON
+python -m alpha_research.pool promote <strategy_id> --to paper --reason "..."
 ```
 
 Flake8 config: `--max-line-length=120 --ignore=E501,W503,E203` (E203 ignored — it conflicts with black's slice formatting; matches `.pre-commit-config.yaml`)
@@ -61,16 +67,25 @@ alpha_research/      Component 2 — alpha research & backtesting infrastructure
   backtests/         Backtesting engines
     builder.py       Vectorized backtesting
     walkforward.py   Walk-forward analysis
-    event_driven/    Event-driven engine (realistic fills/slippage) — canonical engine
+    event_driven/    Event-driven engine (Backtrader adapter) — validation/execution-sim only
     forward_pass/    Forward-pass tracking & comparison
     strategies/      Signal framework, Backtrader compatibility
+      manifest.py    Strategy manifest schema + weights contract (pool registration unit)
+    runners/         Weights-contract strategy entrypoints (sector_rotation, momentum, ...)
     stats/           Statistical tests (PSR, deflated Sharpe, CPCV, bootstrap)
     costs/           Transaction cost & slippage models
+  review/            One-call review pipeline: manifest → QC → backtest → rigor battery
+                     → artifacts under run_id → pool (python -m alpha_research.review)
+  pool/              Strategy pool registry: lifecycle candidate→paper→live→retired,
+                     SQLite state + CLI (python -m alpha_research.pool)
   portfolio/         Portfolio optimization (CVXPY mean-variance, risk parity, rebalancing)
   execution/         Trade execution framework (runner, risk, sim_broker, audit)
   quant_data/        Data lake & market data pipelines (connectors, pipelines, duckdb_store, registry)
-  cerebro/           AI-powered research discovery (arXiv, SSRN, blogs, scoring, proposals)
+    pit.py           Point-in-time FRED layer (publication-lag shifting; default-on in get_data)
+    qc.py            Data QC preflight (missing bars, stale prices, extreme returns)
+  cerebro/           AI-powered research discovery (arXiv, SSRN, blogs, scoring, proposals) — FROZEN (D8)
   research/          Strategy research notes, tracker, external ideas (docs only)
+    pool/            Git-versioned strategy manifests (<strategy_id>/manifest.yaml)
   notebooks/         Exploratory research notebooks and templates
 book_notes/          Component 3 — learning material
   playground/        Playground study environment (studies, agents, skills)
@@ -116,6 +131,32 @@ When writing signals in backtesting code:
 - End-of-day trading (trade after close): use `[0]` for current bar
 - Intraday / start-of-day: use `[-1]` for previous bar (safe, no look-ahead)
 - Every `self.data.X[0]` access should have a comment explaining why `[0]` is valid
+- **Weights contract** (`alpha_research/review`): entrypoints return *unshifted* target
+  weights — weights at date *t* use only data ≤ *t*; the review engine applies the
+  execution-convention shift. Never pre-shift inside a strategy function.
+- **Macro/FRED data is PIT-shifted by default**: `quant_data.api.get_data` moves macro
+  observations to their availability date (`pit=True` default; lag table in
+  `quant_data/pit.py`). `pit=False` logs a look-ahead warning — never use it in backtests.
+
+## Strategy Pool & One-Call Review
+
+The mandatory path from idea to pool (philosophy & methodology:
+`alpha_research/research/RESEARCH_PHILOSOPHY.md`; full guide:
+`docs/guides/strategy_pool_workflow.md`; plan: `EXECUTION_PLAN.md`):
+
+1. Write/refresh the proposal under `alpha_research/research/strategies/<name>/proposal.md`.
+2. Implement the weights-contract entrypoint under `alpha_research/backtests/runners/`:
+   `fn(prices, macro, params) -> DataFrame[date × ticker]` of target weights.
+3. Create `alpha_research/research/pool/<strategy_id>/manifest.yaml`
+   (schema: `alpha_research/backtests/strategies/manifest.py`). Declare `n_trials`
+   honestly — it feeds the DSR gate. Promotion rules are pre-committed here.
+4. `python -m alpha_research.review run <manifest>` — runs QC preflight, vectorized
+   backtest, walk-forward segments, PSR/DSR/MinBTL/bootstrap CI, cost (1×/2×/3×) and
+   parameter (±20/40%) sensitivity, correlation vs active pool, equal-weight baseline;
+   emits the artifact bundle under `data/backtest_runs/<run_id>/` and registers the
+   pool entry (`strategy_pool` table).
+5. Promotion stays human: `python -m alpha_research.pool promote <id> --to paper --reason "..."`.
+   Lifecycle: candidate → paper → live → retired (demotions allowed; retired is terminal).
 
 ## Adding Market Data
 
