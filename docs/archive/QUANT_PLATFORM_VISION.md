@@ -1,3 +1,10 @@
+> ⚠️ **ARCHIVED 2026-06-13 — not a live spec.** Superseded by
+> `alpha_research/research/RESEARCH_PHILOSOPHY.md` (the constitution / single source of
+> truth) and `EXECUTION_PLAN.md` (build plan). This Mar-2026 platform essay is kept for
+> historical context only; do not treat anything here as current canon.
+
+---
+
 # The Optimal Quant Research Platform & Market Monitoring Stack
 
 **A Macro Portfolio Manager's Blueprint**
