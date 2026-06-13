@@ -271,4 +271,112 @@ All critical/high bugs fixed as of 2026-03-13. Tests: `tests/unit/test_bugfixes.
 - Files created: `research/quality_safe_haven_codex_audit_2026-03-18.md` (9-section audit with 6 red flags)
 - Status: COMPLETE (audit), awaiting revisions before Cerebro briefing
 
-*Last updated: 2026-03-18*
+### 2026-06-12 — Platform execution plan finalized (roadmap → actionable WPs)
+- Reviewed the `next_gen_investment_plan.md` brief against the actual codebase and produced `EXECUTION_PLAN.md` (repo root): 4 phases, ~24 work packages with file-level anchors, acceptance criteria, and phase gates, sized for agent-assisted execution
+- **Design decisions locked (D1–D8):** pool = YAML manifests in git + SQLite state table (no MLflow); futures data = vendor-agnostic schema with Databento first (Norgate updater is Windows-only — blocker on macOS); **single-name equity track merged into factor-ETF rotation** (IBKR per-order minimums make 100+ name L/S non-viable at $25–100k); daily ops = standalone launchd script; Dash pool UI cut from Phase 1, point-in-time FRED layer added; strategy contract = weights-DataFrame entrypoint on builder/walkforward; Backtrader demoted to validation-only; Cerebro frozen
+- **Affects existing strategies:** `sector_rotation_2026-03-13_conditional` becomes the Phase 1 reference strategy (WP-1.6; its PM requirements — XLI, FRED publication-lag handling, pre-committed regime rules, EW benchmark — are now explicit work items); `equity_momentum_2026-03-13_conditional` superseded by factor-ETF rotation (WP-2.6) with an active-return correlation gate vs sector rotation
+- **Promotion gate reframed:** the 3–6 month paper record validates operations/consistency, not Sharpe; candidate→paper defaults DSR>0 @95%, PSR(SR★=0)>0.90, survives 2× costs, |corr|<0.4 vs pool
+- Files modified: created `EXECUTION_PLAN.md`; discussion only otherwise
+- Status: COMPLETE (planning) — execution begins at WP-1.1
+
+### 2026-06-12 — Phase 1 implemented: manifest contract, PIT layer, QC, one-call review, pool registry, sector rotation registered
+- Implemented EXECUTION_PLAN.md WP-1.1 → WP-1.6 end-to-end:
+  - `alpha_research/backtests/strategies/manifest.py` — Pydantic StrategyManifest + weights contract (`fn(prices, macro, params) → DataFrame[date × ticker]`, never pre-shifted)
+  - `alpha_research/quant_data/pit.py` — point-in-time FRED layer (publication-lag shifting, **default-on** in `get_data`; CPI +45d, market series +1d, conservative fallbacks) — closes the PM's CPI look-ahead requirement from the 2026-03-13 sector rotation review
+  - `alpha_research/quant_data/qc.py` — data QC preflight (missing bars vs calendar, stale runs, extreme returns, coverage; end-gap=fail, inception-gap=warn); blocks reviews unless `--force`
+  - `alpha_research/review/` — one-call pipeline (`python -m alpha_research.review run <manifest>`): QC → vectorized weights-contract backtest + equal-weight baseline → walk-forward segments → PSR/DSR/MinBTL/bootstrap CI/regime Sharpe → cost 1×/2×/3× + param ±20/40% → correlation vs active pool → gates → full artifact bundle under run_id → pool registration
+  - `alpha_research/pool/` + `strategy_pool` table in `core/models.py` — lifecycle registry (candidate→paper→live→retired, audited transitions) + CLI
+  - `alpha_research/backtests/runners/sector_rotation.py` — proposal implemented with pre-committed regime rules, XLI added to universe (`config/ticker_universe.py`), late-inception eligibility (XLC 2018, XLRE 2015 get 0 weight until full signal history)
+- **Bugs found & fixed in existing code:** (1) `stats/sharpe_tests.deflated_sharpe_ratio` and `stats/minimum_backtest.minimum_backtest_length` compared annualized Sharpe against an expected-max in z-score units — DSR was ~0 and MinBTL "infinite" for any n_trials>1; fixed per Bailey & López de Prado (scale E[max z] by SR estimator std error). (2) `quant_data/api.py` served stale local cache regardless of requested end — added staleness check (prices 7d, macro 75d) with graceful fallback when the API is down; macro cache now also searches `data/market_data/fred/` and prefers the freshest match; added keyless fredgraph CSV fallback (env lacks pandas_datareader). (3) `ticker_map` never registered `US_ETFS` — XLC/XLI/XLRE etc. were unresolvable.
+- **First real review run (`ee3a7b06`):** sector_rotation_v1, 2012→2026, net Sharpe 0.84 vs EW baseline 0.83, PSR 0.999, DSR 0.912 (<0.95), MinBTL needs 4095d vs 3485 available, survives 3× costs → **verdict REVISE**, state `candidate`. Marginal vs baseline — consistent with the PM's 1–2% alpha expectation; the gates are doing their job.
+- Tests: 10 new test files, 163 targeted tests passing (manifest, PIT, QC, pool + CLI, engine, pipeline, review CLI, api, strategy incl. truncation-invariance look-ahead test). **New-code coverage 94% aggregate, every module ≥88%** (Dev agent pass: pool CLI 0→95%, review CLI 0→91%, api.py 22→88%, minimum_backtest 84→100%). Also fixed `api._resample` monthly alias ("ME" requires pandas≥2.2; env has 2.1.3 — `get_data(frequency="1m")` was broken). Pre-existing failures in optimizer/news/LLM/integration suites untouched (verified present on clean tree).
+- Docs: CLAUDE.md (commands, tree, new "Strategy Pool & One-Call Review" + weights-contract/PIT rules), `docs/repo_layout.md`, new `docs/guides/strategy_pool_workflow.md`
+- Status: COMPLETE (Phase 1 gate WP-1.7 pending: re-run reproducibility from clean checkout + owner sign-off)
+
+### 2026-06-12 — Research philosophy & methodology codified
+- Created `research/RESEARCH_PHILOSOPHY.md` — canonical overview of first principles
+  (backtest-as-null-hypothesis, costs-before-alpha, baseline-first, pre-commitment,
+  economic rationale requirement, process-over-outcome), the lifecycle, the rigor battery
+  and default promotion gates, lessons L1–L7 and where they are now structural, portfolio
+  and risk philosophy (strategies-as-assets, ~10% vol, correlation over count, 60/40 tax
+  tilt), paper/live promotion semantics (paper validates ops, not Sharpe), division of
+  labor (verdicts by pipeline, promotion by human), and standing red flags
+- Synthesized from `next_gen_investment_plan.md`, `EXECUTION_PLAN.md` (D1–D8), the
+  2026-03 PM review cycle, and the seven reviewed proposals
+- Files modified: `research/RESEARCH_PHILOSOPHY.md` (new), `research/README.md` (pointer),
+  `CLAUDE.md`, `docs/guides/strategy_pool_workflow.md` (cross-links)
+- Status: COMPLETE
+
+### 2026-06-12 — Alpha factory: goal-oriented agentic pipeline spec
+- Created `docs/guides/alpha_factory_workflow.md` — build spec for the automated research
+  pipeline (data in → validated low-correlation strategies out)
+- Key design commitments: objective = marginal blended Sharpe per unit of owner review
+  time under factory-wide FDR control; DAC (diversification-adjusted contribution) ranks
+  the hypothesis queue; SENSE→DIAGNOSE→DISPATCH→GATE→LEARN control loop dispatches work
+  against the binding constraint (pool risk > diversification gap > starvation > backlog);
+  stages S0–S7 each with owner agent, schema'd artifact, exit gate, and kill rule
+- Factory-level rigor beyond per-strategy DSR: global experiment_ledger (n_trials
+  machine-computed, not self-declared), iteration cap (3 review runs/version-family) +
+  90-day graveyard cooling as the information barrier, 18-month embargo window checked
+  only on the final review run, quarterly Benjamini–Hochberg FDR pass with a 25%
+  promotion-freeze threshold
+- Throughput sized to the owner (8–15 h/wk): WIP limits per stage, ≤2 promotion
+  decisions/week, backpressure blocks upstream dispatch; promotion authority never
+  automates
+- Build roadmap F-0 (ledger + graveyard + manual conductor, now) → F-1 (Conductor
+  proposes dispatch, embargo support, Cerebro unfrozen for S0/S1 only — D8 revisited) →
+  F-2 (decay→hypothesis feedback, FDR job, factory KPI panel), gated on EXECUTION_PLAN
+  phases
+- Files modified: `docs/guides/alpha_factory_workflow.md` (new), `research/README.md`
+  (cross-link)
+- Status: COMPLETE (spec) — F-0 build items pending owner go-ahead
+### 2026-06-12 — Alpha factory consolidated to v1.0 + F-0 operational scaffolding
+- Rewrote `docs/guides/alpha_factory_workflow.md` as consolidated v1.0: inherited
+  collaboration-model protocols folded into the stage specs (each stage now
+  self-contained: owner, hard-stops, artifacts, exit gate, kill rule); spanning-alpha
+  t-stat promoted to an automated S5 gate in F-1 (replaces pairwise |ρ| as the binding
+  diversification test; |ρ| stays as cheap pre-filter)
+- Created `alpha_research/research/factory/factory_config.yaml` — machine-readable
+  single source of truth for ALL tunables (gates incl. the 11-gate kill thresholds,
+  WIP limits, queue-score weights, rigor params, risk limits, stage definitions); rule:
+  config wins over doc, owner-only edits, agents may never modify gates/risk_limits;
+  manifests may tighten gates, never loosen
+- Created `alpha_research/research/factory/hypothesis_queue.yaml` — seeded with 5 real
+  entries (cta-trend [parked/BLOCKED on futures data], factor-etf-rotation [queued,
+  supersedes equity_momentum per D3], cta-carry [parked], fx-carry-momentum [queued,
+  CONDITIONAL data], quality-safe-haven [queued, carries 2026-03-18 Codex audit notes])
+- Created `alpha_research/research/graveyard/README.md` — kill-entry convention,
+  resurrection protocol, pre-factory kills migrated (vol_scaled_momentum, yield_curve,
+  commodity_momentum, vix_regime)
+- F-0 remaining: `experiment_ledger` table + run_review hook; `.claude/agents/*.md`
+  protocol sync (notebook-canonical → manifest-canonical)
+- Files: `docs/guides/alpha_factory_workflow.md` (rewritten),
+  `research/factory/{factory_config,hypothesis_queue}.yaml` (new),
+  `research/graveyard/README.md` (new)
+- Status: COMPLETE (consolidation) — factory is operable in F-0 manual mode
+
+### 2026-06-13 — Doc consolidation: single source of truth for the investment approach
+- Established `RESEARCH_PHILOSOPHY.md` as the **constitution / single source of truth**
+  (science + art + the why). Added a §0 *Document Canon* mapping the delegated layers
+  (how→`alpha_factory_workflow.md`, numbers→`factory_config.yaml`,
+  commands→`strategy_pool_workflow.md`, build→`EXECUTION_PLAN.md`, history→this tracker,
+  origin→`next_gen_investment_plan.md`) with an explicit precedence rule.
+- Absorbed the canonical **11-gate kill checklist** into `RESEARCH_PHILOSOPHY.md` §4
+  (thresholds mirror `factory_config.yaml`, which wins on disagreement).
+- Archived two superseded docs to `docs/archive/` with tombstones:
+  `QUANT_PLATFORM_VISION.md` (Mar-2026 essay, 0 inbound refs) and
+  `RESEARCH_COLLABORATION_MODEL.md` (pre-factory notebook workflow; 11-gate + capital
+  policy salvaged first). Repointed the one inbound ref in `alpha_factory_workflow.md`.
+- Stamped `next_gen_investment_plan.md` as a historical origin brief (kept, not a live spec).
+- **Salvaged the team collaboration & feedback workflow** (RCM's multi-round challenge
+  loop) into `alpha_factory_workflow.md` §7 (new) — redrawn in S0–S6 stage terms with
+  hard-stops, anti-gaming feedback discipline, and the KB-capture loop; renumbered the
+  doc's Build roadmap→§8 / Failure modes→§9. Added a "Team collaboration & feedback" row
+  to `RESEARCH_PHILOSOPHY.md` §0 Canon (→ factory §7 + `.claude/agents/*.md`).
+- Files: `alpha_research/research/RESEARCH_PHILOSOPHY.md`,
+  `docs/guides/alpha_factory_workflow.md`, `next_gen_investment_plan.md`,
+  `docs/archive/{QUANT_PLATFORM_VISION,RESEARCH_COLLABORATION_MODEL}.md` (moved),
+  `alpha_research/research/STRATEGY_TRACKER.md`
+- Status: COMPLETE
+
+*Last updated: 2026-06-13*

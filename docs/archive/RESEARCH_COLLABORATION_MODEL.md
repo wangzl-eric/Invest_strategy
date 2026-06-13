@@ -1,3 +1,14 @@
+> ⚠️ **ARCHIVED 2026-06-13 — not a live spec.** The pre-factory, notebook-centric
+> workflow here is superseded by `docs/guides/alpha_factory_workflow.md` (the manifest →
+> review pipeline replaces Codex-executed notebooks as the validation path). Its two
+> still-canonical artifacts were absorbed elsewhere: the **11-gate checklist** and
+> **capital policy / risk limits** → `alpha_research/research/RESEARCH_PHILOSOPHY.md`
+> §4/§6–7 and `factory_config.yaml`; the **multi-round challenge loop / team feedback
+> workflow** → `docs/guides/alpha_factory_workflow.md` §7 (redrawn in stage terms).
+> Kept for history only.
+
+---
+
 # Research Collaboration Model
 
 > How the Zelin Investment Research team operates — from idea to implementation.
