@@ -91,19 +91,32 @@ def deflated_sharpe_ratio(
     if n < 10 or n_trials < 1:
         return 0.0
 
-    # Expected maximum Sharpe under the null (Euler-Mascheroni approx)
-    euler_mascheroni = 0.5772156649
-    e_max_sr = np.sqrt(2 * np.log(n_trials)) - (np.log(np.pi) + euler_mascheroni) / (
-        2 * np.sqrt(2 * np.log(n_trials))
-    )
+    # Expected maximum of n_trials standard normals (Euler–Mascheroni
+    # approximation). This is in z-score units, NOT Sharpe units.
+    e_max_z = expected_max_z(n_trials)
 
-    # Annualize the benchmark
-    benchmark_sharpe = e_max_sr
+    # Bailey & López de Prado (2014): the null benchmark Sharpe is the
+    # expected max z scaled by the standard error of the Sharpe estimator
+    # under the null, sigma(SR_hat) ~= sqrt(1/(n-1)) per period.
+    sr_star_period = e_max_z * np.sqrt(1.0 / (n - 1))
+    # probabilistic_sharpe_ratio expects an annualized benchmark
+    benchmark_sharpe = sr_star_period * np.sqrt(252)
 
     return probabilistic_sharpe_ratio(
         returns,
         benchmark_sharpe=benchmark_sharpe,
         risk_free_rate=risk_free_rate,
+    )
+
+
+def expected_max_z(n_trials: int) -> float:
+    """E[max of N iid standard normals], asymptotic approximation."""
+    if n_trials <= 1:
+        return 0.0
+    euler_mascheroni = 0.5772156649
+    return float(
+        np.sqrt(2 * np.log(n_trials))
+        - (np.log(np.pi) + euler_mascheroni) / (2 * np.sqrt(2 * np.log(n_trials)))
     )
 
 

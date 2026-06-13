@@ -19,10 +19,12 @@ Imports use real, component-qualified paths (`from core.config import settings`,
 | `dashboard/backend/` | Dashboard | Active | FastAPI service, IBKR integration, APIs (imports `core.*`) |
 | `dashboard/frontend/` | Dashboard | Active | Dash dashboard for monitoring and controls |
 | `alpha_research/backtests/` | Alpha research | Active | Signal research, walk-forward analysis, stats, reporting |
+| `alpha_research/review/` | Alpha research | Active | One-call review pipeline: manifest → QC → backtest → rigor battery → run artifacts → pool (`python -m alpha_research.review`) |
+| `alpha_research/pool/` | Alpha research | Active | Strategy pool registry: lifecycle state machine + CLI (`python -m alpha_research.pool`) |
 | `alpha_research/portfolio/` | Alpha research | Active | Alpha blending, optimization, risk analytics, rebalancing |
 | `alpha_research/execution/` | Alpha research | Active | Paper/live order flow, broker abstraction, risk checks |
-| `alpha_research/quant_data/` | Alpha research | Active | Data-ingestion code, schemas, connectors, registry, DuckDB helpers |
-| `alpha_research/research/` | Alpha research | Active | Strategy notes, reviews, tracker, framework audits |
+| `alpha_research/quant_data/` | Alpha research | Active | Data-ingestion code, schemas, connectors, registry, DuckDB helpers, PIT layer (`pit.py`), QC preflight (`qc.py`) |
+| `alpha_research/research/` | Alpha research | Active | Strategy notes, reviews, tracker, framework audits; `research/pool/` holds git-versioned strategy manifests |
 | `alpha_research/notebooks/` | Alpha research | Active | Exploratory notebooks and templates |
 | `alpha_research/cerebro/` | Alpha research | Experimental | Research-ingestion and idea-generation pipeline |
 | `book_notes/playground/` | Book notes | Active | Playground study environment (studies, agents, skills) |
@@ -71,7 +73,7 @@ compatibility symlinks; an earlier transition used them but imports are now expl
 ### Backtesting
 
 - `alpha_research/backtests/` is the research framework: signals, portfolio builder, walk-forward analysis, statistics, reporting.
-- `alpha_research/backtests/event_driven/backtest_engine.py` is the canonical event-driven execution adapter around Backtrader. Import it directly (the former `dashboard/backend/backtest_engine.py` shim has been removed).
+- `alpha_research/backtests/event_driven/backtest_engine.py` is the event-driven execution adapter around Backtrader — **validation/execution-sim only** (EXECUTION_PLAN.md decision D7). The primary research path is the weights-contract vectorized engine in `alpha_research/review/engine.py`, driven by strategy manifests (see `docs/guides/strategy_pool_workflow.md`).
 
 ### `dashboard/`
 

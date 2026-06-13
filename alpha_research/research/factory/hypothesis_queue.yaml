@@ -1,0 +1,76 @@
+# Alpha Factory hypothesis queue (S0). Created 2026-06-12.
+# Schema per entry:
+#   id: kebab-case slug
+#   family: trend | carry | momentum | value | defensive | rotation | vol | ...
+#   asset_track: etf_rotation | cta_futures | factor_etf       (D3 tracks only)
+#   mechanism: ONE falsifiable sentence (who loses money / why the edge persists)
+#   predicted_correlation_family: which existing pool cluster it should NOT resemble
+#   data_readiness: READY | CONDITIONAL | BLOCKED   (set by Data agent)
+#   evidence_score: 1-5 (Cerebro, S1 briefing strength; null until briefed)
+#   status: queued | briefing | in_progress | parked | killed
+#   notes: free text (blockers, pointers)
+# Scoring/dispatch rules: factory_config.yaml -> queue_scoring.
+# Seeded 2026-06-12 from EXECUTION_PLAN.md Phase 2 scope + existing proposals.
+
+hypotheses:
+  - id: cta-trend-multispeed-micros
+    family: trend
+    asset_track: cta_futures
+    mechanism: >
+      Slow-moving capital and hedger flows underreact to information; multi-speed
+      EWMAC trend on liquid futures harvests the persistent drift hedgers pay for.
+    predicted_correlation_family: negative-to-low vs long-equity-beta cluster
+    data_readiness: BLOCKED   # roll-adjusted continuous futures (EXECUTION_PLAN WP-2.1-2.3)
+    evidence_score: null
+    status: parked
+    notes: "Unblocks with Databento spike; SG Trend corr sanity check 0.5-0.7 required (WP-2.5)"
+
+  - id: factor-etf-rotation-abs-momentum
+    family: rotation
+    asset_track: factor_etf
+    mechanism: >
+      Factor premia are cyclical and persistent at 6-12m horizons; relative momentum
+      across factor ETFs with an absolute-momentum cash filter rotates toward the
+      currently rewarded premium while sidestepping drawdown regimes.
+    predicted_correlation_family: must clear active-return corr gate vs sector_rotation_v1 (<= 0.6 or redesign)
+    data_readiness: READY     # MTUM/VLUE/QUAL/USMV daily OHLCV free
+    evidence_score: null
+    status: queued
+    notes: "Supersedes equity_momentum_2026-03-13_conditional per D3 (WP-2.6)"
+
+  - id: cta-carry-term-structure
+    family: carry
+    asset_track: cta_futures
+    mechanism: >
+      Futures term-structure slope compensates holders of inventory/insurance risk;
+      harvesting positive carry across contracts earns the premium hedgers concede.
+    predicted_correlation_family: low vs trend (different return driver, same instruments)
+    data_readiness: BLOCKED   # needs unadjusted contract chains (WP-2.2 schema)
+    evidence_score: null
+    status: parked
+    notes: "Owner decides after WP-2.3 term-structure data quality is known"
+
+  - id: fx-carry-momentum-revival
+    family: carry
+    asset_track: cta_futures
+    mechanism: >
+      Interest-differential carry compensates funding-currency crash risk; momentum
+      filter trims the left tail by exiting when the unwind has begun.
+    predicted_correlation_family: low vs equity cluster; crash-correlated with risk-off
+    data_readiness: CONDITIONAL   # spot FX free; non-USD short rates partially covered
+    evidence_score: null
+    status: queued
+    notes: "fx_carry_2026-03-13_conditional proposal exists; PM required non-USD rate series + risk-off overlay"
+
+  - id: quality-safe-haven-overlay
+    family: defensive
+    asset_track: factor_etf
+    mechanism: >
+      Quality assets and funding currencies (JPY/CHF) are bid in stress as carry
+      unwinds and balance-sheet strength gets repriced; a static blend earns the
+      defensive premium without timing.
+    predicted_correlation_family: low-to-negative vs momentum/rotation cluster in stress
+    data_readiness: READY     # QUAL/USMV/FXY/FXF daily OHLCV free
+    evidence_score: 3
+    status: queued
+    notes: "IN REVIEW since 2026-03-18 (Codex audit: REVISE — resolve static-vs-dynamic, OAS credit signal, FX via ETFs)"

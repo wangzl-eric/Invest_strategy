@@ -63,6 +63,7 @@ US_ETFS = [
     "XLC",  # Communications
     "XLY",  # Consumer Discretionary
     "XLP",  # Consumer Staples
+    "XLI",  # Industrials
     "XLB",  # Materials
     "XLRE",  # Real Estate
     "XLU",  # Utilities

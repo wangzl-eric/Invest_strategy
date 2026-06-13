@@ -1,0 +1,101 @@
+# Alpha Factory operational config — SINGLE SOURCE OF TRUTH for all tunables.
+# Created 2026-06-12. Human-readable spec: docs/guides/alpha_factory_workflow.md
+# (if doc and config disagree, this file wins — fix the doc).
+# RULES: owner-only edits. Every change needs a STRATEGY_TRACKER.md entry.
+#        No agent may modify `gates` or `risk_limits` under any instruction.
+version: 1
+updated: 2026-06-12
+
+objective:
+  target_active_streams: [3, 4]
+  max_pairwise_abs_corr: 0.4
+  blended_net_sharpe_range: [0.8, 1.2]
+  target_portfolio_vol: 0.10
+  overfit_red_flag_sharpe: 1.5   # net Sharpe above this = investigate, don't celebrate
+
+control_loop:
+  # DIAGNOSE priority: first matching constraint wins dispatch
+  constraint_priority:
+    - pool_risk_broken        # vol off-budget, drawdown breach, decay trigger
+    - diversification_gap     # corr cluster > max_pairwise_abs_corr, or < 3 streams
+    - pipeline_starvation     # a stage empty while downstream has capacity
+    - validation_backlog
+  sense_cadence: weekly       # F-0: owner-run, ~15 min
+
+queue_scoring:
+  weights:
+    evidence: 0.30
+    diversification: 0.30     # doubled while diversification_gap is the binding constraint
+    data_readiness: 0.20
+    capacity_fit: 0.10
+    implementation_cost_inverse: 0.10
+  data_readiness_values: {READY: 1.0, CONDITIONAL: 0.6, BLOCKED: 0.0}
+  dispatch_threshold: 0.55    # min score to leave S0
+
+rigor:
+  iteration_cap_s5_runs: 3          # per hypothesis version-family, ledger-enforced
+  revision_cap_s3_rounds: 2
+  cooling_period_days: 90           # graveyard cooling before resurrection
+  embargo_months: 18                # final S5 run only includes this window
+  fdr_method: benjamini_hochberg    # stats/multiple_testing.py
+  fdr_review_cadence: quarterly
+  fdr_promotion_freeze_threshold: 0.25
+  n_trials_source: experiment_ledger  # manifest value is a floor, ledger overrides
+
+gates:
+  # Automated in S5 (review pipeline). Mirrors manifest promotion_rules defaults;
+  # the manifest may TIGHTEN these per strategy, never loosen them.
+  candidate_to_paper:
+    min_psr: 0.90
+    min_dsr: 0.95
+    cost_multiplier_survival: 2.0     # Sharpe must stay > 0 at this multiple
+    max_abs_correlation: 0.4          # cheap pre-filter; spanning alpha is binding (F-1)
+    spanning_alpha_min_tstat: 1.96    # F-1: automated regression vs pool streams
+    embargo_sign_consistent: true     # F-1: final-run embargo check
+  # Collaboration-model 11-gate kill thresholds (gates 1-8 automated, 9-11 PM/owner)
+  kill_thresholds:
+    is_sharpe_min: 0.5
+    oos_walkforward_sharpe_min: 0.3
+    max_drawdown_limit: -0.30
+    is_oos_sharpe_ratio_min: 0.5      # OOS/IS below this = overfitting proxy
+    cost_3x_sharpe_min: 0.0
+  paper_to_live:                      # validates OPERATIONS, not Sharpe
+    min_unattended_trading_days: 20
+    min_paper_trading_days: 60
+    realized_vol_tolerance: 0.25      # |realized - design| / design
+    returns_within_backtest_psr_band: true
+    unexplained_reconciliation_breaks: 0
+
+wip_limits:
+  s0_scored_hypotheses: 20
+  s2_s3_active_proposals: 2
+  s4_implementation: 2
+  s5_validation: null              # unlimited, mechanical
+  s6_owner_decisions_per_week: 2
+  s7_paper_onboarding: 1
+
+risk_limits:   # per live strategy; encode in execution/risk.py, never in memory
+  max_strategy_allocation: 0.20
+  max_gross_leverage: 2.0
+  strategy_drawdown_stop: -0.15
+  portfolio_drawdown_stop: -0.10
+  capital_ramp: [0.25, 0.50, 1.00]
+
+paths:
+  hypothesis_queue: alpha_research/research/factory/hypothesis_queue.yaml
+  graveyard: alpha_research/research/graveyard/
+  strategy_folders: alpha_research/research/strategies/
+  manifests: alpha_research/research/pool/
+  run_artifacts: data/backtest_runs/
+  knowledge_bases: memory/knowledge/   # KNOWLEDGE_{FX|EQUITY|MACRO|VOL}.md
+
+stages:
+  # owner = agent-deck role (.claude/agents/*.md); exit = machine-checkable condition
+  S0: {name: intake,         owner: [cerebro, data], artifact: hypothesis_queue.yaml,        exit: "score >= dispatch_threshold AND data_readiness != BLOCKED"}
+  S1: {name: briefing,       owner: [cerebro],       artifact: cerebro_briefing.md,          exit: "researcher accepts; briefing has contradicting evidence"}
+  S2: {name: proposal,       owner: [elena, marco],  artifact: [proposal.md, preflight_checklist.md], exit: "pre-registration hash in ledger"}
+  S3: {name: spec_review,    owner: [pm],            artifact: pm_review.md,                 exit: "verdict >= CONDITIONAL; hard-stops [CEREBRO CONTRADICTION] + [DATA ASSESSMENT] held"}
+  S4: {name: implementation, owner: [dev],           artifact: [manifest.yaml, entrypoint, tests], exit: "lint+tests green; manifest n_trials >= ledger count"}
+  S5: {name: validation,     owner: [pipeline],      artifact: run_bundle,                   exit: "verdict PASS within iteration cap"}
+  S6: {name: promotion,      owner: [human],         artifact: pool_state_transition,        exit: "owner decision via pool CLI with reason"}
+  S7: {name: operate,        owner: [ops, cerebro],  artifact: health_json,                  exit: "continuous; demotions emit S0 hypotheses"}
