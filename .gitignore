@@ -61,6 +61,9 @@ htmlcov/
 # Data lake (generated)
 data_lake/
 
+# Backtest run bundles (generated per-run artifacts; the spec is the manifest)
+data/backtest_runs/
+
 # Claude worktrees
 .claude/worktrees/
 

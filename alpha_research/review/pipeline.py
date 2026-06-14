@@ -14,11 +14,16 @@ Artifact set per run (under ``data/backtest_runs/<run_id>/``):
     daily_returns.parquet   net daily returns
     equity_curve.parquet    equity curve
     stats_battery.json      PSR/DSR/MinBTL/CI/segments/regime stats
+    performance.json        comprehensive return/risk suite (Sortino/Calmar/CAGR/VaR/
+                            CVaR/tail ratio/monthly+yearly tables/alpha-beta vs benchmark)
+    engine_reconciliation.json  vectorized vs independent event-driven cross-check
     sensitivity.json        cost (1x/2x/3x) and parameter (+/-20/40%) grids
     correlations.json       pairwise correlation vs active pool strategies
     gates.json              promotion-gate evaluation
     verdict.md              human-readable verdict summary
     review.json / review.md / quantstats_report.html  (reporting layer)
+    report.md + charts/     auto-generated chart-embedded report (deliverable artifact 02;
+                            re-render into a strategy folder with `review report <run_id>`)
 """
 
 from __future__ import annotations
@@ -30,6 +35,11 @@ from typing import Any, Callable, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
+from alpha_research.backtests.reporting.performance import (
+    compute_performance_metrics,
+    performance_headline,
+)
+from alpha_research.backtests.reporting.report import render_backtest_report
 from alpha_research.backtests.reporting.review import (
     ReviewConfig,
     build_review_bundle_from_run,
@@ -51,6 +61,12 @@ from alpha_research.review.engine import (
     equal_weight_baseline,
     run_weights_backtest,
 )
+from alpha_research.review.ledger import (
+    TrialLedger,
+    derive_hypothesis_id,
+    manifest_spec_hash,
+)
+from alpha_research.review.validation import reconcile_event_driven
 
 logger = logging.getLogger(__name__)
 
@@ -100,16 +116,24 @@ def default_macro_loader(
 
 
 def _stats_battery(
-    returns: pd.Series, manifest: StrategyManifest, sharpe: float
+    returns: pd.Series,
+    manifest: StrategyManifest,
+    sharpe: float,
+    *,
+    n_trials_effective: Optional[int] = None,
 ) -> Dict[str, Any]:
+    # DSR/MinBTL deflate by the *effective* trial count from the ledger
+    # (across spec versions and researchers); the manifest value is only a
+    # floor. Falls back to the manifest when the ledger is unavailable.
+    n_trials = int(n_trials_effective or manifest.n_trials)
     arr = returns.to_numpy(dtype=float)
     psr = float(probabilistic_sharpe_ratio(arr, benchmark_sharpe=0.0))
-    dsr = float(deflated_sharpe_ratio(arr, n_trials=manifest.n_trials))
+    dsr = float(deflated_sharpe_ratio(arr, n_trials=n_trials))
     try:
         ci_low, _, ci_high = sharpe_confidence_interval(arr)
     except Exception:
         ci_low, ci_high = float("nan"), float("nan")
-    min_len = int(minimum_backtest_length(sharpe, n_trials=manifest.n_trials))
+    min_len = int(minimum_backtest_length(sharpe, n_trials=n_trials))
 
     # Walk-forward segment consistency: contiguous folds, per-fold Sharpe.
     segments = []
@@ -148,6 +172,7 @@ def _stats_battery(
         "psr": psr,
         "dsr": dsr,
         "n_trials_declared": manifest.n_trials,
+        "n_trials_effective": n_trials,
         "sharpe_ci_95": [float(ci_low), float(ci_high)],
         "min_backtest_length_days": min_len,
         "n_days": int(len(returns)),
@@ -316,16 +341,26 @@ def _verdict_markdown(
     metrics: Dict[str, float],
     baseline_metrics: Dict[str, float],
     gate_result: Dict[str, Any],
+    trial: Optional[Dict[str, Any]] = None,
 ) -> str:
+    trial = trial or {}
+    n_decl = trial.get("n_trials_declared", manifest.n_trials)
+    n_eff = trial.get("n_trials_effective", manifest.n_trials)
+    trials_note = f"`{n_eff}`" + (
+        f" (manifest floor `{n_decl}`)" if n_eff != n_decl else ""
+    )
     lines = [
         f"# Verdict: {manifest.strategy_id} — {gate_result['verdict']}",
         "",
         f"- run_id: `{run_id}`",
         f"- track: `{manifest.track.value}`",
+        f"- hypothesis: `{trial.get('hypothesis_id', manifest.strategy_id)}` "
+        f"(spec v{trial.get('version', 1)})",
         f"- sharpe (net, 1x costs): `{metrics['sharpe_ratio']:.3f}`",
         f"- equal-weight baseline sharpe: `{baseline_metrics['sharpe_ratio']:.3f}`",
         f"- max drawdown: `{metrics['max_drawdown']:.1%}`",
         f"- annual turnover: `{metrics['annual_turnover']:.1f}x`",
+        f"- DSR n_trials (effective): {trials_note}",
         "",
         "## Gates (candidate → paper, pre-committed in manifest)",
         "",
@@ -360,9 +395,11 @@ def run_review(
     price_loader: Optional[PriceLoader] = None,
     macro_loader: Optional[MacroLoader] = None,
     pool: Optional[PoolRegistry] = None,
+    ledger: Optional[TrialLedger] = None,
     force: bool = False,
     tearsheet: bool = True,
     register: bool = True,
+    use_ledger: bool = True,
 ) -> Dict[str, Any]:
     """Run the full rigor battery for one manifest and register the result.
 
@@ -373,9 +410,15 @@ def run_review(
             synthetic frames; defaults hit the local lake / APIs).
         pool: Injectable ``PoolRegistry`` (tests pass one bound to an
             in-memory session).
+        ledger: Injectable ``TrialLedger``. When omitted it shares the pool's
+            session (so tests stay offline) or opens the application DB.
         force: Proceed past a failing data QC report.
         tearsheet: Generate the QuantStats HTML report.
         register: Register/refresh the pool entry and attach the run.
+        use_ledger: Compute the effective ``n_trials`` from the global trial
+            ledger and append a trial row. The manifest ``n_trials`` is a floor;
+            the ledger is what makes DSR honest across repeated runs (the
+            factory's multiple-testing control, §4.1).
 
     Returns:
         Dict with ``run_id``, ``verdict``, ``metrics``, ``gate_result``,
@@ -392,6 +435,35 @@ def run_review(
     macro_loader = macro_loader or default_macro_loader
     pool = pool or PoolRegistry()
     run_manager = RunManager(output_dir=output_dir)
+
+    # Trial ledger: share the pool's session by default so the ledger write
+    # lands in the same DB (and tests stay offline against the in-memory fixture).
+    if use_ledger and ledger is None:
+        ledger = TrialLedger(session=getattr(pool, "_session", None))
+
+    # Resolve the trial context up front (read-only) so the battery deflates by
+    # the effective n_trials. The row itself is written after artifacts succeed.
+    hypothesis_id = derive_hypothesis_id(manifest.strategy_id)
+    spec_hash = manifest_spec_hash(manifest)
+    trial: Dict[str, Any] = {
+        "available": False,
+        "hypothesis_id": hypothesis_id,
+        "manifest_hash": spec_hash,
+        "version": 1,
+        "is_new_spec": True,
+        "prior_runs_this_version": 0,
+        "n_trials_declared": manifest.n_trials,
+        "n_trials_effective": manifest.n_trials,
+    }
+    if use_ledger:
+        try:
+            trial = ledger.plan_trial(hypothesis_id, spec_hash, manifest.n_trials)
+        except Exception as exc:  # never block a review on ledger I/O
+            logger.warning(
+                "Trial ledger unavailable; falling back to manifest n_trials=%d: %s",
+                manifest.n_trials,
+                exc,
+            )
 
     start = manifest.backtest_start or "2010-01-01"
     end = manifest.backtest_end or str(pd.Timestamp.today().date())
@@ -439,11 +511,27 @@ def run_review(
         shift_bars=shift,
     )
 
+    benchmark_returns = None
+    if manifest.benchmark and manifest.benchmark in prices.columns:
+        benchmark_returns = prices[manifest.benchmark].pct_change().dropna()
+
+    # Comprehensive return/risk metrics (always-on, dependency-light) + an
+    # independent event-driven cross-check of the vectorized engine.
+    performance = compute_performance_metrics(
+        primary.daily_returns, benchmark=benchmark_returns
+    )
+    reconciliation = reconcile_event_driven(
+        weights, universe_prices, cost_bps=manifest.cost_model.bps, shift_bars=shift
+    )
+
     # ------------------------------------------------------------------
     # 4. Battery
     # ------------------------------------------------------------------
     battery = _stats_battery(
-        primary.daily_returns, manifest, primary.metrics["sharpe_ratio"]
+        primary.daily_returns,
+        manifest,
+        primary.metrics["sharpe_ratio"],
+        n_trials_effective=trial["n_trials_effective"],
     )
     cost_rows = _cost_sensitivity(weights, universe_prices, manifest)
     param_rows = _param_sensitivity(weights_fn, universe_prices, macro, manifest)
@@ -468,6 +556,9 @@ def run_review(
     metrics["sharpe_vs_baseline"] = (
         metrics["sharpe_ratio"] - baseline.metrics["sharpe_ratio"]
     )
+    # Surface the richer headline metrics (cagr/sortino/calmar/tail/win/...) alongside
+    # the primary metrics so they land in metrics.json and verdict.md.
+    metrics.update(performance_headline(performance))
     run_manager.save_results(run_id, metrics, primary.equity_curve)
     run_dir = run_manager.get_run_dir(run_id)
     primary.daily_returns.to_frame("returns").to_parquet(
@@ -477,13 +568,29 @@ def run_review(
     run_manager.save_text_artifact(run_id, "manifest_snapshot.yaml", manifest.to_yaml())
     run_manager.save_json_artifact(run_id, "qc_report.json", qc_report.to_dict())
     run_manager.save_json_artifact(run_id, "stats_battery.json", battery)
+    run_manager.save_json_artifact(run_id, "performance.json", performance)
+    run_manager.save_json_artifact(run_id, "engine_reconciliation.json", reconciliation)
     run_manager.save_json_artifact(
         run_id, "sensitivity.json", {"cost": cost_rows, "params": param_rows}
     )
     run_manager.save_json_artifact(run_id, "correlations.json", correlations)
     run_manager.save_json_artifact(run_id, "gates.json", gate_result)
+    run_manager.save_json_artifact(
+        run_id,
+        "trial_ledger.json",
+        {
+            "hypothesis_id": trial["hypothesis_id"],
+            "manifest_hash": trial["manifest_hash"],
+            "version": trial["version"],
+            "is_new_spec": trial.get("is_new_spec", True),
+            "prior_runs_this_version": trial.get("prior_runs_this_version", 0),
+            "n_trials_declared": manifest.n_trials,
+            "n_trials_effective": trial["n_trials_effective"],
+            "ledger_available": trial.get("available", False),
+        },
+    )
     verdict_md = _verdict_markdown(
-        manifest, run_id, metrics, baseline.metrics, gate_result
+        manifest, run_id, metrics, baseline.metrics, gate_result, trial
     )
     run_manager.save_text_artifact(run_id, "verdict.md", verdict_md)
 
@@ -500,9 +607,7 @@ def run_review(
         hypothesis=manifest.description,
         verdict=gate_result["verdict"],
     )
-    benchmark_returns = None
-    if manifest.benchmark and manifest.benchmark in prices.columns:
-        benchmark_returns = prices[manifest.benchmark].pct_change().dropna()
+    # benchmark_returns computed once above (reused for performance + the tear sheet)
     bundle = build_review_bundle_from_run(
         run_manager=run_manager,
         run_id=run_id,
@@ -513,14 +618,46 @@ def run_review(
         title=manifest.name,
     )
 
+    # Auto-render the chart-embedded markdown report (deliverable artifact 02) into the
+    # run bundle. Never fail a completed review on report rendering.
+    report_info: Dict[str, Any] = {"report_path": None}
+    try:
+        report_info = render_backtest_report(
+            run_id, run_root=output_dir, strategy_name=manifest.name
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("Backtest report rendering failed: %s", exc)
+
     # ------------------------------------------------------------------
-    # 6. Pool registration
+    # 6. Pool registration + trial-ledger write
     # ------------------------------------------------------------------
     if register:
         pool.register(manifest, manifest_path=manifest_path)
         pool.attach_run(
             manifest.strategy_id, run_id=run_id, verdict=gate_result["verdict"]
         )
+
+    # The ledger row is the system of record for FDR/iteration-cap control.
+    # Written even when register=False (an exploratory run still consumed a
+    # trial); failures here are logged, never fatal to the review.
+    if use_ledger:
+        try:
+            ledger.record(
+                hypothesis_id=trial["hypothesis_id"],
+                strategy_id=manifest.strategy_id,
+                family=manifest.track.value,
+                version=trial["version"],
+                manifest_hash=trial["manifest_hash"],
+                run_id=run_id,
+                verdict=gate_result["verdict"],
+                sharpe=metrics["sharpe_ratio"],
+                psr=battery["psr"],
+                dsr=battery["dsr"],
+                n_trials_declared=manifest.n_trials,
+                n_trials_effective=trial["n_trials_effective"],
+            )
+        except Exception as exc:  # don't lose a completed review on a write error
+            logger.warning("Failed to append trial-ledger row: %s", exc)
 
     logger.info(
         "Review complete: %s run_id=%s verdict=%s",
@@ -533,10 +670,14 @@ def run_review(
         "verdict": gate_result["verdict"],
         "metrics": metrics,
         "battery": battery,
+        "performance": performance,
+        "reconciliation": reconciliation,
         "gate_result": gate_result,
+        "trial": trial,
         "qc_status": qc_report.status,
         "artifacts": {
             "run_dir": str(run_dir),
+            "report_md": report_info.get("report_path"),
             **bundle["paths"],
         },
     }

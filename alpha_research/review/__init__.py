@@ -16,6 +16,18 @@ from alpha_research.review.engine import (  # noqa: F401
     BacktestResult,
     run_weights_backtest,
 )
+from alpha_research.review.ledger import (  # noqa: F401
+    TrialLedger,
+    derive_hypothesis_id,
+    manifest_spec_hash,
+)
 from alpha_research.review.pipeline import run_review  # noqa: F401
 
-__all__ = ["run_review", "run_weights_backtest", "BacktestResult"]
+__all__ = [
+    "run_review",
+    "run_weights_backtest",
+    "BacktestResult",
+    "TrialLedger",
+    "derive_hypothesis_id",
+    "manifest_spec_hash",
+]

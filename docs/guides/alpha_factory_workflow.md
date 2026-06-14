@@ -297,7 +297,9 @@ or `promotion_rules`.**
 **F-0 (now — owner is the dispatcher; ~15 min/week SENSE/DIAGNOSE):**
 - ✅ S4–S6 machinery (manifest, review pipeline, pool, gates)
 - ✅ `factory_config.yaml`, seeded `hypothesis_queue.yaml`, graveyard convention
-- ☐ `experiment_ledger` table + write-hook in `run_review` (one model + one hook)
+- ✅ `experiment_ledger` table + write-hook in `run_review` — DSR/MinBTL deflate by the
+  ledger-derived effective `n_trials` (manifest = floor); trial identity excludes the
+  entrypoint so the multi-impl cross-check is one trial, not N (`alpha_research/review/ledger.py`)
 - ☐ **Protocol sync:** update `.claude/agents/*.md` — they predate Phase 1 and still
   treat Codex-executed notebooks as the canonical validation path; the manifest →
   review pipeline supersedes it for execution (notebooks remain for exploration).

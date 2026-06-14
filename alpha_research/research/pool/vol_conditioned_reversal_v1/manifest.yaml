@@ -1,0 +1,89 @@
+# Strategy manifest — vol-conditioned sector reversal (Fire 2).
+# !! REJECTED 2026-06-14 — see research/graveyard/vol_conditioned_reversal_2026-06-14.md.
+#    Never registered to the pool. Retained as the reproducible spec for resurrection
+#    (cooling until 2026-09-12). Reversal is negative even gross at the liquid ETF layer.
+# Created 2026-06-14. Spec is canonical here; narrative lives in proposal_path,
+# adversarial review in pm_review.md, owner pre-commitments in OWNER_DECISIONS_2026-06-14.md
+# (all under research/strategies/vol_conditioned_reversal_2026-06-13_PENDING/).
+# Every param below is PRE-COMMITTED from the proposal — do NOT tune post-hoc
+# without bumping n_trials (the ledger deflation follows you).
+schema_version: 1
+strategy_id: vol_conditioned_reversal_v1   # _v1 suffix: ledger strips it so trials accumulate under the hypothesis
+name: Vol-Conditioned Sector Reversal
+track: etf_rotation
+# Dynamic 9->10->11 membership is enforced in the runner by eligibility (a sector
+# enters only once it has real post-inception history); XLRE/XLC get explicit 0
+# weight before their inception (never backfilled). The universe lists the full 11.
+universe:
+  - XLK
+  - XLF
+  - XLE
+  - XLV
+  - XLC
+  - XLY
+  - XLP
+  - XLI
+  - XLB
+  - XLRE
+  - XLU
+entrypoint: alpha_research.backtests.runners.vol_conditioned_reversal:build_weights
+params:
+  reversal_lookback: 5        # Lehmann/Nagel weekly horizon; from literature, not tuned
+  vix_lookback: 60            # trailing strictly-backward median window (free param; battery perturbs)
+  vix_threshold_pct: 50       # gate active iff V(t) > 50th-pct (median) of the trailing window
+  construction: long_short    # dollar-neutral; sum(w)=0, gross normalized
+  gross: 1.0                  # 0.5 long / 0.5 short
+  max_weight: 0.20            # per-name cap (mirrors sector_rotation)
+  no_trade_band: 0.05         # turnover AND $1-commission-floor control
+  n_legs_per_side: 0          # 0 = full proportional-z tilt (baseline); >0 = tails-only variant
+  min_eligible: 5             # below this cross-section -> flat
+  mom_neutralize: false       # OFF in v1 baseline; ON is a declared, trial-counted variant (PM R7)
+rebalance:
+  frequency: weekly
+  execution_convention: t+1_open   # engine applies shift_bars=2 (conservative next-bar)
+cost_model:
+  # ENGINE LIMITATION (implementation_plan §0.2 / §5 D-COST; owner picked "approximate
+  # first"): the proportional model charges a single flat bps on turnover — it has NO
+  # vol-conditional spread and NO max(per-share,$1) order floor. The bps below is a
+  # PLACEHOLDER stressed round-trip proxy; the 1x/2x/3x sweep brackets the real cost.
+  # The ~50-65 bps/yr $1-floor drag at 25k is annotated out-of-engine in the verdict
+  # (PM R2). Extend CostModelSpec/engine with the floor+regime model BEFORE any
+  # promotion past candidate.
+  id: proportional
+  bps: 8.0
+data_requirements:
+  - id: VIXCLS               # FRED VIX close; PIT-shifted (1-day pub lag) -> gate reads availability-dated (PM R5)
+    kind: macro
+    source: fred
+benchmark: SPY
+naive_baseline: equal_weight_11_sectors_weekly
+# D-HISTORY (owner-approved): backfill SPDRs to ~1999 inception — the only lever on
+# the modal MinBTL kill (K9) and the only way to run the Aug-2007 tail diagnostic
+# (PM R10). Until the long pull lands, get_data returns local history (~2012+) and
+# the effective start is data-limited. Pin the EXACT first fully-warmed (trailing-60
+# VIX) date before freezing the spec (PM R6) — do not ship a partially-warmed window.
+backtest_start: "1999-01-01"
+backtest_end: null            # latest common date (refresh VIXCLS to match the ETF end)
+n_trials: 24                  # HONEST FLOOR (proposal §13); feeds DSR; ledger accumulates and only grows (PM R13)
+promotion_rules:
+  min_dsr: 0.95
+  min_psr: 0.90
+  cost_multiplier_survival: 2.0   # Sharpe must stay > 0 at 2x stressed cost (K1)
+  max_abs_correlation: 0.4        # vs sector_rotation_v1 and any active stream (K6)
+  min_paper_trading_days: 60
+  realized_vol_tolerance: 0.25
+proposal_path: alpha_research/research/strategies/vol_conditioned_reversal_2026-06-13_rejected/proposal.md
+author: Zelin (spec), Elena (proposal)
+created: 2026-06-14
+description: >
+  Dollar-neutral cross-sectional 5-day reversal across the 11 SPDR sector ETFs,
+  ACTIVE ONLY when VIX > its trailing-60-day median (else flat ~half the weeks).
+  Long the worst recent sectors, short the best; weekly clock, t+1_open, no-trade
+  band 0.05. Mechanism: liquidity provision to vol-constrained intermediaries in
+  stress (Nagel 2012). COST-BOUND, not alpha-bound: expected NET Sharpe ~0.3-0.5,
+  ~35-45% chance net<=0 at 2x stressed cost. Modal kills: MinBTL on the half-length
+  high-VIX sub-sample (K9) and the 2x cost gate (K1). The EW baseline is long-only
+  and carries the equity premium this market-neutral book does not -> K3 is a
+  portfolio-contribution test (|rho| + marginal Sharpe), NOT a raw Sharpe-vs-EW
+  comparison (PM R9). cost_model bps is a placeholder pending the engine's
+  vol-conditional/$1-floor extension (D-COST).

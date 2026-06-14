@@ -379,4 +379,116 @@ All critical/high bugs fixed as of 2026-03-13. Tests: `tests/unit/test_bugfixes.
   `alpha_research/research/STRATEGY_TRACKER.md`
 - Status: COMPLETE
 
-*Last updated: 2026-06-13*
+### 2026-06-13 — F-0: global trial ledger (experiment_ledger) + run_review write-hook
+- Built the factory's multiple-testing control (alpha_factory_workflow.md §4.1): every
+  review run now writes one immutable row to `experiment_ledger`, and DSR/MinBTL deflate
+  by the **effective** `n_trials` computed from the ledger (the manifest value is only a
+  floor). Closes the first F-0 ☐.
+- Trial identity hashes the **economic spec only** (`manifest_spec_hash` excludes the
+  entrypoint) so the multi-impl robustness cross-check — N independent codings of one
+  idea — counts as ONE trial, not N; re-running an identical spec reuses its version and
+  does not inflate the count. `hypothesis_id` strips trailing `_vN`/`_implX` so trials
+  accumulate across spec versions of the same idea.
+- Wired non-fatally: ledger I/O failures log a warning and fall back to the manifest
+  floor; the ledger shares the pool's DB session by default (tests stay offline). New
+  `trial_ledger.json` artifact + effective-n_trials line in `verdict.md`. Table is created
+  via `Base.metadata.create_all` (no migration).
+- Files: `core/models.py` (ExperimentLedger model), `alpha_research/review/ledger.py`
+  (new — TrialLedger, derive_hypothesis_id, manifest_spec_hash),
+  `alpha_research/review/pipeline.py` (plan_trial → battery → record),
+  `alpha_research/review/__init__.py`, `tests/unit/test_trial_ledger.py` (new, 16 tests),
+  `docs/guides/alpha_factory_workflow.md` (F-0 checkbox)
+- F-0 remaining: `.claude/agents/*.md` protocol sync (notebook-canonical → manifest-canonical)
+- Status: COMPLETE
+
+### 2026-06-14 — vol_conditioned_reversal: S0–S3 spec vetting (idea → vetted spec, dynamic workflow, NO code)
+- Vetted a new idea through stages S0–S3 as a multi-agent dynamic workflow (framing → briefing →
+  proposal → adversarial review → impl plan), stopping before any code. Idea: dollar-neutral
+  cross-sectional **5-day sector-ETF reversal, gated ON only when VIX > its trailing 60-day median**
+  (Nagel-2012 stress-state liquidity provision). New folder
+  `research/strategies/vol_conditioned_reversal_2026-06-13_PENDING/`.
+- **S0** `hypothesis.md`: mechanism falsifiable; NOT a near-duplicate of `vix_regime_2026-03-15_rejected`
+  (distinct mechanism — gate-on-reversal vs VIX-as-exposure-scalar; 90-day cooling moot). Data
+  CONDITIONAL (local ETF history from 2012 not ~1999; VIX cache stale to 2026-02-27; dynamic 9→10→11
+  universe). **S1** `cerebro_briefing.md`: 5 supporting / 8 contradicting (Nagel 2012, Lehmann 1990,
+  Hameed-Kang-Viswanathan 2010 vs Avramov-Chordia-Goyal 2006, Khandani-Lo 2011, Blitz 2024,
+  Chordia-Subrahmanyam-Tong 2014); decay ~50–60%, unconditional reversal ≈ decayed-to-zero; REVISE→4
+  pre-commitments. **S2** `proposal.md` (+3 independent drafts): weekly, t+1_open, no-trade band 0.05,
+  per-name cap 0.20, gross 1.0; expected NET Sharpe ~0.3–0.5 with ~35–45% chance ≤0 at 2× costs; honest
+  n_trials floor = 24. **S3** `pm_review.md`: **CONDITIONAL**, revision_needed=false, 13 requirements
+  (R1–R13) + reordered kill hierarchy (K4 beat-the-21-day-trailing-vol-filter elevated to a HARD kill
+  above K2 — the "is it dressed-up vol-timing" / vix_regime test). `implementation_plan.md`: target
+  runner `backtests/runners/vol_conditioned_reversal.py:build_weights`, manifest skeleton, look-ahead
+  test spec, 7 owner decisions (D-COST blocking: engine lacks $1-floor / vol-conditional spread).
+- Files: all under `research/strategies/vol_conditioned_reversal_2026-06-13_PENDING/` (README,
+  hypothesis, cerebro_briefing, 3 proposal drafts, proposal, pm_review, implementation_plan). No code,
+  no manifest, no trial-ledger row (per scope guard).
+- **Fire 2 (same session, owner authorized GO fail-fast):** implemented the runner
+  `alpha_research/backtests/runners/vol_conditioned_reversal.py:build_weights` (dollar-neutral
+  L/S 5-day reversal, VIX>60d-median binary gate, weekly/t+1_open, no-trade band 0.05, dynamic
+  9→10→11 eligibility, look-ahead-clean), the manifest
+  `alpha_research/research/pool/vol_conditioned_reversal_v1/manifest.yaml` (VIXCLS macro req,
+  n_trials=24, placeholder cost bps=8 per D-COST path b), and
+  `tests/unit/test_vol_conditioned_reversal_strategy.py` (**13/13 pass** offline: truncation-
+  invariance of weights+gate, no-future-VIX, warmup, dollar-neutral/capped/gross-1, gate-off-flat,
+  no-trade-band, dynamic-universe). Lint clean. Owner pre-commitments recorded in
+  `OWNER_DECISIONS_2026-06-14.md`. Pipeline wiring validated end-to-end (manifest→prices-from-lake→
+  macro); the S5 battery is **blocked only by sandbox network** to FRED (VIXCLS via public CSV — no
+  API key needed) and the approved ~1999 price backfill. Run instructions + fail-fast read order
+  (K1 2× cost, K9 MinBTL on the high-VIX sub-sample) in `FIRE2_STATUS.md`.
+- Files: `backtests/runners/vol_conditioned_reversal.py`,
+  `research/pool/vol_conditioned_reversal_v1/manifest.yaml`,
+  `tests/unit/test_vol_conditioned_reversal_strategy.py`, strategy-folder docs (OWNER_DECISIONS,
+  FIRE2_STATUS). No `experiment_ledger` row yet (battery not run).
+- **Preliminary S5 backtest (local data, ^VIX/2012-2026/flat 8bps) → REJECTED.** Real engine
+  outputs: net Sharpe −0.84/−1.46/−2.04 at 1×/2×/3× cost (K1 fail), PSR 0.1%, DSR 0.00,
+  turnover 3045%/yr; high-VIX active sub-sample Sharpe −1.09 (K9 fail); the 21-day trailing-vol
+  gate (−0.62) BEATS the VIX gate (−0.84) → K4 hard fail. Negative **even gross** → reversal
+  has no premium at the liquid sector-ETF layer (5-day sector returns continue, not reverse).
+  Folder renamed `…_rejected`; graveyard entry `graveyard/vol_conditioned_reversal_2026-06-14.md`;
+  lesson **L8** captured in `memory/knowledge/KNOWLEDGE_EQUITY.md`. No `experiment_ledger` row
+  (preliminary bypassed register). Cooling until 2026-09-12. Canonical FRED/1999 run never needed —
+  a negative gross edge cannot be rescued by more history or the $1 floor (which only worsens it).
+- **L8 (new lesson):** Short-term reversal is dead — negative even gross — at the liquid sector-ETF
+  layer; the premium lives in illiquid single names (Avramov-Chordia-Goyal). A VIX/regime gate adds
+  nothing over a cheaper trailing-vol gate (re-confirms L4/L6); 5-day reversal turnover ~3000%/yr
+  even weekly (re-confirms L7).
+- Status: REJECTED (S5 preliminary). Lesson captured; graveyard + KB updated.
+
+### 2026-06-14 — Shared backtester: comprehensive output + event-driven reconciliation
+- Motivated by owner feedback (the research flow must end in a backtest *report*, run on the
+  existing shared infra — a strategy is just a node = `build_weights` runner + manifest plugged
+  into `alpha_research.review.run_review`). Enriched the shared pipeline's output rather than
+  building parallel machinery.
+- New `alpha_research/backtests/reporting/performance.py` — dependency-light, always-on
+  comprehensive return/risk suite (CAGR, Sortino, Calmar, downside dev, VaR/CVaR, skew/kurtosis,
+  tail ratio, max-DD depth+duration+episodes, Ulcer, win rate/profit factor, monthly+yearly
+  tables, and full benchmark block: beta/alpha/IR/up-down capture). New
+  `alpha_research/review/validation.py::reconcile_event_driven` — an independent bar-by-bar replay
+  that cross-checks the vectorized engine (reconciles to <1e-9; flags shift/cost/look-ahead bugs).
+- Wired into `run_review`: writes `performance.json` + `engine_reconciliation.json`, folds the rich
+  headline metrics into `metrics.json`/`verdict.md`. Added `quantstats` + `backtrader` to
+  `requirements.txt` (QuantStats HTML tear sheet was already wired and degrades gracefully; the
+  in-house suite means reviews are complete even without the optional deps).
+- Verified end-to-end on local data (sector_rotation, no-macro): bundle now carries the full suite;
+  reconciliation PASS (vectorized Sharpe 0.846 ≡ event-driven). Tests
+  `tests/unit/test_performance_metrics.py` (8) green; 48 existing review/ledger/CLI tests still pass;
+  lint clean. Docs: `docs/guides/backtest_output_reference.md` (node pattern + output reference);
+  CLAUDE.md review step updated.
+- **Deliverable organization (owner feedback: markdown sprawl — ~12 ad-hoc files/strategy).** Locked a
+  canonical **4-doc structure** per strategy (`00_BRIEFING`, `01_RESEARCH_LOG`, `02_BACKTEST_REPORT`
+  [auto-generated], `03_PM_REVIEW`) + the runner/manifest/machine-bundle in their own homes. Templates
+  in `docs/templates/strategy/`. Built `alpha_research/backtests/reporting/report.py::render_backtest_report`
+  — turns a run bundle into a chart-embedded markdown report (equity+drawdown, rolling Sharpe, monthly
+  heatmap, cost sensitivity, return distribution via matplotlib) + all metric/gate/significance/sensitivity
+  tables + engine reconciliation. Auto-rendered into the bundle by `run_review`; `python -m
+  alpha_research.review report <run_id> --out <folder>` drops `02_BACKTEST_REPORT.md` into a strategy
+  folder. Verified end-to-end on local data (5 charts rendered, report well-formatted). Tests
+  `test_backtest_report.py` (2) green; 55-test new+regression suite green; lint clean.
+- Files: `alpha_research/backtests/reporting/performance.py` (new), `alpha_research/review/validation.py`
+  (new), `alpha_research/backtests/reporting/report.py` (new), `alpha_research/review/pipeline.py`,
+  `alpha_research/review/__main__.py`, `requirements.txt`, `tests/unit/{test_performance_metrics,test_backtest_report}.py`
+  (new), `docs/guides/backtest_output_reference.md` (new), `docs/templates/strategy/*` (new), `CLAUDE.md`
+- Status: COMPLETE
+
+*Last updated: 2026-06-14*

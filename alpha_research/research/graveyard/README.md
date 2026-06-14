@@ -36,3 +36,9 @@ One file per kill: `{hypothesis_id}_{YYYY-MM-DD}.md` containing:
 | yield_curve_steepener | 2026-03-13 | no futures infra (now queued as cta-carry, parked) |
 | commodity_momentum | 2026-03-13 | no futures infra (now folded into cta-trend, parked) |
 | vix_regime_vrp | 2026-03-15 | L4, L5, L6, L7 |
+
+## Factory-era kills (F-0+)
+
+| Hypothesis | Killed | Stage | Lesson |
+|---|---|---|---|
+| vol_conditioned_reversal | 2026-06-14 | S5 (prelim) | L8 — STR is negative even gross at the liquid sector-ETF layer; VIX gate loses to a trailing-vol gate (re-confirms L4/L6/L7). Cooling until 2026-09-12. |

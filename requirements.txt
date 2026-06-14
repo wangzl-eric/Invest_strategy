@@ -29,6 +29,9 @@ scipy>=1.11.0
 cvxpy>=1.4.0
 alphalens-reloaded>=0.4.3  # Cross-sectional factor analysis (IC, quantile returns)
 exchange-calendars>=4.5.0  # Trading-day alignment (NYSE, NASDAQ, LSE calendars)
+quantstats>=0.0.62         # Rich HTML tear sheet in the review bundle (reporting/review.py); degrades gracefully if absent
+backtrader>=1.9.78.123     # Event-driven execution-sim adapter (backtests/event_driven/, D7 validation engine)
+matplotlib>=3.7.0          # Embedded charts in the auto-generated backtest report (reporting/report.py)
 
 # Market data
 yfinance>=0.2.30

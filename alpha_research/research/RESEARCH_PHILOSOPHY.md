@@ -133,6 +133,7 @@ Thresholds mirror `factory_config.yaml` — **config wins on any disagreement**:
 - **L5** Position-sizing overlays face a structural headwind — they must *add* Sharpe (≥ +0.15), not merely reduce drawdown.
 - **L6** Always compare against the simplest alternative (VRP lost to trailing vol on every metric).
 - **L7** Daily rebalancing of regime signals generates catastrophic turnover (2,430%/yr observed).
+- **L8** Short-term reversal is dead at the liquid sector-ETF layer — negative *even gross* (the premium lives in illiquid single names; the liquid cross-section shows short-horizon continuation). A VIX/regime gate adds nothing over a cheaper trailing-vol gate (re-confirms L4/L6). [`vol_conditioned_reversal`, 2026-06-14]
 
 These are now structural where possible: L1/L6 are automated in the review pipeline; L7 is
 why rebalance frequency is a manifest field reviewed against turnover; L2/L5 are PM-review

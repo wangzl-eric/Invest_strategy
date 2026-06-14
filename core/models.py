@@ -585,3 +585,46 @@ class PnLAttribution(Base):
 
     # Trigger type: 'threshold_portfolio', 'threshold_signal', 'manual'
     trigger_type = Column(String, index=True)
+
+
+class ExperimentLedger(Base):
+    """Global trial ledger — the factory's multiple-testing control.
+
+    One row per review run (alpha_factory_workflow.md §4.1). An automated
+    factory is a multiple-testing machine; per-strategy DSR with a self-declared
+    ``n_trials`` is necessary but not sufficient. This table is the system of
+    record for *every* backtest that hit the review pipeline, so the effective
+    ``n_trials`` fed to DSR can be computed from the ledger (across spec
+    versions and researchers) rather than trusted from the manifest — the
+    manifest value is only a floor.
+
+    Trial identity uses ``manifest_hash``: a hash of the *economic* spec
+    (params, universe, rebalance, costs, data, promotion rules) that
+    deliberately EXCLUDES the entrypoint, so N independent implementations of
+    one idea (the multi-impl robustness cross-check) collapse to a single
+    trial instead of inflating the count. ``hypothesis_id`` groups spec
+    versions of the same idea; the quarterly Benjamini–Hochberg FDR pass scans
+    ``psr`` across a ``family``.
+    """
+
+    __tablename__ = "experiment_ledger"
+
+    id = Column(Integer, primary_key=True, index=True)
+    # Idea-level grouping (strategy_id with trailing _vN / _implX stripped).
+    hypothesis_id = Column(String, nullable=False, index=True)
+    # The concrete spec id reviewed (manifest.strategy_id).
+    strategy_id = Column(String, nullable=False, index=True)
+    # Coarse asset family for FDR grouping (manifest.track).
+    family = Column(String, default="", index=True)
+    # Monotonic per hypothesis_id; same manifest_hash reuses its version.
+    version = Column(Integer, nullable=False, default=1)
+    # sha256 of the economic spec (entrypoint excluded — see class docstring).
+    manifest_hash = Column(String, nullable=False, index=True)
+    run_id = Column(String, nullable=False, index=True)
+    verdict = Column(String, default="")  # PASS / REVISE
+    sharpe = Column(Float)  # net Sharpe at 1x costs
+    psr = Column(Float)  # probabilistic Sharpe (feeds the FDR pass)
+    dsr = Column(Float)  # deflated Sharpe at the effective n_trials
+    n_trials_declared = Column(Integer, default=1)  # manifest floor at run time
+    n_trials_effective = Column(Integer, default=1)  # ledger-derived count used
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
