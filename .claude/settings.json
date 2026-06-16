@@ -3,6 +3,18 @@
     "everything-claude-code@everything-claude-code": true
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/scripts/backtest_engine_guardrail.sh\"",
+            "statusMessage": "Checking backtest-engine guardrail"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",

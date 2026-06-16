@@ -278,17 +278,19 @@ print(f"Sharpe: {result['sharpe_ratio']:.2f}")
 - Position tracking and analytics
 - Full Backtrader feature set
 
-#### Core Types (`backtests/core.py`)
+#### Result Types (`review/engine.py`, `backtests/native/results.py`)
+
+The weights-contract engines return a `BacktestResult` with `daily_returns`,
+`equity_curve`, `weights`, and a `metrics` dict; the native engine's result adds
+per-bar `positions`, `turnover`, and the `trades` blotter.
 
 ```python
-@dataclass(frozen=True)
-class BacktestResult:
-    equity: pd.Series      # Cumulative equity curve
-    returns: pd.Series     # Daily net returns
-    positions: pd.Series   # Position time series
-    turnover: pd.Series    # Daily turnover
-    stats: Dict[str, float]  # Performance statistics
-    metadata: Dict[str, str]
+@dataclass
+class BacktestResult:            # alpha_research.review.engine
+    daily_returns: pd.Series
+    equity_curve: pd.DataFrame   # columns: date, portfolio_value
+    weights: pd.DataFrame        # effective (post-shift) weights
+    metrics: Dict[str, float]
 ```
 
 ### 2.4 Portfolio Optimization (`portfolio/`)

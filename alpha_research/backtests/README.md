@@ -1,281 +1,181 @@
 # Backtests
 
-Unified backtesting framework combining signal research, portfolio construction, and backtrader-based execution.
+Backtesting infrastructure for the quant research platform. Two engines share one
+economics — a fast **vectorized** engine for the review battery and a rigorous
+**native** event-driven engine for trustworthy single runs — proven to produce
+identical PnL on the same strategy.
 
-## Directory Structure
+- **Engine comparison & design:** `docs/guides/backtesting_engine_comparison.md`
+- **Native engine how-to:** `docs/guides/native_engine_user_guide.md`
+- **Review output reference:** `docs/guides/backtest_output_reference.md`
+
+---
+
+## The two engines
+
+| | Vectorized | Native (event-driven) |
+|---|---|---|
+| Entry point | `alpha_research.review.engine.run_weights_backtest` | `alpha_research.backtests.native.backtest_weights` / `backtest_strategy` |
+| Model | weight vector × returns | share-based: cash, positions, fills, commission, slippage |
+| Speed | fastest (the review battery's workhorse) | slower (a real bar loop) |
+| Use for | parameter sweeps, the rigor battery, many runs | trusting one result, custom/path-dependent logic, cross-checks |
+| Look-ahead | explicit `shift_bars` | structural — strategy sees only `history[:now]` |
+
+They are **proven PnL-identical** (to ~1e-16) by
+`alpha_research.backtests.equivalence.compare_engines`. The native engine can run
+in two cost modes: `cost_basis="traded"` (realistic — costs on actual fills) or
+`cost_basis="target"` (parity — reproduces the vectorized NET PnL bit-for-bit).
+
+---
+
+## Quick start
+
+**1. Backtest a target-weights frame (the weights contract — most common):**
+
+```python
+from alpha_research.backtests.native import backtest_weights
+
+# weights: DatetimeIndex × ticker target weights. prices: wide close frame.
+result = backtest_weights(weights, prices, cost_bps=5.0, shift_bars=1)
+print(result.summary())
+result.metrics          # sharpe_ratio, max_drawdown, annual_turnover, ...
+result.trades_frame     # fill blotter
+```
+
+**2. Write a strategy (stateful / path-dependent):**
+
+```python
+from alpha_research.backtests.native import Strategy, backtest_strategy
+
+class TopN(Strategy):
+    def on_bar(self, ctx):                     # ctx.history is sliced to [:now]
+        h = ctx.history
+        if len(h) <= 126:
+            return
+        winners = (h.iloc[-1] / h.iloc[-126] - 1).nlargest(2).index
+        ctx.order_target_weights({s: 0.5 for s in winners})
+
+result = backtest_strategy(TopN(), prices, cost_bps=5.0)
+```
+
+`ctx` exposes `now`, `history`, `prices`, `equity`, `positions`,
+`current_weights`, and order helpers `order_target_weights` /
+`order_target_percent` / `order_shares`.
+
+**3. Run a registered strategy through the review pipeline (canonical path):**
+
+```bash
+# manifest → QC → backtest → rigor battery (PSR/DSR/MinBTL/CPCV) → artifacts → pool
+python -m alpha_research.review run alpha_research/research/pool/sector_rotation_v1/manifest.yaml
+```
+
+---
+
+## The weights contract
+
+A strategy produces a `DatetimeIndex × ticker` frame of **unshifted target
+weights**. The engine applies the execution shift; never pre-shift inside a
+strategy. Two semantics matter:
+
+- **`NaN` row** = "no new target — hold the previous one."
+- **`0.0`** = "target cash (liquidate this name)." These are different.
+- **`shift_bars`**: `1` = decide & fill at close *t* (T_CLOSE); `2` = fill next
+  bar (conservative). Maps to the manifest `ExecutionConvention`.
+
+Gross exposure may exceed 1 (leverage allowed); the review pipeline separately
+caps gross at 3× as a sanity gate.
+
+---
+
+## No-look-ahead guarantee
+
+The native engine makes look-ahead **structurally impossible**: each bar the
+strategy receives only `history[:now]` (enforced by a runtime guard), and a
+target set at *t* earns only *forward* returns. Macro/FRED inputs stay
+point-in-time (`quant_data.api.get_data`, `pit=True`). See the comparison guide.
+
+---
+
+## Costs
+
+Commission and slippage reuse `backtests/costs/` (`ProportionalCostModel`,
+`FixedSlippageModel`, market-impact, composite). Pass `cost_bps=` / `slippage_bps=`
+to the one-call API, or a `cost_model` / `slippage_model` to `BacktestEngine`.
+
+---
+
+## Cross-engine equivalence (correctness gate)
+
+```python
+from alpha_research.backtests.equivalence import compare_engines
+report = compare_engines(weights, prices, cost_bps=5.0, shift_bars=1)
+assert report["exact_match"]                 # vectorized == native_parity == reference
+report["native_traded_vs_vectorized"]        # realistic friction gap (expected > 0 with costs)
+```
+
+The review pipeline's `engine_reconciliation.json` runs this check every review.
+
+---
+
+## Supported strategy archetypes
+
+The engine is strategy-agnostic across long-only, long-short market-neutral,
+single-asset timing, pairs, volatility-targeting, risk-off rotation, leverage,
+short-only, calendar/seasonal, stateful stop-loss, and risk parity. Each is
+exercised in `tests/unit/test_strategy_archetypes.py`. Out of scope: intraday /
+tick / limit-order-book microstructure and native option payoffs.
+
+---
+
+## Directory structure
 
 ```
 backtests/
-├── __init__.py
-├── core.py                 # Core utilities
-├── metrics.py              # Performance metrics
-├── walkforward.py          # Walk-forward analysis
-│
-├── strategies/             # Signal definitions (upstream)
-│   ├── __init__.py
-│   ├── signals.py         # Signal classes (Momentum, Carry, MeanReversion, etc.)
-│   └── metadata.py        # Strategy metadata for PnL attribution
-│
-├── forward_pass/           # Dual-tracking: prediction vs actual
-│   ├── __init__.py
-│   ├── trade_tracker.py   # Track signal context per trade
-│   └── comparison.py      # Side-by-side comparison view
-│
-├── builder.py             # Portfolio builder: signals → alpha → weights
-│
-├── event_driven/          # Event-driven framework
-│   ├── __init__.py
-│   ├── engine.py
-│   └── events.py
-│
-└── runners/               # Experiment runners
-    ├── __init__.py
-    ├── momentum.py        # Momentum signal experiment
-    └── portfolio_opt.py   # Portfolio optimization experiment
+├── native/             # Native event-driven engine
+│   ├── objects.py      #   Bar / Order / Trade / Position / Account
+│   ├── broker.py       #   SimBroker: fills, commission, slippage, accounting
+│   ├── strategy.py     #   Strategy + Context + WeightsStrategy/CallableStrategy
+│   ├── engine.py       #   BacktestEngine: point-in-time bar loop
+│   ├── analyzers.py    #   Returns/Sharpe/Drawdown/Trade/Performance/Stats
+│   ├── results.py      #   BacktestResult
+│   └── api.py          #   backtest_weights / backtest_strategy
+├── equivalence.py      # compare_engines / assert_engines_agree / reference_returns
+├── runners/            # Weights-contract entrypoints (fn(prices, macro, params))
+│   ├── sector_rotation.py
+│   └── vol_conditioned_reversal.py
+├── stats/              # PSR, deflated Sharpe, MinBTL, CPCV, bootstrap
+├── costs/              # Transaction-cost & slippage models
+├── strategies/         # Signal library, metadata, triple-barrier labeling
+├── forward_pass/       # Prediction-vs-actual dual tracking & attribution
+├── reporting/          # performance metrics + chart/markdown reports
+├── builder.py          # Higher-level signals → alpha → weights pipeline
+├── walkforward.py      # Walk-forward / grid-search analysis
+└── event_driven/       # Optional Backtrader execution-sim adapter
 ```
 
-## Data Flow
+Related (outside this package): `alpha_research/review/` (the one-call review
+pipeline) and `alpha_research/backtests/strategies/manifest.py` (the manifest
+schema and weights contract).
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              DATA FLOW                                       │
-└─────────────────────────────────────────────────────────────────────────────┘
+---
 
-  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-  │  strategies/ │────►│   builder.py  │────►│  Backtrader  │────►│     IBKR     │
-  │   signals.py │     │    (alpha)   │     │   engine.py  │     │   (live)     │
-  └──────────────┘     └──────────────┘     └──────────────┘     └──────────────┘
-        │                     │                     │
-        │                     │                     │
-   "What to trade"       "How much"            "Execute"
-   (signal scores)       (weights)           (Backtrader)
-```
+## Adding a strategy
 
-### Two Usage Modes
+1. Implement a weights-contract entrypoint under `runners/`:
+   `build_weights(prices, macro, params) -> DataFrame[date × ticker]`.
+2. Create a manifest under `alpha_research/research/pool/<id>/manifest.yaml`.
+3. `python -m alpha_research.review run <manifest>` — runs QC, backtest, the
+   rigor battery, engine reconciliation, and registers the pool entry.
 
-1. **Research Mode** - Pure pandas, no Backtrader dependency:
-```python
-from backtests.strategies import get_signal, MomentumSignal
+Full guide: `docs/guides/strategy_pool_workflow.md`.
 
-signal = get_signal("momentum_60_21")
-sig_values = signal.compute(prices)  # Returns pd.Series
-positions = signal.to_positions(sig_values)
-```
+---
 
-2. **Backtest Mode** - Native Backtrader integration:
-```python
-from backtests.strategies import create_signal_strategy, MomentumSignal
+## Contributing to the engine
 
-# Create Backtrader strategy from signal
-StrategyClass = create_signal_strategy(MomentumSignal, {'lookback': 60, 'skip': 21})
-cerebro.addstrategy(StrategyClass)
-```
-
-3. **Blended Signals** - Combine multiple signals:
-```python
-from backtests.strategies import create_blended_strategy, MomentumSignal, MeanReversionSignal
-
-StrategyClass = create_blended_strategy(
-    [MomentumSignal, MeanReversionSignal],
-    [{'lookback': 60}, {'lookback': 30}],
-    weights=[0.7, 0.3]
-)
-cerebro.addstrategy(StrategyClass)
-```
-
-### Detailed Flow
-
-1. **Signals** (`strategies/signals.py`)
-   - Define trading signals (Momentum, Carry, MeanReversion, etc.)
-   - Each signal: `compute(prices) → signal_scores`
-   - Registry: `get_signal(name)`, `register(signal)`
-
-2. **Portfolio Builder** (`builder.py`)
-   - Load price data for universe
-   - Compute signals via `get_signal()`
-   - Generate alpha scores (blend signals)
-   - Optimize weights (mean-variance, risk-parity, etc.)
-
-3. **Event-Driven Engine** (`event_driven/`)
-   - Backtrader-based backtesting
-   - Consistent logic between backtest and live
-
-4. **Live Execution**
-   - Connect to IBKR via `IBKRClient`
-   - Same signals, same execution logic
-
-## Usage
-
-### 1. Using Signals Directly
-
-```python
-from backtests.strategies import get_signal, list_signals
-
-# List available signals
-print(list_signals())
-
-# Get a signal
-signal = get_signal("momentum_12_1")
-sig_values = signal.compute(prices)
-positions = signal.to_positions(sig_values)
-```
-
-### 2. Using Portfolio Builder
-
-```python
-from backtests.builder import PortfolioBuilder, PortfolioConfig
-
-builder = PortfolioBuilder(
-    PortfolioConfig(
-        universe=["SPY", "TLT", "GLD"],
-        signals=["momentum_60_21", "mean_reversion"],
-        optimization="risk_parity",
-    )
-)
-
-# Load data
-import yfinance as yf
-def loader(ticker, start, end):
-    return yf.download(ticker, start=start, end=end, progress=False)
-
-builder.load_data(loader, "2020-01-01", "2023-12-31")
-builder.compute_signals()
-builder.optimize_weights()
-
-# Run backtest
-results = builder.backtest()
-
-# Get metrics
-metrics = builder.get_portfolio_metrics()
-print(metrics)
-```
-
-### 3. Running Experiments
-
-```bash
-# Momentum signal experiment
-python -m backtests.runners.momentum --ticker SPY --start 2020-01-01 --end 2023-12-31
-
-# Portfolio optimization
-python -m backtests.runners.portfolio_opt --returns_csv returns.csv --max_weight 0.2
-```
-
-## Strategy Metadata
-
-Strategy metadata is defined in `strategies/metadata.py` for PnL attribution:
-
-```python
-from backtests.strategies import SIGNAL_METADATA, get_signal_metadata
-
-metadata = get_signal_metadata("momentum_tech")
-# {
-#   "thesis": "Capture tech sector momentum...",
-#   "factors": ["momentum", "size", "growth"],
-#   "positions": ["AAPL", "MSFT", "GOOGL", ...]
-# }
-```
-
-## Backtest Engine
-
-The canonical event-driven backtest engine is in `workstation/backtests/event_driven/backtest_engine.py`.
-Legacy imports from `backend.backtest_engine` still work through a compatibility shim:
-
-```python
-from workstation.backtests.event_driven.backtest_engine import (
-    BacktestEngine,
-    IBKRDataFeed,
-)
-import backtrader as bt
-
-engine = BacktestEngine(cash=100000, commission=0.001)
-engine.add_data(IBKRDataFeed(dataname=df), name="SPY")
-engine.add_strategy(MyStrategy)
-result = engine.run_backtest()
-```
-
-## Forward Pass: Dual Tracking
-
-Track both **what the strategy predicted** (forward-pass) and **what actually happened** (post-trade) for attribution:
-
-```python
-from backtests.forward_pass import ForwardPassTracker, ComparisonView
-from datetime import datetime
-
-# 1. Track predictions during backtest
-tracker = ForwardPassTracker()
-
-# At each bar, update signals
-tracker.update_signals(datetime.now(), {"momentum": 0.73, "mean_reversion": -0.2})
-
-# When opening a trade
-tracker.open_trade(
-    timestamp=datetime.now(),
-    ticker="AAPL",
-    direction=1,  # Long
-    quantity=100,
-    price=150.25,
-    predicted_return=0.05,  # What we expected
-    confidence=0.8,          # Signal confidence
-)
-
-# When closing the trade
-tracker.close_trade("AAPL", datetime.now(), price=155.00)
-
-# 2. Compare with post-trade attribution
-comparison = ComparisonView(tracker, attribution_df)
-
-# Get summary
-summary = comparison.get_summary()
-# {
-#   "direction_accuracy": 0.65,
-#   "high_confidence_accuracy": 0.78,
-#   "prediction_bias": -0.02,
-#   "factor_impact": {"momentum": 0.015, "value": -0.003},
-# }
-
-# Get per-signal accuracy
-signal_quality = comparison.get_prediction_quality_by_signal()
-
-# Get confusion matrix
-confusion = comparison.get_confusion_matrix()
-
-# Get LLM explanations
-explanations = comparison.get_llm_explanations()
-```
-
-### Key Components
-
-| Component | Purpose |
-|-----------|---------|
-| `SignalHistory` | Time series of signal values at each bar |
-| `TradeRecord` | Single trade with entry/exit context |
-| `ForwardPassTracker` | Aggregator for tracking predictions |
-| `ComparisonView` | Side-by-side comparison with attribution |
-
-### Look-Ahead Bias Prevention
-
-When using forward-pass tracking, ensure signals are computed using only data available at time t:
-
-```python
-# ✅ Correct: Signal uses closed bar data
-signal_value = momentum_signal.compute(prices)  # prices up to t, not t+1
-
-# ❌ Wrong: Using future data
-signal_value = prices['close'].shift(-1)  # Look-ahead!
-```
-
-The tracker records what was available at each timestamp, so you can later verify no look-ahead bias occurred.
-
-### Use Cases
-
-- **Signal quality analysis**: Are high-confidence signals actually more accurate?
-- **Prediction bias detection**: Do we systematically over/under-predict?
-- **Factor contribution**: Which signals drive actual returns?
-- **LLM storytelling**: Compare what we predicted vs what actually happened
-
-## Notes
-
-- All paths use `backtests.` import prefix
-- Signals are registered at module load time
-- Portfolio builder uses backtrader internally for execution
-- Live trading uses the same signals and execution logic
+Engine changes must stay **minimal, backward-compatible, and non-redundant**:
+preserve the weights contract and public signatures, reuse the existing
+cost/stats/calendar utilities, never add a parallel engine, keep no-look-ahead
+intact, and reconcile any behavior change via `equivalence.compare_engines`. A
+project `PreToolUse` hook (`scripts/backtest_engine_guardrail.sh`) surfaces this
+reminder automatically when engine files are edited.

@@ -14,8 +14,6 @@ Covers all 9 critical/high bugs from research/framework_audit/backtesting_audit.
 Bug 10 (Round 2): builder.py rebalance_freq passthrough
 """
 
-from datetime import datetime
-
 import numpy as np
 import pandas as pd
 
@@ -381,32 +379,12 @@ class TestBug8TransactionCosts:
                     row_with["total_return"] <= row_no["total_return"]
                 ), f"Signal {sig_name}: costs should reduce returns"
 
-    def test_event_driven_engine_has_costs(self):
-        """EventDrivenBacktester should apply commission and slippage."""
-        from alpha_research.backtests.event_driven.engine import EventDrivenBacktester
-        from alpha_research.backtests.event_driven.events import OrderEvent
-
-        engine = EventDrivenBacktester(
-            initial_cash=100000, commission_rate=0.001, slippage_bps=10.0
-        )
-
-        order = OrderEvent(
-            type="ORDER",
-            timestamp=datetime(2024, 1, 1),
-            symbol="AAPL",
-            direction="BUY",
-            quantity=100,
-        )
-
-        fill = engine.execute_order(order, market_price=150.0)
-
-        # Slippage: BUY should fill above market price
-        assert fill.fill_price > 150.0, "BUY slippage should increase price"
-        assert fill.commission > 0, "Commission should be non-zero"
-
-        # Verify commission calculation
-        expected_commission = abs(100 * fill.fill_price * 0.001)
-        np.testing.assert_allclose(fill.commission, expected_commission, rtol=1e-10)
+    # NOTE: the old `test_event_driven_engine_has_costs` (which exercised the
+    # retired `event_driven.EventDrivenBacktester` skeleton) was removed when that
+    # skeleton was superseded by the native engine. Its intent — commission and
+    # slippage applied to fills — is covered by
+    # tests/unit/test_native_engine.py::TestBroker.test_commission_charged and
+    # ::test_slippage_worsens_fill_and_is_tracked.
 
 
 # ===========================================================================

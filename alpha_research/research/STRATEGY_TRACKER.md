@@ -491,4 +491,127 @@ All critical/high bugs fixed as of 2026-03-13. Tests: `tests/unit/test_bugfixes.
   (new), `docs/guides/backtest_output_reference.md` (new), `docs/templates/strategy/*` (new), `CLAUDE.md`
 - Status: COMPLETE
 
-*Last updated: 2026-06-14*
+### 2026-06-16 — Professional backtest report (additive deliverable 03)
+- Added `alpha_research/backtests/reporting/professional_report.py::render_professional_report` — a
+  presentation-grade markdown report rendered from the **existing** run bundle, leaving the backtest
+  engine and `02_BACKTEST_REPORT.md`/`report.py` byte-for-byte untouched (additive only). Visualization
+  deck: cumulative return vs. buy-and-hold with buy/sell markers, underwater/drawdown, parameter-stability
+  fan, signal seasonality decomposition (month-of-year / weekday / additive trend+seasonal), return
+  distribution annotated with skewness & excess kurtosis, multi-index beta exposure (S&P 500 / Nasdaq), and
+  rolling + volatility-adjusted (10%-vol-targeted) Sharpe. Adds the signal's mathematical/statistical
+  rationale (LaTeX), a Statistical-Moments formula table, a generated PM review, and a **Methodology &
+  Backtest Rigor** section (horizon, win-probability, data source, engine used, qualitative rigor process).
+  Consumes optional richer artifacts (weights/prices/benchmarks parquet, review.json control) when present
+  and degrades gracefully when absent — always a valid md file.
+- Files: `alpha_research/backtests/reporting/professional_report.py` (new),
+  `alpha_research/backtests/reporting/__init__.py` (export), `tests/unit/test_professional_report.py` (new)
+- Tests: `test_professional_report.py` (4) green — full deck, graceful degradation, missing-bundle raise,
+  and coexistence check proving artifact 02 still renders; existing reporting/performance suite (20) still
+  green; flake8 clean. Engine and existing report unchanged.
+- Status: COMPLETE
+
+### 2026-06-16 — Sample professional report rendered for vol_conditioned_reversal_v1
+- Generated a sample of the new artifact-03 report for the (rejected) `vol_conditioned_reversal_v1`
+  to exercise the deck on a real strategy. Ran the review pipeline offline with a local VIX macro
+  loader (`data/market_data/prices/vix_daily.parquet`, PIT-shifted 1d) since FRED was unreachable;
+  `register=False`/`use_ledger=False` so the graveyard status is untouched. Enriched the run bundle
+  with optional artifacts (effective weights, universe prices, SP500+Nasdaq benchmarks) and rendered
+  all 7 charts. Result confirms the rejection: net Sharpe -0.97, edge vs EW baseline -1.80, PSR 0%,
+  DSR 0, 0/4 walk-forward folds positive, excess kurtosis 12.4 (fat left tail), betas ~0.04-0.05
+  (dollar-neutral as designed).
+- Two fixes to the new report module surfaced while eyeballing the sample (no engine/02 change):
+  (1) buy/sell markers fall back to *gross*-exposure changes when a book is net-flat, so a
+  dollar-neutral long-short still shows rebalance activity; (2) seasonality bar charts use numeric
+  x-positions with explicit tick labels — single-letter month names repeat (M/J/A) and matplotlib
+  was merging same-named categorical bars (12 months were collapsing to 8).
+- Files: `alpha_research/backtests/reporting/professional_report.py` (marker + seasonality fixes);
+  sample output under `alpha_research/research/strategies/vol_conditioned_reversal_2026-06-13_rejected/sample_professional_report/`.
+- Tests: `test_professional_report.py` (4) still green; flake8 clean.
+- Status: COMPLETE
+
+### 2026-06-16 — Wired the professional report (artifact 03) into the review pipeline + CLI
+- `run_review` now auto-generates the professional report on every run: it writes the support frames
+  (`weights.parquet` = effective post-shift weights, `prices.parquet` = universe prices,
+  `benchmarks.parquet` = benchmark price level) and then renders `03_PROFESSIONAL_REPORT.md` + `charts_pro/`
+  into the bundle, in its own defensive try/except (a render failure never fails a completed review, same
+  pattern as artifact 02). The returned `artifacts` dict gains `professional_report_md`.
+- CLI: new `python -m alpha_research.review report-pro <run_id> --out <folder>` subcommand mirrors `report`,
+  dropping `03_PROFESSIONAL_REPORT.md` (+ `charts_pro/`) into a strategy folder. The professional report is
+  ADDITIVE — it does not replace the human-written `03_PM_REVIEW.md` in the locked 4-doc deliverable set.
+- Docs: CLAUDE.md (commands block + review-step description), `docs/guides/backtest_output_reference.md`
+  (bundle table + node checklist) updated. Engine and artifact 02 unchanged.
+- Files: `alpha_research/review/pipeline.py`, `alpha_research/review/__main__.py`, `CLAUDE.md`,
+  `docs/guides/backtest_output_reference.md`, `tests/unit/test_review_pipeline.py` (end-to-end assertions).
+- Tests: full review+reporting suite green (32) — pipeline e2e now asserts the artifact-03 + support frames
+  exist and the report carries the methodology/rigor + PM-review sections; flake8 clean. Verified a live
+  pipeline run on vol_conditioned_reversal_v1 emits both reports + all support frames.
+- Status: COMPLETE
+
+### 2026-06-16 — Native event-driven backtest engine (rigour-first, no look-ahead by construction)
+- New package `alpha_research/backtests/native/` — a share-based, event-driven portfolio backtester built by
+  adapting the strongest ideas from vnpy (immutable event/data objects + gateway-style `SimBroker`),
+  backtrader (`Strategy`/`Broker`/`Analyzer` lifecycle, `order_target_percent`), and qlib (point-in-time
+  discipline, `Account`/`Position` accounting). Complements — does not replace — the vectorized
+  `review.engine.run_weights_backtest` (kept as the fast review path).
+- Rigour over speed, per request: (1) **no look-ahead by construction** — the strategy only ever receives
+  `Context.history` sliced to `[:decision_bar]`, enforced by an always-on runtime guard (not `assert`);
+  targets earn only *forward* returns; execution convention is an explicit `shift_bars`/`execution_delay`
+  param, not a hidden `.shift()`. (2) Realistic fills: commission + slippage reused from `backtests/costs`.
+  (3) Accounting closure: equity always `cash + Σ position value`. (4) Input validation (rejects duplicate
+  timestamps / all-NaN columns). (5) `StatsAnalyzer` wires PSR/DSR/Sharpe-CI from `backtests.stats` in.
+- Reconciliation: native (cost-free, daily rebalance, shift_bars=1 / T_CLOSE) matches `run_weights_backtest`
+  to ~1e-16 per daily return (regression-tested). With frictions or shift_bars=2 it intentionally diverges
+  (drift-correction turnover + decision-to-fill price gap) — realism, not error.
+- Deliverables: `docs/guides/backtesting_engine_comparison.md` (edge learned/adapted + side-by-side) and
+  `docs/guides/native_engine_user_guide.md` (how-to). Tests: `tests/unit/test_native_engine.py` — 60 tests,
+  all green, **98% coverage** of the native package (every module ≥95%); flake8/black/isort clean.
+- Files: new `alpha_research/backtests/native/{objects,broker,strategy,engine,analyzers,results,api,__init__}.py`,
+  two docs guides, one test file. No existing source modified.
+- Status: COMPLETE
+
+### 2026-06-16 — Consolidated the backtest engines + proved exact cross-engine PnL equivalence
+- Goal: one source of truth, with every engine provably producing the *same* PnL on the *same* strategy.
+- **Native parity mode** (`backtest_weights(..., cost_basis="target")`): the event-driven engine now reproduces
+  the vectorized `run_weights_backtest` NET PnL **bit-for-bit** (~4e-16) for any `shift_bars`, incl. costs —
+  it runs the loop frictionless for an independent gross stream, emulates the vectorized shift on the price
+  calendar, then deducts the canonical target-turnover cost (`engine.rebuild_with_returns`). Default
+  `cost_basis="traded"` stays the realistic answer (drift-correction turnover + decision-to-fill gap).
+- **`alpha_research/backtests/equivalence.py`** — the single correctness gate. `compare_engines()` /
+  `assert_engines_agree()` run the same weights through vectorized, native-parity, and an independent
+  `reference_returns` loop and assert they agree to machine precision; the realistic mode's (expected)
+  divergence is reported, never hidden.
+- **De-duplication**: `review/validation.py::reconcile_event_driven` now delegates its hand-rolled bar loop to
+  the shared `equivalence.reference_returns` (3 weights-contract return-engines → vectorized + native, with
+  reconcile a thin wrapper). Review gate behavior/return contract unchanged (tests green).
+- **Import fix**: `backtests/event_driven/__init__.py` now imports the Backtrader adapter lazily, so the
+  lightweight event-driven primitives (and `EventDrivenBacktester`) import without `backtrader` installed.
+- Verified exact agreement (~4e-16) on const / monthly / long-short synthetic schedules AND the real
+  `sector_rotation` runner (identical Sharpe 0.9819). Tests: `tests/unit/test_engine_equivalence.py` (+ parity
+  tests in `test_native_engine.py`) — engine+equivalence coverage **98%** (native pkg + equivalence.py, every
+  file ≥95%). Full unit suite: 621 passed; the 9 remaining failures are pre-existing and in unrelated
+  subsystems (LLM-verdict `researcher` import, dashboard news `NameError`, playground template) — not
+  backtesting-engine code.
+- Files: new `alpha_research/backtests/equivalence.py`, `tests/unit/test_engine_equivalence.py`; edited
+  `native/{api,engine}.py`, `review/validation.py`, `backtests/event_driven/__init__.py`.
+- Status: COMPLETE
+
+### 2026-06-16 — Decommissioned stale/unused/redundant backtests modules
+- After consolidating on vectorized + native engines, removed 6 modules with **zero** code/test/manifest
+  references (verified by reverse-import scan):
+  - `portfolio_backtest.py` — orphan secondary bar loop (no importers); superseded by `review.engine` + native.
+  - `core.py`, `metrics.py` — imported *only* by `portfolio_backtest.py`; dead once it went.
+  - `strategies/backtrader_compat.py` — unused Backtrader shim (framework_audit already flagged it redundant).
+  - `runners/momentum.py`, `runners/portfolio_opt.py` — stale CLI experiment scripts (README-only, not
+    weights-contract runners; the live runners are `sector_rotation` + `vol_conditioned_reversal`).
+- Updated `backtests/README.md` (tree + run instructions point to review pipeline / native engine) and
+  `docs/PROJECT_DOCUMENTATION.md` (result-type section). Full unit suite unchanged: 622 passed, same 9
+  pre-existing unrelated failures. ~1.0k LOC of dead code removed.
+- Follow-up: also retired the `event_driven.EventDrivenBacktester` *skeleton* (`event_driven/engine.py` +
+  `events.py`) — an explicit "skeleton to evolve" superseded by the native engine, used only by one
+  regression test whose intent (commission + slippage on fills) is covered by
+  `test_native_engine.py::TestBroker`. Removed that test, kept the Backtrader adapter (`backtest_engine.py`).
+  Repo-wide scan confirmed no other duplicate source files or tracked junk. Suite: 621 passed (one redundant
+  test dropped), same 9 unrelated failures.
+- Status: COMPLETE
+
+*Last updated: 2026-06-16*

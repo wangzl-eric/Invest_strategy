@@ -5,6 +5,10 @@
 # Dependency-free (numpy/pandas) so it runs every review. The heavyweight Backtrader
 # execution-sim adapter (backtests/event_driven/, D7) remains the path for fill/slippage
 # realism; this is the always-on engine-agreement gate.
+# 2026-06-16: CONSOLIDATED — the independent bar loop now lives in
+# alpha_research.backtests.equivalence.reference_returns (single home, shared by the
+# cross-engine equivalence harness). This function is a thin comparison wrapper over it,
+# so the review gate and the equivalence tests exercise the *same* reference engine.
 """Event-driven cross-check of the vectorized weights-contract backtest."""
 
 from __future__ import annotations
@@ -34,40 +38,17 @@ def reconcile_event_driven(
     Returns a dict with both engines' Sharpe/total-return, the max per-day return
     divergence, and ``reconciled`` (True when the two agree to ~1e-9).
     """
+    from alpha_research.backtests.equivalence import reference_returns
     from alpha_research.review.engine import run_weights_backtest
 
     common = [c for c in weights.columns if c in prices.columns]
     if not common:
         return {"available": False, "reason": "no overlap between weights and prices"}
 
-    px = prices[common].sort_index()
-    rets = px.pct_change()
-    targets = weights[common].sort_index().reindex(px.index).ffill()
-
-    dates = px.index
-    prev_eff = pd.Series(0.0, index=common)
-    ed_dates, ed_daily = [], []
-    started = False
-    for i, d in enumerate(dates):
-        j = i - shift_bars
-        if j < 0:
-            continue
-        eff_row = targets.iloc[j]
-        if not started:
-            if eff_row.isna().all():
-                continue  # warmup: no position yet (mirrors engine's `valid` mask)
-            started = True
-        eff = eff_row.fillna(0.0)
-        gross = float((eff * rets.loc[d].fillna(0.0)).sum())
-        turnover = float((eff - prev_eff).abs().sum())  # day 1: full entry (prev=0)
-        ed_daily.append(gross - turnover * (cost_bps / 10_000.0))
-        ed_dates.append(d)
-        prev_eff = eff
-
-    if len(ed_daily) < 2:
+    ed = reference_returns(weights, prices, cost_bps=cost_bps, shift_bars=shift_bars)
+    if len(ed) < 2:
         return {"available": False, "reason": "too few bars after alignment"}
 
-    ed = pd.Series(ed_daily, index=ed_dates)
     ed_sharpe = (
         float(ed.mean() / ed.std() * np.sqrt(TRADING_DAYS)) if ed.std() > 0 else 0.0
     )
