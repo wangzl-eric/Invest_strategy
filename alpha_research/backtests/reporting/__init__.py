@@ -1,5 +1,8 @@
 """Reporting and validation helpers for backtest review workflows."""
 
+from alpha_research.backtests.reporting.professional_report import (
+    render_professional_report,
+)
 from alpha_research.backtests.reporting.review import (
     ReviewConfig,
     build_review_bundle_from_run,
@@ -18,4 +21,5 @@ __all__ = [
     "build_review_bundle_from_run",
     "render_review_markdown",
     "load_series_from_file",
+    "render_professional_report",
 ]

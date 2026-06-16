@@ -91,8 +91,21 @@ class TestRunReview:
             "review.md",
             "daily_returns.parquet",
             "equity_curve.parquet",
+            # Professional report (artifact 03) + its support frames, auto-rendered.
+            "03_PROFESSIONAL_REPORT.md",
+            "weights.parquet",
+            "prices.parquet",
+            "benchmarks.parquet",
         ):
             assert (run_dir / artifact).exists(), f"missing artifact: {artifact}"
+
+        # Both reports are surfaced in the returned artifact paths.
+        assert result["artifacts"]["professional_report_md"]
+        assert Path(result["artifacts"]["professional_report_md"]).exists()
+        # The professional report carries the rigor/methodology section.
+        pro = (run_dir / "03_PROFESSIONAL_REPORT.md").read_text()
+        assert "## Methodology & Backtest Rigor" in pro
+        assert "## Portfolio Manager Review" in pro
 
         # Pool entry created as candidate with the run attached
         entry = pool.get("pipeline_test")

@@ -5,6 +5,7 @@ Usage (from repo root, PYTHONPATH=.):
     python -m alpha_research.review run alpha_research/research/pool/<id>/manifest.yaml
     python -m alpha_research.review run <manifest> --force --no-tearsheet
     python -m alpha_research.review report <run_id> --out <strategy_folder>
+    python -m alpha_research.review report-pro <run_id> --out <strategy_folder>
 """
 
 from __future__ import annotations
@@ -13,6 +14,9 @@ import argparse
 import json
 import sys
 
+from alpha_research.backtests.reporting.professional_report import (
+    render_professional_report,
+)
 from alpha_research.backtests.reporting.report import render_backtest_report
 from alpha_research.review.pipeline import run_review
 
@@ -55,6 +59,25 @@ def main(argv: list[str] | None = None) -> int:
         "--run-root", default="data/backtest_runs", help="Run artifact root"
     )
 
+    p_pro = sub.add_parser(
+        "report-pro",
+        help="Render the professional, presentation-grade report (artifact 03) from a run bundle",
+    )
+    p_pro.add_argument("run_id", help="Run bundle id under the run root")
+    p_pro.add_argument(
+        "--out",
+        default=None,
+        help="Destination dir (e.g. the strategy folder); default: the run bundle dir",
+    )
+    p_pro.add_argument(
+        "--filename",
+        default="03_PROFESSIONAL_REPORT.md",
+        help="Report filename written into --out",
+    )
+    p_pro.add_argument(
+        "--run-root", default="data/backtest_runs", help="Run artifact root"
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "run":
@@ -85,6 +108,16 @@ def main(argv: list[str] | None = None) -> int:
             run_root=args.run_root,
             out_dir=args.out,
             filename=args.filename if args.out else "report.md",
+        )
+        print(json.dumps(info, indent=2))
+        return 0
+
+    if args.command == "report-pro":
+        info = render_professional_report(
+            args.run_id,
+            run_root=args.run_root,
+            out_dir=args.out,
+            filename=args.filename,
         )
         print(json.dumps(info, indent=2))
         return 0

@@ -65,6 +65,8 @@ Every run emits the same comprehensive set:
 | `verdict.md` | human-readable summary (now includes the rich headline metrics) |
 | `review.json` / `review.md` | standardized review payload |
 | `report.md` + `charts/` | **auto-generated, chart-embedded report** (deliverable artifact `02`): equity+drawdown, rolling Sharpe, monthly heatmap, cost sensitivity, return distribution + all metric/gate/significance/sensitivity tables + engine reconciliation. Re-render into a strategy folder with `python -m alpha_research.review report <run_id> --out <folder>`. |
+| `03_PROFESSIONAL_REPORT.md` + `charts_pro/` | **auto-generated, presentation-grade report** (additive deliverable artifact `03`, alongside — not replacing — the human `03_PM_REVIEW.md`): return-vs-buy&hold with buy/sell markers, drawdown, parameter stability, signal seasonality decomposition, skew/kurtosis distribution, multi-index beta, rolling & vol-adjusted Sharpe + the signal's mathematical rationale, a methodology/rigor section (horizon, win-probability, data source, engine, qualitative process), and a generated PM review. Re-render with `python -m alpha_research.review report-pro <run_id> --out <folder>`. |
+| `weights.parquet`, `prices.parquet`, `benchmarks.parquet` | support frames for the professional report (effective post-shift weights, universe prices, benchmark price level) — additive; absent → that report degrades gracefully |
 | `quantstats_report.html` | **rich visual tear sheet** (when `quantstats` is installed; degrades gracefully otherwise) |
 
 ### `performance.json` groups (computed in-house, always present)
@@ -98,3 +100,6 @@ Every run emits the same comprehensive set:
    `performance.json`, `engine_reconciliation.json` first; promotion stays human).
 4. `python -m alpha_research.review report <run_id> --out <strategy folder>` → drops the
    chart-embedded `02_BACKTEST_REPORT.md` (+ `charts/`) into the strategy folder.
+5. `python -m alpha_research.review report-pro <run_id> --out <strategy folder>` → drops the
+   presentation-grade `03_PROFESSIONAL_REPORT.md` (+ `charts_pro/`) into the strategy folder
+   (both reports also land in the run bundle automatically during `run`).

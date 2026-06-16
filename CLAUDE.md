@@ -30,7 +30,8 @@ make serve-frontend                    # Dash on :8050
 
 # Strategy pool & one-call review (Phase 1, see EXECUTION_PLAN.md)
 python -m alpha_research.review run alpha_research/research/pool/<id>/manifest.yaml
-python -m alpha_research.review report <run_id> --out <strategy_folder>   # chart-embedded 02_BACKTEST_REPORT.md
+python -m alpha_research.review report <run_id> --out <strategy_folder>      # chart-embedded 02_BACKTEST_REPORT.md
+python -m alpha_research.review report-pro <run_id> --out <strategy_folder>  # presentation-grade 03_PROFESSIONAL_REPORT.md
 python -m alpha_research.pool list                                  # pool overview
 python -m alpha_research.pool show <strategy_id>                    # full entry JSON
 python -m alpha_research.pool promote <strategy_id> --to paper --reason "..."
@@ -157,10 +158,14 @@ The mandatory path from idea to pool (philosophy & methodology:
    a **comprehensive performance suite** (`performance.json`: Sortino/Calmar/CAGR/VaR/
    CVaR/tail ratio/monthly+yearly tables/alpha-beta vs benchmark), an **independent
    event-driven reconciliation** of the engine (`engine_reconciliation.json`), and a
-   QuantStats tear sheet when available; emits the artifact bundle under
-   `data/backtest_runs/<run_id>/` and registers the pool entry (`strategy_pool` table).
-   A strategy is just a node (a `build_weights` runner + a manifest) plugged into this one
-   shared backtester — see `docs/guides/backtest_output_reference.md`.
+   QuantStats tear sheet when available; auto-renders both the chart-embedded
+   `02_BACKTEST_REPORT.md` and the presentation-grade `03_PROFESSIONAL_REPORT.md`
+   (return-vs-buy&hold with buy/sell markers, drawdown, parameter stability, seasonality
+   decomposition, skew/kurtosis distribution, multi-index beta, rolling & vol-adjusted
+   Sharpe, signal math, methodology/rigor, and a generated PM review); emits the artifact
+   bundle under `data/backtest_runs/<run_id>/` and registers the pool entry (`strategy_pool`
+   table). A strategy is just a node (a `build_weights` runner + a manifest) plugged into
+   this one shared backtester — see `docs/guides/backtest_output_reference.md`.
 5. Promotion stays human: `python -m alpha_research.pool promote <id> --to paper --reason "..."`.
    Lifecycle: candidate → paper → live → retired (demotions allowed; retired is terminal).
 

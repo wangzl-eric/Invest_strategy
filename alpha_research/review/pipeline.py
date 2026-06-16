@@ -22,8 +22,12 @@ Artifact set per run (under ``data/backtest_runs/<run_id>/``):
     gates.json              promotion-gate evaluation
     verdict.md              human-readable verdict summary
     review.json / review.md / quantstats_report.html  (reporting layer)
+    weights.parquet / prices.parquet / benchmarks.parquet  support frames for the
+                            professional report (effective weights, universe prices, benchmark level)
     report.md + charts/     auto-generated chart-embedded report (deliverable artifact 02;
                             re-render into a strategy folder with `review report <run_id>`)
+    03_PROFESSIONAL_REPORT.md + charts_pro/  presentation-grade report (deliverable artifact 03;
+                            re-render with `review report-pro <run_id> --out <folder>`)
 """
 
 from __future__ import annotations
@@ -38,6 +42,9 @@ import pandas as pd
 from alpha_research.backtests.reporting.performance import (
     compute_performance_metrics,
     performance_headline,
+)
+from alpha_research.backtests.reporting.professional_report import (
+    render_professional_report,
 )
 from alpha_research.backtests.reporting.report import render_backtest_report
 from alpha_research.backtests.reporting.review import (
@@ -618,6 +625,25 @@ def run_review(
         title=manifest.name,
     )
 
+    # Optional richer artifacts consumed by the professional report (artifact 03):
+    # effective post-shift weights, the universe price frame, and the benchmark price
+    # level. Additive bundle files — they unlock the buy/sell markers, buy-and-hold
+    # overlay, and benchmark beta without altering any existing artifact. Never fail a
+    # completed review on writing them.
+    try:
+        primary.weights.reset_index(names="date").to_parquet(
+            run_dir / "weights.parquet", engine="pyarrow"
+        )
+        universe_prices.reset_index(names="date").to_parquet(
+            run_dir / "prices.parquet", engine="pyarrow"
+        )
+        if manifest.benchmark and manifest.benchmark in prices.columns:
+            prices[[manifest.benchmark]].reset_index(names="date").to_parquet(
+                run_dir / "benchmarks.parquet", engine="pyarrow"
+            )
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("Failed to write professional-report support artifacts: %s", exc)
+
     # Auto-render the chart-embedded markdown report (deliverable artifact 02) into the
     # run bundle. Never fail a completed review on report rendering.
     report_info: Dict[str, Any] = {"report_path": None}
@@ -627,6 +653,16 @@ def run_review(
         )
     except Exception as exc:  # pragma: no cover - defensive
         logger.warning("Backtest report rendering failed: %s", exc)
+
+    # Auto-render the professional, presentation-grade report (deliverable artifact 03)
+    # into the run bundle. Additive — sits alongside artifact 02; never fails the review.
+    pro_report_info: Dict[str, Any] = {"report_path": None}
+    try:
+        pro_report_info = render_professional_report(
+            run_id, run_root=output_dir, strategy_name=manifest.name
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("Professional report rendering failed: %s", exc)
 
     # ------------------------------------------------------------------
     # 6. Pool registration + trial-ledger write
@@ -678,6 +714,7 @@ def run_review(
         "artifacts": {
             "run_dir": str(run_dir),
             "report_md": report_info.get("report_path"),
+            "professional_report_md": pro_report_info.get("report_path"),
             **bundle["paths"],
         },
     }
