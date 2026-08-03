@@ -1,0 +1,45 @@
+{
+  "_comment": [
+    "Scoped permissions for the unattended report-digest watcher (scripts/digest_watcher.sh).",
+    "Deliberately NOT --dangerously-skip-permissions: this agent is triggered by whatever PDF",
+    "lands in the Dropbox inbox, and a report is untrusted input. A PDF containing prompt-injection",
+    "text should not be able to reach the network, rewrite source code, or run arbitrary shell.",
+    "Everything here is the minimum the digest pipeline needs. Widen it only deliberately."
+  ],
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "Skill(read-industrial-report)",
+      "Bash(pdftotext:*)",
+      "Bash(python3:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(wc:*)",
+      "Bash(grep:*)",
+      "Bash(test:*)",
+      "Bash(basename:*)",
+      "Bash(dirname:*)"
+    ],
+    "deny": [
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(ssh:*)",
+      "Bash(scp:*)",
+      "Bash(git push:*)",
+      "Bash(gh:*)",
+      "Bash(rm:*)",
+      "Bash(sudo:*)",
+      "Bash(chmod:*)",
+      "Bash(launchctl:*)",
+      "WebFetch",
+      "WebSearch"
+    ]
+  }
+}

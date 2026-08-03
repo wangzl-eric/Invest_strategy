@@ -76,3 +76,8 @@ docker-compose.override.yml
 # Configuration (keep templates, ignore actual secrets)
 config/ibkr_config.yaml
 !config/ibkr_config.yaml.example
+
+# Reports library: keep our own digests/notes in git, keep licensed source PDFs local.
+# The source reports are third-party sell-side research (several stamped "for the
+# exclusive use of ..."), and this repo is public — do not commit them.
+book_notes/playground/reports/**/*.pdf
