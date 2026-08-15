@@ -219,9 +219,13 @@ Use the read-industrial-report skill and follow it exactly, end to end:
   - determine the report's OWN publication date, issuer and topic from its contents (not from the
     file's timestamp and not from today's date). The staged filename is deliberately generic;
   - write the digest to book_notes/playground/reports/<YYYY>/<MM>/<tag>_<issuer>_<topic>_<YYYY-MM-DD>.md;
-  - the source PDF lives outside the repo: COPY it into that same folder under the digest's stem.
-    Do NOT move it and do NOT write anything into ~/Dropbox/report-inbox — the watcher owns that
-    directory and any file appearing there re-triggers the pipeline;
+  - DO NOT try to copy, move or file the source PDF, and do not worry that it is missing from the
+    library — the watcher owns the original and files it for you as soon as you finish. Copying
+    tools are denied to you on purpose. Instead, write the digest's repo-relative path — that one
+    line and nothing else — to:  $workdir/DIGEST_PATH
+    Getting that file right is what puts the PDF beside your digest, so write it before you finish;
+  - do NOT write anything into ~/Dropbox/report-inbox — the watcher owns that directory and any
+    file appearing there re-triggers the pipeline;
   - put scratch files (text extracts, checkers) in $workdir, never in the reports library;
   - if the destination stem already exists you are re-digesting: UPDATE in place. Never _v2;
   - harvest transferable ideas into book_notes/playground/reports/IDEAS.md, scored on the three axes,
@@ -258,6 +262,37 @@ Finish by printing the digest path and a one-line summary."
     wait "$cpid"; rc=$?
   fi
   set -e
+
+  # --- post-run duties the AGENT deliberately cannot perform -------------------
+  # cp and python3 are denied to the agent (an interpreter defeats every other
+  # denial). Both jobs below belong to the watcher anyway: it owns the original
+  # PDF, and it runs as the user with a full toolchain.
+  if [[ "$rc" -eq 0 ]]; then
+    # 1. File the source PDF beside the digest, using the path the agent reported.
+    digest_rel="$(head -1 "$workdir/DIGEST_PATH" 2>/dev/null | tr -d '\r' | sed 's/^ *//;s/ *$//')"
+    case "$digest_rel" in
+      book_notes/playground/reports/*.md)
+        if [[ -f "$REPO/$digest_rel" ]]; then
+          dest="$REPO/${digest_rel%.md}.pdf"
+          if cp "$workdir/report.pdf" "$dest"; then
+            log "  filed source PDF → ${digest_rel%.md}.pdf"
+          else
+            log "  WARNING: could not file source PDF to $dest"; rc=1
+          fi
+        else
+          log "  WARNING: agent reported '$digest_rel' but no such digest exists — PDF not filed"; rc=1
+        fi ;;
+      "")
+        log "  WARNING: agent wrote no DIGEST_PATH — source PDF NOT filed"; rc=1 ;;
+      *)
+        log "  WARNING: DIGEST_PATH '$digest_rel' is outside the reports library — refusing"; rc=1 ;;
+    esac
+
+    # 2. Run the integrity checker the agent cannot.
+    if ! ( cd "$REPO" && python3 scripts/check_ideas_integrity.py ); then
+      log "  WARNING: idea-pool integrity check FAILED after this digest"; rc=1
+    fi
+  fi
 
   rm -rf "$workdir"
 
