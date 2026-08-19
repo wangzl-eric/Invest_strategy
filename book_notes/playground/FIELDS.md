@@ -1,5 +1,13 @@
 # Playground Field Organization
 
+> **RETIRED 2026-08-18.** The `fields/` taxonomy was never populated — nine field READMEs and two
+> empty study indexes, no content in four months. Topic organisation now lives where the content is:
+> concept `domain:` frontmatter in [`brain/concepts/`](brain/concepts/) and the six mechanism families
+> in [`reports/IDEAS.md`](reports/IDEAS.md#how-the-pool-interconnects). A taxonomy imposed ahead of
+> content is a guess about what you will learn; a taxonomy derived from atoms is a description of what
+> you did learn. Kept for reference; do not file new work here.
+
+
 **Purpose:** Organize personal research and exploration by field/topic to maintain clear boundaries and context.
 
 ## Field Structure

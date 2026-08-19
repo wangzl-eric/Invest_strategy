@@ -127,3 +127,24 @@ Several of these are best read together rather than as standalone notes:
   are the method backbone; `crossasset_gs_goal-kickstart` is the applied allocation view — and it
   carries the +0.4 to +0.7 stock/bond correlation reading that the Bridgewater digest explicitly
   asked to be measured.
+
+Each thread above has a counterpart in the pool, where the same material is grouped by *mechanism*
+rather than by report: the threads follow the market story, the families follow the transferable idea.
+Where a thread names a contradiction between two notes, the pool usually resolves it as one idea with
+two sources — an independent arrival, which is itself evidence.
+
+| Thread | Where it lands in the pool |
+|---|---|
+| Japan rates & the yen | [IDEA-005](IDEAS.md#idea-005) issuance mix · [IDEA-006](IDEAS.md#idea-006) mandate rebalancing · [IDEA-011](IDEAS.md#idea-011) official FX reaction · [IDEA-030](IDEAS.md#idea-030) WAM drift · [IDEA-042](IDEAS.md#idea-042) free float |
+| Volatility | [IDEA-031](IDEAS.md#idea-031) direction of travel *(the merge of both halves)* · [IDEA-033](IDEAS.md#idea-033) fair-value residual · [IDEA-020](IDEAS.md#idea-020) convexity inside the factor · [IDEA-045](IDEAS.md#idea-045) priced dispersion |
+| Central-bank balance sheets & swap spreads | [IDEA-014](IDEAS.md#idea-014) reserve satiation · [IDEA-016](IDEAS.md#idea-016) flat is tightening · [IDEA-039](IDEAS.md#idea-039) backstop censors the tail · [IDEA-042](IDEAS.md#idea-042) free-float denominator |
+| Portfolio construction | [IDEA-001](IDEAS.md#idea-001) the correlation position · [IDEA-004](IDEAS.md#idea-004) risk vs capital weights · [IDEA-008](IDEAS.md#idea-008) leverage aversion · [IDEA-025](IDEAS.md#idea-025) where the Sharpe gain is not · [IDEA-037](IDEAS.md#idea-037) TSMOM |
+
+**Navigating the library.** [`IDEAS.md`](IDEAS.md) is the pool and the entry point; its
+[How the pool interconnects](IDEAS.md#how-the-pool-interconnects) section carries the six idea
+families, the six hubs and the edge vocabulary. Every idea links to the digest it came from, every
+digest links back to the ideas it produced, and ideas link outward to the paper notes in
+[`../papers/`](../papers/INDEX.md), the book studies in `../studies/` and the strategy or code in
+`alpha_research/` they bear on. Run `python3 scripts/check_ideas_integrity.py` after editing any of
+it — it fails on a dead link, a broken reciprocal edge, or an ID that resolves but points at the
+wrong entry.

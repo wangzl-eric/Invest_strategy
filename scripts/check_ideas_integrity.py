@@ -49,6 +49,19 @@ def main() -> int:
         )
 
     totals = [int(x) for x in re.findall(r"\| \*\*(\d+)\*\* \|$", text, re.M)]
+    # A regex that matches nothing makes the sortedness test vacuously true. This pattern
+    # is anchored to end-of-line, so adding any column AFTER Total silently disabled the
+    # assertion below (verified 2026-08-18: mutating the table dropped 46 totals to 0 and
+    # the sortedness check still passed). Count first, then compare.
+    if not ids:
+        problems.append(
+            "no idea entries parsed — the '### IDEA-NNN ·' pattern matched nothing"
+        )
+    if len(totals) != len(ids):
+        problems.append(
+            f"summary table: matched {len(totals)} totals for {len(ids)} ideas — the Total "
+            "column regex is end-of-line anchored; a column added after Total breaks it"
+        )
     if totals != sorted(totals, reverse=True):
         problems.append("summary table is not sorted by total, descending")
 
@@ -58,6 +71,67 @@ def main() -> int:
         for m in re.finditer(r"IDEA-\d{3}", f.read_text(encoding="utf-8")):
             if m.group(0) not in known:
                 problems.append(f"{f.relative_to(LIB)} references unknown {m.group(0)}")
+
+    # a cited ID must also MATCH the slug the sentence describes. Checking only
+    # that an ID resolves let nine mis-pointed references survive two passes: the
+    # 2026-08-11 repair claimed a clean slug-vs-ID check while IDEA-005/006 were
+    # still transposed throughout the prose. Where a canonical slug appears on the
+    # same line as an ID, they must agree.
+    id_of_slug = {s: i for i, s in entries}
+    for f in sorted(LIB.rglob("*.md")):
+        for lineno, line in enumerate(f.read_text(encoding="utf-8").split("\n"), 1):
+            if line.startswith("### IDEA-"):
+                continue
+            for slug, sid in id_of_slug.items():
+                pos = line.find(slug)
+                if pos < 0:
+                    continue
+                before = [
+                    m for m in re.finditer(r"IDEA-\d{3}", line) if m.start() < pos
+                ]
+                if before and before[-1].group(0) != sid:
+                    problems.append(
+                        f"{f.relative_to(LIB)}:{lineno} cites {before[-1].group(0)} "
+                        f"but slug '{slug}' is {sid}"
+                    )
+
+    # anchor links must point at their own id: [IDEA-014](#idea-014), never #idea-015
+    for cited, anchor in re.findall(r"\[IDEA-(\d{3})\]\([^)]*#idea-(\d+)\)", text):
+        if cited != anchor:
+            problems.append(f"link [IDEA-{cited}] points at #idea-{anchor}")
+
+    # *related:* edges must be reciprocal, so every relation is navigable both ways
+    rel = {}
+    for chunk in re.split(r"^### IDEA-", text, flags=re.M)[1:]:
+        nnn = chunk[:3]
+        m = re.search(r"^\*related:\*(.*)$", chunk, re.M)
+        rel[nnn] = set(re.findall(r"#idea-(\d{3})", m.group(1))) if m else set()
+    for src, targets in rel.items():
+        for tgt in targets:
+            if src not in rel.get(tgt, set()):
+                problems.append(f"IDEA-{src} -> IDEA-{tgt} is not reciprocated")
+
+    # every relative link in the library must resolve (file, and anchor if given)
+    anchor_ids = {f"idea-{i[-3:]}" for i in ids}
+    for f in sorted(LIB.rglob("*.md")):
+        for lineno, line in enumerate(f.read_text(encoding="utf-8").split("\n"), 1):
+            for _label, target in re.findall(r"\[([^\]]+)\]\(([^)]+)\)", line):
+                if target.startswith(("http://", "https://", "mailto:")):
+                    continue
+                path, _, frag = target.partition("#")
+                if path:
+                    dest = (f.parent / path).resolve()
+                    if not dest.exists():
+                        problems.append(
+                            f"{f.relative_to(LIB)}:{lineno} dead link {target}"
+                        )
+                        continue
+                    if frag and dest.name != "IDEAS.md":
+                        continue
+                if frag.startswith("idea-") and frag not in anchor_ids:
+                    problems.append(
+                        f"{f.relative_to(LIB)}:{lineno} dead anchor {target}"
+                    )
 
     # each entry's three scores must sum to its stated total
     for block in re.split(r"^### ", text, flags=re.M)[1:]:
@@ -80,8 +154,10 @@ def main() -> int:
         for p in problems:
             print(f"  - {p}")
         return 1
+    pairs = sum(len(v) for v in rel.values()) // 2
     print(
-        f"OK    {len(ids)} ideas · IDs unique and anchored · table sorted and complete · all cross-refs resolve"
+        f"OK    {len(ids)} ideas · IDs unique and anchored · table sorted and complete · "
+        f"cross-refs resolve and match their slugs · {pairs} reciprocal relations · links live"
     )
     return 0
 

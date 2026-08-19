@@ -1,5 +1,12 @@
 # IDEAS — the accumulating pool
 
+> **This file is the `mechanism` layer of the [research second brain](../brain/README.md)** — it
+> stays here rather than under `brain/` because 105 digest back-links point at it and the IDs are
+> permanent. Its companions: [`brain/concepts/`](../brain/concepts/) holds the machinery these
+> mechanisms are built from, [`brain/VERDICTS.md`](../brain/VERDICTS.md) holds what we actually tried,
+> and [`brain/INBOX.md`](../brain/INBOX.md) is where an unclassified thought goes. Historical naming:
+> `IDEA-NNN` means *mechanism*.
+
 > **Stage 1 of 3. Nothing here is validated.** This file accumulates ideas and methodologies that
 > make *initial* sense, harvested from the report digests in this library. Selection on economic
 > merit is **stage 2**; validation, backtesting and rigor gates are **stage 3**
@@ -9,7 +16,7 @@
 > kept, with the gap recorded. **Every entry is a transferable mechanism, not a house call** — if it
 > could not be applied to a different market next year, it does not belong here.
 
-*46 ideas from 10 reports, pooled from 57 raw candidates after 10 merges. Generated 2026-08-04; last pass 2026-08-15 (re-digest of `flows_gs_cta-bond-futures_2026-06-09` — one candidate merged into IDEA-028 as a third source, one refinement recorded on IDEA-010; **no new IDs, no renumbering, no score changes**, so the summary table below is unchanged).*
+*46 ideas from 10 reports, pooled from 57 raw candidates after 10 merges. Generated 2026-08-04; last pass 2026-08-15 (re-digest of `flows_gs_cta-bond-futures_2026-06-09` — one candidate merged into [IDEA-028](#idea-028) as a third source, one refinement recorded on [IDEA-010](#idea-010); **no new IDs, no renumbering, no score changes**, so the summary table below is unchanged). Interconnection pass 2026-08-17 — the citation network was made navigable (idea-to-idea, entry-to-digest, digest-to-pool, plus outward links to papers, studies and platform code) and nine mis-pointed cross-references were repaired; again **no score, wording or ranking changes**. See [How the pool interconnects](#how-the-pool-interconnects) to navigate it and the Calibration record for the repair list.*
 
 ---
 
@@ -28,7 +35,10 @@ will weight these deliberately. An idea scoring 5/5/1 is not worse than one scor
 for life; re-scoring changes where it *sorts*, never what it is called. New ideas take the next unused
 number wherever they land. Run `python3 scripts/check_ideas_integrity.py` after any pass that edits
 this file — it verifies IDs are unique and anchored, the table matches and is sorted, scores sum to
-their stated totals, and every cross-reference in the library resolves.
+their stated totals, and every cross-reference in the library resolves. Since 2026-08-17 it also
+verifies that a cited ID **matches the slug the sentence describes** (a resolving ID pointing at the
+wrong entry is the failure that survived two earlier passes), that anchor links point at their own id,
+that `*related:*` edges are reciprocal, and that every relative link in the library is live.
 
 ---
 
@@ -84,6 +94,48 @@ their stated totals, and every cross-reference in the library resolves.
 | [046](#idea-046) | `structure` | **calendar-clustered-trigger-resolution** | 1 | 2 | 2 | **5** |
 
 **Composition:** 9 signal · 17 method · 9 regime · 5 risk · 6 structure
+
+---
+
+<a id="how-the-pool-interconnects"></a>
+## How the pool interconnects
+
+*Every entry carries an edge block under its `*applies to:*` line — `*related:*` to other ideas,
+and where they exist `*literature:*` (paper notes), `*study:*` (book studies) and `*platform:*`
+(the code or strategy the idea bears on). The relations are read off the merge record, the
+deliberate non-merges and the entries' own reasoning; they are not topic similarity.*
+
+**Shape.** 83 reciprocal relations across the 46 ideas — every edge navigable from both ends, every
+idea connected (degree 2–6), and the pool is **one single component**, not clusters of unrelated
+readings. Six hubs carry degree 6: [IDEA-003](#idea-003) (moment matching),
+[IDEA-018](#idea-018) (effective breadth), [IDEA-020](#idea-020) (convexity inside the factor),
+[IDEA-026](#idea-026) (annualise the level claim), [IDEA-031](#idea-031) (direction of travel),
+[IDEA-042](#idea-042) (free float). That these six are all *methods* rather than signals is the same
+finding the calibration record reaches from the score distribution — this pool is long durable
+method and short durable signal.
+
+**Edge kinds.** `contrast` / `not merged` marks ideas deliberately kept apart, and those are the
+load-bearing ones — they record a distinction someone already had to think through
+([IDEA-005](#idea-005) vs [IDEA-006](#idea-006) carry opposite flow signs and must never be
+aggregated; [IDEA-018](#idea-018) vs [IDEA-041](#idea-041) differ by having a code path).
+`tension` marks pairs that discipline each other ([IDEA-042](#idea-042) shrinks
+[IDEA-005](#idea-005)'s own 3–6bp claim to ~1.2bp). Everything else names the direction of
+dependence in plain words.
+
+**The six families.** A reading order for anyone entering the pool cold:
+
+| Family | Ideas | What holds it together |
+|---|---|---|
+| Balanced-portfolio construction | [001](#idea-001) [004](#idea-004) [008](#idea-008) [025](#idea-025) [022](#idea-022) [009](#idea-009) [034](#idea-034) | Every diversification claim is an unpriced correlation position, and the financing leg is where the claimed edge is not |
+| Evaluation statistics & research epistemics | [003](#idea-003) [018](#idea-018) [010](#idea-010) [013](#idea-013) [041](#idea-041) [019](#idea-019) [043](#idea-043) [032](#idea-032) [037](#idea-037) [028](#idea-028) | What a statistic can and cannot see, and how many independent estimates sit behind a number |
+| Central-bank plumbing & free float | [014](#idea-014) [016](#idea-016) [042](#idea-042) [005](#idea-005) [030](#idea-030) [007](#idea-007) [039](#idea-039) [012](#idea-012) | Reserves, issuance calendars and price-insensitive holders — measured in the unit that binds |
+| Carry, convexity & direction of travel | [020](#idea-020) [031](#idea-031) [033](#idea-033) [045](#idea-045) [024](#idea-024) [023](#idea-023) [026](#idea-026) [011](#idea-011) [002](#idea-002) | The same level is two states depending on how you got there, and the tail is bought back inside the factor |
+| Positioning & forced flow | [006](#idea-006) [022](#idea-022) [036](#idea-036) [040](#idea-040) [046](#idea-046) [035](#idea-035) | Who must trade, in which direction, and whether they have room left |
+| Macro measurement wedges | [015](#idea-015) [021](#idea-021) [028](#idea-028) [038](#idea-038) [029](#idea-029) [017](#idea-017) [027](#idea-027) [044](#idea-044) | Split the arithmetic part from the behavioural part before treating a print as information |
+
+*Families are a reading aid, not a partition. [022](#idea-022) (forced flow) and
+[028](#idea-028) (decompose the aggregate) each sit in two, and the `*related:*` edges cross family
+lines freely — which is why the graph is one component rather than six.*
 
 ---
 
@@ -179,8 +231,12 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-001 · stock-bond-correlation-is-the-position-and-the-regime
 
 `regime` · **status: unvalidated** · **15/15**
-*source:* 2012 · factor_bridgewater_risk-parity_2012 , 2026/07 · crossasset_gs_goal-kickstart_2026-07-27 **← independent arrival in 2+ reports**
+*source:* [2012 · factor_bridgewater_risk-parity_2012](2012/factor_bridgewater_risk-parity_2012.md) , [2026/07 · crossasset_gs_goal-kickstart_2026-07-27](2026/07/crossasset_gs_goal-kickstart_2026-07-27.md) **← independent arrival in 2+ reports**
 *applies to:* Any multi-asset portfolio; SPY vs TLT/DGS10 directly, and the same growth-vs-inflation shock test on Bunds/Euro Stoxx, JGBs/TOPIX, Gilts/FTSE. Actionable decision is the CTA/real-asset allocation size.
+<!-- edges -->
+*related:* [IDEA-004](#idea-004) measures it · [IDEA-008](#idea-008) supplies the premium · [IDEA-025](#idea-025) prices the financing leg · [IDEA-009](#idea-009) picks the diversifier when the sign flips · [IDEA-022](#idea-022) who is forced to rebalance
+*literature:* [bridgewater2012](../papers/paper_notes_bridgewater2012.md) · [campbell_shiller_1988](../papers/paper_notes_campbell_shiller_1988.md)
+*study:* [2026-03-29_expected_returns_ilmanen](../studies/2026-03-29_expected_returns_ilmanen/er_book_briefing.md)
 
 **Statement.** The stock-bond correlation sign is both a position you implicitly hold and the regime variable that selects your diversifier. Growth shocks make bonds hedge equities; inflation/discount-rate shocks make them fall together. Any risk-balanced or levered balanced portfolio is economically short that correlation, so size on the prevailing shock mix rather than the historical average, and when the sign turns positive buy diversification elsewhere (trend, real assets, options) instead of rebalancing into bonds.
 
@@ -200,8 +256,10 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-002 · structure-geometry-vs-stated-view
 
 `structure` · **status: unvalidated** · **14/15**
-*source:* 2026/04 · macro_gs_jpy-macro-trading_2026-04-07
+*source:* [2026/04 · macro_gs_jpy-macro-trading_2026-04-07](2026/04/macro_gs_jpy-macro-trading_2026-04-07.md)
 *applies to:* Any packaged derivative sold alongside a directional view: swaption ladders and 1x2s in rates, structured notes and autocallables in equities, range accruals and dual-currency deposits in FX, accumulators in commodities.
+<!-- edges -->
+*related:* [IDEA-020](#idea-020) same convexity geometry, sell side · [IDEA-043](#idea-043) score direction and packaging apart · [IDEA-026](#idea-026) a target with no horizon
 
 **Statement.** Compute a packaged trade's payoff geometry independently of its label before accepting it: maximum profit, the point at which being right stops paying, and the breakeven expressed in the same units as the seller's own volatility statistics. A direction call and the structure sold alongside it are two different products deserving two different credibility scores — the direction is free to publish, the structure is inventory.
 
@@ -221,8 +279,13 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-003 · moments-must-match-the-premium
 
 `method` · **status: unvalidated** · **14/15**
-*source:* 2025/11 · rates_gs_vol-strategies_2025-11-13 , 2026/07 · macro_gs_em-trader_2026-07-30 **← independent arrival in 2+ reports**
+*source:* [2025/11 · rates_gs_vol-strategies_2025-11-13](2025/11/rates_gs_vol-strategies_2025-11-13.md) , [2026/07 · macro_gs_em-trader_2026-07-30](2026/07/macro_gs_em-trader_2026-07-30.md) **← independent arrival in 2+ reports**
 *applies to:* Universal to option-like, convexity and carry structures: rates and equity vol selling, FX and credit carry, EM local receivers, commodity roll. Immediately applicable to this repo's vol_conditioned_reversal_v1 and fx_carry proposals.
+<!-- edges -->
+*related:* [IDEA-014](#idea-014) contrast: stops overpaying vs literal transfer · [IDEA-018](#idea-018) compounds: both inflate the same t-stat · [IDEA-027](#idea-027) when to pay for convexity · [IDEA-020](#idea-020) the payoff it mis-scores · [IDEA-019](#idea-019) the moments a selector must span · [IDEA-034](#idea-034) score the hedge on its tail, not Sharpe
+*literature:* [carr_wu_vrp_2009](../papers/paper_notes_carr_wu_vrp_2009.md) · [cremers_halling_weinbaum_2015](../papers/paper_notes_cremers_halling_weinbaum_2015.md) · [rates_vrp](../papers/paper_notes_rates_vrp.md)
+*study:* [2026-03-29_expected_returns_ilmanen](../studies/2026-03-29_expected_returns_ilmanen/er_book_briefing.md) · [2026-06-24_volatility_workstation](../studies/2026-06-24_volatility_workstation/README.md)
+*platform:* [vol_conditioned_reversal_v1 manifest](../../../alpha_research/research/pool/vol_conditioned_reversal_v1/manifest.yaml) · [fx_carry proposal](../../../alpha_research/research/strategies/fx_carry_2026-03-13_conditional/proposal.md)
 
 **Statement.** A selection or evaluation statistic must span the moments the premium actually lives in. Where the P&L identity is quadratic in a state variable (P&L ~ 0.5*Gamma*S^2*(sigma_IV^2 - sigma_RV^2)*dt) or the premium exists to compensate crash risk, a Sharpe- or carry-to-vol ranking is a category error: it loads onto the very risk being paid for and reports it as skill. Skew, kurtosis and max drawdown become mandatory columns, and the selector itself should be penalised by the higher moments rather than reported next to them.
 
@@ -230,7 +293,7 @@ their stated totals, and every cross-reference in the library resolves.
 
 | | | |
 |---|:--:|---|
-| Economic rationale | **4/5** | Both the compensated risk and the counterparty are named, and the persistence has an incentive account. Held at 4 not 5 because it prevents mis-selection rather than capturing a transfer — contrast IDEA-014, where the fee is literal money you can stop paying. |
+| Economic rationale | **4/5** | Both the compensated risk and the counterparty are named, and the persistence has an incentive account. Held at 4 not 5 because it prevents mis-selection rather than capturing a transfer — contrast [IDEA-014](#idea-014), where the fee is literal money you can stop paying. |
 | Durability | **5/5** | A property of the premium plus an algebraic identity. Cannot be arbitraged; the reporting incentive it guards against is equally permanent. |
 | Testability | **5/5** | Verified present: performance.py computes skew and excess kurtosis; report.py and professional_report.py render them; stats/ ships bootstrap, cross_validation, minimum_backtest, multiple_testing, sharpe_tests. Implementation is a gate, not a data problem. |
 
@@ -242,8 +305,12 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-004 · risk-contribution-vs-capital-weights
 
 `method` · **status: unvalidated** · **14/15**
-*source:* 2012 · factor_bridgewater_risk-parity_2012
+*source:* [2012 · factor_bridgewater_risk-parity_2012](2012/factor_bridgewater_risk-parity_2012.md)
 *applies to:* Any multi-asset portfolio; equally within-sleeve to sector, country or factor weight sets in any market.
+<!-- edges -->
+*related:* [IDEA-001](#idea-001) the correlation it is short · [IDEA-008](#idea-008) the premium for levering it · [IDEA-025](#idea-025) where the Sharpe gain is not
+*literature:* [bridgewater2012](../papers/paper_notes_bridgewater2012.md)
+*platform:* [advanced_analytics.py](../../../alpha_research/portfolio/advanced_analytics.py)
 
 **Statement.** Restate any allocation in risk-contribution space before calling it diversified. When two sleeves differ in volatility by a factor k, capital weights understate the high-vol sleeve's variance share by roughly k-squared; at k=3 a 60/40 split is ~90% equity risk. Applies within sleeves too — sector, country and factor weights lie the same way.
 
@@ -251,7 +318,7 @@ their stated totals, and every cross-reference in the library resolves.
 
 | | | |
 |---|:--:|---|
-| Economic rationale | **4/5** | The arithmetic is an identity and the persistence has a named institutional cause. Not 5 because the identity is a measurement correction, not an edge — the premium for exploiting it is a separate claim (IDEA-008). |
+| Economic rationale | **4/5** | The arithmetic is an identity and the persistence has a named institutional cause. Not 5 because the identity is a measurement correction, not an edge — the premium for exploiting it is a separate claim ([IDEA-008](#idea-008)). |
 | Durability | **5/5** | Variance arithmetic does not decay. IPS and policy-portfolio conventions move on decade timescales; the 60/40 label survived both 2008 and 2022 intact. |
 | Testability | **5/5** | Verified: risk_parity_optimize and risk_contribution exist in alpha_research/portfolio/advanced_analytics.py; SPY, TLT, IEF, GLD all resolve through get_data. TIP and DBC do not resolve — substitute or add one registry line. |
 
@@ -263,8 +330,12 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-005 · issuance-mix-taper-sector-loser
 
 `signal` · **status: unvalidated** · **13/15**
-*source:* 2026/04 · macro_gs_jpy-macro-trading_2026-04-07
+*source:* [2026/04 · macro_gs_jpy-macro-trading_2026-04-07](2026/04/macro_gs_jpy-macro-trading_2026-04-07.md)
 *applies to:* Any sovereign curve with a tapering central bank and tenor-clustered domestic ALM buyers: JGBs, USTs vs QT redemption caps plus quarterly refunding, Gilts vs LDI at the long end, Bunds vs PEPP/APP reinvestment.
+<!-- edges -->
+*related:* [IDEA-006](#idea-006) contrast: OPPOSITE sign, never aggregate · [IDEA-042](#idea-042) tension: sizes the effect down · [IDEA-030](#idea-030) reads the same tenor demand · [IDEA-007](#idea-007) supplies the global duration channel
+*literature:* [litterman1991](../papers/paper_notes_litterman1991.md) · [bernanke2020](../papers/paper_notes_bernanke2020.md)
+*study:* [2026-03-26_fixed_income_relative_value_analysis_2e](../studies/2026-03-26_fixed_income_relative_value_analysis_2e/firv_book_briefing.md)
 
 **Statement.** The published sovereign issuance calendar combined with the central bank's purchase-taper schedule identifies WHICH curve sector underperforms, independent of the level view: the loser is the tenor that simultaneously loses the central bank's price-insensitive bid and lacks a natural mandated buyer, while the tenor whose supply is cut below mandated-buyer absorption capacity gets structurally over-bid. Express as a curve fly shorting the squeezed body, not as an outright duration short.
 
@@ -284,8 +355,10 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-006 · mandate-rebalancing-is-contrarian-flow
 
 `signal` · **status: unvalidated** · **13/15**
-*source:* 2026/07 · flows_gs_japan-savings-jgb-demand_2026-07-20
+*source:* [2026/07 · flows_gs_japan-savings-jgb-demand_2026-07-20](2026/07/flows_gs_japan-savings-jgb-demand_2026-07-20.md)
 *applies to:* JGBs and JPY rates in the source instance; generalises to NBIM, Korean NPS, Dutch/Danish pensions in the EUR long end, and month/quarter-end rebalancing of US 60/40 and target-date mandates.
+<!-- edges -->
+*related:* [IDEA-005](#idea-005) contrast: OPPOSITE sign, never aggregate · [IDEA-022](#idea-022) contrast: forced but trend-following · [IDEA-030](#idea-030) the same holder's tenor drift · [IDEA-035](#idea-035) the demand-side falsification
 
 **Statement.** A large asset owner held to a benchmark band rebalances into whatever fell, so its flow is a decreasing function of the asset's own return — stabilising by construction and mechanically incapable of generating a trend. Sign and rough size are computable ex ante from public target weights, band limits, AUM and observable sleeve returns. Treat it as forecastable liquidity supply, and never aggregate it with momentum-driven flow, which carries the opposite sign convention.
 
@@ -305,8 +378,13 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-007 · term-premium-not-risk-neutral-transmission
 
 `regime` · **status: unvalidated** · **13/15**
-*source:* 2026/07 · macro_gs_em-trader_2026-07-30
+*source:* [2026/07 · macro_gs_em-trader_2026-07-30](2026/07/macro_gs_em-trader_2026-07-30.md)
 *applies to:* EM local 10y, JGBs, Bunds, Gilts, long-dated credit; by extension long-duration equity and infrastructure.
+<!-- edges -->
+*related:* [IDEA-042](#idea-042) free float sets the local beta · [IDEA-005](#idea-005) who withdraws from which sector · [IDEA-024](#idea-024) horizon of the explaining variables
+*literature:* [cochrane_piazzesi_2005](../papers/paper_notes_cochrane_piazzesi_2005.md) · [kimwright2005](../papers/paper_notes_kimwright2005.md) · [duffee2002](../papers/paper_notes_duffee2002.md) · [litterman1991](../papers/paper_notes_litterman1991.md)
+*study:* [2026-03-26_fixed_income_relative_value_analysis_2e](../studies/2026-03-26_fixed_income_relative_value_analysis_2e/firv_book_briefing.md)
+*platform:* [yield_curve proposal](../../../alpha_research/research/strategies/yield_curve_2026-03-13_rejected/proposal.md)
 
 **Statement.** When transmitting a global rate move to any long-dated risky duration, decompose the driver before sizing the response: foreign and EM 10y local yields load on the US term-premium component roughly 3x more strongly than on the risk-neutral expected-policy-path component (median t of 6-8 vs about 2 across 16 EMs). A 25bp UST selloff driven by term premium is a materially different event for foreign long ends than the same 25bp driven by repricing the Fed path.
 
@@ -326,8 +404,12 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-008 · leverage-aversion-premium
 
 `structure` · **status: unvalidated** · **13/15**
-*source:* 2012 · factor_bridgewater_risk-parity_2012
+*source:* [2012 · factor_bridgewater_risk-parity_2012](2012/factor_bridgewater_risk-parity_2012.md)
 *applies to:* Cross-asset (levered bonds vs equities) and the within-equity low-beta version; generalizes to any market with a structurally leverage-constrained investor base.
+<!-- edges -->
+*related:* [IDEA-004](#idea-004) the risk-weight identity · [IDEA-025](#idea-025) not merged: return source vs diagnostic · [IDEA-001](#idea-001) the correlation the leverage rides on
+*literature:* [frazzini_pedersen_bab_2014](../papers/paper_notes_frazzini_pedersen_bab_2014.md)
+*study:* [2026-03-29_expected_returns_ilmanen](../studies/2026-03-29_expected_returns_ilmanen/er_book_briefing.md)
 
 **Statement.** Prefer levering a high-Sharpe low-volatility asset up to your target volatility over holding a lower-Sharpe high-volatility asset at 1x. The compensation is not for bearing volatility, it is for being willing and able to borrow — so how you reach target vol is a return source, not plumbing.
 
@@ -347,8 +429,13 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-009 · hedge-efficacy-scales-with-crash-duration
 
 `regime` · **status: unvalidated** · **13/15**
-*source:* 2013 · factor_aqr_managed-futures_2013
+*source:* [2013 · factor_aqr_managed-futures_2013](2013/factor_aqr_managed-futures_2013.md)
 *applies to:* Any trend or MA overlay used as a portfolio hedge; equally applicable to vol-targeting and risk-parity de-risking rules, which share the latency property.
+<!-- edges -->
+*related:* [IDEA-034](#idea-034) why a bleeding hedge gets cut · [IDEA-037](#idea-037) the rule whose latency this bounds · [IDEA-018](#idea-018) hedge value and independence in tension · [IDEA-001](#idea-001) the correlation regime that makes a diversifier necessary
+*literature:* [hurst2013](../papers/paper_notes_hurst2013.md) · [daniel_moskowitz_crashes_2016](../papers/paper_notes_daniel_moskowitz_crashes_2016.md)
+*study:* [2026-03-29_expected_returns_ilmanen](../studies/2026-03-29_expected_returns_ilmanen/er_book_briefing.md)
+*platform:* [vol_scaled_momentum proposal](../../../alpha_research/research/strategies/vol_scaled_momentum_2026-03-13_rejected/proposal.md)
 
 **Statement.** A trend or moving-average rule hedges only those drawdowns lasting longer than its signal latency. All three canonical crisis wins (1929-32, 2000-02, 2008) are multi-month-to-multi-year declines; a 12-month lookback cannot flip short inside a one-month crash. The right question about any trend allocation is not 'does it have crisis alpha' but 'does its lookback match the duration of the crisis I am hedging' — a design parameter, not an empirical discovery.
 
@@ -368,8 +455,13 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-010 · publication-date-ends-the-in-sample
 
 `risk` · **status: unvalidated** · **13/15**
-*source:* 2013 · factor_aqr_managed-futures_2013
+*source:* [2013 · factor_aqr_managed-futures_2013](2013/factor_aqr_managed-futures_2013.md)
 *applies to:* Every externally sourced strategy — sell-side, academic, asset-manager — and by extension every internal backtest with full-sample parameter choice.
+<!-- edges -->
+*related:* [IDEA-013](#idea-013) same note, fee side · [IDEA-043](#idea-043) publisher-level version · [IDEA-037](#idea-037) the strategy it dates · [IDEA-018](#idea-018) the other inflator of the same statistic
+*literature:* [baltussen2021](../papers/paper_notes_baltussen2021.md) · [geczy2017](../papers/paper_notes_geczy2017.md)
+*study:* [2026-06-17_advances_financial_ml](../studies/2026-06-17_advances_financial_ml/study_hypotheses.md)
+*platform:* [manifest.py — no publication_date field](../../../alpha_research/backtests/strategies/manifest.py) · [pit.py — the series-level analogue](../../../alpha_research/quant_data/pit.py)
 
 **Statement.** Treat the publication date of any vendor-authored strategy note as the exact end of its in-sample period, and size on post-publication evidence only — or, absent enough post-publication history, haircut the reported Sharpe by roughly a third to a half before it enters any allocation. Extend the same rule to internal backtests whose parameters were chosen while looking at the full sample.
 
@@ -391,8 +483,12 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-011 · official-fx-reaction-function-overlay
 
 `risk` · **status: unvalidated** · **13/15**
-*source:* 2026/04 · macro_gs_jpy-macro-trading_2026-04-07
+*source:* [2026/04 · macro_gs_jpy-macro-trading_2026-04-07](2026/04/macro_gs_jpy-macro-trading_2026-04-07.md)
 *applies to:* Any managed or defended currency with a published or inferable official reaction function — USD/JPY (MoF), CHF (SNB), CNH (PBoC fixing band), EM carry pairs with reserve-financed defence; transposable to commodity price bands and circuit-breaker markets.
+<!-- edges -->
+*related:* [IDEA-031](#idea-031) trigger is direction of travel, not level · [IDEA-023](#idea-023) the funder whose vol it manages
+*literature:* [fama1984](../papers/paper_notes_fama1984.md) · [obstfeld2005](../papers/paper_notes_obstfeld2005.md) · [gopinath2021](../papers/paper_notes_gopinath2021.md)
+*study:* [2026-03-27_global_macro_trading_gliner](../studies/2026-03-27_global_macro_trading_gliner/gmt_book_briefing.md)
 
 **Statement.** Where an official body defends a currency, the tradable edge is not direction but the authority's reaction function, which is triggered by realized volatility and momentum extremes rather than by a price level. Convert it into a position-management overlay on the carry trade: cut or flatten at a momentum extreme (14-day RSI > 80), exit on the shock day (a daily range several times normal), and re-enter roughly one month after the intervention once the pair has bottomed and rebounded.
 
@@ -412,8 +508,11 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-012 · trailing-window-buffer-undersizing
 
 `risk` · **status: unvalidated** · **13/15**
-*source:* 2026/05 · rates_gs_fed-balance-sheet_2026-05-21
+*source:* [2026/05 · rates_gs_fed-balance-sheet_2026-05-21](2026/05/rates_gs_fed-balance-sheet_2026-05-21.md)
 *applies to:* Universal — any buffer, margin, VaR limit, stop-loss or 'excess capacity' claim; any sell-side or regulatory estimate of how much a system can absorb.
+<!-- edges -->
+*related:* [IDEA-039](#idea-039) the backstop that censored the window · [IDEA-014](#idea-014) the crossing the buffer must survive
+*study:* [2026-06-17_advances_financial_ml](../studies/2026-06-17_advances_financial_ml/study_hypotheses.md)
 
 **Statement.** A tail buffer calibrated on a trailing window that excludes the regime it must survive is systematically undersized — here a buffer matched the trailing-12-month 95th percentile (\$211bn) rather than the full post-2019 p95 (\$290bn, +45%), with p99 at \$414bn and observed max \$568bn. Second and less obvious: the sign of the correction flips with an unstated framing choice — a buffer read as releasable capacity adds headroom, read as a floor that must survive a shock it subtracts. Force the framing to be stated before accepting any capacity number.
 
@@ -433,8 +532,11 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-013 · mechanical-replicant-as-fee-and-skill-audit
 
 `method` · **status: unvalidated** · **12/15**
-*source:* 2013 · factor_aqr_managed-futures_2013
+*source:* [2013 · factor_aqr_managed-futures_2013](2013/factor_aqr_managed-futures_2013.md)
 *applies to:* Any active manager, hedge-fund index, smart-beta product or internal strategy: CTA/managed futures, equity long-short vs market/value/momentum, risk premia products, multi-strategy vehicles.
+<!-- edges -->
+*related:* [IDEA-037](#idea-037) the replicant itself · [IDEA-010](#idea-010) date the R-squared · [IDEA-018](#idea-018) discount its breadth
+*literature:* [funghsieh2004](../papers/paper_notes_funghsieh2004.md) · [hurst2013](../papers/paper_notes_hurst2013.md)
 
 **Statement.** Before paying for any active manager or manager index, regress its returns on the cheapest mechanical rule that could plausibly generate them. The R^2 is the share of the product you can buy for near-zero cost; only the residual justifies a fee. Here a single vol-scaled 12-month sign rule explained a CTA index with R^2 > 0.9 — roughly 90% of the managed-futures industry is a replicable factor wearing a 2-and-20 wrapper.
 
@@ -454,8 +556,11 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-014 · reserve-satiation-crossing
 
 `signal` · **status: unvalidated** · **12/15**
-*source:* 2026/05 · rates_gs_fed-balance-sheet_2026-05-21
+*source:* [2026/05 · rates_gs_fed-balance-sheet_2026-05-21](2026/05/rates_gs_fed-balance-sheet_2026-05-21.md)
 *applies to:* Repo-IORB / SOFR-IORB spreads and their tails; front-end bills; by extension 2s10s and any levered position whose funding leg reprices. Same convex-demand-near-satiation structure applies to collateral specials.
+<!-- edges -->
+*related:* [IDEA-016](#idea-016) the drain that brings the crossing · [IDEA-039](#idea-039) confounds the same tail · [IDEA-012](#idea-012) trailing buffers undersize it · [IDEA-003](#idea-003) contrast: this one is literal money
+*literature:* [bernanke2020](../papers/paper_notes_bernanke2020.md)
 
 **Statement.** The tradeable variable is not the level of reserves but the crossing point: the reserve share at which secured overnight funding crosses from below to above the policy floor. Because reserve demand is convex — flat when abundant, steep near satiation — a slope fitted across the abundant regime understates the near-satiation slope by several multiples, so a planned linear drain overshoots its funding-cost target and funding-stress hedges are systematically underpriced as the crossing approaches.
 
@@ -475,8 +580,10 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-015 · effective-vs-marginal-rate-refi-runway
 
 `signal` · **status: unvalidated** · **12/15**
-*source:* 2026/01 · economics_gs_japan-outlook_2026-01-06
+*source:* [2026/01 · economics_gs_japan-outlook_2026-01-06](2026/01/economics_gs_japan-outlook_2026-01-06.md)
 *applies to:* Sovereign bonds/CDS of post-ZIRP issuers (JGBs, Bunds, Gilts, USTs); corporate credit of 2020-21 termed-out issuers; equity of levered names carrying legacy low-coupon debt.
+<!-- edges -->
+*related:* [IDEA-028](#idea-028) recompute the ratio first · [IDEA-032](#idea-032) the override that explains it away · [IDEA-021](#idea-021) the other arithmetic-not-behaviour wedge
 
 **Statement.** An issuer's effective interest cost (interest paid divided by debt outstanding) can sit far below the marginal market rate for a decade after rates rise, because the legacy low-coupon stock only reprices as it matures. The spread between marginal and effective rate, combined with the maturity schedule, is a public dated calendar of when reported leverage and coverage must deteriorate regardless of any policy or management decision. Rank issuers by (marginal - effective) x (share of debt maturing within N years).
 
@@ -496,8 +603,11 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-016 · flat-balance-sheet-is-tightening
 
 `regime` · **status: unvalidated** · **12/15**
-*source:* 2026/05 · rates_gs_fed-balance-sheet_2026-05-21
+*source:* [2026/05 · rates_gs_fed-balance-sheet_2026-05-21](2026/05/rates_gs_fed-balance-sheet_2026-05-21.md)
 *applies to:* Front-end rates and funding spreads in any reserve system; sharpest where currency growth is fast — an EM central bank with 8-12%/yr currency growth has a far larger neutral expansion rate and a much faster passive drain.
+<!-- edges -->
+*related:* [IDEA-014](#idea-014) where the drain is heading · [IDEA-028](#idea-028) measure in the binding unit · [IDEA-042](#idea-042) free float as the denominator
+*literature:* [bernanke2020](../papers/paper_notes_bernanke2020.md)
 
 **Statement.** A central bank's neutral asset growth rate is strictly positive and computable from an identity: dA = g_C*C + g_T*TGA + rho*g_B*B. Holding the balance sheet flat therefore drains reserves at (g_C*C + g_T*TGA)/B + rho*g_B per year — 1.16pp of bank assets per year in the US today. 'No change to the balance sheet' is a tightening announcement, and the true policy axis is grow-at-neutral vs grow-below-neutral vs flat, only the first of which is neutral.
 
@@ -517,8 +627,12 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-017 · capital-structure-valuation-wedge
 
 `signal` · **status: unvalidated** · **12/15**
-*source:* 2026/07 · crossasset_gs_goal-kickstart_2026-07-27
+*source:* [2026/07 · crossasset_gs_goal-kickstart_2026-07-27](2026/07/crossasset_gs_goal-kickstart_2026-07-27.md)
 *applies to:* US/EUR IG and HY credit vs equity of the same issuer universe. Generalizes wherever a capped and an uncapped claim on the same cash flows are separately benchmarked (preferreds vs common, mezzanine vs equity tranche, sub debt vs equity).
+<!-- edges -->
+*related:* [IDEA-027](#idea-027) attribution picks the instrument · [IDEA-044](#idea-044) is the extreme growth-carried?
+*literature:* [fama_french_1993](../papers/paper_notes_fama_french_1993.md) · [ivashina2015](../papers/paper_notes_ivashina2015.md)
+*study:* [2026-03-29_expected_returns_ilmanen](../studies/2026-03-29_expected_returns_ilmanen/er_book_briefing.md)
 
 **Statement.** When credit spreads sit in their richest decile while equity multiples sit near their historical median, allocate corporate risk to equity rather than credit: both are claims on the same firms' cash flows, but the capped instrument offers historically thin compensation while the uncapped one does not. The percentile SPREAD between the two, not either level in isolation, is the signal.
 
@@ -538,8 +652,13 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-018 · effective-breadth-discount-for-self-correlated-strategies
 
 `method` · **status: unvalidated** · **12/15**
-*source:* 2013 · factor_aqr_managed-futures_2013
+*source:* [2013 · factor_aqr_managed-futures_2013](2013/factor_aqr_managed-futures_2013.md)
 *applies to:* Any multi-market strategy whose credibility rests on breadth: cross-asset trend, cross-asset carry, global value, multi-country macro signals.
+<!-- edges -->
+*related:* [IDEA-041](#idea-041) not merged: this one has a code path · [IDEA-037](#idea-037) the breadth claim it discounts · [IDEA-013](#idea-013) same note · [IDEA-010](#idea-010) same inflated statistic · [IDEA-003](#idea-003) compounds: both inflate the same t-stat · [IDEA-009](#idea-009) hedge value and independence in tension
+*literature:* [baltussen2021](../papers/paper_notes_baltussen2021.md)
+*study:* [2026-06-17_advances_financial_ml](../studies/2026-06-17_advances_financial_ml/study_hypotheses.md)
+*platform:* [cross_validation.py](../../../alpha_research/backtests/stats/cross_validation.py)
 
 **Statement.** When breadth is offered in place of a mechanism, discount it by the strategy's own cross-market position correlation. 67 markets x 135 years is not 9,000 independent observations if the strategy systematically holds the same directional bet in every market at once. And the property that most compresses effective breadth is precisely the property being sold: crisis alpha exists because all sleeves go short together.
 
@@ -559,8 +678,12 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-019 · selector-must-span-total-expected-return
 
 `method` · **status: unvalidated** · **12/15**
-*source:* 2026/07 · macro_gs_em-trader_2026-07-30
+*source:* [2026/07 · macro_gs_em-trader_2026-07-30](2026/07/macro_gs_em-trader_2026-07-30.md)
 *applies to:* Any cross-sectional ranking — FX carry, equity factor scores, credit relative value, commodity roll yield, and in-house signal construction generally.
+<!-- edges -->
+*related:* [IDEA-003](#idea-003) the moments a selector must span · [IDEA-023](#idea-023) the funder leg it misses · [IDEA-026](#idea-026) the horizon it misses
+*literature:* [koijen_carry_2018](../papers/paper_notes_koijen_carry_2018.md)
+*platform:* [fx_carry proposal — ranks on raw rate diffs](../../../alpha_research/research/strategies/fx_carry_2026-03-13_conditional/proposal.md) · [sector_rotation_v1 manifest](../../../alpha_research/research/pool/sector_rotation_v1/manifest.yaml)
 
 **Statement.** Before trusting any cross-sectional ranking statistic, rank-correlate it against the total expected return it is meant to proxy, computed on the same author's own inputs. A selector built from one component of expected return while a forecast of the other exists will systematically misselect: here carry vs the firm's own 12m forecast total return has Spearman +0.19 across 21 currencies (+0.47 dropping two capital-controlled names), and the resulting book picks a leg forecast to lose 2.33% over one forecast to make 6.11%.
 
@@ -580,8 +703,12 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-020 · buy-convexity-back-inside-the-risk-factor
 
 `structure` · **status: unvalidated** · **11/15**
-*source:* 2025/11 · rates_gs_vol-strategies_2025-11-13 , 2026/07 · crossasset_gs_goal-kickstart_2026-07-27 **← independent arrival in 2+ reports**
+*source:* [2025/11 · rates_gs_vol-strategies_2025-11-13](2025/11/rates_gs_vol-strategies_2025-11-13.md) , [2026/07 · crossasset_gs_goal-kickstart_2026-07-27](2026/07/crossasset_gs_goal-kickstart_2026-07-27.md) **← independent arrival in 2+ reports**
 *applies to:* Rates vol (short gamma vs long vega), equity vol (front-month vs back-month), FX (short JPY/CHF carry vs long its convexity), credit (near-dated tranche risk vs far-dated protection); any premium-harvesting sleeve with a term structure of convexity.
+<!-- edges -->
+*related:* [IDEA-003](#idea-003) why Sharpe cannot score it · [IDEA-034](#idea-034) carry-positive alternative · [IDEA-046](#idea-046) the event-dated version · [IDEA-031](#idea-031) when convexity is cheap · [IDEA-002](#idea-002) the same geometry from the buy side · [IDEA-023](#idea-023) the funding leg's convexity
+*literature:* [carr_wu_vrp_2009](../papers/paper_notes_carr_wu_vrp_2009.md) · [rates_vrp](../papers/paper_notes_rates_vrp.md)
+*study:* [2026-06-24_volatility_workstation](../studies/2026-06-24_volatility_workstation/README.md)
 
 **Statement.** Manufacture a carry sleeve's diversification inside the sleeve by pairing the short-convexity leg with long convexity bought at the point of the same risk factor where mandated protection demand is NOT concentrated — short front gamma against long back-dated vega, or short a funding currency for carry while long its calls. Paying away part of the carry to buy the tail back from the same market converts a procyclical strategy into a near-zero-correlation one, and that convexity is cheapest exactly when carry is widest and short positioning most crowded.
 
@@ -601,8 +728,10 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-021 · administered-price-cpi-wedge
 
 `signal` · **status: unvalidated** · **11/15**
-*source:* 2026/01 · economics_gs_japan-outlook_2026-01-06
+*source:* [2026/01 · economics_gs_japan-outlook_2026-01-06](2026/01/economics_gs_japan-outlook_2026-01-06.md)
 *applies to:* Inflation swaps, linkers and front-end rates in any jurisdiction with active fiscal price intervention: Japan now, Euro-area energy caps 2022-23, UK energy price guarantee, US ACA/health-CPI methodology shifts.
+<!-- edges -->
+*related:* [IDEA-028](#idea-028) decompose the print · [IDEA-015](#idea-015) the other arithmetic-not-behaviour wedge
 
 **Statement.** A measurable share of any CPI print is set by legislation rather than markets — fuel-tax changes, tuition waivers, capped utilities, administered health prices. These enter the index with a magnitude and a date that are public in advance and exit exactly 12 months later. Forecast the legislated wedge separately from the market-priced core, and trade the divergence between the mechanical path of the published fixing and the smoothed path priced by inflation markets and embedded in backward-looking policy reaction functions.
 
@@ -622,8 +751,11 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-022 · forced-flow-response-function
 
 `method` · **status: unvalidated** · **11/15**
-*source:* 2012 · factor_bridgewater_risk-parity_2012 , 2026/06 · flows_gs_cta-bond-futures_2026-06-09 **← independent arrival in 2+ reports**
+*source:* [2012 · factor_bridgewater_risk-parity_2012](2012/factor_bridgewater_risk-parity_2012.md) , [2026/06 · flows_gs_cta-bond-futures_2026-06-09](2026/06/flows_gs_cta-bond-futures_2026-06-09.md) **← independent arrival in 2+ reports**
 *applies to:* Levered risk-parity, vol-target and managed-volatility portfolios cross-asset; the flow lands in equity index and government bond futures. Applies wherever CTA/vol-target AUM is material relative to depth.
+<!-- edges -->
+*related:* [IDEA-006](#idea-006) not merged: OPPOSITE sign · [IDEA-040](#idea-040) when the cohort has no room left · [IDEA-036](#idea-036) how synchronised the triggers are · [IDEA-001](#idea-001) the portfolio that forces it
+*literature:* [bridgewater2012](../papers/paper_notes_bridgewater2012.md)
 
 **Statement.** For any cohort that trades by a replicable rule under a capacity or volatility constraint, the research deliverable is the conditional flow response function — projected net flow under up/base/down price paths at multiple horizons — not the estimated position level. The level is a stock; the derivative with respect to price is the tradable object. Any inverse-volatility sizing rule carrying leverage converts a volatility spike into a mechanical, calendar-predictable sale, so build the deleveraging schedule explicitly and choose to pre-empt it or supply liquidity into it.
 
@@ -643,8 +775,13 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-023 · funding-leg-as-first-order-choice
 
 `structure` · **status: unvalidated** · **11/15**
-*source:* 2026/07 · macro_gs_em-trader_2026-07-30
+*source:* [2026/07 · macro_gs_em-trader_2026-07-30](2026/07/macro_gs_em-trader_2026-07-30.md)
 *applies to:* Any carry book: EM FX, G10 FX, and by extension cross-currency-funded credit, rates or commodity carry.
+<!-- edges -->
+*related:* [IDEA-019](#idea-019) selector must span the funder · [IDEA-020](#idea-020) the convexity of the funding leg · [IDEA-026](#idea-026) annualise the carry pickup · [IDEA-011](#idea-011) the official reaction on the funding leg
+*literature:* [asness2013_fx](../papers/paper_notes_asness2013_fx.md) · [koijen_carry_2018](../papers/paper_notes_koijen_carry_2018.md) · [du_tepper_verdelhan2018](../papers/paper_notes_du_tepper_verdelhan2018.md)
+*study:* [2026-03-27_global_macro_trading_gliner](../studies/2026-03-27_global_macro_trading_gliner/gmt_book_briefing.md)
+*platform:* [fx_carry proposal](../../../alpha_research/research/strategies/fx_carry_2026-03-13_conditional/proposal.md)
 
 **Statement.** In any carry book the short (funding) leg is a first-order decision, not a residual: switching funder changes the carry numerator and the volatility denominator simultaneously, and because the USD is the dominant common factor in EM FX volatility, funding in a non-USD currency can raise carry and lower cross volatility at once. For an identical MXN long, carry-to-vol is 2.07x higher funded in EUR than USD (1.49x more carry x 1.39x less vol), and EUR-funded vol is lower for 8 of 9 legible crosses.
 
@@ -664,8 +801,12 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-024 · horizon-match-regressors-to-instrument
 
 `method` · **status: unvalidated** · **11/15**
-*source:* 2025/11 · rates_gs_vol-strategies_2025-11-13
+*source:* [2025/11 · rates_gs_vol-strategies_2025-11-13](2025/11/rates_gs_vol-strategies_2025-11-13.md)
 *applies to:* Any term structure explained by a factor model: implied vol surfaces, the yield curve, credit spread curves by maturity bucket, commodity forward curves.
+<!-- edges -->
+*related:* [IDEA-033](#idea-033) residual is model error at the long end · [IDEA-045](#idea-045) the state variable it scopes · [IDEA-007](#idea-007) the term-premium component it scopes
+*literature:* [diebold2006](../papers/paper_notes_diebold2006.md) · [nelson1987](../papers/paper_notes_nelson1987.md) · [svensson1994](../papers/paper_notes_svensson1994.md)
+*study:* [2026-03-26_fixed_income_relative_value_analysis_2e](../studies/2026-03-26_fixed_income_relative_value_analysis_2e/firv_book_briefing.md)
 
 **Statement.** A factor model's explanatory power is not uniform across a term structure — it holds only where the horizon of the explanatory variables spans the horizon of the instrument. Cyclical macro variables explain short-dated implied vol well (adj. R^2 ~0.7-0.85) and long-dated poorly (~0.3-0.4), because long-dated instruments price regime-change risk beyond any forecast panel's reach. Report fit across the whole grid, and refuse to let a short-horizon result be generalised in prose to 'the surface'.
 
@@ -685,8 +826,11 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-025 · sharpe-gain-is-diversification-not-leverage
 
 `method` · **status: unvalidated** · **11/15**
-*source:* 2012 · factor_bridgewater_risk-parity_2012
+*source:* [2012 · factor_bridgewater_risk-parity_2012](2012/factor_bridgewater_risk-parity_2012.md)
 *applies to:* Any levered vol-targeted or risk-budgeted portfolio, in any market or currency where the financing leg is priced separately from the asset leg.
+<!-- edges -->
+*related:* [IDEA-008](#idea-008) not merged: diagnostic vs return source · [IDEA-001](#idea-001) the correlation that fails with financing · [IDEA-004](#idea-004) the identity it corrects
+*literature:* [frazzini_pedersen_bab_2014](../papers/paper_notes_frazzini_pedersen_bab_2014.md)
 
 **Statement.** Leverage is Sharpe-neutral before financing costs and Sharpe-negative after, so none of a levered balanced portfolio's claimed improvement comes from leverage itself — all of it comes from the correlation matrix. The right diagnostic is the break-even financing spread at which the levered balanced portfolio stops beating the unlevered concentrated one; that spread is the actual margin of safety.
 
@@ -694,20 +838,25 @@ their stated totals, and every cross-reference in the library resolves.
 
 | | | |
 |---|:--:|---|
-| Economic rationale | **3/5** | Downgraded from the extractor's 4. A named cost-payer and a real correlated-failure channel, but it identifies where the edge is NOT — derivative of IDEA-008 and IDEA-001 rather than a source of return in its own right. |
+| Economic rationale | **3/5** | Downgraded from the extractor's 4. A named cost-payer and a real correlated-failure channel, but it identifies where the edge is NOT — derivative of [IDEA-008](#idea-008) and [IDEA-001](#idea-001) rather than a source of return in its own right. |
 | Durability | **5/5** | Scale-invariance of the Sharpe ratio is algebra. The joint blow-out of financing spreads and cross-asset correlation in stress is a structural feature of funding markets, repeatedly observed. |
 | Testability | **3/5** | DFF resolves; SOFR is in treasury_yields.parquet but raises ValueError. The achievable financing cost — futures-implied rate, PB spread, ETF borrow — is not in the lake at all. A public proxy exists via ES and ZN calendar spreads but is not ingested, so the honest break-even is one data source away. |
 
 **Evidence so far.** None. The digest reports the 'leverage improves Sharpe' claim without derivation or cost accounting; this idea is a correction to it, not a finding from it.
 
-**To test later.** Asset returns as in IDEA-004; FRED SOFR, EFFR, DTB3; ES and ZN front/back calendar spreads to back out implied financing (gap); FRED NFCI (present in macro_indicators.parquet but unregistered) or a TED-style spread as a funding-stress conditioner.
+**To test later.** Asset returns as in [IDEA-004](#idea-004); FRED SOFR, EFFR, DTB3; ES and ZN front/back calendar spreads to back out implied financing (gap); FRED NFCI (present in macro_indicators.parquet but unregistered) or a TED-style spread as a funding-stress conditioner.
 
 <a id="idea-026"></a>
 ### IDEA-026 · annualise-the-level-claim-against-the-competing-rate
 
 `risk` · **status: unvalidated** · **11/15**
-*source:* 2026/04 · macro_gs_jpy-macro-trading_2026-04-07 , 2026/07 · flows_gs_japan-savings-jgb-demand_2026-07-20 , 2026/07 · macro_gs_em-trader_2026-07-30 **← independent arrival in 2+ reports**
+*source:* [2026/04 · macro_gs_jpy-macro-trading_2026-04-07](2026/04/macro_gs_jpy-macro-trading_2026-04-07.md) , [2026/07 · flows_gs_japan-savings-jgb-demand_2026-07-20](2026/07/flows_gs_japan-savings-jgb-demand_2026-07-20.md) , [2026/07 · macro_gs_em-trader_2026-07-30](2026/07/macro_gs_em-trader_2026-07-30.md) **← independent arrival in 2+ reports**
 *applies to:* Any negative-carry RV position (curve trades, cash-futures basis, credit curves, commodity calendars); any carry-vs-value ranking (FX, credit spread vs expected default drift, commodity roll vs inventory normalisation); any government bond, FX or equity market on official-flow, SWF-reallocation or QT/issuance-remit headlines.
+<!-- edges -->
+*related:* [IDEA-019](#idea-019) same class of selector error · [IDEA-023](#idea-023) carry net of the funder · [IDEA-038](#idea-038) level vs pace is the same split · [IDEA-042](#idea-042) size the flow per unit time · [IDEA-002](#idea-002) a target published with no horizon · [IDEA-029](#idea-029) annualise before trading it
+*literature:* [koijen_carry_2018](../papers/paper_notes_koijen_carry_2018.md) · [asness_value_momentum_2013](../papers/paper_notes_asness_value_momentum_2013.md)
+*study:* [2026-03-26_fixed_income_relative_value_analysis_2e](../studies/2026-03-26_fixed_income_relative_value_analysis_2e/firv_book_briefing.md)
+*platform:* [fx_carry proposal](../../../alpha_research/research/strategies/fx_carry_2026-03-13_conditional/proposal.md)
 
 **Statement.** Every level claim must be converted to a per-unit-time rate through its delivery or reversion horizon and compared against the competing rate over the same period, before it becomes a position. Three forms: target divided by carry defines an implicit maximum holding period and therefore an implicit stop; a valuation gap becomes an annual drag of gap x (1 - 2^(-1/h)) that must be netted against carry pickup before ranking; and an announced flow effect delivered over years must be divided by that horizon and set against the instrument's realised weekly volatility. A published target with no horizon has not specified a trade.
 
@@ -727,8 +876,11 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-027 · risk-attribution-selects-hedge-instrument
 
 `method` · **status: unvalidated** · **11/15**
-*source:* 2026/07 · crossasset_gs_goal-kickstart_2026-07-27
+*source:* [2026/07 · crossasset_gs_goal-kickstart_2026-07-27](2026/07/crossasset_gs_goal-kickstart_2026-07-27.md)
 *applies to:* Any asset with a listed options market and a decomposable risk model — S&P puts vs cutting equity beta, CDX payers vs spread-duration cuts, FX equivalents.
+<!-- edges -->
+*related:* [IDEA-003](#idea-003) moments the hedge choice depends on · [IDEA-044](#idea-044) same decompose-before-acting move · [IDEA-017](#idea-017) the wedge it instruments · [IDEA-034](#idea-034) whether the hedge survives
+*literature:* [ang_hodrick_xing_zhang_2006](../papers/paper_notes_ang_hodrick_xing_zhang_2006.md)
 
 **Statement.** The level of a drawdown-probability estimate tells you nothing about how to hedge; its attribution does. Risk attributed to valuation carries no timing content — the level is highly persistent and the trigger exogenous — so the efficient response is time-limited convexity. Risk attributed to deteriorating growth is trending and serially correlated, so the efficient response is simply reducing exposure. Decompose the model output before choosing the instrument.
 
@@ -748,8 +900,11 @@ their stated totals, and every cross-reference in the library resolves.
 ### IDEA-028 · decompose-the-headline-aggregate
 
 `method` · **status: unvalidated** · **11/15**
-*source:* 2026/01 · economics_gs_japan-outlook_2026-01-06 , 2026/05 · rates_gs_fed-balance-sheet_2026-05-21 , 2026/06 · flows_gs_cta-bond-futures_2026-06-09 **← independent arrival in 3 reports**
+*source:* [2026/01 · economics_gs_japan-outlook_2026-01-06](2026/01/economics_gs_japan-outlook_2026-01-06.md) , [2026/05 · rates_gs_fed-balance-sheet_2026-05-21](2026/05/rates_gs_fed-balance-sheet_2026-05-21.md) , [2026/06 · flows_gs_cta-bond-futures_2026-06-09](2026/06/flows_gs_cta-bond-futures_2026-06-09.md) **← independent arrival in 3 reports**
 *applies to:* Any macro series where an annual average is the headline (GDP, IP, retail sales, credit growth), and any central-bank reserve system used as a conditioning variable for duration, credit or risk-asset exposure — US, ECB (banknotes + government deposits), BoJ (current-account balances). Extended 2026-08-15 to **any published figure accompanied by a breakdown** — scenario grids, sector attributions, flow decompositions, P&L attributions, index contributions.
+<!-- edges -->
+*related:* [IDEA-041](#idea-041) not merged: arithmetic vs dependency · [IDEA-016](#idea-016) the reserves half · [IDEA-015](#idea-015) the growth-arithmetic half · [IDEA-042](#idea-042) the denominator version · [IDEA-021](#idea-021) recompute the print first
+*platform:* [professional_report.py — no contribution table](../../../alpha_research/backtests/reporting/professional_report.py) · [report.py](../../../alpha_research/backtests/reporting/report.py)
 
 **Statement.** Recompute every headline aggregate from its components before treating it as information, and measure in the units of the constraint that actually binds. Annual-average growth mechanically embeds the prior year's within-year path, so a series can print decelerating annual growth while quarter-on-quarter momentum accelerates — report carryover, Q4/Q4 and annual-average together. Central-bank liquidity is reserves divided by commercial-bank assets, never headline balance-sheet size, whose week-to-week momentum is near-uncorrelated with the liquidity that prices the front end.
 
@@ -777,8 +932,12 @@ Two cells suffice to run the test, and it costs nothing. The live instance: the 
 ### IDEA-029 · real-rate-buffer-supply-shock-reaction
 
 `regime` · **status: unvalidated** · **10/15**
-*source:* 2026/07 · macro_gs_em-trader_2026-07-30
+*source:* [2026/07 · macro_gs_em-trader_2026-07-30](2026/07/macro_gs_em-trader_2026-07-30.md)
 *applies to:* EM local front-ends and EM FX under a commodity/supply shock; generalises to any inflation-targeting complex facing a common shock, with the DM vs EM split of 2021-22 as the natural out-of-sample analogue.
+<!-- edges -->
+*related:* [IDEA-038](#idea-038) reaction function vs priced path · [IDEA-026](#idea-026) annualise before trading it
+*literature:* [obstfeld2005](../papers/paper_notes_obstfeld2005.md)
+*study:* [2026-03-27_global_macro_trading_gliner](../studies/2026-03-27_global_macro_trading_gliner/gmt_book_briefing.md)
 
 **Statement.** Under a supply-driven inflation shock, the cross-section of central-bank reaction — and therefore local front-end direction — sorts on the ex-ante real policy rate buffer (policy rate minus forward-looking CPI), not on the country's exposure to the shock. Large restrictive buffers look through the shock or even cut; negative buffers must hike to rebuild regardless of oil exposure. Critically, the buffer is convention-sensitive: India swings 2.7pp purely on which fiscal-year CPI forecast is used, so the sort key must be convention-standardised before it is a signal.
 
@@ -798,8 +957,12 @@ Two cells suffice to run the test, and it costs nothing. The live instance: the 
 ### IDEA-030 · wam-drift-reveals-tenor-demand
 
 `signal` · **status: unvalidated** · **10/15**
-*source:* 2026/07 · flows_gs_japan-savings-jgb-demand_2026-07-20
+*source:* [2026/07 · flows_gs_japan-savings-jgb-demand_2026-07-20](2026/07/flows_gs_japan-savings-jgb-demand_2026-07-20.md)
 *applies to:* Long-end government curves wherever a large mandated holder's maturity profile is disclosed — JGB 20s/30s, USTs via SOMA's maturity ladder, gilts via the APF, EUR long end via insurer regulatory filings.
+<!-- edges -->
+*related:* [IDEA-042](#idea-042) free float the WAM drift implies · [IDEA-005](#idea-005) which sector loses its buyer · [IDEA-006](#idea-006) the same mandated holder
+*literature:* [litterman1991](../papers/paper_notes_litterman1991.md)
+*study:* [2026-03-26_fixed_income_relative_value_analysis_2e](../studies/2026-03-26_fixed_income_relative_value_analysis_2e/firv_book_briefing.md)
 
 **Statement.** Read a large mandated holder's duration demand from the drift in its portfolio weighted-average maturity, not from its stated policy or notional purchases: a holder whose WAM is falling replaces less than 100% of annual maturity decay and is therefore a net supplier of duration to the market even while it is a net buyer of bonds. It is the cleanest available falsification of any 'constrained buyer supports the long end' story.
 
@@ -819,8 +982,12 @@ Two cells suffice to run the test, and it costs nothing. The live instance: the 
 ### IDEA-031 · direction-of-travel-conditioning
 
 `regime` · **status: unvalidated** · **10/15**
-*source:* 2025/11 · rates_gs_vol-strategies_2025-11-13 , 2026/04 · macro_gs_jpy-macro-trading_2026-04-07 **← independent arrival in 2+ reports**
+*source:* [2025/11 · rates_gs_vol-strategies_2025-11-13](2025/11/rates_gs_vol-strategies_2025-11-13.md) , [2026/04 · macro_gs_jpy-macro-trading_2026-04-07](2026/04/macro_gs_jpy-macro-trading_2026-04-07.md) **← independent arrival in 2+ reports**
 *applies to:* Any carry or mean-reversion sleeve: equity and rates vol selling, credit spread carry, FX carry, commodity calendar carry, cross-sectional value overlays. For the vol half, any market with an options skew and a measurable positioning imbalance — the direction of the asymmetry flips with positioning and must be re-measured per market and regime.
+<!-- edges -->
+*related:* [IDEA-033](#idea-033) residual, then direction · [IDEA-011](#idea-011) the official-flow instance · [IDEA-045](#idea-045) the competing read of flat regimes · [IDEA-036](#idea-036) distance as the state variable · [IDEA-020](#idea-020) when the convexity is cheapest · [IDEA-044](#idea-044) confirmed or unconfirmed extreme
+*literature:* [asness_value_momentum_2013](../papers/paper_notes_asness_value_momentum_2013.md) · [moskowitz_tsmom_2012](../papers/paper_notes_moskowitz_tsmom_2012.md)
+*study:* [2026-06-24_volatility_workstation](../studies/2026-06-24_volatility_workstation/README.md)
 
 **Statement.** The same level is two different states depending on how you got there, so condition on the direction of travel rather than the level. Take a valuation or mean-reversion entry only when the variable is both stretched AND already moving back toward fair value — 'rich and falling' and 'rich and rising' are different states at identical levels, and only the first is paid. The same discipline applies to the vol estimate: realized volatility is directionally asymmetric (here 4.81bp/day in a rally regime vs 3.65 in a sell-off vs 2.75 unconditional) and frequently points opposite to option skew, so measure it conditionally and treat the cheap side that realizes faster as systematically under-priced gamma.
 
@@ -840,8 +1007,10 @@ Two cells suffice to run the test, and it costs nothing. The live instance: the 
 ### IDEA-032 · base-rate-override-tell
 
 `method` · **status: unvalidated** · **10/15**
-*source:* 2026/01 · economics_gs_japan-outlook_2026-01-06
+*source:* [2026/01 · economics_gs_japan-outlook_2026-01-06](2026/01/economics_gs_japan-outlook_2026-01-06.md)
 *applies to:* Capex-sensitive equities (industrials, capital goods, semis) across countries; extends to credit and housing cycles wherever a datable cycle-length distribution exists.
+<!-- edges -->
+*related:* [IDEA-041](#idea-041) count the nodes behind the override · [IDEA-043](#idea-043) the publisher who writes it · [IDEA-015](#idea-015) the runway an override explains away
 
 **Statement.** When a forecast explicitly cites a base rate and then overrides it with qualitative differentiators — 'this cycle is different because X, Y, Z' — treat the override itself as a marker of elevated reversion risk rather than as evidence against it. Quantitative form: cycle age relative to the empirical distribution of historical cycle lengths gives a hazard rate; use that hazard as a conditioning variable on cyclical exposure, and treat the narrative case for extension as a contrarian input.
 
@@ -861,8 +1030,12 @@ Two cells suffice to run the test, and it costs nothing. The live instance: the 
 ### IDEA-033 · fair-value-residual-not-level-zscore
 
 `method` · **status: unvalidated** · **10/15**
-*source:* 2025/11 · rates_gs_vol-strategies_2025-11-13
+*source:* [2025/11 · rates_gs_vol-strategies_2025-11-13](2025/11/rates_gs_vol-strategies_2025-11-13.md)
 *applies to:* Any market where an insurance-like premium is embedded in a price with identifiable fundamental drivers: equity vol vs macro dispersion, rates vol, credit spreads vs default fundamentals, FX carry vs rate differentials and terms of trade.
+<!-- edges -->
+*related:* [IDEA-024](#idea-024) where the residual stops meaning anything · [IDEA-031](#idea-031) rich AND falling · [IDEA-045](#idea-045) what the residual scales with
+*literature:* [campbell_shiller_1988](../papers/paper_notes_campbell_shiller_1988.md)
+*study:* [2026-06-24_volatility_workstation](../studies/2026-06-24_volatility_workstation/README.md)
 
 **Statement.** For any premium-harvesting trade whose price level is itself driven by observable fundamentals, build the timing signal on the residual from a fundamentals fair-value model, not on a z-score of the level against its own history. Where fundamentals explain 70-85% of the level, a level z-score is predominantly a fundamentals reading with the premium buried inside its noise.
 
@@ -882,12 +1055,15 @@ Two cells suffice to run the test, and it costs nothing. The live instance: the 
 ### IDEA-034 · positive-carry-hedges-survive-the-committee
 
 `structure` · **status: unvalidated** · **10/15**
-*source:* 2013 · factor_aqr_managed-futures_2013
+*source:* [2013 · factor_aqr_managed-futures_2013](2013/factor_aqr_managed-futures_2013.md)
 *applies to:* Portfolio hedge construction generally: trend overlays vs long puts vs long vol vs gold vs long duration, in any book with an equity or credit core.
+<!-- edges -->
+*related:* [IDEA-009](#idea-009) the duration its payoff depends on · [IDEA-020](#idea-020) buy the tail inside the factor instead · [IDEA-003](#idea-003) score it on the tail, not Sharpe · [IDEA-027](#idea-027) whether the hedge survives the committee
+*literature:* [hurst2013](../papers/paper_notes_hurst2013.md)
 
 **Statement.** Prefer crisis hedges whose expected carry is positive or zero over hedges that bleed, even at the cost of a weaker or slower payoff. A negative-carry hedge (option premium, or a fee-laden fund) must be timed, and timing failures are governance failures rather than market failures: the position gets cut after a few quiet quarters, precisely before it would have paid. A positive-expected-return hedge can be held permanently, so its realized hedge value is far closer to its theoretical hedge value.
 
-**Mechanism — who pays, why it persists.** The constrained party is the allocator's own governance process — quarterly review cycles, drag attribution, career risk on visible bleed. That constraint is real, price-insensitive and does not arbitrage away, which is exactly the point: the market prices the hedge's payoff, not the holder's ability to keep holding it. The trade-off must be stated honestly — the positive-carry hedge is paid for in a different currency, reversal risk and duration-dependence (see IDEA-009) instead of premium outlay.
+**Mechanism — who pays, why it persists.** The constrained party is the allocator's own governance process — quarterly review cycles, drag attribution, career risk on visible bleed. That constraint is real, price-insensitive and does not arbitrage away, which is exactly the point: the market prices the hedge's payoff, not the holder's ability to keep holding it. The trade-off must be stated honestly — the positive-carry hedge is paid for in a different currency, reversal risk and duration-dependence (see [IDEA-009](#idea-009)) instead of premium outlay.
 
 | | | |
 |---|:--:|---|
@@ -897,14 +1073,16 @@ Two cells suffice to run the test, and it costs nothing. The live instance: the 
 
 **Evidence so far.** None from the digest, which argues only that trend is cheap relative to CTA fees. The comparison against explicit option convexity is a proposed extension, not a reported result.
 
-**To test later.** CBOE PPUT / PUTW / CLL index history as the explicit-convexity leg; the TSMOM sleeve returns as the implicit-convexity leg; VIXCLS and vix3m_daily for carry-cost context; cost per unit of crisis payoff computed over the drawdown catalogue from IDEA-009.
+**To test later.** CBOE PPUT / PUTW / CLL index history as the explicit-convexity leg; the TSMOM sleeve returns as the implicit-convexity leg; VIXCLS and vix3m_daily for carry-cost context; cost per unit of crisis payoff computed over the drawdown catalogue from [IDEA-009](#idea-009).
 
 <a id="idea-035"></a>
 ### IDEA-035 · retail-access-revealed-preference-test
 
 `method` · **status: unvalidated** · **10/15**
-*source:* 2026/07 · flows_gs_japan-savings-jgb-demand_2026-07-20
+*source:* [2026/07 · flows_gs_japan-savings-jgb-demand_2026-07-20](2026/07/flows_gs_japan-savings-jgb-demand_2026-07-20.md)
 *applies to:* Government bonds and retail savings instruments under any retail-access policy — Japan NISA, UK ISA and retail gilts, Italy BTP Italia, US TreasuryDirect / I-bonds, India retail G-sec.
+<!-- edges -->
+*related:* [IDEA-006](#idea-006) the flow it falsifies · [IDEA-043](#idea-043) the house that published it
 
 **Statement.** A policy that widens retail access to an asset — a tax wrapper, a retail bond programme, app distribution — moves nothing if a near-substitute is already accessible and unbought; that is a revealed-preference falsification available before any post-policy flow data arrives. Household participation is set by a reservation yield, not by tax status, so causality runs yield to retail ownership, not ownership to yield: rising retail ownership is a symptom of cheapening, not a cause of richening.
 
@@ -924,8 +1102,12 @@ Two cells suffice to run the test, and it costs nothing. The live instance: the 
 ### IDEA-036 · threshold-proximity-dispersion
 
 `signal` · **status: unvalidated** · **10/15**
-*source:* 2026/06 · flows_gs_cta-bond-futures_2026-06-09
+*source:* [2026/06 · flows_gs_cta-bond-futures_2026-06-09](2026/06/flows_gs_cta-bond-futures_2026-06-09.md)
 *applies to:* Panels of correlated futures: global bond futures, global equity index futures, the G10 FX complex, the energy strip.
+<!-- edges -->
+*related:* [IDEA-040](#idea-040) saturation is the other half · [IDEA-046](#idea-046) when the trigger resolves · [IDEA-022](#idea-022) the flow the trigger produces · [IDEA-031](#idea-031) distance as the state variable
+*literature:* [moskowitz_tsmom_2012](../papers/paper_notes_moskowitz_tsmom_2012.md)
+*platform:* [sector_rotation_v1 manifest](../../../alpha_research/research/pool/sector_rotation_v1/manifest.yaml)
 
 **Statement.** Across a panel of correlated markets, measure each one's distance to its trend trigger in volatility units and take the cross-sectional dispersion. Low dispersion — everything sitting near its threshold at once — means a common shock triggers synchronized same-direction flow and amplifies; high dispersion means the shock is absorbed by whichever market is closest and the panel diverges rather than moves together.
 
@@ -951,8 +1133,13 @@ The source note evidences the second half without stating it: in its 1-month gri
 ### IDEA-037 · tsmom-12m-sign-vol-scaled-cross-asset
 
 `signal` · **status: unvalidated** · **10/15**
-*source:* 2013 · factor_aqr_managed-futures_2013
+*source:* [2013 · factor_aqr_managed-futures_2013](2013/factor_aqr_managed-futures_2013.md)
 *applies to:* Any liquid market with a continuous price history; applied to 67 equity index / bond / FX / commodity markets, and transfers to single names, crypto and rates without modification.
+<!-- edges -->
+*related:* [IDEA-013](#idea-013) the fee audit built on it · [IDEA-009](#idea-009) its hedge value is duration-bounded · [IDEA-010](#idea-010) its sample ends at publication · [IDEA-018](#idea-018) its breadth is self-correlated
+*literature:* [moskowitz_tsmom_2012](../papers/paper_notes_moskowitz_tsmom_2012.md) · [hurst2013](../papers/paper_notes_hurst2013.md) · [geczy2017](../papers/paper_notes_geczy2017.md) · [asness_momentum_fact_fiction_2014](../papers/paper_notes_asness_momentum_fact_fiction_2014.md) · [daniel_moskowitz_crashes_2016](../papers/paper_notes_daniel_moskowitz_crashes_2016.md)
+*study:* [2026-03-27_global_macro_trading_gliner](../studies/2026-03-27_global_macro_trading_gliner/gmt_book_briefing.md) · [2026-03-29_expected_returns_ilmanen](../studies/2026-03-29_expected_returns_ilmanen/er_book_briefing.md)
+*platform:* [equity_momentum proposal](../../../alpha_research/research/strategies/equity_momentum_2026-03-13_conditional/proposal.md) · [vol_scaled_momentum proposal](../../../alpha_research/research/strategies/vol_scaled_momentum_2026-03-13_rejected/proposal.md)
 
 **Statement.** Take the sign of each market's trailing 12-month excess return as a directional signal, size every position to a constant ex-ante volatility target, rebalance monthly, and aggregate across equity index, bond, FX and commodity markets. Refinements to the signal add little; breadth and risk-equalized sizing do the work.
 
@@ -972,8 +1159,10 @@ The source note evidences the second half without stating it: in its 1-month gri
 ### IDEA-038 · ois-strip-level-vs-pace
 
 `method` · **status: unvalidated** · **10/15**
-*source:* 2026/04 · macro_gs_jpy-macro-trading_2026-04-07
+*source:* [2026/04 · macro_gs_jpy-macro-trading_2026-04-07](2026/04/macro_gs_jpy-macro-trading_2026-04-07.md)
 *applies to:* Any policy rate with a liquid meeting-dated OIS or futures strip — Fed (fed funds futures / SOFR), ECB (ESTR), BoE (SONIA), BoJ (TONA/JSCC), plus EM CBs with liquid meeting swaps.
+<!-- edges -->
+*related:* [IDEA-026](#idea-026) level vs rate, same discipline · [IDEA-029](#idea-029) the reaction function it prices
 
 **Statement.** Invert a meeting-dated OIS strip into cumulative and marginal hike probabilities — P_i = (OIS_i - r_0)/step, marginal = jump/step — to separate whether your disagreement with the market is about the terminal LEVEL or about the PACE. The distinction determines the correct expression: a pure level disagreement is a far-forward or terminal-sector trade, a pace disagreement is a calendar/meeting-dated steepener, and mis-diagnosing it means being right on the view and losing on the structure.
 
@@ -993,8 +1182,11 @@ The source note evidences the second half without stating it: in its 1-month gri
 ### IDEA-039 · backstop-censors-the-tail
 
 `method` · **status: unvalidated** · **9/15**
-*source:* 2026/05 · rates_gs_fed-balance-sheet_2026-05-21
+*source:* [2026/05 · rates_gs_fed-balance-sheet_2026-05-21](2026/05/rates_gs_fed-balance-sheet_2026-05-21.md)
 *applies to:* Any market with an official or quasi-official backstop: repo/funding after a standing-facility redesign, peripheral euro sovereign spreads after OMT/TPI, bank funding under deposit insurance, cleared-derivative tails after a default-fund top-up, equity vol under a perceived central-bank put.
+<!-- edges -->
+*related:* [IDEA-012](#idea-012) the buffer it silently inflates · [IDEA-014](#idea-014) the crossing it may be masking
+*literature:* [bernanke2020](../papers/paper_notes_bernanke2020.md) · [ivashina2015](../papers/paper_notes_ivashina2015.md)
 
 **Statement.** Any estimate of system resilience — or of a tail hedge's payoff — computed from data after a backstop facility was widened is measuring the backstop, not the system. The private-demand story and the facility-subsidy story generate identical observables, so 'how much room is there' silently becomes 'how far can we lean on a facility never tested at scale.' Date every facility change, split the sample there, and if the discriminating event will never be run, report the parameter as unidentified rather than as an estimate. Trading corollary: after a backstop is strengthened, the historical tail both overstates the payoff and invalidates the base rate used to price it.
 
@@ -1014,8 +1206,10 @@ The source note evidences the second half without stating it: in its 1-month gri
 ### IDEA-040 · positioning-saturation-one-sided-flow
 
 `regime` · **status: unvalidated** · **9/15**
-*source:* 2026/06 · flows_gs_cta-bond-futures_2026-06-09
+*source:* [2026/06 · flows_gs_cta-bond-futures_2026-06-09](2026/06/flows_gs_cta-bond-futures_2026-06-09.md)
 *applies to:* Bond futures in the source; generalizes to any market with a measurable positioning proxy — equity index futures, FX, energy. The state variable is 'position relative to own capacity bound', not the position sign.
+<!-- edges -->
+*related:* [IDEA-036](#idea-036) proximity is the other half · [IDEA-022](#idea-022) the flow function it bounds · [IDEA-046](#idea-046) the date it resolves on
 
 **Statement.** When a rule-based cohort's replicated position sits at the extreme of its own trailing range, the forward flow distribution becomes one-sided — it can buy on a rally and also buy on a selloff, because it has no room to add. The disappearance of that asymmetry, the down-scenario flow flipping from positive to negative, is the signal that the crowded state has normalized, and it is more informative than the position level itself.
 
@@ -1035,8 +1229,12 @@ The source note evidences the second half without stating it: in its 1-month gri
 ### IDEA-041 · count-independent-estimates-not-outputs
 
 `risk` · **status: unvalidated** · **9/15**
-*source:* 2026/01 · economics_gs_japan-outlook_2026-01-06 , 2026/06 · flows_gs_cta-bond-futures_2026-06-09 **← independent arrival in 2+ reports**
+*source:* [2026/01 · economics_gs_japan-outlook_2026-01-06](2026/01/economics_gs_japan-outlook_2026-01-06.md) , [2026/06 · flows_gs_cta-bond-futures_2026-06-09](2026/06/flows_gs_cta-bond-futures_2026-06-09.md) **← independent arrival in 2+ reports**
 *applies to:* Not market-specific. Applies to every external research digest, every vendor signal, every multi-scenario table, and most acutely to rates + FX + cyclical-equity packages sold as one theme.
+<!-- edges -->
+*related:* [IDEA-018](#idea-018) contrast: this one is prose-level only · [IDEA-028](#idea-028) not merged: dependency vs arithmetic · [IDEA-032](#idea-032) the override it audits · [IDEA-043](#idea-043) same publisher-quality family
+*study:* [2026-06-17_advances_financial_ml](../studies/2026-06-17_advances_financial_ml/study_hypotheses.md)
+*platform:* [cross_validation.py](../../../alpha_research/backtests/stats/cross_validation.py)
 
 **Statement.** Count the number of independent models behind a claim, not the number of numbers in front of it, and size positions to independent estimated nodes rather than to conclusions. Six scenario figures from one undisclosed model corroborate each other by construction and constitute one piece of evidence; several apparently separate conclusions descending from a single fitted regression have perfectly correlated forecast errors, so the trades expressing them are one trade and any scenario analysis built on them overstates diversification.
 
@@ -1044,7 +1242,7 @@ The source note evidences the second half without stating it: in its 1-month gri
 
 | | | |
 |---|:--:|---|
-| Economic rationale | **2/5** | Deliberately low, and independent arrival from two digests does not change it. This is bias avoidance, not an edge with a payer. Its value is defensive: it stops you sizing on evidence you do not have. Contrast IDEA-018, which turns the same intuition into a specific statistical adjustment with a code path. |
+| Economic rationale | **2/5** | Deliberately low, and independent arrival from two digests does not change it. This is bias avoidance, not an edge with a payer. Its value is defensive: it stops you sizing on evidence you do not have. Contrast [IDEA-018](#idea-018), which turns the same intuition into a specific statistical adjustment with a code path. |
 | Durability | **5/5** | Permanent — a property of how desk research is constructed and incentivized, not of any market regime. As true in 2036 as in 2026. |
 | Testability | **2/5** | Barely testable as a market claim. The only real test needs a labelled archive of dated desk calls scored on outcome, split by whether corroborating figures came from independent models — requiring the archive first. book_notes/playground/reports/ is the natural seed (10 digests, verified) but nowhere near large enough. A reachable proxy: Philadelphia Fed SPF individual-forecaster microdata (free) to measure within-forecaster vs across-forecaster cross-variable error correlation, which quantifies how little diversification a single house view provides — adjacent to, not identical with, the claim. |
 
@@ -1056,8 +1254,12 @@ The source note evidences the second half without stating it: in its 1-month gri
 ### IDEA-042 · free-float-denominator-and-market-specific-beta
 
 `method` · **status: unvalidated** · **8/15**
-*source:* 2026/07 · flows_gs_japan-savings-jgb-demand_2026-07-20
+*source:* [2026/07 · flows_gs_japan-savings-jgb-demand_2026-07-20](2026/07/flows_gs_japan-savings-jgb-demand_2026-07-20.md)
 *applies to:* Government bond swap spreads, asset swaps and cash-futures bases in any QE-affected market — JGB, UST, Bund, Gilt — and any market where an official holder owns a large disclosed non-trading stock.
+<!-- edges -->
+*related:* [IDEA-005](#idea-005) tension: shrinks its 3-6bp to ~1.2bp · [IDEA-030](#idea-030) WAM drift reads the same float · [IDEA-016](#idea-016) reserves as the same denominator · [IDEA-007](#idea-007) beta into the global duration pool · [IDEA-026](#idea-026) flow converted to a rate · [IDEA-028](#idea-028) the denominator version
+*literature:* [bernanke2020](../papers/paper_notes_bernanke2020.md) · [du_tepper_verdelhan2018](../papers/paper_notes_du_tepper_verdelhan2018.md)
+*study:* [2026-03-26_fixed_income_relative_value_analysis_2e](../studies/2026-03-26_fixed_income_relative_value_analysis_2e/firv_book_briefing.md)
 
 **Statement.** Size official-sector flow as a change in free float — outstanding minus price-insensitive holders, above all the central bank — never in absolute terms or as a share of gross outstanding; and estimate the ppt-to-basis-point coefficient in the target market and regime rather than transplanting it, because post-2008 the basis is set by intermediary balance-sheet capacity at least as much as by supply. Corollary: when a headline result is the product of two independently estimated inputs, verify each separately, because errors in opposite directions are invisible in the product.
 
@@ -1077,8 +1279,10 @@ The source note evidences the second half without stating it: in its 1-month gri
 ### IDEA-043 · publisher-credibility-ledger
 
 `method` · **status: unvalidated** · **8/15**
-*source:* 2026/05 · rates_gs_fed-balance-sheet_2026-05-21 , 2026/07 · flows_gs_japan-savings-jgb-demand_2026-07-20 **← independent arrival in 2+ reports**
+*source:* [2026/05 · rates_gs_fed-balance-sheet_2026-05-21](2026/05/rates_gs_fed-balance-sheet_2026-05-21.md) , [2026/07 · flows_gs_japan-savings-jgb-demand_2026-07-20](2026/07/flows_gs_japan-savings-jgb-demand_2026-07-20.md) **← independent arrival in 2+ reports**
 *applies to:* Sell-side, broker and consulting research inputs across all asset classes; any publisher maintaining both a narrative product and a tracked idea list.
+<!-- edges -->
+*related:* [IDEA-010](#idea-010) publication-date discipline, per-house · [IDEA-032](#idea-032) the override as a tell · [IDEA-041](#idea-041) count the models behind the call · [IDEA-002](#idea-002) score the packaging apart from the call · [IDEA-035](#idea-035) the house that published it
 
 **Statement.** Score the publisher, not the prose. Archive every dated forecast alongside a falsifiable pace number and the same publisher's contemporaneous trade book, then score realized-vs-forecast pace and carry the resulting bias forward as an explicit prior. Two tells: a published institutional central path is the SLOW end of the distribution rather than its centre (direction repeatedly right, pace repeatedly understated in the same direction), and a directional conclusion argued at length but absent from the same house's idea list is prose, not a position. Discount any printed reward:risk whose stop has been revised into profit.
 
@@ -1098,8 +1302,12 @@ The source note evidences the second half without stating it: in its 1-month gri
 ### IDEA-044 · sentiment-extreme-needs-driver-check
 
 `regime` · **status: unvalidated** · **8/15**
-*source:* 2026/07 · crossasset_gs_goal-kickstart_2026-07-27
+*source:* [2026/07 · crossasset_gs_goal-kickstart_2026-07-27](2026/07/crossasset_gs_goal-kickstart_2026-07-27.md)
 *applies to:* Any market with a cross-asset risk-appetite composite — equity index timing, credit beta sizing, cross-asset risk budgeting; maps directly onto the entry filter for this repo's vol_conditioned_reversal_v1.
+<!-- edges -->
+*related:* [IDEA-027](#idea-027) attribution decides the response · [IDEA-017](#idea-017) the risk-appetite wedge · [IDEA-031](#idea-031) confirmed or unconfirmed extreme
+*literature:* [hong_stein_disagreement_2007](../papers/paper_notes_hong_stein_disagreement_2007.md)
+*platform:* [vol_conditioned_reversal_v1 manifest](../../../alpha_research/research/pool/vol_conditioned_reversal_v1/manifest.yaml)
 
 **Statement.** A positioning or risk-appetite extreme is only a contrarian signal when it is not confirmed by the underlying growth factor. Decompose the composite into orthogonal drivers — growth, policy/liquidity, currency — and read which one carries the extreme: an extreme carried by the growth component tends to persist and should be held through, while one carried by the policy/liquidity component with growth neutral is a melt-up and is fragile.
 
@@ -1119,8 +1327,12 @@ The source note evidences the second half without stating it: in its 1-month gri
 ### IDEA-045 · premium-scales-with-priced-dispersion
 
 `regime` · **status: unvalidated** · **6/15**
-*source:* 2025/11 · rates_gs_vol-strategies_2025-11-13
+*source:* [2025/11 · rates_gs_vol-strategies_2025-11-13](2025/11/rates_gs_vol-strategies_2025-11-13.md)
 *applies to:* Vol-carry in rates first, but the general form — scale carry to the dispersion embedded in the relevant term structure — transfers to FX carry, credit, and commodity carry.
+<!-- edges -->
+*related:* [IDEA-033](#idea-033) the fair-value model it needs · [IDEA-031](#idea-031) flat regimes read the other way · [IDEA-024](#idea-024) horizon scoping of the same fit
+*literature:* [rates_vrp](../papers/paper_notes_rates_vrp.md)
+*study:* [2026-06-24_volatility_workstation](../studies/2026-06-24_volatility_workstation/README.md) · [2026-03-29_expected_returns_ilmanen](../studies/2026-03-29_expected_returns_ilmanen/er_book_briefing.md)
 
 **Statement.** The compensation for selling insurance scales with how much dispersion the underlying term structure is actually pricing. When the forward curve is compressed near perceived neutral, the market prices little uncertainty about the path, implied vol trades close to its fundamental fair value, and the risk-premium buffer thins — so the same strategy earns a fraction of its unconditional return-to-vol. Size the sleeve off that state variable, not off trailing P&L.
 
@@ -1140,8 +1352,10 @@ The source note evidences the second half without stating it: in its 1-month gri
 ### IDEA-046 · calendar-clustered-trigger-resolution
 
 `structure` · **status: unvalidated** · **5/15**
-*source:* 2026/06 · flows_gs_cta-bond-futures_2026-06-09
+*source:* [2026/06 · flows_gs_cta-bond-futures_2026-06-09](2026/06/flows_gs_cta-bond-futures_2026-06-09.md)
 *applies to:* Rates futures options and swaptions around NFP/CPI/central-bank dates; equally applicable to equity index options around CPI/FOMC.
+<!-- edges -->
+*related:* [IDEA-036](#idea-036) proximity conditions it · [IDEA-040](#idea-040) saturation conditions it · [IDEA-020](#idea-020) the convexity it would buy
 
 **Statement.** Trend-threshold crossings are not uniformly distributed in time — they cluster on scheduled macro releases, because that is when enough information arrives at once to gap price through a trigger. So when a panel is both positioning-saturated and sitting close to its thresholds, the right expression is convexity into the known release date rather than a directional position: the timing is public, the direction is not.
 
@@ -1155,7 +1369,7 @@ The source note evidences the second half without stating it: in its 1-month gri
 
 **Evidence so far.** None quantitative. One instance — a stronger-than-expected NFP reversing Europe's incipient breakout — described narratively. An anecdote consistent with the idea, not evidence for it.
 
-**To test later.** BLS/FRED-ALFRED release calendar for NFP, CPI and FOMC dates; daily and intraday futures returns to isolate release-day moves; the threshold-proximity and saturation state variables from IDEA-036 and IDEA-040; for the structure itself, CME bond-future option implied vols or USD swaption surfaces (gap).
+**To test later.** BLS/FRED-ALFRED release calendar for NFP, CPI and FOMC dates; daily and intraday futures returns to isolate release-day moves; the threshold-proximity and saturation state variables from [IDEA-036](#idea-036) and [IDEA-040](#idea-040); for the structure itself, CME bond-future option implied vols or USD swaption surfaces (gap).
 
 ---
 
@@ -1164,37 +1378,35 @@ The source note evidences the second half without stating it: in its 1-month gri
 *The same mechanism reached from two unrelated reports is one idea with two sources — and the
 independent arrival is itself evidence. Deliberate non-merges are recorded too.*
 
-- IDEA-001 = 'stock-bond-correlation-is-the-position' (Bridgewater 2012 risk-parity) + 'correlation-sign-selects-diversifier' (GS GOAL 2026-07). Same discount-rate mechanism reached from opposite ends: the 2012 note's construction is short the correlation, the 2026 note uses the correlation sign to pick the diversifier. Independent arrival 14 years apart across a product note and an allocation note is strong evidence the mechanism is real, not a narrative. Kept the 2012 'you are the holder of the everything-falls state' compensated-risk framing plus the 2026 mandated-allocator counterparty.
+- [IDEA-001](#idea-001) = 'stock-bond-correlation-is-the-position' (Bridgewater 2012 risk-parity) + 'correlation-sign-selects-diversifier' (GS GOAL 2026-07). Same discount-rate mechanism reached from opposite ends: the 2012 note's construction is short the correlation, the 2026 note uses the correlation sign to pick the diversifier. Independent arrival 14 years apart across a product note and an allocation note is strong evidence the mechanism is real, not a narrative. Kept the 2012 'you are the holder of the everything-falls state' compensated-risk framing plus the 2026 mandated-allocator counterparty.
 
-- IDEA-003 = 'payoff-identity-dictates-the-statistic' (GS rates-vol 2025-11) + 'moment-match-selector-to-premium' (GS EM trader 2026-07). Identical failure: a two-moment statistic applied to a premium that exists to compensate the third moment. Kept the EM note's stronger mechanism (the evaluation metric itself creates the incentive to sell the tail; the hedger buying the insurance is the counterparty) and the rates note's algebraic derivation (the gamma P&L identity). Two GS desks nine months apart making the identical omission argues house methodology, which is itself the finding.
+- [IDEA-003](#idea-003) = 'payoff-identity-dictates-the-statistic' (GS rates-vol 2025-11) + 'moment-match-selector-to-premium' (GS EM trader 2026-07). Identical failure: a two-moment statistic applied to a premium that exists to compensate the third moment. Kept the EM note's stronger mechanism (the evaluation metric itself creates the incentive to sell the tail; the hedger buying the insurance is the counterparty) and the rates note's algebraic derivation (the gamma P&L identity). Two GS desks nine months apart making the identical omission argues house methodology, which is itself the finding.
 
-- IDEA-020 = 'convexity-barbell-inside-the-sleeve' (rates-vol 2025-11) + 'funding-currency-carry-crash-asymmetry' (GOAL 2026-07). One construction principle: buy the tail back inside the same risk factor, at the point of the term or skew structure where mandated protection demand is NOT concentrated. Rates version is horizon segmentation (near gamma rich, far vega cheap); FX version is the carry-crash asymmetry (cheapest convexity exactly when carry is widest and shorts most crowded). Kept both instances; the FX half supplies the named compensated risk the rates half only implies.
+- [IDEA-020](#idea-020) = 'convexity-barbell-inside-the-sleeve' (rates-vol 2025-11) + 'funding-currency-carry-crash-asymmetry' (GOAL 2026-07). One construction principle: buy the tail back inside the same risk factor, at the point of the term or skew structure where mandated protection demand is NOT concentrated. Rates version is horizon segmentation (near gamma rich, far vega cheap); FX version is the carry-crash asymmetry (cheapest convexity exactly when carry is widest and shorts most crowded). Kept both instances; the FX half supplies the named compensated risk the rates half only implies.
 
-- IDEA-022 = 'vol-target-deleveraging-flow' (Bridgewater 2012) + 'flow-response-function-not-position-level' (GS CTA 2026-06). Same price-insensitive party (a fund executing a pre-committed rule under a vol target and margin agreement) and the same tradable object. Kept the CTA note's general formulation (model the derivative of position with respect to price) and the 2012 note's specific calendar-predictable vol-spike trigger. NOT merged with IDEA-005 despite superficial similarity: mandate rebalancing carries the OPPOSITE sign (contrarian, cannot trend) and the GPIF digest is explicit that the two must never be aggregated — that sign-convention warning is carried in IDEA-005's statement.
+- [IDEA-022](#idea-022) = 'vol-target-deleveraging-flow' (Bridgewater 2012) + 'flow-response-function-not-position-level' (GS CTA 2026-06). Same price-insensitive party (a fund executing a pre-committed rule under a vol target and margin agreement) and the same tradable object. Kept the CTA note's general formulation (model the derivative of position with respect to price) and the 2012 note's specific calendar-predictable vol-spike trigger. NOT merged with [IDEA-006](#idea-006) despite superficial similarity: mandate rebalancing carries the OPPOSITE sign (contrarian, cannot trend) and the GPIF digest is explicit that the two must never be aggregated — that sign-convention warning is carried in [IDEA-006](#idea-006)'s statement.
 
-- IDEA-026 = 'negative-carry-implies-max-holding-period' (JPY desk 2026-04) + 'amortize-valuation-gap-against-carry' (EM trader 2026-07) + 'flow-headline-signal-to-noise-triage' (GPIF flows 2026-07). Three digests independently arrived at one operation: convert a level claim into a per-unit-time rate through its delivery or reversion horizon, then compare it to the competing rate over the same period — carry, valuation drag, or realised noise. Triple independent arrival is the strongest such signal in the pool. Kept all three counterparty accounts (carry receiver paid for patience; horizon mismatch in evaluation windows; headline-chasing liquidity demand).
+- [IDEA-026](#idea-026) = 'negative-carry-implies-max-holding-period' (JPY desk 2026-04) + 'amortize-valuation-gap-against-carry' (EM trader 2026-07) + 'flow-headline-signal-to-noise-triage' (GPIF flows 2026-07). Three digests independently arrived at one operation: convert a level claim into a per-unit-time rate through its delivery or reversion horizon, then compare it to the competing rate over the same period — carry, valuation drag, or realised noise. Triple independent arrival is the strongest such signal in the pool. Kept all three counterparty accounts (carry receiver paid for patience; horizon mismatch in evaluation windows; headline-chasing liquidity demand).
 
-- IDEA-027 = 'annual-average-growth-artifact' (GS Japan 2026-01) + 'reserve-share-not-balance-sheet-size' (GS Fed balance sheet 2026-05). Structurally identical correction: a published headline aggregate whose informative component is diluted by mechanical or autonomous components, fixable by recomputing from published sub-components, persisting because the correct series is less convenient. Kept the reserves version's stronger causal account (currency demand and fiscal cash management are exogenous to the asset side) alongside the growth version's cleaner arithmetic.
+- [IDEA-031](#idea-031) = 'stretched-and-already-reverting' (rates-vol 2025-11) + 'directional-realized-vol-asymmetry-vs-skew' (JPY desk 2026-04). This is the near-duplicate the calibration brief flagged. Both say the same level is two different states depending on direction of travel — the rates note applies it to the entry filter, the JPY note to the vol estimate. Kept the rates note's flow-exhaustion mechanism (forced hedgers and short-gamma dealers still executing in the widening phase) as the scored mechanism, and demoted the JPY note's positioning-based asymmetry to an explicitly weaker second half. The merge is scored on the stronger half for economic rationale and penalised on the weaker half for durability — it must not launder the weak idea.
 
-- IDEA-029 = 'stretched-and-already-reverting' (rates-vol 2025-11) + 'directional-realized-vol-asymmetry-vs-skew' (JPY desk 2026-04). This is the near-duplicate the calibration brief flagged. Both say the same level is two different states depending on direction of travel — the rates note applies it to the entry filter, the JPY note to the vol estimate. Kept the rates note's flow-exhaustion mechanism (forced hedgers and short-gamma dealers still executing in the widening phase) as the scored mechanism, and demoted the JPY note's positioning-based asymmetry to an explicitly weaker second half. The merge is scored on the stronger half for economic rationale and penalised on the weaker half for durability — it must not launder the weak idea.
+- [IDEA-043](#idea-043) = 'gradualist-forecast-prior' (Fed balance sheet 2026-05) + 'publisher-trade-book-conviction-tell' (GPIF flows 2026-07). Two facets of one thing: research output is a reputational product, so its stated conviction and pace are systematically biased, and both debias through the same artefact — an archive of dated claims with falsifiable pace numbers, joined to the publisher's contemporaneous tracked book and to realized outcomes. Same data requirement, same remedy.
 
-- IDEA-043 = 'gradualist-forecast-prior' (Fed balance sheet 2026-05) + 'publisher-trade-book-conviction-tell' (GPIF flows 2026-07). Two facets of one thing: research output is a reputational product, so its stated conviction and pace are systematically biased, and both debias through the same artefact — an archive of dated claims with falsifiable pace numbers, joined to the publisher's contemporaneous tracked book and to realized outcomes. Same data requirement, same remedy.
+- [IDEA-028](#idea-028) = 'annual-average-growth-artifact' (GS Japan 2026-01) + 'reserve-share-not-balance-sheet-size' (GS Fed balance sheet 2026-05) + **'residual-attribution test' (GS CTA 2026-06, added 2026-08-15)**. The third arrival is the same operation carried one step further: the first two say *recompute the headline from its components*, the third says *and when the recomputation misses, read the residual*. Sign-coherent residuals across independent cells mean an omitted component set (keep the claim, discount by the unattributed fraction); sign-random residuals mean transcription noise; large sign-incoherent residuals mean aggregate and breakdown came from different runs. Kept the reserves version's stronger causal account (currency demand and fiscal cash management are exogenous to the asset side) alongside the growth version's cleaner arithmetic, and persisting because the correct series is less convenient than the headline. Kept the growth and reserves halves as the scored content and added the residual test as an extension — **no score change**: three arrivals of a measurement discipline still name no counterparty, and economic rationale stays at 2. NOT merged with [IDEA-041](#idea-041) (count independent estimates, not outputs), which is adjacent but distinct: [IDEA-041](#idea-041) asks *how many models produced these numbers*, [IDEA-028](#idea-028) asks *do these numbers add up and what does the gap mean* — one is about dependency structure, the other about arithmetic completeness, and the CTA note fails both independently.
 
-- IDEA-028 = 'annual-average-growth-artifact' (GS Japan 2026-01) + 'reserve-share-not-balance-sheet-size' (GS Fed balance sheet 2026-05) + **'residual-attribution test' (GS CTA 2026-06, added 2026-08-15)**. The third arrival is the same operation carried one step further: the first two say *recompute the headline from its components*, the third says *and when the recomputation misses, read the residual*. Sign-coherent residuals across independent cells mean an omitted component set (keep the claim, discount by the unattributed fraction); sign-random residuals mean transcription noise; large sign-incoherent residuals mean aggregate and breakdown came from different runs. Kept the growth and reserves halves as the scored content and added the residual test as an extension — **no score change**: three arrivals of a measurement discipline still name no counterparty, and economic rationale stays at 2. NOT merged with IDEA-041 (count independent estimates, not outputs), which is adjacent but distinct: IDEA-041 asks *how many models produced these numbers*, IDEA-028 asks *do these numbers add up and what does the gap mean* — one is about dependency structure, the other about arithmetic completeness, and the CTA note fails both independently.
+- [IDEA-041](#idea-041) = 'forecast-tree-node-concentration' (GS Japan 2026-01) + 'count-models-not-numbers' (GS CTA 2026-06). Identical root principle — count independent sources of variation, not outputs — applied to position sizing and to note auditing respectively. NOT merged with [IDEA-018](#idea-018) (effective-breadth discount), which is kept separate because it converts the same intuition into a specific implementable adjustment to the deflated-Sharpe / MinBTL inputs in alpha_research/backtests/stats/cross_validation.py, applied to our own strategies rather than to external prose. The kinship is real and worth noting; the implementable version deserves its own entry and a higher score.
 
-- IDEA-041 = 'forecast-tree-node-concentration' (GS Japan 2026-01) + 'count-models-not-numbers' (GS CTA 2026-06). Identical root principle — count independent sources of variation, not outputs — applied to position sizing and to note auditing respectively. NOT merged with IDEA-018 (effective-breadth discount), which is kept separate because it converts the same intuition into a specific implementable adjustment to the deflated-Sharpe / MinBTL inputs in alpha_research/backtests/stats/cross_validation.py, applied to our own strategies rather than to external prose. The kinship is real and worth noting; the implementable version deserves its own entry and a higher score.
-
-- NOT MERGED, deliberately: IDEA-008 (leverage-aversion-premium) and IDEA-024 (sharpe-gain-is-diversification-not-leverage) both concern the financing leg of the same 2012 note, but one is a compensated-risk return source and the other is a diagnostic showing where the return is not. Also not merged: IDEA-006 (issuance-mix locates the squeezed sector) and IDEA-039 (free-float denominator sizes the effect) — they are in productive tension, since IDEA-039's discipline is what would have shrunk the GPIF note's own 3-6bp claim to ~1.2bp.
+- NOT MERGED, deliberately: [IDEA-008](#idea-008) (leverage-aversion-premium) and [IDEA-025](#idea-025) (sharpe-gain-is-diversification-not-leverage) both concern the financing leg of the same 2012 note, but one is a compensated-risk return source and the other is a diagnostic showing where the return is not. Also not merged: [IDEA-005](#idea-005) (issuance-mix locates the squeezed sector) and [IDEA-042](#idea-042) (free-float denominator sizes the effect) — they are in productive tension, since [IDEA-042](#idea-042)'s discipline is what would have shrunk the GPIF note's own 3-6bp claim to ~1.2bp.
 
 ---
 
 ## Thin yield — reports that produced little, and why that is the right outcome
 
-- No report yielded zero transferable ideas, but two came close for opposite reasons and should be treated as thin. (1) GS CTA bond-futures flow monitor (2026-06-09, flows_gs_cta-bond-futures_2026-06-09.md). Five raw candidates, and after merging its flow-response method into IDEA-022 and its 'count models not numbers' into IDEA-041, only three survive as its own contribution — IDEA-036 (threshold dispersion, eco 3), IDEA-040 (positioning saturation, eco 3) and IDEA-046 (calendar convexity, eco 1, the lowest-scoring idea in the entire pool). The digest's own essence concedes the note contains six scenario numbers descending from one undisclosed model, i.e. one piece of evidence, and the source disclaimer states the simulated backtest carries 'no assurance'. A weekly positioning monitor is a data product, not an idea product; the transferable content was the reader's critique of it rather than its analysis. That is the right outcome, not a harvesting failure. **Update 2026-08-15 (third pass):** it contributed a fourth time, as a third source on IDEA-028 (the residual-attribution test) — and note *how*: again as a critique, this time of its own arithmetic, not as an argument it makes. Three passes have now produced the same pattern, which upgrades the thin-yield diagnosis from an observation to a settled property of this source. Its own analysis has yielded one buildable mechanism (IDEA-036) across three readings; everything else it has given the pool is a rule for auditing documents like it.
+- No report yielded zero transferable ideas, but two came close for opposite reasons and should be treated as thin. (1) GS CTA bond-futures flow monitor (2026-06-09, flows_gs_cta-bond-futures_2026-06-09.md). Five raw candidates, and after merging its flow-response method into [IDEA-022](#idea-022) and its 'count models not numbers' into [IDEA-041](#idea-041), only three survive as its own contribution — [IDEA-036](#idea-036) (threshold dispersion, eco 3), [IDEA-040](#idea-040) (positioning saturation, eco 3) and [IDEA-046](#idea-046) (calendar convexity, eco 1, the lowest-scoring idea in the entire pool). The digest's own essence concedes the note contains six scenario numbers descending from one undisclosed model, i.e. one piece of evidence, and the source disclaimer states the simulated backtest carries 'no assurance'. A weekly positioning monitor is a data product, not an idea product; the transferable content was the reader's critique of it rather than its analysis. That is the right outcome, not a harvesting failure. **Update 2026-08-15 (third pass):** it contributed a fourth time, as a third source on [IDEA-028](#idea-028) (the residual-attribution test) — and note *how*: again as a critique, this time of its own arithmetic, not as an argument it makes. Three passes have now produced the same pattern, which upgrades the thin-yield diagnosis from an observation to a settled property of this source. Its own analysis has yielded one buildable mechanism ([IDEA-036](#idea-036)) across three readings; everything else it has given the pool is a rule for auditing documents like it.
 
-- (2) Bridgewater risk-parity note (2012, factor_bridgewater_risk-parity_2012.md). Superficially productive — it contributed to IDEA-001, IDEA-004, IDEA-008, IDEA-022 and IDEA-024 — but note what actually happened: its own thesis (equalize risk contribution and lever the low-vol sleeves) survives only as a measurement correction (IDEA-004, eco 4) and a diagnostic showing the claimed Sharpe gain does not come from leverage (IDEA-024, eco 3). The two highest-scoring ideas traced to it, IDEA-001 (the correlation position) and IDEA-008 (leverage aversion), arrive as CRITIQUES of the note rather than as its argument — the note never articulates the betting-against-beta mechanism that supplies its premium, and never names the correlation assumption its whole construction is collateralized by. A note whose best transferable content is the thing it declined to say is thin in a specific and diagnosable way: it presents only descriptive statistics (vol ratios, quadrant maps, taxonomies) and no inferential ones anywhere.
+- (2) Bridgewater risk-parity note (2012, factor_bridgewater_risk-parity_2012.md). Superficially productive — it contributed to [IDEA-001](#idea-001), [IDEA-004](#idea-004), [IDEA-008](#idea-008), [IDEA-022](#idea-022) and [IDEA-025](#idea-025) — but note what actually happened: its own thesis (equalize risk contribution and lever the low-vol sleeves) survives only as a measurement correction ([IDEA-004](#idea-004), eco 4) and a diagnostic showing the claimed Sharpe gain does not come from leverage ([IDEA-025](#idea-025), eco 3). The two highest-scoring ideas traced to it, [IDEA-001](#idea-001) (the correlation position) and [IDEA-008](#idea-008) (leverage aversion), arrive as CRITIQUES of the note rather than as its argument — the note never articulates the betting-against-beta mechanism that supplies its premium, and never names the correlation assumption its whole construction is collateralized by. A note whose best transferable content is the thing it declined to say is thin in a specific and diagnosable way: it presents only descriptive statistics (vol ratios, quadrant maps, taxonomies) and no inferential ones anywhere.
 
-- Two further observations on yield concentration. The GS Japan macro outlook (2026-01) produced one genuinely strong signal (IDEA-015, effective-vs-marginal refi runway, eco 4 / dur 5) and then three research-hygiene rules, which is what happens when a note's three pillars rest on a single wage regression — the methodology critique out-yields the content. Conversely the GS JPY desk note (2026-04) was the richest single source in the pool by economic rationale, contributing two 5s (IDEA-006 issuance-mix, IDEA-002 structure geometry) plus IDEA-011 which has the highest testability of any signal here; the sell-side note with the most conflicted incentives produced the most auditable ideas, precisely because its claims rest on public quantities (issuance calendars, absorption capacity, strike placement) that a reader can check.
+- Two further observations on yield concentration. The GS Japan macro outlook (2026-01) produced one genuinely strong signal ([IDEA-015](#idea-015), effective-vs-marginal refi runway, eco 4 / dur 5) and then three research-hygiene rules, which is what happens when a note's three pillars rest on a single wage regression — the methodology critique out-yields the content. Conversely the GS JPY desk note (2026-04) was the richest single source in the pool by economic rationale, contributing two 5s ([IDEA-005](#idea-005) issuance-mix, [IDEA-002](#idea-002) structure geometry) plus [IDEA-011](#idea-011) which has the highest testability of any signal here; the sell-side note with the most conflicted incentives produced the most auditable ideas, precisely because its claims rest on public quantities (issuance calendars, absorption capacity, strike placement) that a reader can check.
 
 ---
 
@@ -1203,7 +1415,7 @@ independent arrival is itself evidence. Deliberate non-merges are recorded too.*
 *Ten agents read one digest each in isolation, so their 1–5 scales drifted. A single pass re-scored
 the pool against fixed anchors. Every changed score is listed.*
 
-**Distribution.** 46 ideas from 56 raw candidates after 8 pairwise merges and 1 triple merge. FINAL DISTRIBUTIONS. Economic rationale — 5: 9 ideas (20%), 4: 15 (33%), 3: 14 (30%), 2: 7 (15%), 1: 1 (2%). Discriminating: the 5s are exactly the ideas that name a counterparty who must trade (GPIF's statutory band, LCR-bound banks, solvency-regulated lifers, leverage-barred mandates, the fee-paying allocator, the dealer who sets the strikes, the global duration pool, the crash-insurance buyer), and everything below 4 explicitly lacks one. Durability — 5: 18 (39%), 4: 19 (41%), 3: 7 (15%), 2: 1, 1: 1. Deliberately top-heavy and I am not flattening it: this skew is a real finding, not a calibration failure. Durability 5 was earned two ways — arithmetic identities that cannot decay (variance algebra, roll-down, statistical carryover, the reserve identity, Sharpe scale-invariance, effective-N) and mandate/regulation plumbing on decade clocks. The composition tells you something uncomfortable about the pool: it is long durable METHODS and short durable SIGNALS. Of the 18 durability-5s only 5 are signals or regimes; the rest are methods and risk rules. Testability — 5: 6 (13%), 4: 11 (24%), 3: 22 (48%), 2: 7 (15%), 1: 0. The modal 3 is honest and informative: the binding constraint on this pool is not proprietary data but registry wiring plus a handful of free public connectors (SPF dispersion, HLW r*, CFTC COT, ACM term premium, BIS REER, BIS policy rates, Treasury QRA, NY Fed SOMA maturity ladder, CBOE PPUT/PUTW). Live checks confirmed that WRESBAL, SOFR, T5YIE, DFII10, DGS1, GDPC1, ^N225 and 13 EM FX crosses are physically present in the lake or defined in core/market_data_service.py yet raise ValueError through alpha_research.quant_data.api.get_data — each is one line in ticker_map.py. No idea scored testability 1, and that is itself worth recording: every surviving idea has at least a public-proxy route, which says something about how much sell-side 'proprietary' analysis rests on free data. The two genuine infrastructure walls, not data walls, are the absence of any options pricing/P&L module in alpha_research/backtests (blocks IDEA-020 and IDEA-046) and the absence of any repo/OIS instrument series (blocks the tradeable leg of IDEA-013). Totals run 5 to 15 with a median of 11; the top decile (IDEA-001 through IDEA-004) are all either merged-from-two-sources or identity-grade, which is the pattern you would want.
+**Distribution.** 46 ideas from 56 raw candidates after 8 pairwise merges and 1 triple merge. FINAL DISTRIBUTIONS. Economic rationale — 5: 9 ideas (20%), 4: 15 (33%), 3: 14 (30%), 2: 7 (15%), 1: 1 (2%). Discriminating: the 5s are exactly the ideas that name a counterparty who must trade (GPIF's statutory band, LCR-bound banks, solvency-regulated lifers, leverage-barred mandates, the fee-paying allocator, the dealer who sets the strikes, the global duration pool, the crash-insurance buyer), and everything below 4 explicitly lacks one. Durability — 5: 18 (39%), 4: 19 (41%), 3: 7 (15%), 2: 1, 1: 1. Deliberately top-heavy and I am not flattening it: this skew is a real finding, not a calibration failure. Durability 5 was earned two ways — arithmetic identities that cannot decay (variance algebra, roll-down, statistical carryover, the reserve identity, Sharpe scale-invariance, effective-N) and mandate/regulation plumbing on decade clocks. The composition tells you something uncomfortable about the pool: it is long durable METHODS and short durable SIGNALS. Of the 18 durability-5s only 5 are signals or regimes; the rest are methods and risk rules. Testability — 5: 6 (13%), 4: 11 (24%), 3: 22 (48%), 2: 7 (15%), 1: 0. The modal 3 is honest and informative: the binding constraint on this pool is not proprietary data but registry wiring plus a handful of free public connectors (SPF dispersion, HLW r*, CFTC COT, ACM term premium, BIS REER, BIS policy rates, Treasury QRA, NY Fed SOMA maturity ladder, CBOE PPUT/PUTW). Live checks confirmed that WRESBAL, SOFR, T5YIE, DFII10, DGS1, GDPC1, ^N225 and 13 EM FX crosses are physically present in the lake or defined in core/market_data_service.py yet raise ValueError through alpha_research.quant_data.api.get_data — each is one line in ticker_map.py. No idea scored testability 1, and that is itself worth recording: every surviving idea has at least a public-proxy route, which says something about how much sell-side 'proprietary' analysis rests on free data. The two genuine infrastructure walls, not data walls, are the absence of any options pricing/P&L module in alpha_research/backtests (blocks [IDEA-020](#idea-020) and [IDEA-046](#idea-046)) and the absence of any repo/OIS instrument series (blocks the tradeable leg of [IDEA-013](#idea-013)). Totals run 5 to 15 with a median of 11; the top decile ([IDEA-001](#idea-001) through [IDEA-004](#idea-004)) are all either merged-from-two-sources or identity-grade, which is the pattern you would want.
 
 **Housekeeping pass, 2026-08-11 (cross-reference IDs repaired).** During the re-digest of
 `flows_gs_cta-bond-futures_2026-06-09` it was confirmed that the prose sections below — the merge
@@ -1219,31 +1431,55 @@ free-float-denominator 039→042, publisher-credibility-ledger 040→043. A slug
 now reports zero mismatches. *If a future pass renumbers the pool again, re-run that check — the
 headings are canonical and the prose is not.*
 
+**Interconnection pass, 2026-08-17 (link layer added; nine mis-pointed cross-references repaired).**
+The library's citation network was already dense — 105 `IDEA-NNN` citations across the ten digests and
+~40 idea-to-idea references in the prose — but stored entirely as plain text, so none of it was
+navigable and no backlink existed anywhere. This pass made the existing network clickable and added
+the outward edges: 85 idea-to-idea anchor links, 57 `*source:*` links from each entry to its digest,
+105 digest back-links to the pool, and per-entry `*literature:*` / `*study:*` / `*platform:*` lines
+pointing into `../papers/`, `../studies/` and `alpha_research/`. 588 relative links now resolve, zero
+broken. **No score, wording or ranking of any entry's analysis was altered.**
+
+Repairing the references came first, because linkifying a wrong ID only makes it wrong and clickable.
+Nine references pointed at the wrong entry — the 2026-08-11 pass above fixed thirteen and left these,
+and its claim that "a slug-vs-ID consistency check now reports zero mismatches" did not hold. The
+reason it survived two passes is worth recording: `check_ideas_integrity.py` verified only that a
+cited ID *exists*, never that it matches the slug the sentence describes, so every one of these passed
+a green check. The corrected pairs, each verified by slug against the canonical `### IDEA-NNN ·`
+headings: the merge record's `IDEA-027` entry was a pre-renumbering duplicate of the `IDEA-028`
+entry below it and was folded into it; direction-of-travel merge 029→031; sharpe-gain-is-diversification
+024→025 (twice, in the not-merged note and the thin-yield note); issuance-mix 006→005 (twice, in the
+not-merged note and the thin-yield note); free-float-denominator 039→042 (twice); mandate-rebalancing
+005→006 (twice, in IDEA-022's non-merge note and as the economic-rationale-5 anchor). Note the
+direction of the error: `IDEA-005` and `IDEA-006` were transposed throughout the prose while the
+digests carried them correctly, so the digests — not this file — were the reliable copy.
+The checker was extended in the same pass to close that blind spot.
+
 **Changes:**
 
-- ANCHORS SET FIRST. Economic rationale 5 = IDEA-005 (mandate-rebalancing-is-contrarian-flow): a single named entity with a legally defined +/-6ppt band around a 25% target, a statutory mandate, no discretion to abstain, and a sign computable ex ante from public disclosures. Nothing else in the pool has a counterparty this literally forced. Economic rationale 1 = IDEA-046 (calendar-clustered-trigger-resolution): the payer is explicitly not identified, the event-vol premium is already competitively traded, the residual edge is conceded to be an assumption, and there is zero quantitative evidence. Every other score was set by asking 'is this closer to GPIF's statutory band or to the NFP-convexity assumption?'
-- Durability 1 anchor = IDEA-045 (premium-scales-with-priced-dispersion): ex-post fitted thresholds, highly autocorrelated flat-curve regimes so the effective sample is a handful of episodes, a curve-to-vol link resting on a reaction function that has changed since 2003, and no way to detect regime end. That is the rubric's 1 exactly. Durability 5s were reserved for arithmetic identities and mandate/regulation plumbing.
+- ANCHORS SET FIRST. Economic rationale 5 = [IDEA-006](#idea-006) (mandate-rebalancing-is-contrarian-flow): a single named entity with a legally defined +/-6ppt band around a 25% target, a statutory mandate, no discretion to abstain, and a sign computable ex ante from public disclosures. Nothing else in the pool has a counterparty this literally forced. Economic rationale 1 = [IDEA-046](#idea-046) (calendar-clustered-trigger-resolution): the payer is explicitly not identified, the event-vol premium is already competitively traded, the residual edge is conceded to be an assumption, and there is zero quantitative evidence. Every other score was set by asking 'is this closer to GPIF's statutory band or to the NFP-convexity assumption?'
+- Durability 1 anchor = [IDEA-045](#idea-045) (premium-scales-with-priced-dispersion): ex-post fitted thresholds, highly autocorrelated flat-curve regimes so the effective sample is a handful of episodes, a curve-to-vol link resting on a reaction function that has changed since 2003, and no way to detect regime end. That is the rubric's 1 exactly. Durability 5s were reserved for arithmetic identities and mandate/regulation plumbing.
 - Ten extractors ran a compressed 3-5 scale — 47 of 56 raw scores sat at 3 or 4. Twenty-two scores were changed, listed below.
-- IDEA-001 stock-bond-correlation: economic rationale 4 -> 5 for the GOAL half. The extractor docked it because the flexible investor 'avoids a loss rather than monetises a premium', but the merged idea's core claim is a genuine compensated risk (someone must hold the everything-falls state), which the 2012 half states correctly.
-- IDEA-003 moments-must-match-the-premium: economic rationale 5 -> 4. The EM extractor gave 5 for naming the crash-risk counterparty. Downgraded to preserve the distinction between methods that stop you overpaying (this) and methods that capture a literal transfer (IDEA-014, the fee audit, kept at 5). Testability confirmed at 5 by inspection: performance.py computes skew and excess kurtosis, report.py and professional_report.py render them, and stats/ ships bootstrap, cross_validation, minimum_backtest, multiple_testing, sharpe_tests.
-- IDEA-013 mechanical-replicant: testability 2 -> 3. The extractor scored the manager-index side only. Verified the replicant side is fully buildable (SPY, QQQ, TLT, IEF, GLD, USO and all seven G10 crosses resolve), and DBMF/KMLM are free via yfinance behind one registry line — the licensed index is the residual gap, not the whole test.
-- IDEA-016 flat-balance-sheet-is-tightening: testability 4 -> 3. Verified WRESBAL and WTREGEN raise ValueError through get_data despite sitting in fed_liquidity.parquet, CURRCIR is in neither registry nor lake, and TLAACBW027SBOG is in neither. Three of four inputs are unreachable from the research API — that is a 3, not a 4.
-- IDEA-017 capital-structure-valuation-wedge: testability held at 4 but for a corrected reason. The source digest listed the credit leg as a gap; a live call confirmed BAMLH0A0HYM2 returns data through get_data and BAMLC0A0CM is registered. The credit leg is NOT a gap; the equity forward-P/E leg is.
-- IDEA-018 effective-breadth-discount: testability 3 -> 4. Verified alpha_research/backtests/stats ships cross_validation.py, minimum_backtest.py and multiple_testing.py, and runners/ contains working position-producing entrypoints — the adjustment is implementable against existing code, not merely conceivable.
-- IDEA-022 forced-flow-response-function: testability 4 -> 3. The CTA extractor claimed 'data in the lake covers US Treasury futures (IBKR_RATES_FUTURES: ZB/ZN/ZF/ZT)'. Verified false: those are IBKR live-feed definitions in core/market_data_service.py, ZN raises ValueError through get_data, and no bond-futures price series exists in the Parquet lake. Even the US panel must be ETF-proxied.
-- IDEA-025 sharpe-gain-is-diversification-not-leverage: economic rationale 4 -> 3. It identifies where the edge is NOT — derivative of IDEA-008 and IDEA-001 rather than a source of return.
-- IDEA-033 fair-value-residual: economic rationale 4 -> 3. The extractor scored the underlying premium; the idea is the specification technique, and nobody is forced to mis-price a residual.
-- IDEA-024 horizon-match-regressors: economic rationale 4 -> 3, for the same reason — a scoping rule for other people's signals, and the source note does not even make the argument.
-- IDEA-037 tsmom: testability held at 4 with a corrected basis. Verified SPY, QQQ, TLT, IEF, SHY, GLD, USO and all seven G10 crosses resolve with yfinance fallback, so a four-sleeve proxy is buildable today; DBC, UUP, EFA, EEM, TIP do not resolve. Also verified the extractor's claim that fx/commodities/rates_yf bundles start 2024-02 — correct.
-- IDEA-036 threshold-proximity-dispersion: testability 4 held, basis corrected — XLB and XLI were confirmed resolving through the US_ETFS expansion in ticker_map, so the sector panel is live even though those tickers are absent from _ETF_ENTRIES.
-- IDEA-034 positive-carry-hedges: economic rationale 4 -> 3. The named constrained party is your own investment committee — a self-inflicted constraint — and the cost gap it exploits (the VRP) is well known and priced.
-- IDEA-038 ois-strip-level-vs-pace: economic rationale 3 -> 2. An arithmetic decomposition with no counterparty and no compensated risk; the extractor's 3 was generous relative to the anchors.
-- IDEA-040 positioning-saturation: economic rationale 4 -> 3. The capacity bound is never observed — it is inferred from a trailing 1-year range that drifts with realized vol, which is a statistical artifact rather than the disclosed mandate limit the mechanism requires.
-- IDEA-042 free-float-denominator: economic rationale 4 -> 3. A denominator discipline that improves the sizing of other people's claims, not a position.
-- IDEA-043 publisher-credibility-ledger: economic rationale 3 -> 2 (merged). No market counterparty at all. Testability held at 3 on verification that book_notes/playground/reports/ holds 10 digests — the archive seed is real but only ~3-5 entries are scorable against a ~30-entry minimum.
-- IDEA-039 backstop-censors-the-tail: economic rationale 4 -> 3, durability 5 -> 4. It is an inference rule that improves estimates rather than an edge anyone pays you to bear, and a formalized stigma-free standing facility would alter rather than merely relocate the censoring.
-- IDEA-023 funding-leg-as-first-order-choice: durability 5 -> 4, on the idea's own counterexample — TWD's EUR-funded vol was 36% HIGHER, so it is a strong prior, not a law.
-- IDEA-044 sentiment-extreme-needs-driver-check: economic rationale 3 -> 2. Nothing names a constrained counterparty or compensated risk, and the underlying contrarian signal is weak enough standalone that the whole claim rests on the filter.
-- IDEA-045 premium-scales-with-priced-dispersion: durability 3 -> 1 (the new low anchor) and economic rationale 3 -> 2. The extractor's own note conceded it is partly circular and indistinguishable from correct compensation for a real risk; that plus ex-post thresholds and undetectable regime end is the rubric's durability 1.
-- IDEA-046 calendar-clustered-trigger-resolution: economic rationale 3 -> 1 (the new low anchor), durability 3 -> 2.
+- [IDEA-001](#idea-001) stock-bond-correlation: economic rationale 4 -> 5 for the GOAL half. The extractor docked it because the flexible investor 'avoids a loss rather than monetises a premium', but the merged idea's core claim is a genuine compensated risk (someone must hold the everything-falls state), which the 2012 half states correctly.
+- [IDEA-003](#idea-003) moments-must-match-the-premium: economic rationale 5 -> 4. The EM extractor gave 5 for naming the crash-risk counterparty. Downgraded to preserve the distinction between methods that stop you overpaying (this) and methods that capture a literal transfer ([IDEA-014](#idea-014), the fee audit, kept at 5). Testability confirmed at 5 by inspection: performance.py computes skew and excess kurtosis, report.py and professional_report.py render them, and stats/ ships bootstrap, cross_validation, minimum_backtest, multiple_testing, sharpe_tests.
+- [IDEA-013](#idea-013) mechanical-replicant: testability 2 -> 3. The extractor scored the manager-index side only. Verified the replicant side is fully buildable (SPY, QQQ, TLT, IEF, GLD, USO and all seven G10 crosses resolve), and DBMF/KMLM are free via yfinance behind one registry line — the licensed index is the residual gap, not the whole test.
+- [IDEA-016](#idea-016) flat-balance-sheet-is-tightening: testability 4 -> 3. Verified WRESBAL and WTREGEN raise ValueError through get_data despite sitting in fed_liquidity.parquet, CURRCIR is in neither registry nor lake, and TLAACBW027SBOG is in neither. Three of four inputs are unreachable from the research API — that is a 3, not a 4.
+- [IDEA-017](#idea-017) capital-structure-valuation-wedge: testability held at 4 but for a corrected reason. The source digest listed the credit leg as a gap; a live call confirmed BAMLH0A0HYM2 returns data through get_data and BAMLC0A0CM is registered. The credit leg is NOT a gap; the equity forward-P/E leg is.
+- [IDEA-018](#idea-018) effective-breadth-discount: testability 3 -> 4. Verified alpha_research/backtests/stats ships cross_validation.py, minimum_backtest.py and multiple_testing.py, and runners/ contains working position-producing entrypoints — the adjustment is implementable against existing code, not merely conceivable.
+- [IDEA-022](#idea-022) forced-flow-response-function: testability 4 -> 3. The CTA extractor claimed 'data in the lake covers US Treasury futures (IBKR_RATES_FUTURES: ZB/ZN/ZF/ZT)'. Verified false: those are IBKR live-feed definitions in core/market_data_service.py, ZN raises ValueError through get_data, and no bond-futures price series exists in the Parquet lake. Even the US panel must be ETF-proxied.
+- [IDEA-025](#idea-025) sharpe-gain-is-diversification-not-leverage: economic rationale 4 -> 3. It identifies where the edge is NOT — derivative of [IDEA-008](#idea-008) and [IDEA-001](#idea-001) rather than a source of return.
+- [IDEA-033](#idea-033) fair-value-residual: economic rationale 4 -> 3. The extractor scored the underlying premium; the idea is the specification technique, and nobody is forced to mis-price a residual.
+- [IDEA-024](#idea-024) horizon-match-regressors: economic rationale 4 -> 3, for the same reason — a scoping rule for other people's signals, and the source note does not even make the argument.
+- [IDEA-037](#idea-037) tsmom: testability held at 4 with a corrected basis. Verified SPY, QQQ, TLT, IEF, SHY, GLD, USO and all seven G10 crosses resolve with yfinance fallback, so a four-sleeve proxy is buildable today; DBC, UUP, EFA, EEM, TIP do not resolve. Also verified the extractor's claim that fx/commodities/rates_yf bundles start 2024-02 — correct.
+- [IDEA-036](#idea-036) threshold-proximity-dispersion: testability 4 held, basis corrected — XLB and XLI were confirmed resolving through the US_ETFS expansion in ticker_map, so the sector panel is live even though those tickers are absent from _ETF_ENTRIES.
+- [IDEA-034](#idea-034) positive-carry-hedges: economic rationale 4 -> 3. The named constrained party is your own investment committee — a self-inflicted constraint — and the cost gap it exploits (the VRP) is well known and priced.
+- [IDEA-038](#idea-038) ois-strip-level-vs-pace: economic rationale 3 -> 2. An arithmetic decomposition with no counterparty and no compensated risk; the extractor's 3 was generous relative to the anchors.
+- [IDEA-040](#idea-040) positioning-saturation: economic rationale 4 -> 3. The capacity bound is never observed — it is inferred from a trailing 1-year range that drifts with realized vol, which is a statistical artifact rather than the disclosed mandate limit the mechanism requires.
+- [IDEA-042](#idea-042) free-float-denominator: economic rationale 4 -> 3. A denominator discipline that improves the sizing of other people's claims, not a position.
+- [IDEA-043](#idea-043) publisher-credibility-ledger: economic rationale 3 -> 2 (merged). No market counterparty at all. Testability held at 3 on verification that book_notes/playground/reports/ holds 10 digests — the archive seed is real but only ~3-5 entries are scorable against a ~30-entry minimum.
+- [IDEA-039](#idea-039) backstop-censors-the-tail: economic rationale 4 -> 3, durability 5 -> 4. It is an inference rule that improves estimates rather than an edge anyone pays you to bear, and a formalized stigma-free standing facility would alter rather than merely relocate the censoring.
+- [IDEA-023](#idea-023) funding-leg-as-first-order-choice: durability 5 -> 4, on the idea's own counterexample — TWD's EUR-funded vol was 36% HIGHER, so it is a strong prior, not a law.
+- [IDEA-044](#idea-044) sentiment-extreme-needs-driver-check: economic rationale 3 -> 2. Nothing names a constrained counterparty or compensated risk, and the underlying contrarian signal is weak enough standalone that the whole claim rests on the filter.
+- [IDEA-045](#idea-045) premium-scales-with-priced-dispersion: durability 3 -> 1 (the new low anchor) and economic rationale 3 -> 2. The extractor's own note conceded it is partly circular and indistinguishable from correct compensation for a real risk; that plus ex-post thresholds and undetectable regime end is the rubric's durability 1.
+- [IDEA-046](#idea-046) calendar-clustered-trigger-resolution: economic rationale 3 -> 1 (the new low anchor), durability 3 -> 2.
 - Testability corrections applied pool-wide from live checks against get_data: WRESBAL, DFII10, SOFR, T5YIE, DGS1, GDPC1, ^N225, ZN, DBMF, USDBRL=X, TIP, DBC, UUP, EFA and EEM all raise ValueError even where the data physically sits in the Parquet lake — a registry gap, not a data gap, and I scored it as a 1-line fix rather than a hard blocker. Confirmed working: BAMLH0A0HYM2, BAMLC0A0CM, TLT, IEF, SHY, GLD, USO, SPY, QQQ, XLB, XLI, DGS2/5/10/30, T10YIE, VIXCLS, IORB, DFF, GDP, CPIAUCSL, all seven G10 FX crosses. Confirmed absent with no substitute: any options pricing or P&L module in alpha_research/backtests (only a VIX notebook), any CFTC connector, any JGB curve, any repo/OIS instrument series.

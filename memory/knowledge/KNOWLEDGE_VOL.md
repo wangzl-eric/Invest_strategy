@@ -1,4 +1,16 @@
 # Knowledge Base: Volatility
+
+> **SUPERSEDED 2026-08-18 — read-only archive.**
+> The tested-outcome content of this file was rescued into
+> [`book_notes/playground/brain/VERDICTS.md`](../../book_notes/playground/brain/VERDICTS.md);
+> the concept and paper content is superseded by
+> [`brain/concepts/`](../../book_notes/playground/brain/concepts/) and
+> [`book_notes/playground/papers/`](../../book_notes/playground/papers/INDEX.md).
+>
+> **Why it went stale:** its documented intake — `/capture-finding`, `/learn-verdict`,
+> `/learn-source` — was never installed (only `read-to-learn` exists), so the `kb-curator`
+> agent had no way to be invoked. Do not add entries here; use the brain's
+> [`INBOX.md`](../../book_notes/playground/brain/INBOX.md).
 _Last updated: 2026-03-19_
 _Entry tags: [AUTO] auto-extracted | [PLAYGROUND] from notebook | [BOOK/ARTICLE] from reading | [PM-VERDICT] from strategy review_
 _All entries validated by kb-curator agent before write._

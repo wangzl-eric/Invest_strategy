@@ -41,3 +41,22 @@ repos:
     hooks:
       - id: flake8
         args: ['--max-line-length=120', '--ignore=E501,W503,E203']
+
+  # Second-brain integrity — the atom pool's only enforcement point.
+  # Added 2026-08-19. Five of six condensation layers in this repo died because their
+  # conventions were documented but never enforced; the one that survived had a checker
+  # that nothing ran automatically. These make Law 6 in brain/README.md a fact.
+  - repo: local
+    hooks:
+      - id: check-ideas-integrity
+        name: idea pool integrity (IDs, reciprocal edges, slug match, live links)
+        entry: python3 scripts/check_ideas_integrity.py
+        language: system
+        pass_filenames: false
+        files: ^book_notes/playground/reports/.*\.md$
+      - id: check-brain-integrity
+        name: brain integrity (concepts, verdicts, wikilinks, index sync)
+        entry: python3 scripts/check_brain_integrity.py
+        language: system
+        pass_filenames: false
+        files: ^book_notes/playground/(brain|reports)/.*\.md$

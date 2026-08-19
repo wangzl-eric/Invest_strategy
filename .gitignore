@@ -81,3 +81,7 @@ config/ibkr_config.yaml
 # The source reports are third-party sell-side research (several stamped "for the
 # exclusive use of ..."), and this repo is public — do not commit them.
 book_notes/playground/reports/**/*.pdf
+
+# Obsidian UI state — rewrites on every pane move; vault settings stay versioned.
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json

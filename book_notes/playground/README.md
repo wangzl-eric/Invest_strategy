@@ -2,6 +2,21 @@
 
 **Purpose:** Interactive learning and exploration environment for studying markets without formal research rigor requirements.
 
+> ## → Start at [`brain/`](brain/README.md)
+>
+> The **second brain** is where reading is condensed into reusable thought. Everything else in the
+> playground produces *source-faithful* notes (L1); the brain holds the *transferable* atoms (L2) those
+> notes collapse into, and links back to them:
+>
+> | | | |
+> |---|---|---|
+> | **Mechanisms** — what to trade, who pays | 46 atoms | [`reports/IDEAS.md`](reports/IDEAS.md) |
+> | **Concepts** — the machinery beneath them | 10 atoms | [`brain/concepts/`](brain/concepts/) |
+> | **Verdicts** — what we tried and what happened | 13 records | [`brain/VERDICTS.md`](brain/VERDICTS.md) |
+> | **Inbox** — your own raw thoughts, unpolished | live | [`brain/INBOX.md`](brain/INBOX.md) |
+>
+> Nothing in the brain replaces its source. Run `python3 scripts/check_brain_integrity.py` after edits.
+
 ## What is the Playground?
 
 The playground is a **separate space** from the formal research workflow (`research/`) where you can:
