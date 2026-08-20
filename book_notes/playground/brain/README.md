@@ -1,5 +1,7 @@
 # The Brain — a research second brain
 
+> **Just want to use it?** → [`HOWTO.md`](HOWTO.md). This file is the architecture and the laws; HOWTO is the daily and weekly workflow.
+
 *Created 2026-08-18. Purpose: hold a pool of thoughts in a form that survives the source they came
 from, so that high-dimensional reading (reports, papers, books) collapses into low-dimensional,
 reusable logic — without ever destroying the original.*
