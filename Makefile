@@ -1,7 +1,7 @@
 # IBKR Analytics - Makefile
 # Usage: make <target>
 
-.PHONY: help install test test-cov lint format clean serve-backend serve-frontend serve-all typecheck pre-commit
+.PHONY: help install test test-cov lint format clean serve-backend serve-frontend serve-all typecheck pre-commit brain-index brain-check brain-triage
 
 # Default target
 help:
@@ -77,3 +77,16 @@ serve-all:
 # Run pre-commit hooks
 pre-commit:
 	pre-commit run --all-files
+
+# --- Research second brain -------------------------------------------------
+# Markdown is the source of truth; the SQLite index is derived and disposable.
+brain-index:  ## Rebuild the derived index from markdown
+	python3 -m alpha_research.brain.index --build
+
+brain-check:  ## Assert index matches markdown + both integrity checkers
+	python3 -m alpha_research.brain.index --check
+	python3 scripts/check_ideas_integrity.py
+	python3 scripts/check_brain_integrity.py --captures
+
+brain-triage:  ## List captures awaiting triage
+	python3 scripts/triage_inbox.py list
