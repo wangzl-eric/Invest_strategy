@@ -102,6 +102,15 @@ class Transaction:
     """Snapshot -> apply -> verify -> rollback on red."""
 
     def __init__(self, paths):
+        # verify() unconditionally runs check_brain_integrity.py --reindex, which
+        # REWRITES CONCEPTS.md. If it is not in the snapshot set, a rollback on the
+        # mechanism or verdict path restores IDEAS.md/VERDICTS.md but leaves a
+        # regenerated CONCEPTS.md behind — a partial rollback, which is worse than
+        # none because it looks clean. Always snapshot it. (Found 2026-08-21.)
+        paths = list(paths)
+        index = BRAIN / "CONCEPTS.md"
+        if index not in [pathlib.Path(x) for x in paths]:
+            paths.append(index)
         self.paths = [pathlib.Path(p) for p in paths]
         self.tmp = pathlib.Path(tempfile.mkdtemp(prefix="triage-"))
         self.saved = {}
@@ -264,6 +273,27 @@ def cmd_promote(a):
             return finish(tx, f, "triaged")
 
     # ---- mechanism: the dangerous one
+    # check_ideas_integrity.py matches a slug against prose with str.find() and no word
+    # boundary, so a slug that occurs inside existing prose retroactively invalidates
+    # every citation line containing it. Pre-flight the slug before minting an ID.
+    lib = IDEAS.parent
+    hits = []
+    for f in sorted(lib.rglob("*.md")):
+        for lineno, line in enumerate(f.read_text(encoding="utf-8").split("\n"), 1):
+            if line.startswith("### IDEA-"):
+                continue
+            if a.slug in line and re.search(r"IDEA-\d{3}", line):
+                hits.append(f"{f.relative_to(lib)}:{lineno}")
+    if hits:
+        print(
+            f"REFUSING — slug '{a.slug}' already occurs on {len(hits)} line(s) that cite an "
+            f"IDEA id; the checker's substring slug rule would flag them all:"
+        )
+        for h in hits[:5]:
+            print(f"    {h}")
+        print("  choose a longer or more distinctive slug.")
+        return 1
+
     mid = next_id("mechanism")
     nnn = mid[-3:]
     total = a.econ + a.dur + a.test
@@ -381,9 +411,9 @@ def main():
         default="method",
         choices=["signal", "method", "regime", "risk", "structure"],
     )
-    s.add_argument("--econ", type=int, default=3)
-    s.add_argument("--dur", type=int, default=3)
-    s.add_argument("--test", type=int, default=3)
+    s.add_argument("--econ", type=int, default=3, choices=range(1, 6))
+    s.add_argument("--dur", type=int, default=3, choices=range(1, 6))
+    s.add_argument("--test", type=int, default=3, choices=range(1, 6))
     s.add_argument("--source", default="TODO")
     s.add_argument("--related", action="append")
     s.set_defaults(fn=cmd_promote)

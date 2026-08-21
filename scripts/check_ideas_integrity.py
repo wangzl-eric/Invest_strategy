@@ -77,6 +77,7 @@ def main() -> int:
     # 2026-08-11 repair claimed a clean slug-vs-ID check while IDEA-005/006 were
     # still transposed throughout the prose. Where a canonical slug appears on the
     # same line as an ID, they must agree.
+    slug_of = dict(entries)
     id_of_slug = {s: i for i, s in entries}
     for f in sorted(LIB.rglob("*.md")):
         for lineno, line in enumerate(f.read_text(encoding="utf-8").split("\n"), 1):
@@ -133,13 +134,73 @@ def main() -> int:
                         f"{f.relative_to(LIB)}:{lineno} dead anchor {target}"
                     )
 
+    # The summary table must AGREE with the entries, not merely be sorted and complete.
+    # Verified 2026-08-21: mutating a row's kind, slug case and component scores to
+    # 1|9|4 (which do not sum to its stated 14) passed this checker with exit 0, because
+    # only the ID (line 45) and the Total (line 51) were ever read. The table is what a
+    # reader scans; a table that disagrees with its entries is a silent lie.
+    entry_meta = {}
+    for block in re.split(r"^### ", text, flags=re.M)[1:]:
+        head = block.split("\n", 1)[0]
+        if not head.startswith("IDEA-"):
+            continue
+        eid = head.split(" ")[0]
+        kind = re.search(r"^`(\w+)` · \*\*status:", block, re.M)
+        parts = re.findall(r"\| \*\*([1-5])/5\*\* \|", block)
+        stated = re.search(r"\*\*(\d+)/15\*\*", block)
+        entry_meta[eid] = {
+            "kind": kind.group(1) if kind else None,
+            "scores": [int(x) for x in parts] if len(parts) == 3 else None,
+            "total": int(stated.group(1)) if stated else None,
+        }
+
+    row_re = re.compile(
+        r"^\| \[(\d{3})\]\(#idea-\d{3}\) \| `(\w+)` \| \*\*(\S+)\*\* \| "
+        r"(\d) \| (\d) \| (\d) \| \*\*(\d+)\*\* \|$",
+        re.M,
+    )
+    seen_rows = set()
+    for nnn, kind, slug, e, d, tst, tot in row_re.findall(text):
+        eid = f"IDEA-{nnn}"
+        seen_rows.add(eid)
+        meta = entry_meta.get(eid)
+        if not meta:
+            problems.append(f"summary row {eid} has no matching entry")
+            continue
+        if slug != slug_of.get(eid):
+            problems.append(
+                f"summary row {eid}: slug '{slug}' != entry slug '{slug_of.get(eid)}'"
+            )
+        if meta["kind"] and kind != meta["kind"]:
+            problems.append(
+                f"summary row {eid}: kind '{kind}' != entry kind '{meta['kind']}'"
+            )
+        row_scores = [int(e), int(d), int(tst)]
+        if meta["scores"] and row_scores != meta["scores"]:
+            problems.append(
+                f"summary row {eid}: scores {row_scores} != entry scores {meta['scores']}"
+            )
+        if sum(row_scores) != int(tot):
+            problems.append(
+                f"summary row {eid}: {row_scores} do not sum to stated total {tot}"
+            )
+        if meta["total"] is not None and int(tot) != meta["total"]:
+            problems.append(
+                f"summary row {eid}: total {tot} != entry total {meta['total']}"
+            )
+    if len(seen_rows) != len(ids):
+        problems.append(
+            f"summary table: {len(seen_rows)} well-formed rows parsed for {len(ids)} entries "
+            "— a row that does not match the expected shape is invisible to every row check"
+        )
+
     # each entry's three scores must sum to its stated total
     for block in re.split(r"^### ", text, flags=re.M)[1:]:
         head = block.split("\n", 1)[0]
         if not head.startswith("IDEA-"):
             continue
         stated = re.search(r"\*\*(\d+)/15\*\*", block)
-        parts = re.findall(r"\| \*\*(\d)/5\*\* \|", block)
+        parts = re.findall(r"\| \*\*([1-5])/5\*\* \|", block)
         if (
             stated
             and len(parts) == 3
