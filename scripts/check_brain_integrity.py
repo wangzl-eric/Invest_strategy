@@ -22,11 +22,11 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-BRAIN = ROOT / "book_notes/playground/brain"
+BRAIN = ROOT / "knowledge/brain"
 CONCEPTS_DIR = BRAIN / "concepts"
 INDEX = BRAIN / "CONCEPTS.md"
 VERDICTS = BRAIN / "VERDICTS.md"
-IDEAS = ROOT / "book_notes/playground/reports/IDEAS.md"
+IDEAS = ROOT / "knowledge/reports/IDEAS.md"
 
 REQUIRED_FM = ("type", "id", "slug", "domain", "status")
 VALID_STATUS = {"stable", "contested", "unsettled"}

@@ -195,7 +195,7 @@ regime-fitting; cannot validate Sharpe (and doesn't claim to).
 spec, reason, ledger stats. Resurrection needs materially new evidence + 90-day cooling;
 S0 checks it before queueing near-duplicates. Every kill also fires
 `/learn-verdict {folder}` → KB Curator → domain KBs
-(`memory/knowledge/KNOWLEDGE_{FX|EQUITY|MACRO|VOL}.md`): the graveyard is the archive,
+(`knowledge/domains/KNOWLEDGE_{FX|EQUITY|MACRO|VOL}.md`): the graveyard is the archive,
 the KBs are the working memory agents actually read.
 
 ---
@@ -285,7 +285,7 @@ both ledger-enforced. A verdict **renames the strategy folder** (`…_REVISE` �
 `…_REJECTED`) — the filesystem shows the loop's state.
 
 **Closing the loop:** every verdict — pass *or* kill — fires `/learn-verdict {folder}` → KB
-Curator → domain KBs (`memory/knowledge/KNOWLEDGE_{FX|EQUITY|MACRO|VOL}.md`), and every kill
+Curator → domain KBs (`knowledge/domains/KNOWLEDGE_{FX|EQUITY|MACRO|VOL}.md`), and every kill
 also lands in the graveyard (§4.4). Completion protocol (§6) routes all of it through the
 Conductor, which decides the next dispatch. **No agent self-dispatches; no agent edits gates
 or `promotion_rules`.**

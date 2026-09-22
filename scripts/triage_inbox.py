@@ -29,10 +29,10 @@ import sys
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-BRAIN = ROOT / "book_notes/playground/brain"
+BRAIN = ROOT / "knowledge/brain"
 CONCEPTS = BRAIN / "concepts"
 VERDICTS = BRAIN / "VERDICTS.md"
-IDEAS = ROOT / "book_notes/playground/reports/IDEAS.md"
+IDEAS = ROOT / "knowledge/reports/IDEAS.md"
 CAPTURES = pathlib.Path.home() / "Dropbox/thought-inbox"
 ARCHIVE = pathlib.Path.home() / "Dropbox/thought-inbox-archive"
 

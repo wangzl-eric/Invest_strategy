@@ -28,4 +28,4 @@ Delete these comments when filling. -->
 
 <!-- Add `## ROUND 2` if the researcher revised; track resolved/unresolved from Round 1.
 After the final round, a verdict renames the strategy folder. REJECT → graveyard +
-/learn-verdict (lesson to memory/knowledge/KNOWLEDGE_*.md). -->
+/learn-verdict (lesson to knowledge/domains/KNOWLEDGE_*.md). -->

@@ -68,7 +68,7 @@ How to hand off:
 ## Working with the Platform
 
 Before any research work, always:
-1. **Read domain KBs** — Read `memory/knowledge/KNOWLEDGE_FX.md` and `memory/knowledge/KNOWLEDGE_MACRO.md`. Before defining any signal, check the **Known Failure Modes** section for the relevant topic. If your proposed strategy repeats a known failure, flag it explicitly before proceeding.
+1. **Read domain KBs** — Read `knowledge/domains/KNOWLEDGE_FX.md` and `knowledge/domains/KNOWLEDGE_MACRO.md`. Before defining any signal, check the **Known Failure Modes** section for the relevant topic. If your proposed strategy repeats a known failure, flag it explicitly before proceeding.
 2. **Review lessons learned** — Read `~/.claude/projects/-Users-zelin-Desktop-PA-Investment-Invest-strategy/memory/LESSONS_LEARNED.md` for relevant lessons from past strategy rejections
 3. **Review business context** — Read `~/.claude/projects/-Users-zelin-Desktop-PA-Investment-Invest-strategy/memory/BUSINESS_CONTEXT.md` for PM principles and domain constraints
 4. **Complete pre-flight checklist** — Copy `~/.claude/projects/-Users-zelin-Desktop-PA-Investment-Invest-strategy/memory/templates/strategy_research_checklist.md` to your strategy folder and check off all applicable items

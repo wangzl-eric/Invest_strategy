@@ -312,7 +312,7 @@ def render_backtest_report(
         f"| MinBTL (days) | {battery.get('min_backtest_length_days','n/a')} (have {battery.get('n_days','?')}, "
         f"{'OK' if battery.get('minbtl_satisfied') else 'FAIL'}) |",
         f"| Sharpe 95% CI | {battery.get('sharpe_ci_95','n/a')} |",
-        f"| Walk-forward +segments | {battery.get('walkforward_positive_segments','?')}/"
+        f"| Walk-forward +windows (OOS) | {battery.get('walkforward_positive_segments','?')}/"
         f"{len(battery.get('walkforward_segments',[]))} |",
         "",
     ]

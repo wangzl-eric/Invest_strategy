@@ -140,7 +140,7 @@ If verdict is BLOCKED, strategy is parked until pipeline is built. No research p
 - Book references (chapters from `books_and_papers/reading-list-summary.md`)
 - Known failure modes for this strategy type
 - Suggested signal construction approaches
-- Relevant entries from domain knowledge bases (`memory/knowledge/`)
+- Relevant entries from domain knowledge bases (`knowledge/domains/`)
 
 **Researcher** also reads `research/external_ideas.md` and cites minimum:
 - 2 academic papers
@@ -219,7 +219,7 @@ A Round 3 is triggered only if a CRITICAL issue remains unresolved after Round 2
 - `CONDITIONAL` — minor gaps remain; researcher iterates in same loop
 - `REJECTED` — fails a kill gate; folder renamed to `*_rejected`, lessons captured
 
-**After any verdict**, KB Curator is triggered (via `/learn-verdict {folder}`) to extract lessons into the domain knowledge bases (`memory/knowledge/KNOWLEDGE_{FX|EQUITY|MACRO|VOL}.md`). This ensures rejected strategies teach future researchers.
+**After any verdict**, KB Curator is triggered (via `/learn-verdict {folder}`) to extract lessons into the domain knowledge bases (`knowledge/domains/KNOWLEDGE_{FX|EQUITY|MACRO|VOL}.md`). This ensures rejected strategies teach future researchers.
 
 ---
 
@@ -247,10 +247,10 @@ Lessons from every strategy feed into four domain KB files:
 
 | Domain | File | Topics |
 |--------|------|--------|
-| FX | `memory/knowledge/KNOWLEDGE_FX.md` | carry, momentum, real-exchange-rates, regime |
-| Equity | `memory/knowledge/KNOWLEDGE_EQUITY.md` | momentum, quality, low-vol, sector-rotation, crowding |
-| Macro | `memory/knowledge/KNOWLEDGE_MACRO.md` | yield-curve, commodity-momentum, inflation-regime, credit |
-| Volatility | `memory/knowledge/KNOWLEDGE_VOL.md` | vrp, vix-regime, vol-targeting, realized-vs-implied |
+| FX | `knowledge/domains/KNOWLEDGE_FX.md` | carry, momentum, real-exchange-rates, regime |
+| Equity | `knowledge/domains/KNOWLEDGE_EQUITY.md` | momentum, quality, low-vol, sector-rotation, crowding |
+| Macro | `knowledge/domains/KNOWLEDGE_MACRO.md` | yield-curve, commodity-momentum, inflation-regime, credit |
+| Volatility | `knowledge/domains/KNOWLEDGE_VOL.md` | vrp, vix-regime, vol-targeting, realized-vs-implied |
 
 **Skills for capturing knowledge:**
 - `/learn-verdict {folder}` — extract lessons from a completed PM review
@@ -263,7 +263,7 @@ All writes are proposed by **KB Curator** and require explicit user confirmation
 
 ## Playground (Hypothesis Generation)
 
-Before formal research, ideas can be explored in `workstation/playground/` with no rigor gates:
+Before formal research, ideas can be explored in `knowledge/` with no rigor gates:
 
 - **No statistical thresholds** — explore freely
 - **No PM review required** — learning-focused

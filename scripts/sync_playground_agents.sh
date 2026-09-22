@@ -4,7 +4,7 @@
 set -euo pipefail
 
 PROJECT_DIR="/Users/zelin/Desktop/PA Investment/Invest_strategy"
-AGENTS_DIR="$PROJECT_DIR/book_notes/playground/agents"
+AGENTS_DIR="$PROJECT_DIR/knowledge/agents"
 LAUNCH_SCRIPT="$PROJECT_DIR/scripts/launch_playground_team.sh"
 LOG_FILE="$PROJECT_DIR/.claude/sync_agents.log"
 AD="$HOME/.local/bin/agent-deck"
@@ -116,7 +116,7 @@ done
 if [ ${#MISSING[@]} -gt 0 ]; then
   log "WARNING: The following playground agents have .md files but are NOT referenced in launch_playground_team.sh:"
   for m in "${MISSING[@]}"; do
-    log "  - $m  (book_notes/playground/agents/$m.md)"
+    log "  - $m  (knowledge/agents/$m.md)"
   done
 else
   log "Playground launch script coverage OK — all playground agents are referenced."

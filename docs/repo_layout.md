@@ -5,7 +5,7 @@ This repository is a **layered architecture**: a shared infrastructure package a
 - **`core/`** — shared infrastructure: config, DB (models/database/persistence), IBKR broker client, market-data platform, Flex ingestion, LLM plumbing. Depends on nothing internal.
 - **`dashboard/`** — IBKR portfolio analytics & market-price application (FastAPI backend + Dash frontend)
 - **`alpha_research/`** — alpha research & backtesting infrastructure (signal/backtest/portfolio/execution libraries, data ingestion, research notes, notebooks, and the Cerebro discovery pipeline)
-- **`book_notes/`** — learning material: notes on books/papers and the playground study environment
+- **`knowledge/`** — learning & study material: the indexed concept/verdict KB (`brain/`), domain KBs, paper and practitioner-report notes, book chapter notes, dated topic studies, and source PDFs
 
 For the end-to-end research flow, see [`docs/data_backtest_report_pipeline.md`](./data_backtest_report_pipeline.md).
 
@@ -25,10 +25,14 @@ Imports use real, component-qualified paths (`from core.config import settings`,
 | `alpha_research/execution/` | Alpha research | Active | Paper/live order flow, broker abstraction, risk checks |
 | `alpha_research/quant_data/` | Alpha research | Active | Data-ingestion code, schemas, connectors, registry, DuckDB helpers, PIT layer (`pit.py`), QC preflight (`qc.py`) |
 | `alpha_research/research/` | Alpha research | Active | Strategy notes, reviews, tracker, framework audits; `research/pool/` holds git-versioned strategy manifests |
-| `alpha_research/notebooks/` | Alpha research | Active | Exploratory notebooks and templates |
+| `alpha_research/notebooks/templates/` | Alpha research | Active | Scaffolds for a new research notebook |
 | `alpha_research/cerebro/` | Alpha research | Experimental | Research-ingestion and idea-generation pipeline |
-| `book_notes/playground/` | Book notes | Active | Playground study environment (studies, agents, skills) |
-| `book_notes/books_and_papers/` | Book notes | Active | Source PDFs of books and papers |
+| `knowledge/brain/` | Knowledge | Active | Concept/verdict KB — indexed into `data_lake/brain.sqlite` by `alpha_research/kb_index/`, pre-commit guarded |
+| `knowledge/domains/` | Knowledge | Active | Domain KBs (`KNOWLEDGE_{FX,EQUITY,MACRO,VOL}.md`) written by `kb-curator` |
+| `knowledge/{papers,reports,books}/` | Knowledge | Active | Paper notes, practitioner report library (+ `IDEAS.md`), book chapter notes |
+| `knowledge/{studies,tutorials}/` | Knowledge | Active | Dated topic investigations (+ `_legacy/`); numbered platform tutorials |
+| `knowledge/fields/` | Knowledge | Reference | Field primers — taxonomy retired 2026-08-18, see `knowledge/FIELDS.md` |
+| `knowledge/{sources,shared}/` | Knowledge | Active | Source PDFs; `viz_helpers` + notebook templates (`knowledge.shared.*`) |
 | `data/` | Shared runtime data | Active | Pulled datasets, market data files, broker exports, catalogs |
 | `docs/` | Documentation | Active | Guides, specs, architecture notes |
 | `scripts/` | Tooling | Active | CLI entry points, ingestion jobs, automation |
@@ -92,8 +96,9 @@ compatibility symlinks; an earlier transition used them but imports are now expl
 - Put API, DB, broker, and scheduler code in `dashboard/backend/`.
 - Put UI code in `dashboard/frontend/`.
 - Put reusable research logic in `alpha_research/{backtests,portfolio,execution,quant_data}/`.
-- Put strategy notes and exploratory notebooks in `alpha_research/{research,notebooks}/`.
-- Put book/paper learning material in `book_notes/`.
+- Put strategy notes in `alpha_research/research/`; notebook scaffolds in `alpha_research/notebooks/templates/`.
+- Put platform tutorials in `knowledge/tutorials/` and worked studies in `knowledge/studies/`.
+- Put book/paper learning material and study notes in `knowledge/`.
 - Put raw or generated files in `data/`.
 - Keep optional or experimental integrations clearly marked (`alpha_research/cerebro/`).
 
@@ -101,7 +106,7 @@ compatibility symlinks; an earlier transition used them but imports are now expl
 
 The major structural cleanups are done:
 
-- Three-component split (`dashboard/`, `alpha_research/`, `book_notes/`) with explicit imports (no symlinks).
+- Three-component split (`dashboard/`, `alpha_research/`, `knowledge/`) with explicit imports (no symlinks).
 - `core/` extracted as the shared-infrastructure bottom layer — the dashboard↔research cycle is broken.
 - `dashboard/backend/backtest_engine.py` shim removed; import `alpha_research.backtests.event_driven.backtest_engine` directly.
 - QuantConnect Lean (`qc_lean/`) removed in favor of the in-house engine.

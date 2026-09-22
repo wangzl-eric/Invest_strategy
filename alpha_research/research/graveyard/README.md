@@ -26,7 +26,7 @@ One file per kill: `{hypothesis_id}_{YYYY-MM-DD}.md` containing:
 - Resurrection requires the stated condition met AND the cooling period elapsed; the
   resurrected entry goes back to S0 as a **new version** (ledger trial counts carry over).
 - Every kill also fires `/learn-verdict {folder}` so the lesson reaches the domain KBs
-  (`memory/knowledge/`) — the graveyard is the archive; the KBs are the working memory.
+  (`knowledge/domains/`) — the graveyard is the archive; the KBs are the working memory.
 
 ## Pre-factory kills (migrated from STRATEGY_TRACKER.md, 2026-03)
 

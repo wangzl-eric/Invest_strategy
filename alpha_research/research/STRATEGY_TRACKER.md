@@ -446,7 +446,7 @@ All critical/high bugs fixed as of 2026-03-13. Tests: `tests/unit/test_bugfixes.
   gate (−0.62) BEATS the VIX gate (−0.84) → K4 hard fail. Negative **even gross** → reversal
   has no premium at the liquid sector-ETF layer (5-day sector returns continue, not reverse).
   Folder renamed `…_rejected`; graveyard entry `graveyard/vol_conditioned_reversal_2026-06-14.md`;
-  lesson **L8** captured in `memory/knowledge/KNOWLEDGE_EQUITY.md`. No `experiment_ledger` row
+  lesson **L8** captured in `knowledge/domains/KNOWLEDGE_EQUITY.md`. No `experiment_ledger` row
   (preliminary bypassed register). Cooling until 2026-09-12. Canonical FRED/1999 run never needed —
   a negative gross edge cannot be rescued by more history or the $1 floor (which only worsens it).
 - **L8 (new lesson):** Short-term reversal is dead — negative even gross — at the liquid sector-ETF
@@ -614,4 +614,72 @@ All critical/high bugs fixed as of 2026-03-13. Tests: `tests/unit/test_bugfixes.
   test dropped), same 9 unrelated failures.
 - Status: COMPLETE
 
-*Last updated: 2026-06-16*
+### 2026-06-17 — Review walk-forward upgraded from contiguous segments to expanding-window OOS
+- Motivated by a playground study of López de Prado, *Advances in Financial Machine Learning*, Ch. 7
+  (Cross-Validation in Finance): `knowledge/books/2026-06-17_advances_financial_ml/notes/ch07_notes.md`.
+  Tracing the review pipeline showed its "walk-forward" was `np.array_split(returns, 4)` — contiguous
+  segment Sharpe over the *whole* series, including lookback-starved early bars — not a true walk-forward.
+- What changed:
+  - `alpha_research/backtests/stats/cross_validation.py`: `walk_forward_split` gained a backward-compatible
+    `expanding=False` flag (anchors the train window at index 0 and grows it; test windows unchanged).
+  - `alpha_research/review/pipeline.py`: `_stats_battery` now reserves a ~40% in-sample anchor
+    (`WALKFORWARD_ANCHOR_FRAC`) and evaluates `N_WALKFORWARD_WINDOWS=6` non-overlapping expanding-window
+    OOS windows via `walk_forward_split(..., expanding=True)`. Adds `walkforward_method`,
+    `walkforward_oos_sharpe_mean`, `walkforward_oos_start/end`; keeps `walkforward_segments` /
+    `walkforward_positive_segments` (now per-OOS-window) for backward compat. Short-sample fallback to a
+    single full-sample window.
+  - Report wording fixed in `reporting/professional_report.py` and `reporting/report.py`
+    ("contiguous segments" → "expanding-window OOS windows"; added OOS span + mean OOS Sharpe).
+  - Tests: `tests/unit/test_stats.py` (expanding-mode case), `tests/unit/test_review_pipeline.py`
+    (structural assertions replacing the hard-coded `== 4`).
+- Scope note: this is an OOS **stability** diagnostic over the already-causal weights-contract return path,
+  NOT a leakage control (look-ahead stays controlled by the execution-convention shift + PIT macro). Purged
+  CV remains confined to the ML-signal path by design. No engine/PnL/weights behavior changed, so no
+  `compare_engines` reconciliation needed. flake8 clean; 20/20 targeted tests pass.
+- Files modified: `alpha_research/backtests/stats/cross_validation.py`,
+  `alpha_research/review/pipeline.py`, `alpha_research/backtests/reporting/professional_report.py`,
+  `alpha_research/backtests/reporting/report.py`, `tests/unit/test_stats.py`,
+  `tests/unit/test_review_pipeline.py`.
+- Status: COMPLETE
+
+### 2026-06-23 — akshare global data connector + live connection regtest (Dev)
+- Motivation: broaden the research data layer beyond US-centric yfinance/FRED/stooq to global,
+  keyless multi-asset coverage (CN/HK/US equities + indices, FX, treasury yields, crypto, macro)
+  via [akshare](https://akshare.akfamily.xyz), so strategies can be researched on non-US universes.
+- What changed:
+  - New `alpha_research/quant_data/connectors/akshare_global.py`: `AkShareConnector` with a declarative
+    `AKSHARE_BARS_DATASETS` catalog (us_stock, hk_stock, cn_stock, us_index, cn_index, forex), normalized
+    to the canonical bars schema (`spec.CANONICAL_BARS`); plus `us_treasury_yields()` (CN+US tenors, long
+    format), `crypto_spot()`, `fx_spot()`, and a `macro_*` escape hatch. Bounded exponential-backoff retry
+    (`_with_retry`) for transient EastMoney/Sina disconnects; lazy akshare import (layering-safe).
+  - Endpoint reliability tiering: Sina-backed datasets are the reliable backbone; EastMoney-backed ones
+    (`reliable=False`, e.g. forex) are best-effort because `push2his.eastmoney.com` blocks non-CN IPs.
+    Switched cn_stock from the EastMoney `stock_zh_a_hist` to the reliable Sina `stock_zh_a_daily`.
+  - Wired into `alpha_research/quant_data/api.py` `get_data(..., source="akshare[:<dataset>]")`.
+  - `requirements.txt`: pinned `akshare>=1.18.0`. `pytest.ini`: added `requires_network` marker.
+- Tests: `tests/unit/test_akshare_connector.py` (28 offline, mocked-akshare: normalization, retry,
+  dispatch, discovery, lazy-import) + akshare dispatch cases in `tests/unit/test_quant_data_api.py`;
+  `tests/integration/test_akshare_connection.py` (live regtest, `requires_network`): reliable backbone
+  asserted hard, EastMoney best-effort xfail, skips cleanly offline. Live run: 10 passed, 1 xfailed.
+  flake8 clean. (Pre-existing, unrelated failures in test_portfolio_optimizer [cvxpy OSQP infeasible] and
+  test_llm_verdict [missing `researcher` module] confirmed present on baseline — out of scope.)
+- Files: `alpha_research/quant_data/connectors/akshare_global.py` (new),
+  `alpha_research/quant_data/connectors/__init__.py`, `alpha_research/quant_data/api.py`,
+  `tests/unit/test_akshare_connector.py` (new), `tests/integration/test_akshare_connection.py` (new),
+  `tests/unit/test_quant_data_api.py`, `requirements.txt`, `pytest.ini`.
+- Status: COMPLETE
+
+### 2026-06-24 — Volatility workstation: added SP500/OIS/ON-RRP + Plotly (Dev)
+
+- Extended `vol_data.py` with three new loaders:
+  - `load_sp500()`: akshare `index_us_stock_sina('.INX')` daily OHLCV back to 2004, fallback yfinance `^GSPC`
+  - `load_ois()`: FRED `SOFR` (from 2018) + `EFFR` (from 2000) merged — overnight rate history
+  - `load_on_rrp()`: FRED `RRPONTSYD` — Fed ON RRP facility usage ($B, from 2003)
+- Converted all notebook charts from matplotlib to Plotly (9 interactive figures, 0 errors).
+- New analysis sections: correlation heatmap, SP500 vs VIX inverted, ON RRP drain vs equity rally.
+- akshare does NOT carry US OIS/SOFR or Fed ON RRP — these are FRED-only.
+- Files: `knowledge/studies/2026-06-24_volatility_workstation/vol_data.py`,
+  `.../notebooks/00_volatility_workstation.ipynb`, `.../README.md`, `.../FINDINGS_LOG.md`.
+- Status: COMPLETE
+
+*Last updated: 2026-06-24*

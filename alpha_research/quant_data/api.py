@@ -200,6 +200,26 @@ def _fetch_fred_csv(series_id: str, start: str, end: str) -> pd.DataFrame:
     return raw[["date", "series_id", "value"]]
 
 
+def _fetch_akshare(
+    symbol: str, start: str, end: str, dataset: str = "us_stock"
+) -> pd.DataFrame:
+    """Pull daily OHLCV from akshare and adapt to the (date, ticker, OHLCV) schema.
+
+    *dataset* is an :data:`AKSHARE_BARS_DATASETS` key (us_stock, hk_stock,
+    cn_stock, us_index, cn_index, forex).
+    """
+    from alpha_research.quant_data.connectors.akshare_global import AkShareConnector
+
+    df = AkShareConnector().fetch_bars(dataset, symbol, start=start, end=end)
+    if df.empty:
+        return pd.DataFrame(
+            columns=["date", "ticker", "open", "high", "low", "close", "volume"]
+        )
+    df = df.rename(columns={"timestamp": "date", "symbol": "ticker"})
+    df["date"] = pd.to_datetime(df["date"]).dt.tz_localize(None)
+    return df[["date", "ticker", "open", "high", "low", "close", "volume"]]
+
+
 def _fetch_binance(symbol: str, start: str, end: str) -> pd.DataFrame:
     """Pull daily OHLCV from Binance public API."""
     try:
@@ -323,6 +343,14 @@ def _fetch_single(
             df = _fetch_fred(info.canonical_id, start, end)
         elif effective_source == "binance":
             df = _fetch_binance(info.canonical_id, start, end)
+        elif effective_source and effective_source.startswith("akshare"):
+            # "akshare" or "akshare:<dataset>" (default dataset: us_stock)
+            dataset = (
+                effective_source.split(":", 1)[1]
+                if ":" in effective_source
+                else "us_stock"
+            )
+            df = _fetch_akshare(info.canonical_id, start, end, dataset)
         else:
             df = _fetch_yfinance(info.canonical_id, start, end)
     except Exception as exc:
@@ -371,7 +399,9 @@ def get_data(
         frequency: '1d' (default), '1w', or '1m'. Only '1d' is currently
                    fetched from APIs; resampling applied for others.
         source:    Force a specific connector: 'yfinance'|'fred'|'stooq'|
-                   'ecb'|'binance'|'polygon'|'ibkr'. Auto-detected if None.
+                   'ecb'|'binance'|'polygon'|'ibkr'|'akshare'. Auto-detected
+                   if None. akshare accepts a dataset suffix, e.g.
+                   'akshare:hk_stock' or 'akshare:cn_stock' (default us_stock).
         pit:       Point-in-time mode (default True). Macro/FRED results
                    have their dates shifted from reference date to a
                    conservative availability date (publication lag), with

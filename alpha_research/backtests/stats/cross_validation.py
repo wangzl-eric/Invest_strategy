@@ -144,14 +144,27 @@ def walk_forward_split(
     train_window: int,
     test_window: int,
     step: Optional[int] = None,
+    expanding: bool = False,
 ) -> List[Tuple[np.ndarray, np.ndarray]]:
-    """Walk-forward (rolling window) cross-validation.
+    """Walk-forward cross-validation (rolling or expanding window).
+
+    Test windows march forward in time, non-overlapping by default, each strictly
+    out-of-sample relative to its training window. With ``expanding=False`` the
+    training window has a fixed size that rolls forward; with ``expanding=True``
+    the training window is anchored at the first observation and grows, so every
+    test window is evaluated against all prior history (anchored walk-forward).
+
+    Test windows are identical for both modes (same ``start`` progression); only
+    the training indices differ. ``train_window`` then acts as the initial
+    in-sample anchor before the first OOS test window.
 
     Args:
         dates: Sorted DatetimeIndex.
-        train_window: Number of observations in training window.
-        test_window: Number of observations in test window.
+        train_window: Observations in the (fixed) training window, or the initial
+            anchor length when ``expanding=True``.
+        test_window: Number of observations in each test window.
         step: Step size for rolling (default: test_window = non-overlapping).
+        expanding: Anchor the training window at index 0 and grow it.
 
     Returns:
         List of (train_indices, test_indices) tuples.
@@ -164,7 +177,8 @@ def walk_forward_split(
     start = 0
 
     while start + train_window + test_window <= n:
-        train_idx = np.arange(start, start + train_window)
+        train_start = 0 if expanding else start
+        train_idx = np.arange(train_start, start + train_window)
         test_idx = np.arange(
             start + train_window,
             min(start + train_window + test_window, n),

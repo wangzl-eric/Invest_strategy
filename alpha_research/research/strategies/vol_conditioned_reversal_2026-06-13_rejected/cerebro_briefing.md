@@ -326,7 +326,7 @@ same-day-close vs 1-day-lag convention); enforce the **dynamic universe** (9 sec
   the decay/cost-erosion case stands without it (Avramov-Chordia-Goyal, de Groot et al., Chordia et
   al., Blitz et al.). Re-verify before any S2 citation.
 - **Repo housekeeping (verified):** the referenced `memory/LESSONS_LEARNED.md` and
-  `memory/knowledge/KNOWLEDGE_*.md` files do **not** exist on disk — the working lessons source is the
+  `knowledge/domains/KNOWLEDGE_*.md` files do **not** exist on disk — the working lessons source is the
   **L1–L7 block in `STRATEGY_TRACKER.md`**. The `graveyard/` directory holds only `README.md` (no
   per-kill files yet); pre-factory kills are tracked in that table. All `pm_review.md` /
   `proposal.md` paths cited in §5 were confirmed present.

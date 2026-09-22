@@ -53,10 +53,10 @@ repos:
         entry: python3 scripts/check_ideas_integrity.py
         language: system
         pass_filenames: false
-        files: ^book_notes/playground/reports/.*\.md$
+        files: ^knowledge/reports/.*\.md$
       - id: check-brain-integrity
         name: brain integrity (concepts, verdicts, wikilinks, index sync)
         entry: python3 scripts/check_brain_integrity.py
         language: system
         pass_filenames: false
-        files: ^book_notes/playground/(brain|reports)/.*\.md$
+        files: ^knowledge/(brain|reports)/.*\.md$

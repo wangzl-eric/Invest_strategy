@@ -32,7 +32,7 @@ Use `SendMessage` to communicate with teammates. Your plain text output is NOT v
 
 When a researcher (Marco or Elena) messages you with a strategy domain, you MUST follow this sequence — **KB-first, then external search**:
 
-1. **Read the domain KB first** — Read the relevant `memory/knowledge/KNOWLEDGE_{DOMAIN}.md` (FX, EQUITY, MACRO, or VOL). Extract:
+1. **Read the domain KB first** — Read the relevant `knowledge/domains/KNOWLEDGE_{DOMAIN}.md` (FX, EQUITY, MACRO, or VOL). Extract:
    - Known Failure Modes relevant to this strategy type
    - Market Facts & Structural Observations in the relevant topics
    - Intermediate Findings that are open hypotheses worth testing

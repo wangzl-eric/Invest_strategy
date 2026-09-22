@@ -87,7 +87,7 @@ paths:
   strategy_folders: alpha_research/research/strategies/
   manifests: alpha_research/research/pool/
   run_artifacts: data/backtest_runs/
-  knowledge_bases: memory/knowledge/   # KNOWLEDGE_{FX|EQUITY|MACRO|VOL}.md
+  knowledge_bases: knowledge/domains/   # KNOWLEDGE_{FX|EQUITY|MACRO|VOL}.md
 
 stages:
   # owner = agent-deck role (.claude/agents/*.md); exit = machine-checkable condition

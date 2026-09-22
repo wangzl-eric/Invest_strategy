@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Integrity check for the reports idea pool.
 
-Run after any pass that touches book_notes/playground/reports/IDEAS.md.
+Run after any pass that touches knowledge/reports/IDEAS.md.
 
     python3 scripts/check_ideas_integrity.py
 
@@ -15,7 +15,7 @@ import pathlib
 import re
 import sys
 
-LIB = pathlib.Path(__file__).resolve().parent.parent / "book_notes/playground/reports"
+LIB = pathlib.Path(__file__).resolve().parent.parent / "knowledge/reports"
 IDEAS = LIB / "IDEAS.md"
 
 

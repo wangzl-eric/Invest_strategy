@@ -681,9 +681,12 @@ def _methodology_section(
         f"- **Window:** {win.get('start', '?')} → {win.get('end', '?')}",
         f"- **Length:** {win.get('n_days', '?')} trading days "
         f"(~{_num(win.get('years'), 1)} years)",
-        f"- **Walk-forward folds:** {len(battery.get('walkforward_segments', []))} contiguous "
-        f"out-of-sample segments, {battery.get('walkforward_positive_segments', '?')} positive — "
-        "consistency is judged across folds, not on the full-sample number alone.",
+        f"- **Walk-forward:** {len(battery.get('walkforward_segments', []))} expanding-window "
+        f"out-of-sample windows ({battery.get('walkforward_oos_start', '?')} → "
+        f"{battery.get('walkforward_oos_end', '?')}), "
+        f"{battery.get('walkforward_positive_segments', '?')} positive; mean OOS Sharpe "
+        f"{_num(battery.get('walkforward_oos_sharpe_mean'), 2)} — consistency is judged across "
+        "OOS windows after an in-sample anchor, not on the full-sample number alone.",
         "",
         "### Win probability",
         "",
@@ -836,7 +839,7 @@ def _pm_review_section(
             f"**Statistical significance.** PSR {_pct(psr, 1)}, DSR {_num(dsr)} "
             f"(n_trials={battery.get('n_trials_effective', '?')}), MinBTL "
             f"{'satisfied' if battery.get('minbtl_satisfied') else 'NOT satisfied'}; "
-            f"walk-forward positive in {wf} segments — consistency across the sample, "
+            f"walk-forward positive in {wf} OOS windows — consistency across the sample, "
             "not a single lucky regime."
         )
 

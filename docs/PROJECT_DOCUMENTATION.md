@@ -164,7 +164,7 @@ Fast checks:
 
 - `./scripts/show_playground_team.sh` shows the effective defaults, env overrides, and saved `agent-deck` commands
 - `./scripts/launch_playground_team.sh "topic"` launches the playground paper-reading team
-- Persistent playground defaults live in `workstation/playground/agents/*.md` frontmatter (`runtime:` and `model:`)
+- Persistent playground defaults live in `knowledge/agents/*.md` frontmatter (`runtime:` and `model:`)
 
 ---
 
@@ -713,7 +713,7 @@ python bin/start_scheduler.py YOUR_ACCOUNT_ID
 ### 6.3 Research Workflow
 
 ```python
-# In Jupyter notebook (notebooks/analysis.ipynb)
+# In Jupyter notebook (knowledge/studies/_legacy/analysis.ipynb)
 
 import sys
 sys.path.insert(0, "/Users/zelin/Desktop/PA Investment/Invest_strategy")
@@ -979,8 +979,9 @@ Invest_strategy/
 ├── quant_data/               # Real directory — canonical data layer
 ├── research/                 # Compatibility symlink -> workstation/research
 ├── notebooks/                # Compatibility symlink -> workstation/notebooks
-├── playground/               # Compatibility symlink -> workstation/playground
-├── books_and_papers/         # Compatibility symlink -> workstation/books_and_papers
+├── knowledge/                # Real directory — learning & study material
+│                             #   (brain, domains, papers, reports, books,
+│                             #    studies, fields, sources, shared)
 │
 ├── extensions/
 │   └── cerebro/             # Optional research-ingestion extension

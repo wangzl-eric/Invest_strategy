@@ -1,0 +1,131 @@
+> **⚠ STAGE-3 DOCUMENT — PARKED. Not the current activity.**
+>
+> This file is about *validating* claims: scoring predictions against outcomes, closing data gaps,
+> auditing reasoning. That belongs **after** the idea pool is selected from, not during accumulation.
+> The current activity is stage 1 — accumulate and score ideas that make initial sense — and its
+> output is [`IDEAS.md`](IDEAS.md). See the purpose statement at the top of [`INDEX.md`](INDEX.md).
+>
+> Kept because the diagnosis is durable and will matter at stage 3. One observation inside it does
+> bear on stage 1 and is worth carrying forward now: **on every call this library can mark, the
+> credibility ranking inverted** — the desk note scored 3 for having "not one confidence interval"
+> beat the GIR notes scored 5 for disclosed estimators. That is a reason to score an *idea's*
+> mechanism separately from its *source's* rigour, which is what `IDEAS.md` does.
+
+---
+
+# Learning Roadmap — three improvement areas from the reports library
+
+*Generated 2026-08-03 from a multi-agent pass over all 10 digests, the `/read-industrial-report`
+skill, `alpha_research/quant_data/ticker_map.py`, `pit.py`, and the parquet lake. Three analysts
+proposed independently under different lenses (analytical method / verification capability /
+calibration across sources); a judge merged, ranked, and rejected. Rejections are recorded at the
+bottom — they are as informative as what was kept.*
+
+# Three improvement areas — ranked
+
+*(Verified against all 10 digests, the skill, the ticker registry, the PIT lag table, and the parquet lake. Corrections to the analysts' claims are flagged at the bottom.)*
+
+| # | Area | Core defect it fixes | Effort | Do first? |
+|---|---|---|---|---|
+| **1** | **Score claims on a schedule, not on read date** — `CALLS.md` + a refresh script, unblocked by a one-pass registry fix | Every mark-to-market in the library was struck on the day it was noticed. Two genuinely ex-ante predictions expire within 90 days and nothing is watching them. | ~1 day | **Yes** |
+| **2** | **Promote your best reasoning moves from inventions to a standing checklist**, and tag every pillar by argument shape | Digest quality tracks *when it was written*, not what the report needed. Three of your sharpest moves each appear exactly once. | ~half a day | Second |
+| **3** | **Cross-multiply the library** — one Japan thread file with an observable panel and an open-parameters table | Report B's printed number is report A's missing parameter, and you are not collecting them. Three closures are sitting unclaimed. | ~half a day | Third |
+
+**Do #1 first.** Not because it is the most intellectually interesting — #2 is — but because it is the only one with a **deadline**. `2026/04/macro_gs_jpy-macro-trading` line 150 dates the December desk's post-intervention rebound rule to **late-Aug / early-Sep 2026** and explicitly calls it *"a prediction, not a postdiction."* `2026/05/rates_gs_fed-balance-sheet` What-to-watch row 1 pre-commits **ρ = WRESBAL ÷ TLAACBW027SBOG reaching 11% before end-Oct-2026** as the break condition. These are the only two forward-looking, pre-specified, falsifiable tests the library has ever made. If they resolve while nobody is looking, they become postdictions like everything else, and the library goes back to n=0 on genuine out-of-sample scoring. #2 and #3 also both *consume* #1's output: shape hit rates need an outcome column, and the thread panel needs current levels.
+
+---
+
+## Area 1 — Score claims on a schedule, not on read date
+
+### Evidence
+
+**Scorecards are spontaneous, not systematic.** `.claude/skills/read-industrial-report/SKILL.md` has seven workflow steps (locate/frame → read → trace chain → platform → write → file → close). **None of them is "score the last report."** The result: mark-to-market sections appear in **3 of 10** digests — `2026/04/macro_gs_jpy-macro-trading` ("Scorecard as of 2026-08-02"), `2026/05/rates_gs_fed-balance-sheet` ("Scorecard as of 2026-08-03", 8 rows), `2026/07/macro_gs_em-trader` ("Mark-to-market as of 2026-08-03") — and are **absent from japan-outlook, vol-strategies, cta-bond-futures, goal-kickstart and japan-savings**.
+
+**Horizons are therefore incomparable.** EM Trader's JPY funder leg is marked after **2 sessions** (−2.25%); the Fed balance-sheet pace after **74 days** (WALCL +$10.67bn/mo vs a $5bn/mo base case, 2.1×); the JGB call after **7 months** (2.060% → 2.670%). A hit rate built from horizons chosen after the outcome is known is not a hit rate.
+
+**Stale levels are already contradicting each other inside the library.** The JGB 10y is quoted as *"2.65% as of the April 2026 reference month"* in `2026/01/economics_gs_japan-outlook` (line 44), as *"2.65% as of the most recent monthly reading"* in `2026/06/flows_gs_cta-bond-futures` (line 42), and as **2.670% (Jun-26 ref)** in both July digests — three different "now"s. Worse, `2026/07/crossasset_gs_goal-kickstart` line 48 still carries **"4.25–4.50% range (per Exhibit 66 path)"** for fed funds; `2026/05/rates_gs_fed-balance-sheet` line 221 computed live **EFFR 3.63% / IORB 3.65% ⟹ 3.50–3.75%** and logged it as *"Discrepancy to verify."* It is still unverified, in a digest the library treats as Credibility 5.
+
+**The rubric is teaching the opposite of the record.** Credibility 5 went to `japan-outlook` (wage regression R²=0.88, coefficients significant at 99%) and to `fed-balance-sheet` (*"every load-bearing identity reconciles… to within 3–8%"*). Credibility 3 went to `jpy-macro-trading` (*"not one estimated model, not one confidence interval, not one backtest… the central terminal-rate number is inferred from a verbal cue in an Ueda press conference"*) and `cta-bond-futures`. **On every call the library can mark, the ranking inverts:** the Credibility-3 desk note won twice (JGB flat-2.0% → 2.670%; USD/JPY 152 → 163.86 peak) and its intervention playbook fired to spec; the Credibility-5 balance-sheet note is running 2.1× against its own central pace; the Credibility-4 EM Trader nominated JPY as its third G10 funder on the exact session MoF intervened, burning *"9.0 months of MXN carry in two sessions."* `INDEX.md` has a C/R/A column and **no outcome column**, so this cannot be sorted, only re-derived by hand from prose.
+
+**Half the ledger is unresolvable today, and that is a registry omission, not a data gap — verified.** `get_data(['WRESBAL'])`, `get_data(['HG=F'])`, `get_data(['USDMXN=X'])` all raise `ValueError: Unknown ticker or alias`. But the data is **already on disk**: `data/market_data/fred/fed_liquidity.parquet` holds RRPONTSYD, TREAST, WALCL, WRESBAL, WSHOMCB, WTREGEN; `data/market_data/fred/treasury_yields.parquet` holds DFII10/DFII5/DFII30, SOFR, DGS1, DGS3MO, DGS20, T5YIFR; `data/market_data/prices/commodities.parquet` holds HG=F and BZ=F. Registration also drives refresh: registered `WALCL.parquet` and `USDJPY_X.parquet` were rewritten **2026-08-03**, while the three unregistered bulk files all froze at **2026-02-27** — five months stale because nothing in the research path ever asks for them. And the workaround has already been used: `2026/05/rates_gs_fed-balance-sheet` line 217 records that TLAACBW027SBOG and TGCRRATE *"had to be pulled by direct FRED REST call using the key in `.env`"* — no PIT shift, no cache, no catalog entry, no reproducibility. `auto_detect_source` (ticker_map.py lines ~381–394) carries exactly 12 FRED prefixes; `PUBLICATION_LAG_DAYS` pins WALCL and WTREGEN at 2 and RRPONTSYD at 1 but **omits WRESBAL, TREAST and WSHOMCB entirely** despite the identical weekly H.4.1 release — they fall through `_FALLBACK_BY_SPACING`, one branch from `_DEFAULT_LAG = 45`.
+
+### First step (this week)
+
+1. **Registry pass, half a day.** Add to `alpha_research/quant_data/ticker_map.py`: `_FRED_ENTRIES` ← WRESBAL, WTREGEN, TREAST, WSHOMCB, RRPONTSYD, TLAACBW027SBOG, TGCRRATE, DFII10, SOFR, DGS1, DGS3MO, NFCI; `_FX_ENTRIES` ← the 13 EM crosses already defined in `FX_TICKERS` in `core/market_data_service.py`; `_ETF_ENTRIES` ← HG=F, BZ=F. Extend the `fred_prefixes` tuple. Add `PUBLICATION_LAG_DAYS` entries in `pit.py`: WRESBAL/TREAST/WSHOMCB = 2 (same H.4.1 release as WALCL), TLAACBW027SBOG = 7 (H.8), SOFR/TGCRRATE = 1.
+2. **Create `knowledge/reports/CALLS.md`**, two tables. **A — third-party claims:** digest · issuer · **channel** (`GIR-research` / `FICC-desk-axe` / `buy-side-product`) · claim · observable + series · value at publication · **horizon date** · status · realised. Seed it from the **39 What-to-watch rows** across the eight tables — the content is already written, it just needs a resolve-by date and a series id. **B — the library's own book:** `2026/07/flows_gs_japan-savings-jgb-demand` states outright that *"the short-belly position is this library's, not GS's."* Write it down with a dated entry from `IRLTLT01JPM156N`, an invalidation, and a mark; same for the RSI-gated short-JPY carry overlay.
+3. **Write `knowledge/reports/refresh_calls.py`** (~60 lines): pull each row's series through `get_data`, recompute, emit **FIRED / INTACT / STALE / GAP** into `INDEX.md`. Rows that fail to resolve print GAP and become the standing registry backlog.
+4. **Add step 8 to `SKILL.md`:** *before digesting a new report, open CALLS.md and resolve every row whose horizon date has passed — record the mark even when it embarrasses a prior read.*
+5. **Split the header rubric** into **Auditability (1–5)** (Reg AC, disclosed estimator, error bands, reconcilable arithmetic — today's Credibility content) and a categorical **Channel**, and add both plus **Outcome** as `INDEX.md` columns. Retro-tag Channel on the seven older digests (~30 min); apply the score split forward only. The point of splitting is that CALLS.md then *computes* the channel hit rate instead of you asserting it in prose — and if the desks start losing, the number moves on its own.
+6. Schedule it. `/loop` or a scheduled agent, monthly. **First run 2026-08-30**, which resolves the JPY rebound prediction.
+
+---
+
+## Area 2 — Promote your best reasoning moves to a standing checklist, and tag every pillar by argument shape
+
+### Evidence
+
+**Three of your sharpest moves were invented, executed well, and never reused.**
+
+1. **DIRECTION vs STRUCTURE.** `2026/04/macro_gs_jpy-macro-trading` line 88: *"Direction and packaging deserve separate credibility scores"* — proven by solving the zero-cost 3m10y payer ladder exactly (max profit **10bp flat across 2.461–2.561, zero at 2.661% = +40bp over forward, unbounded loss beyond**) under a header reading *"core view remains bearish on the belly."* Applied in **no other digest**. `2026/07/crossasset_gs_goal-kickstart` records a Neutral-3m direction expressed through three long-convexity structures (long-dated calls, short-dated SPX puts, JPY calls) and never separates them; `2025/11/rates_gs_vol-strategies` is *entirely* a structure comparison (short gamma vs long vega vs blend) under one direction and never names the split.
+2. **STATED PROBABILITY vs BASE RATE.** Used once, `2026/05/rates_gs_fed-balance-sheet` item 13: breakeven **3.6%/quarter vs 2 funding events in 28 quarters = 7.1%**. GOAL Kickstart prints a **~20–25% probability of a >20% 12m S&P drawdown**, a **~20% model recession probability** and an **11% economist figure** in the same note (lines 20–26); the digest reconciles them to each other and to history nowhere.
+3. **A CORRECT MECHANISM THAT HASN'T MOVED THE PRICE.** `2026/04/macro_gs_jpy-macro-trading` line 68: *"A correct mechanism that has not moved the price for ten months is evidence the mechanism is not the marginal driver."* Never applied to `2025/11/rates_gs_vol-strategies`, whose What-to-watch row 1 still reads **"At the low end of the fair-value range (per report, Nov 2025)"** — nine months unmarked. Never applied to Bridgewater's stock/bond hedge, which `2026/07/crossasset_gs_goal-kickstart` line 55 measures at **+0.4 to +0.7 across regions since 2024** — two years, i.e. the current state, not a stress scenario.
+
+**Inversion is done in 3 of 10, and `GAP` retires everything else from scrutiny.** `fed-balance-sheet` #1 inverts H(11%)=$225bn and H(10%)=$475bn into **B=$25.0tn and ρ₀=11.90%, neither of which GS prints**, then shows live data makes H(11%)=$160bn — **GS 41% too high**. `em-trader` inverts Exhibit 8's ratio against Exhibit 7's numerator (σ = C/CtV) into a nine-row implied-vol table *"the note never prints."* `japan-savings` fits Exhibit 6's slope off the chart axes and re-derives every cell of Exhibit 10 to ≤0.2pp. Meanwhile `SKILL.md` step 3b says only *"Prefer things measurable from this platform's data lake"* — so GSRAI, the PCA factors, the macro fair-value model, GSDEER/GSFEER and the CTA momentum thresholds are all written as GAP and pass unaudited. Inversion caught the two largest errors in the library: the Fed note's headroom being 41% too high, and japan-savings' $75bn sitting **17–26% below its own AUM × band × JGB-share product** while β_eff ran **3–5× above** its stated baseline — *"which is precisely why the number looks reasonable and is not."*
+
+**The argument-shape scoreboard is the counterintuitive finding, and it exists nowhere.** Your digests classify pillars as "descriptive or inferential / load-bearing or corroborating" — an axis that did **not** sort the winners. The axis that did is only visible across all ten at once:
+
+- **Won:** an **asserted parameter** with no estimate — the JPY desks' r* = −0.25%, *"never estimated, never given a range, and never sourced to anything but a press-conference adjective"* — worth **+61bp** on the 10y. And **supply-demand accounting on public quantities** — ¥0.75trn/mo ultra-long issuance cut vs ¥0.6trn/mo lifer capacity, *"the only one built on quantities that could in principle be audited."*
+- **Lost or unproven:** an **estimated model with disclosed diagnostics** (japan-outlook's wage regression, R²=0.88, carrying a BoJ/10y path now broken by 67bp); an **identity plus trend extrapolation** (fed balance-sheet: the identity ties to 3.2% while the pace runs 2.1× against it); a **spec search** (EM issuance, best-4-of-C by in-sample R², FWER ≈ 99.998%, then set **28% above the only quantified model path**); a **transplanted coefficient** (β ≈ 1bp/ppt moved from UST/Bund/Gilt onto JGBs against the note's own caveat, printing 3–6bp where its own inputs give ~1.75bp); a **black box** (CTA thresholds — *"no stated lookback window, moving-average convention, or volatility-scaling rule"*).
+
+On this sample, **disclosed-estimator rigour has not predicted, while auditable public quantities and a trader's asserted parameter have.** That is the opposite of a quant's prior, it is the most transferable thing ten reports have produced, and it is currently stranded in five separate paragraphs.
+
+**Repeat failure modes are diagnosed once and never aggregated.** No skew/kurtosis/max-DD on canonically negatively-skewed premia, spotted in `vol-strategies` (Weakest link) and again in `em-trader` nine months and two desks later — the latter concludes *"two GIR notes with the same blind spot is a house methodology, not an oversight."* And "a book of 7–12 trades that is really one position" (`jpy-macro-trading`: *"Book-level correlation is close to 1"*).
+
+### First step (this week)
+
+1. **Add an "Analyst's checklist" block to `SKILL.md` step 3 and to `templates/report_digest.md`** — eight named moves, each answered **applied / N/A / not done because X**: (i) separate direction from structure and score them apart; (ii) compute the payoff geometry and breakeven — **required fallback when the premium is undisclosed: "solved for fair premium = X," not silence** (the discipline `em-trader` idea 11 stopped one step short of); (iii) check any stated probability against its unconditional base rate; (iv) invert printed figures to recover unstated inputs; (v) normalise any flow to the stock it moves; (vi) reconcile one printed table cell-by-cell; (vii) age-check the mechanism — has it moved the price?; (viii) name the counterparty and whose inventory the structure is.
+2. **Add a rule to step 3b:** a What-to-watch row may be marked `GAP` only after (a) an inversion attempt and (b) a named public proxy ruled out.
+3. **Add a required one-line `Shape:` tag to every PEE block** from a fixed vocabulary: `identity` · `estimated-model` · `asserted-parameter` · `supply-demand-accounting` · `spec-search` · `transplanted-coefficient` · `black-box` · `scenario`. Carry it into CALLS.md so the hit rate groups by shape.
+4. **Write `knowledge/reports/SHAPES.md`** — one section per shape: definition, the diagnostic question ("what observation would falsify this?"), live examples with outcomes. The first draft writes itself from the evidence above.
+5. **Back-fill against `2026/07/crossasset_gs_goal-kickstart` as the test case.** It is the weakest digest in the library on identical grounds: 56 lines, **no "Load-bearing formulas" section at all** for a note whose entire prescription is convexity — no strike, no premium, no breakeven for any of the three hedges; three probabilities never reconciled; a Neutral direction never scored apart from three structures; a fed-funds figure still wrong; and cross-links written as `report_digest_bridgewater_risk_parity` / `report_digest_aqr_managed_futures`, which are **not paths and do not resolve**. Fixing that one file exercises six of the eight moves.
+
+---
+
+## Area 3 — Cross-multiply the library: one thread file, one open-parameters table
+
+### Evidence
+
+**Three calculations are sitting unclaimed right now, and two are pure arithmetic on numbers already written down.**
+
+1. **The CTA black box has a published approximation on your own shelf.** `2013/factor_aqr_managed-futures` establishes that a public rule — **sign of the trailing 12-month return, constant-vol sizing** — reproduces CTA index returns at **R² > 0.9**. `2026/06/flows_gs_cta-bond-futures` says its momentum threshold *"is never disclosed even in outline,"* with *"no stated lookback window, moving-average convention, or volatility-scaling rule to independently verify it"* — then cross-links to the AQR digest as *"validates/extends"* (line 49). **The link was made and the arithmetic was not done.** The note also prints **−$128.9m DV01** as its headline stock and the digest never asks whether that is large — no normalisation to open interest anywhere.
+2. **Bridgewater's load-bearing assumption is contradicted one folder away.** The 2012 digest closes by asking that the positive stock-bond correlation regime be *"baked into stress tests."* Four weeks later `2026/07/crossasset_gs_goal-kickstart` line 55 records that correlation at **+0.4 to +0.7 across regions since 2024 (Exhibit 49)** — the exact number the earlier digest asked for. Never carried back.
+3. **A 30-second calculation would verify a GS house number and recover an input GS chose not to print.** `2026/01/economics_gs_japan-outlook` writes the debt-dynamics identity in full and quotes both inputs — **r = 0.8%, g = 3.9%, natural decline ≈ −7pp/yr** — and never plugs them in. Doing so: 7 ÷ 3.1 ⟹ **D/Y ≈ 2.26×** (verified). That is precisely the invert-to-recover move `fed-balance-sheet` item 1 invented four months later and never applied backwards.
+
+**The thread structure is right in instinct and dead in practice.** `INDEX.md`'s "Reading threads" section names **three** digests for Japan when **six** now touch it (japan-outlook, jpy-macro-trading, cta-bond-futures, japan-savings, goal-kickstart, em-trader), and its footer still reads ***"7 digests covering 8 reports"*** against the current 10/11. Each of the six re-states USD/JPY and the JGB 10y from scratch at its own read date, so there is no single record of what the library believed about a given observable, when.
+
+**And the pairing that matters most happened by accident.** The library holds the JGB **supply** side (jpy-macro-trading: ¥0.75trn/mo issuance cut vs ¥0.6trn/mo lifer capacity, rinban taper, tap-bucket reallocation) and the **demand/macro** side (japan-savings: GIR says flatly the cheapening is *"macro-led"*). `japan-savings` line 142 caught it and stated the consequence exactly — *"on GIR's reading a BoJ pause kills it; on the desks' reading an issuance-calendar change does"* — but only because of reading order. The same accident produced the GOAL-vs-EM-Trader yen contradiction (long JPY calls 27-Jul, JPY as third G10 funder 30-Jul, same firm, three days apart, caught only because both were read on 03-Aug).
+
+### First step (this week)
+
+1. **Create `knowledge/reports/threads/japan-rates.md`** with three sections: **(a) an observable panel** — USD/JPY, `IRLTLT01JPM156N`, GPIF domestic-bond share, 30y JGB ASW — one row per digest read-date, so drift is visible without opening six files; **(b) a claims matrix** of issuer × mechanism (supply / macro / flow / positioning) × direction; **(c) open contradictions, each paired with the one observable that discriminates.** The supply-vs-macro attribution fight goes in (c) with its falsifier named on each side.
+2. **Add an open-parameters column to the same file** — one row per digest listing the number that digest needed and did not have. Close the two free ones immediately: **Bridgewater's stock/bond correlation** (copy +0.4 to +0.7 back and re-run the risk-parity conclusion under it) and **japan-outlook's implied D/Y = 2.26×**. ~45 minutes for both.
+3. **Close the CTA row with real work (~2h).** Run the AQR rule — sign of trailing 12m return, constant-vol sizing — on the US duration buckets the lake can actually reach: `SHY`, `IEF`, `TLT` all resolve through `get_data` (verified). Compare the sign flips against the note's stated threshold crossings for TU/FV/TY/US as of 2026-06-08. Two honest findings fall out either way: whether a public rule reproduces the black box, and — since `IRLTLT01JPM156N` is monthly with a 45-day PIT lag and Bund/Bobl/Schatz/Gilt are absent entirely — **which legs of the note are structurally unverifiable here**, which is itself an open-parameters row rather than a shrug.
+4. **Add one line to `SKILL.md` step 4:** if the report joins an existing thread, update the thread panel and name the observable that separates the competing mechanisms. Fix the stale INDEX counts (7/8 → 10/11) and the three-digest Japan thread in the same pass.
+
+---
+
+## What I rejected, and why
+
+**A standalone `payoff.py` module** (Analyst 1, area 2). The evidence is real — jpy-macro-trading solves the payer ladder and the receiver breakeven brilliantly; goal-kickstart prices none of its three hedges; vol-strategies reproduces ½ΓS²(σ_IV²−σ_RV²)dt and never solves for the RV level at which the blend goes to zero. But the proposed action — *"price GOAL Kickstart's three hedges at plausible strikes with premia implied from VIX levels"* — invents both inputs and then computes on them, which is a worse epistemic position than the current silence. **Kept the discipline, dropped the module:** payoff geometry becomes move (ii) of the Area-2 checklist, with "premium not disclosed, solved for fair premium = X" as the mandatory fallback. That is a template row, not 60 lines of code, and it is the part that actually caught the ladder.
+
+**Building `jpy_intervention_v1` as a pool node end-to-end** (Analyst 2, area 4). The most seductive proposal in the set, and the worst ratio. The rule is genuinely fully specified and needs only `USDJPY=X` — all true. But: 1–2 days; the sample is a handful of MoF episodes, so `MinBTL` and `DSR` will refuse it, and the digest itself calls the rebound rule *"a backtestable claim presented as folklore… no sample size, no list of episodes, no dispersion"*; `Track` in `alpha_research/backtests/strategies/manifest.py` has only `etf_rotation` / `cta_futures` / `factor_etf`, so an FX overlay needs a schema change before it can even be registered. And the thing being learned — "would my own gates catch this?" — is answerable in one sentence without building it. **Kept the loop-closing impulse at 1/8th the cost:** the TSMOM replication in Area 3, which runs on registered data and answers a question the library actually has open.
+
+**A separate area for splitting Credibility into Auditability + Channel** (Analyst 3, area 2). The diagnosis is the sharpest single observation any of the three made and I promoted the evidence into Area 1. But as a standalone change it is a relabel: renaming a column without an outcome column beside it just moves an unfalsifiable judgment one cell to the left. It only becomes a measurement once CALLS.md computes the hit rate per channel — so it ships *inside* Area 1 or not at all.
+
+**Building MOVE-equivalent and net-liquidity helpers in `quant_data`** (Analyst 2, area 3, second half). Real gaps, well-evidenced (`net_liquidity = WALCL − WTREGEN − RRPONTSYD` measured at **corr 0.72–0.73** with ΔWRESBAL vs WALCL's **0.189**). But this is data engineering, and net liquidity becomes a three-line derived series the moment the Area-1 registry pass lands. It is a consequence, not an area.
+
+**"~45 unmarked observables"** (Analyst 1, area 4) — **corrected to 39.** Counted directly: vol-strategies 4, japan-outlook 5, jpy-macro 5, fed-balance-sheet 5, cta-bond-futures 5, goal-kickstart 5, japan-savings 5, em-trader 5; Bridgewater and AQR carry no What-to-watch table. Analyst 2's count of 39 is the correct one.
+
+**Analyst 2's `resolve()` MISS claim** — **corrected in mechanism, confirmed in effect.** `resolve()` returns `None` rather than raising for all of them; the hard gate is `resolve_strict` inside `get_data`. Verified end-to-end: `get_data(['WRESBAL'])`, `get_data(['HG=F'])`, `get_data(['USDMXN=X'])` each raise `ValueError: Unknown ticker or alias`. The staleness claim is confirmed exactly — `fed_liquidity.parquet`, `treasury_yields.parquet`, `commodities.parquet` and `fx.parquet` all max out at **2026-02-27**, while every registered per-ticker file was rewritten **2026-08-03**.
+
+**Everything framed as "read more widely" or "read both sides."** Analyst 3's thread proposal carried some of this; I kept only the three concrete artifacts (observable panel, claims matrix, discriminating observable) and dropped the framing.

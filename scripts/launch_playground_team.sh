@@ -8,7 +8,7 @@ FOCUS="${1:-paper reading and knowledge scope expansion}"
 PROJECT_DIR="/Users/zelin/Desktop/PA Investment/Invest_strategy"
 AD="$HOME/.local/bin/agent-deck"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONDUCTOR_PROMPT="$PROJECT_DIR/book_notes/playground/agents/conductor.md"
+CONDUCTOR_PROMPT="$PROJECT_DIR/knowledge/agents/conductor.md"
 
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/lib/playground_team.sh"
@@ -70,14 +70,14 @@ ensure_playground_session \
   "playground-explorer" \
   "$EXPLORER_TOOL" \
   "$EXPLORER_WRAPPER" \
-  "You are Explorer. Read book_notes/playground/agents/explorer.md for your identity. Focus area: $FOCUS. Start by surfacing open hypotheses from the KBs and propose 3 reading-led playground study directions." \
+  "You are Explorer. Read knowledge/agents/explorer.md for your identity. Focus area: $FOCUS. Start by surfacing open hypotheses from the KBs and propose 3 reading-led playground study directions." \
   --worktree "playground-explorer" -b
 
 ensure_playground_session \
   "playground-tutor" \
   "$TUTOR_TOOL" \
   "$TUTOR_WRAPPER" \
-  "You are Tutor. Read book_notes/playground/agents/tutor.md for your identity. Focus area: $FOCUS. Stand by to explain papers, methods, and study workflows in the playground." \
+  "You are Tutor. Read knowledge/agents/tutor.md for your identity. Focus area: $FOCUS. Stand by to explain papers, methods, and study workflows in the playground." \
   --worktree "playground-tutor" -b
 
 ensure_playground_session \
@@ -91,7 +91,7 @@ ensure_playground_session \
   "playground-dev" \
   "$DEV_TOOL" \
   "$DEV_WRAPPER" \
-  "You are Dev. Read book_notes/playground/agents/dev.md for your identity. Focus area: $FOCUS. Stand by to create notebook scaffolds, lightweight utilities, and reproducible paper-reading support inside the playground." \
+  "You are Dev. Read knowledge/agents/dev.md for your identity. Focus area: $FOCUS. Stand by to create notebook scaffolds, lightweight utilities, and reproducible paper-reading support inside the playground." \
   --worktree "playground-dev" -b
 
 echo "[5/5] Attaching MCPs..."

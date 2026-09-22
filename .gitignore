@@ -52,7 +52,7 @@ logs/
 Thumbs.db
 
 # Large book source binaries (exceed git large-file limit; keep locally only)
-book_notes/books_and_papers/advances-in-financial-machine-learning.pdf
+knowledge/sources/advances-in-financial-machine-learning.pdf
 
 # Coverage
 .coverage
@@ -80,7 +80,7 @@ config/ibkr_config.yaml
 # Reports library: keep our own digests/notes in git, keep licensed source PDFs local.
 # The source reports are third-party sell-side research (several stamped "for the
 # exclusive use of ..."), and this repo is public — do not commit them.
-book_notes/playground/reports/**/*.pdf
+knowledge/reports/**/*.pdf
 
 # Obsidian UI state — rewrites on every pane move; vault settings stay versioned.
 .obsidian/workspace.json

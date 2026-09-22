@@ -6,10 +6,10 @@ Quick reference for the `agent-deck` playground paper-reading and knowledge-expa
 
 | Role | Session | Default runtime | Default model | Source of truth | One-off override |
 |------|---------|-----------------|---------------|-----------------|------------------|
-| Explorer | `playground-explorer` | `codex` | `gpt-5.4` | `workstation/playground/agents/explorer.md` `runtime:` + `model:` | `PLAYGROUND_EXPLORER_RUNTIME=...` / `PLAYGROUND_EXPLORER_MODEL=...` |
-| Tutor | `playground-tutor` | `codex` | `gpt-5.4` | `workstation/playground/agents/tutor.md` `runtime:` + `model:` | `PLAYGROUND_TUTOR_RUNTIME=...` / `PLAYGROUND_TUTOR_MODEL=...` |
-| Cerebro | `playground-cerebro` | `claude` | `opus` | `workstation/playground/agents/cerebro.md` `runtime:` + `model:` | `PLAYGROUND_CEREBRO_RUNTIME=...` / `PLAYGROUND_CEREBRO_MODEL=...` |
-| Dev | `playground-dev` | `codex` | `gpt-5.4` | `workstation/playground/agents/dev.md` `runtime:` + `model:` | `PLAYGROUND_DEV_RUNTIME=...` / `PLAYGROUND_DEV_MODEL=...` |
+| Explorer | `playground-explorer` | `codex` | `gpt-5.4` | `knowledge/agents/explorer.md` `runtime:` + `model:` | `PLAYGROUND_EXPLORER_RUNTIME=...` / `PLAYGROUND_EXPLORER_MODEL=...` |
+| Tutor | `playground-tutor` | `codex` | `gpt-5.4` | `knowledge/agents/tutor.md` `runtime:` + `model:` | `PLAYGROUND_TUTOR_RUNTIME=...` / `PLAYGROUND_TUTOR_MODEL=...` |
+| Cerebro | `playground-cerebro` | `claude` | `opus` | `knowledge/agents/cerebro.md` `runtime:` + `model:` | `PLAYGROUND_CEREBRO_RUNTIME=...` / `PLAYGROUND_CEREBRO_MODEL=...` |
+| Dev | `playground-dev` | `codex` | `gpt-5.4` | `knowledge/agents/dev.md` `runtime:` + `model:` | `PLAYGROUND_DEV_RUNTIME=...` / `PLAYGROUND_DEV_MODEL=...` |
 
 ## Fast Checks
 
@@ -23,7 +23,7 @@ Quick reference for the `agent-deck` playground paper-reading and knowledge-expa
 
 ## Override Rules
 
-- Persistent defaults: edit the `runtime:` and `model:` frontmatter in `workstation/playground/agents/*.md`
+- Persistent defaults: edit the `runtime:` and `model:` frontmatter in `knowledge/agents/*.md`
 - One-off launch overrides: export `PLAYGROUND_<AGENT>_RUNTIME=...` and/or `PLAYGROUND_<AGENT>_MODEL=...` before launch
 - After changing a playground agent file, `scripts/sync_playground_agents.sh` notifies the matching live session to re-read its identity file
 - Restart a session when you want a model change to take effect in that running session

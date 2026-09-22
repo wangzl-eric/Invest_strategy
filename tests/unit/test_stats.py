@@ -277,6 +277,26 @@ class TestWalkForwardSplit:
             overlap = np.intersect1d(test1, test2)
             assert len(overlap) == 0
 
+    def test_expanding_anchors_train_at_zero(self):
+        """expanding=True anchors train at index 0 and grows; test windows match."""
+        from alpha_research.backtests.stats.cross_validation import walk_forward_split
+
+        dates = pd.bdate_range("2020-01-01", periods=1000)
+        rolling = walk_forward_split(dates, train_window=252, test_window=63)
+        expanding = walk_forward_split(
+            dates, train_window=252, test_window=63, expanding=True
+        )
+
+        # Same number of windows and identical test slices in both modes.
+        assert len(expanding) == len(rolling)
+        for (_, t_exp), (_, t_roll) in zip(expanding, rolling):
+            assert np.array_equal(t_exp, t_roll)
+        # Training sets all start at 0 and grow monotonically.
+        train_lens = [len(train) for train, _ in expanding]
+        assert all(train[0] == 0 for train, _ in expanding)
+        assert train_lens == sorted(train_lens)
+        assert train_lens[-1] > train_lens[0]
+
 
 # ===========================================================================
 # Bootstrap

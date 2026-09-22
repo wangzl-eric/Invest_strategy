@@ -59,6 +59,7 @@ from alpha_research.backtests.stats import (
     probabilistic_sharpe_ratio,
     regime_conditional_sharpe,
     sharpe_confidence_interval,
+    walk_forward_split,
 )
 from alpha_research.backtests.strategies.manifest import StrategyManifest, load_manifest
 from alpha_research.pool.registry import PoolRegistry
@@ -79,7 +80,10 @@ logger = logging.getLogger(__name__)
 
 COST_MULTIPLIERS = (1.0, 2.0, 3.0)
 PARAM_SCALES = (0.6, 0.8, 1.2, 1.4)
-N_WALKFORWARD_SEGMENTS = 4
+# Expanding-window walk-forward: reserve an initial in-sample anchor, then
+# evaluate this many non-overlapping out-of-sample windows marching forward.
+N_WALKFORWARD_WINDOWS = 6
+WALKFORWARD_ANCHOR_FRAC = 0.4
 
 PriceLoader = Callable[[List[str], str, str], pd.DataFrame]
 MacroLoader = Callable[[List[str], str, str, pd.DatetimeIndex], Dict[str, pd.Series]]
@@ -142,23 +146,55 @@ def _stats_battery(
         ci_low, ci_high = float("nan"), float("nan")
     min_len = int(minimum_backtest_length(sharpe, n_trials=n_trials))
 
-    # Walk-forward segment consistency: contiguous folds, per-fold Sharpe.
-    segments = []
-    folds = np.array_split(np.arange(len(returns)), N_WALKFORWARD_SEGMENTS)
-    for i, idx in enumerate(folds):
-        seg = returns.iloc[idx]
-        seg_sharpe = (
-            float(seg.mean() / seg.std() * np.sqrt(252)) if seg.std() > 0 else 0.0
-        )
-        segments.append(
+    # Walk-forward consistency via expanding-window out-of-sample windows.
+    # Reserve an initial in-sample anchor (lookback-starved early bars are not
+    # representative), then evaluate non-overlapping OOS windows marching
+    # forward. Weights-contract runners are causal + fixed-param, so the realized
+    # return path is already OOS by construction; this measures performance
+    # stability across the deployment timeline, not leakage (look-ahead is
+    # controlled upstream by the execution-convention shift + PIT macro).
+    def _seg_sharpe(seg: pd.Series) -> float:
+        return float(seg.mean() / seg.std() * np.sqrt(252)) if seg.std() > 0 else 0.0
+
+    n = len(returns)
+    anchor = max(int(n * WALKFORWARD_ANCHOR_FRAC), 1)
+    test_window = max((n - anchor) // N_WALKFORWARD_WINDOWS, 1)
+    splits = walk_forward_split(
+        returns.index,
+        train_window=anchor,
+        test_window=test_window,
+        step=test_window,
+        expanding=True,
+    )
+    segments = [
+        {
+            "segment": i + 1,
+            "start": str(returns.index[test_idx[0]].date()),
+            "end": str(returns.index[test_idx[-1]].date()),
+            "sharpe": _seg_sharpe(returns.iloc[test_idx]),
+            "n_days": int(len(test_idx)),
+            "train_days": int(len(train_idx)),
+        }
+        for i, (train_idx, test_idx) in enumerate(splits)
+    ]
+    # Fallback for samples too short to form ≥2 OOS windows: report the full
+    # sample as a single window so downstream consumers still get a value.
+    if len(segments) < 2:
+        segments = [
             {
-                "segment": i + 1,
-                "start": str(seg.index.min().date()),
-                "end": str(seg.index.max().date()),
-                "sharpe": seg_sharpe,
+                "segment": 1,
+                "start": str(returns.index.min().date()),
+                "end": str(returns.index.max().date()),
+                "sharpe": _seg_sharpe(returns),
+                "n_days": int(n),
+                "train_days": 0,
             }
-        )
+        ]
+        wf_method = "full_sample_fallback"
+    else:
+        wf_method = "expanding_oos"
     positive_segments = sum(1 for s in segments if s["sharpe"] > 0)
+    wf_oos_sharpe_mean = float(np.mean([s["sharpe"] for s in segments]))
 
     # Regime-conditional Sharpe: trailing-63d realized-vol terciles of the
     # strategy's own returns (no external data dependency).
@@ -186,6 +222,10 @@ def _stats_battery(
         "minbtl_satisfied": bool(len(returns) >= min_len),
         "walkforward_segments": segments,
         "walkforward_positive_segments": positive_segments,
+        "walkforward_method": wf_method,
+        "walkforward_oos_sharpe_mean": wf_oos_sharpe_mean,
+        "walkforward_oos_start": segments[0]["start"],
+        "walkforward_oos_end": segments[-1]["end"],
         "regime_conditional_sharpe": {str(k): float(v) for k, v in regime.items()},
     }
 

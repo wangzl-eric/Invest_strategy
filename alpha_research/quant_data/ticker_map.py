@@ -66,6 +66,17 @@ _FRED_ENTRIES: list[dict] = [
         "aliases": ("yield curve", "inversion", "t10y2y", "2s10s", "yield spread"),
     },
     {
+        "id": "IRLTLT01JPM156N",
+        "name": "Japan 10Y JGB Yield",
+        "aliases": (
+            "jgb yield",
+            "japan 10-year yield",
+            "japan 10y yield",
+            "10-year jgb",
+            "jgb 10y",
+        ),
+    },
+    {
         "id": "DFF",
         "name": "Federal Funds Effective Rate",
         "aliases": ("fed funds", "policy rate", "dff", "fed rate", "ffr"),
@@ -139,6 +150,7 @@ _ETF_ENTRIES: list[dict] = [
         "aliases": ("long bond", "tlt", "20-year treasury", "long duration"),
     },
     {"id": "GLD", "name": "SPDR Gold Shares", "aliases": ("gold", "gld")},
+    {"id": "IAU", "name": "iShares Gold Trust", "aliases": ("iau", "ishares gold")},
     {"id": "SLV", "name": "iShares Silver Trust", "aliases": ("silver", "slv")},
     {
         "id": "USO",

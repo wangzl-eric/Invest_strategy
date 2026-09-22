@@ -72,6 +72,9 @@ PUBLICATION_LAG_DAYS: Dict[str, int] = {
     "DTWEXBGS": 1,
     "DEXUSEU": 1,
     "DEXJPUS": 1,
+    # OECD MEI, monthly, published with the aggregation lag typical of the
+    # monthly bucket above
+    "IRLTLT01JPM156N": 45,
 }
 
 # Fallback lags by inferred reference-period spacing (calendar days).

@@ -259,7 +259,7 @@ bottom, then three product components that build on it.
 | **Core infrastructure** (bottom layer) | `core/` | Config, DB models/persistence, IBKR client + circuit breaker, market-data platform, Flex ingestion, LLM plumbing. Imports nothing internal |
 | **Dashboard application** | `dashboard/backend/`, `dashboard/frontend/`, `data/` | API, broker/account workflows, monitoring UI, stored operational data |
 | **Alpha research & backtesting** | `alpha_research/{backtests,portfolio,execution,quant_data,cerebro,research,notebooks}/` | data ingestion, signal research, strategy testing, optimization, paper-trading prep |
-| **Book notes** | `book_notes/{playground,books_and_papers}/` | reading studies and learning material |
+| **Knowledge base** | `knowledge/{brain,domains,papers,reports,books,studies,fields,sources}/` | learning material, paper/report notes, and the indexed concept KB |
 
 **Layering rule:** `core/` imports nothing internal; `alpha_research/` and
 `dashboard/` import `core/`; `dashboard/` may also import `alpha_research/` (one-way).
@@ -577,16 +577,17 @@ Exploratory notebooks live under `alpha_research/notebooks/` (with `templates/` 
 
 | Notebook | Purpose |
 |----------|---------|
-| `analysis.ipynb` | Exploratory data analysis on account and trade data |
-| `pnl_query_tutorial.ipynb` | Querying PnL history with advanced filters and visualizations |
-| `beginner_/intermediate_/advanced_research_tutorial.ipynb` | Progressive research workflow tutorials |
-| `signal_research_tutorial.ipynb` / `portfolio_builder_tutorial.ipynb` | Signal construction and portfolio building walkthroughs |
-| `backtest_robustness_tutorial.ipynb` | PSR, deflated Sharpe, CPCV and other robustness checks |
-| `vix_futures_options_research.ipynb` / `msft_btc_correlation.ipynb` | Worked cross-asset studies |
-| `test_connection.py` | Quick IBKR connection smoke test |
+| `alpha_research/notebooks/templates/` | Scaffolds for a new research notebook |
+| `knowledge/tutorials/00_getting_started.ipynb` | Data access and platform tour |
+| `knowledge/tutorials/0{1,2,3}_*_research.ipynb` | Progressive research workflow tutorials |
+| `knowledge/tutorials/04_signal_research.ipynb` / `06_portfolio_builder.ipynb` | Signal construction and portfolio building walkthroughs |
+| `knowledge/tutorials/05_backtest_robustness.ipynb` | PSR, deflated Sharpe, CPCV and other robustness checks |
+| `knowledge/tutorials/07_pnl_query.ipynb` / `08_verdict_example.ipynb` | PnL querying; a worked LLM verdict |
+| `knowledge/studies/_legacy/` | Older worked studies (VIX/options, MSFT-BTC, account analysis) |
+| `scripts/test_connection.py` | Quick IBKR connection smoke test |
 
 Strategy notes, audits, and the research tracker live under `alpha_research/research/`;
-book/paper learning material lives under `book_notes/`.
+book/paper learning material lives under `knowledge/`.
 
 ### 13. Automation Scripts
 
@@ -903,10 +904,18 @@ Invest_strategy/
 │   ├── quant_data/             # Ingestion code, connectors, registry, DuckDB
 │   ├── cerebro/                # Optional research-ingestion extension
 │   ├── research/               # Strategy notes, audits, reviews, trackers
-│   └── notebooks/              # Exploratory notebooks and templates
-├── book_notes/                 # Component 3 — learning material
-│   ├── playground/             # Reading-study sandbox (studies, agents, skills)
-│   └── books_and_papers/       # Reference PDFs
+│   └── notebooks/templates/    # Scaffolds for a new research notebook
+├── knowledge/                  # Component 3 — learning & study material
+│   ├── brain/                  # Concept/verdict KB (indexed, pre-commit guarded)
+│   ├── domains/                # KNOWLEDGE_{FX,EQUITY,MACRO,VOL}.md
+│   ├── papers/                 # Paper notes + INDEX.md
+│   ├── reports/                # Practitioner report library + IDEAS.md
+│   ├── books/                  # Book chapter notes
+│   ├── studies/                # Dated topic investigations (+ _legacy/)
+│   ├── tutorials/              # Numbered platform tutorials (00-08)
+│   ├── fields/                 # Field primers only — taxonomy retired
+│   ├── sources/                # Reference PDFs
+│   └── shared/                 # viz_helpers + notebook templates
 │
 ├── bin/                        # Entry scripts & launchers (start.sh/.bat, stop.sh, …)
 ├── scripts/                    # Automation and CLI entry points

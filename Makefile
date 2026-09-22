@@ -81,10 +81,10 @@ pre-commit:
 # --- Research second brain -------------------------------------------------
 # Markdown is the source of truth; the SQLite index is derived and disposable.
 brain-index:  ## Rebuild the derived index from markdown
-	python3 -m alpha_research.brain.index --build
+	python3 -m alpha_research.kb_index.index --build
 
 brain-check:  ## Assert index matches markdown + both integrity checkers
-	python3 -m alpha_research.brain.index --check
+	python3 -m alpha_research.kb_index.index --check
 	python3 scripts/check_ideas_integrity.py
 	python3 scripts/check_brain_integrity.py --captures
 

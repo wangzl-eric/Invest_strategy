@@ -78,6 +78,6 @@ print_role "dev"
 
 echo ""
 echo "Override locations"
-echo "- Persistent defaults: edit the 'runtime:' and 'model:' frontmatter in book_notes/playground/agents/<agent>.md"
+echo "- Persistent defaults: edit the 'runtime:' and 'model:' frontmatter in knowledge/agents/<agent>.md"
 echo "- One-off launch overrides: set PLAYGROUND_<AGENT>_RUNTIME and/or PLAYGROUND_<AGENT>_MODEL before ./scripts/launch_playground_team.sh"
 echo "- Existing agent-deck sessions: edit the agent file and let scripts/sync_playground_agents.sh update the saved session command; restart that session when you want the new model to take effect."

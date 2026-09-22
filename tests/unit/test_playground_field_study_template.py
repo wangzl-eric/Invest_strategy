@@ -6,9 +6,7 @@ from types import ModuleType
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-TEMPLATE_PATH = (
-    REPO_ROOT / "workstation/playground/shared/notebooks/field_study_template.py"
-)
+TEMPLATE_PATH = REPO_ROOT / "knowledge/shared/notebooks/field_study_template.py"
 
 
 def _fake_price_frame(ticker: str, start_value: float) -> pd.DataFrame:
@@ -26,14 +24,17 @@ def _fake_price_frame(ticker: str, start_value: float) -> pd.DataFrame:
 def test_field_study_template_executes_with_stubbed_helpers(monkeypatch):
     # field_study_template.py imports directly from alpha_research.quant_data.api
     import alpha_research.quant_data.api as _api
+
     monkeypatch.setattr(
-        _api, "calculate_volatility",
+        _api,
+        "calculate_volatility",
         lambda returns, window=20, annualize=True, method="rolling": pd.Series(
             0.2, index=returns.index
         ),
     )
     monkeypatch.setattr(
-        _api, "get_prices",
+        _api,
+        "get_prices",
         lambda ticker, **_: (
             _fake_price_frame("SPY", 100.0)
             if ticker == "SPY"
@@ -41,7 +42,7 @@ def test_field_study_template_executes_with_stubbed_helpers(monkeypatch):
         ),
     )
 
-    fake_viz_helpers = ModuleType("workstation.playground.shared.viz_helpers")
+    fake_viz_helpers = ModuleType("knowledge.shared.viz_helpers")
 
     def _fake_plot(*args, **kwargs):
         return {"args": args, "kwargs": kwargs}
@@ -52,7 +53,7 @@ def test_field_study_template_executes_with_stubbed_helpers(monkeypatch):
     fake_viz_helpers.plot_time_series = _fake_plot
 
     monkeypatch.chdir(REPO_ROOT)
-    monkeypatch.setitem(sys.modules, "workstation.playground.shared.viz_helpers", fake_viz_helpers)
+    monkeypatch.setitem(sys.modules, "knowledge.shared.viz_helpers", fake_viz_helpers)
 
     spec = importlib.util.spec_from_file_location(
         "test_field_study_template_module", TEMPLATE_PATH

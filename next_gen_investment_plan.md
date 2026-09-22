@@ -26,7 +26,7 @@ the product components on top.
 | **Core infrastructure** | `core/` | Config, DB/persistence, IBKR client, market-data platform, Flex ingestion, LLM plumbing. Imports nothing internal. |
 | **Alpha research** | `alpha_research/` | Research + backtest framework (signals, backtests, portfolio, execution, quant_data, cerebro). |
 | **Dashboard** | `dashboard/` | Monitoring + control app (FastAPI backend + Dash frontend). |
-| **Book notes** | `book_notes/` | Reading / learning material (playground studies, papers). |
+| **Knowledge base** | `knowledge/` | Reading / learning material: concept KB, papers, reports, books, studies. |
 
 Data is **not** a separate top-level component today — it spans `core/` (the FRED/yfinance
 market-data platform and Parquet store) and `alpha_research/quant_data/` (vendor connectors,
@@ -75,7 +75,7 @@ Mapped against what the repo already supports, so the plan separates *build* fro
 
 | # | Capability | Status today | Where it lives / what's missing |
 |---|------------|--------------|----------------------------------|
-| 1 | **Ingest ideas** — read reports & academic papers to extract modelling techniques and investment ideas | Partial | `alpha_research/cerebro/` (arXiv/SSRN/blog discovery, scoring, proposals) + `book_notes/playground/`. Experimental; not wired into a reliable queue. |
+| 1 | **Ingest ideas** — read reports & academic papers to extract modelling techniques and investment ideas | Partial | `alpha_research/cerebro/` (arXiv/SSRN/blog discovery, scoring, proposals) + `knowledge/`. Experimental; not wired into a reliable queue. |
 | 2 | **Research** — turn an idea into a tradable expression; backtest & validate rigorously with strict anti-overfitting / anti-p-hacking discipline (AFML first-principles) | Have (strong) | `backtests/` engines + `backtests/stats/` (PSR, deflated Sharpe, CPCV, purged k-fold, MinBTL, White's reality check, FDR/Bonferroni, decay/capacity). v2 Challenge Loop (Cerebro→Researcher→PM) enforces rigor. |
 | 3 | **Register & scale** — register strategies/experiments to a tracked **strategy pool** (MLflow-style) for paper-trading, production, and monitoring | Partial | `backtests/run_manager.py` (run tracking + git commit + metrics + artifacts), MLflow hooks (`/api/research/backtest/mlflow`), feature registry. No unified *strategy pool* with lifecycle states (candidate → paper → live → retired). |
 | 4 | **Optimize** — construct portfolios under risk constraints (target vol, VaR, drawdown) | Have | `alpha_research/portfolio/` (cvxpy mean-variance, risk parity, Black-Litterman, min-var), `risk.py` / `risk_analytics.py` (Ledoit-Wolf, VaR/CVaR, stress). |

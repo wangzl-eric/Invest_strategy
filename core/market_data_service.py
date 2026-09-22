@@ -444,6 +444,11 @@ MACRO_FRED_SERIES = {
     "UMCSENT": {"name": "Consumer Sentiment", "unit": "index", "freq": "monthly"},
     "NFCI": {"name": "Chicago Fed NFCI", "unit": "index", "freq": "weekly"},
     "BAMLH0A0HYM2": {"name": "HY OAS Spread", "unit": "bp", "freq": "daily"},
+    "IRLTLT01JPM156N": {
+        "name": "Japan 10Y JGB Yield",
+        "unit": "%",
+        "freq": "monthly",
+    },
 }
 
 # Fed balance sheet / liquidity series for QE/QT monitoring.

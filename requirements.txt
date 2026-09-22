@@ -36,6 +36,7 @@ matplotlib>=3.7.0          # Embedded charts in the auto-generated backtest repo
 # Market data
 yfinance>=0.2.30
 fredapi>=0.5.0
+akshare>=1.18.0            # Global multi-asset data (CN/US/HK equities, indices, FX, bonds, crypto, macro) — connectors/akshare_global.py
 
 # Frontend dependencies
 dash==2.14.2

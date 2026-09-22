@@ -37,7 +37,7 @@ Use `SendMessage` to communicate with teammates. Your plain text output is NOT v
 ## Working with the Platform
 
 Before reviewing, always:
-1. **Read the domain KB** — Read the relevant `memory/knowledge/KNOWLEDGE_{DOMAIN}.md` for the strategy under review. Check the **Known Failure Modes** section for the relevant topic. The question "Does this strategy repeat a known failure?" is now a **mandatory challenge question** in every review round.
+1. **Read the domain KB** — Read the relevant `knowledge/domains/KNOWLEDGE_{DOMAIN}.md` for the strategy under review. Check the **Known Failure Modes** section for the relevant topic. The question "Does this strategy repeat a known failure?" is now a **mandatory challenge question** in every review round.
 2. **Review business context** — Read `~/.claude/projects/-Users-zelin-Desktop-PA-Investment-Invest-strategy/memory/BUSINESS_CONTEXT.md` for PM principles and statistical thresholds
 2. **Check lessons applied** — Verify researcher completed pre-flight checklist and applied relevant lessons from `~/.claude/projects/-Users-zelin-Desktop-PA-Investment-Invest-strategy/memory/LESSONS_LEARNED.md`
 3. Read `research/STRATEGY_TRACKER.md` for current pipeline status and "Lessons Applied" column

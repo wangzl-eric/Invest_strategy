@@ -177,9 +177,10 @@ When any agent finishes a task, it MUST send a summary message to `conductor-pla
 
 All study artifacts (notebooks, chapter notes, reading queues, book briefings) live under:
 ```
-workstation/playground/studies/<book_or_topic_name>/
+knowledge/books/<YYYY-MM-DD>_<book_slug>/      # one folder per book
+knowledge/studies/<YYYY-MM-DD>_<topic_slug>/   # cross-field topic investigations
 ```
-No separate briefings directory. Everything co-located under the study folder.
+No separate briefings directory. Everything co-located under the folder.
 
 ### Markdown Math Rendering Standard
 

@@ -88,10 +88,18 @@ alpha_research/      Component 2 — alpha research & backtesting infrastructure
   cerebro/           AI-powered research discovery (arXiv, SSRN, blogs, scoring, proposals) — FROZEN (D8)
   research/          Strategy research notes, tracker, external ideas (docs only)
     pool/            Git-versioned strategy manifests (<strategy_id>/manifest.yaml)
-  notebooks/         Exploratory research notebooks and templates
-book_notes/          Component 3 — learning material
-  playground/        Playground study environment (studies, agents, skills)
-  books_and_papers/  Source PDFs of books and papers
+  notebooks/templates/  Scaffolds for a new research notebook
+knowledge/           Component 3 — learning & study material
+  brain/             Concept/verdict knowledge base (indexed by alpha_research/kb_index)
+  domains/           Domain KBs (KNOWLEDGE_{FX,EQUITY,MACRO,VOL}.md) — written by kb-curator
+  papers/            Paper notes + INDEX.md
+  reports/           Practitioner report library (by year/month) + IDEAS.md
+  books/             Book chapter notes ({date}_{book}/notes/chXX_notes.md)
+  studies/           Dated topic investigations ({date}_{topic}/) + _legacy/
+  tutorials/         Numbered platform tutorials (00-08)
+  fields/            Field primers only — taxonomy RETIRED (see knowledge/FIELDS.md)
+  sources/           Source PDFs of books and papers
+  shared/            viz_helpers + notebook templates (importable: knowledge.shared.*)
 bin/                 Entry scripts & launchers (start.sh/.bat, stop.sh, start_scheduler.py, .app/.command)
 scripts/             Automation (PA downloads, data ingestion, backfill, scheduling, agent-deck teams)
 config/              App config YAML, ticker universe
@@ -237,29 +245,42 @@ agent-deck                                  # open session manager
 - Codex runner override uses `RESEARCH_CODEX_MODEL=...`.
 - `scripts/sync_agents.sh` attempts to refresh the saved `agent-deck` session command when `.claude/agents/*.md` changes, then notifies the live session to re-read its identity file; restart the session when you want the new model to take effect.
 
-## Playground (Market Study Platform)
+## Knowledge Base (Learning & Study Platform)
 
-The `playground/` directory is a **separate space** from formal research for learning, exploration, and hypothesis generation:
+The `knowledge/` directory is a **separate space** from formal research (`alpha_research/`)
+for learning, exploration, and hypothesis generation. `alpha_research/` is rigor-gated
+(manifest → review → DSR gate → PM review → pool); `knowledge/` is not.
 
 ```
-playground/
-├── README.md                    # Overview and quick start
-├── QUICK_REFERENCE.md          # Common tasks cheat sheet
-├── data_helpers.py             # Simplified data access wrappers
-├── notebooks/                  # Interactive exploration notebooks
-│   ├── 00_getting_started.ipynb
-│   ├── 01_market_overview.ipynb
-│   ├── 02_correlation_explorer.ipynb
-│   ├── 03_regime_detector.ipynb
-│   └── 04_signal_sandbox.ipynb
-├── studies/                    # Saved exploration results
-│   └── {date}_{topic}/        # Timestamped study folders
-├── agents/                     # Playground-specific agents
-│   ├── tutor.md               # Educational guide (no rigor gates)
-│   └── explorer.md            # Hypothesis generator
-└── skills/                     # Playground-specific skills
-    └── market-study/          # Exploratory workflow
+knowledge/
+├── README.md  QUICK_REFERENCE.md  GET_STARTED_QUICK.md  FIELDS.md  TICKERS.md
+├── brain/                      # Concept/verdict KB — the durable, indexed core
+│   ├── CONCEPTS.md  VERDICTS.md  INBOX.md  CAPTURE.md  HOWTO.md
+│   └── concepts/CONCEPT-NNN-*.md
+├── domains/                    # Domain KBs, written by kb-curator
+│   └── KNOWLEDGE_{FX,EQUITY,MACRO,VOL}.md
+├── papers/                     # Paper notes (read-to-learn) + INDEX.md
+├── reports/                    # Practitioner report library (read-industrial-report)
+│   ├── {year}/{month}/{topic}_{house}_{slug}_{date}.md
+│   └── INDEX.md  IDEAS.md  LEARNING_ROADMAP.md
+├── books/                      # Book chapter notes
+│   └── {date}_{book}/notes/chXX_notes.md
+├── studies/                    # Dated topic investigations (cross-field)
+│   └── {date}_{topic}/{README,FINDINGS_LOG}.md + notebooks/ + data/
+├── fields/                     # Field primers only — taxonomy RETIRED
+│   └── {field}/{README.md,studies/,notebooks/,data/,agents/}
+├── sources/                    # Source PDFs of books and papers
+├── shared/                     # viz_helpers.py + notebook templates
+│                               #   (importable as knowledge.shared.*)
+├── tutorials/                  # Numbered platform tutorials (00_getting_started … 08)
+├── agents/                     # Study-team agent definitions
+└── skills/                     # market-study (not harness-loaded — see .claude/skills/)
 ```
+
+**Integrity:** `brain/` and `reports/IDEAS.md` are machine-indexed into
+`data_lake/brain.sqlite` by `alpha_research/kb_index/` and guarded in
+`.pre-commit-config.yaml` by `scripts/check_brain_integrity.py` and
+`scripts/check_ideas_integrity.py`. Rebuild with `python -m alpha_research.kb_index.index --build`.
 
 **Philosophy:**
 - **Process-driven and logical** — Material understanding is systematic: extract structure, identify key claims, condense knowledge points rigorously
@@ -301,7 +322,8 @@ Only materials scoring ≥ 3 in all three dimensions warrant deeper follow-up.
 - `./scripts/show_playground_team.sh` — shows effective models and override points
 
 **Directory structure:**
-- All study artifacts live under `book_notes/playground/studies/<book_or_topic>/`
+- Book chapter notes live under `knowledge/books/<date>_<book>/`
+- Topic investigations live under `knowledge/studies/<date>_<topic>/`
 - Each study folder is organized as:
   ```
   {date}_{topic}/
@@ -312,7 +334,7 @@ Only materials scoring ≥ 3 in all three dimensions warrant deeper follow-up.
   ├── FINDINGS_LOG.md
   └── (briefings, book maps, data files at root)
   ```
-- Example: `book_notes/playground/studies/2026-03-26_fixed_income_relative_value_analysis_2e/`
+- Example: `knowledge/books/2026-03-26_fixed_income_relative_value_analysis_2e/`
 
 **Markdown math rendering:**
 - All markdown notes must use standard LaTeX delimiters: `$...$` for inline, `$$...$$` for display math

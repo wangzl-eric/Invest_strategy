@@ -127,7 +127,21 @@ class TestRunReview:
         assert 0.0 <= battery["dsr"] <= 1.0
         assert battery["dsr"] <= battery["psr"] + 1e-9  # DSR deflates PSR
         assert battery["n_trials_declared"] == 5
-        assert len(battery["walkforward_segments"]) == 4
+        # Expanding-window walk-forward: multiple OOS windows after an in-sample
+        # anchor, each with the expected shape; positive count within bounds.
+        wf = battery["walkforward_segments"]
+        assert battery["walkforward_method"] == "expanding_oos"
+        assert len(wf) >= 4
+        assert all(
+            {"segment", "start", "end", "sharpe", "n_days", "train_days"} <= s.keys()
+            for s in wf
+        )
+        assert 0 <= battery["walkforward_positive_segments"] <= len(wf)
+        assert (
+            wf[0]["train_days"] > 0
+        )  # in-sample anchor reserved before first OOS window
+        # OOS windows cover strictly less than the full sample (anchor excluded).
+        assert sum(s["n_days"] for s in wf) < battery["n_days"]
 
         sens = json.loads(
             (Path(result["artifacts"]["run_dir"]) / "sensitivity.json").read_text()

@@ -218,7 +218,7 @@ Use the read-industrial-report skill and follow it exactly, end to end:
   - extract the text with pdftotext -layout before reading;
   - determine the report's OWN publication date, issuer and topic from its contents (not from the
     file's timestamp and not from today's date). The staged filename is deliberately generic;
-  - write the digest to book_notes/playground/reports/<YYYY>/<MM>/<tag>_<issuer>_<topic>_<YYYY-MM-DD>.md;
+  - write the digest to knowledge/reports/<YYYY>/<MM>/<tag>_<issuer>_<topic>_<YYYY-MM-DD>.md;
   - DO NOT try to copy, move or file the source PDF, and do not worry that it is missing from the
     library — the watcher owns the original and files it for you as soon as you finish. Copying
     tools are denied to you on purpose. Instead, write the digest's repo-relative path — that one
@@ -228,10 +228,10 @@ Use the read-industrial-report skill and follow it exactly, end to end:
     file appearing there re-triggers the pipeline;
   - put scratch files (text extracts, checkers) in $workdir, never in the reports library;
   - if the destination stem already exists you are re-digesting: UPDATE in place. Never _v2;
-  - harvest transferable ideas into book_notes/playground/reports/IDEAS.md, scored on the three axes,
+  - harvest transferable ideas into knowledge/reports/IDEAS.md, scored on the three axes,
     merging into an existing entry rather than duplicating. NEVER renumber an existing IDEA-0NN —
     the IDs are permanent handles cited by other digests; only the sort order changes;
-  - add the row to book_notes/playground/reports/INDEX.md;
+  - add the row to knowledge/reports/INDEX.md;
   - include the 'Commentary — value to our investment learning' section.
 
 Unattended run: make reasonable judgment calls rather than asking questions, and record every
@@ -271,7 +271,7 @@ Finish by printing the digest path and a one-line summary."
     # 1. File the source PDF beside the digest, using the path the agent reported.
     digest_rel="$(head -1 "$workdir/DIGEST_PATH" 2>/dev/null | tr -d '\r' | sed 's/^ *//;s/ *$//')"
     case "$digest_rel" in
-      book_notes/playground/reports/*.md)
+      knowledge/reports/*.md)
         if [[ -f "$REPO/$digest_rel" ]]; then
           dest="$REPO/${digest_rel%.md}.pdf"
           if cp "$workdir/report.pdf" "$dest"; then

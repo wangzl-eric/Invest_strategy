@@ -23,12 +23,12 @@ This skill is the single entry point for all market data work:
 
 | Script | Purpose | Owner |
 |--------|---------|-------|
-| `quant_data/api.py` | Public `get_data()` interface, local-first + API fallback | data_fetcher |
-| `quant_data/ticker_map.py` | Ticker registry, NL alias resolver, `auto_detect_source()` | data_fetcher |
-| `quant_data/analytics.py` | `compute_rolling_sharpe`, `compute_drawdown`, `compute_correlation_matrix` | data_fetcher |
-| `book_notes/playground/shared/data_helpers.py` | Backward-compat shim → re-exports from api.py | data_fetcher |
+| `alpha_research/quant_data/api.py` | Public `get_data()` interface, local-first + API fallback | data_fetcher |
+| `alpha_research/quant_data/ticker_map.py` | Ticker registry, NL alias resolver, `auto_detect_source()` | data_fetcher |
+| `alpha_research/quant_data/analytics.py` | `compute_rolling_sharpe`, `compute_drawdown`, `compute_correlation_matrix` | data_fetcher |
 
-> `quant_data/` lives at repo root. Always import from `quant_data.*` (not `workstation.quant_data.*`).
+> Always import by the full component-qualified path — `from alpha_research.quant_data.api import get_data`.
+> There is no top-level `quant_data` module and no `data_helpers.py` shim.
 
 When **adding a new ticker or series**: edit `ticker_map.py` `_FRED_ENTRIES` /
 `_ETF_ENTRIES` / `_FX_ENTRIES` / `_CRYPTO_ENTRIES` and add aliases.
@@ -40,7 +40,7 @@ and register the source string in `auto_detect_source()` in `ticker_map.py`.
 
 ## Step 1 — Resolve Tickers
 
-Use `resolve_strict(query)` from `quant_data/ticker_map.py`.
+Use `resolve_strict(query)` from `alpha_research/quant_data/ticker_map.py`.
 
 ### Built-in alias table
 
@@ -92,10 +92,10 @@ Local coverage: DGS10 ✓ (2000-01-03 – 2026-03-24)  |  SPY ✗ (not cached �
 
 ## Step 3 — Generate Code
 
-Always use `quant_data.api.get_data()` as the canonical call:
+Always use `alpha_research.quant_data.api.get_data()` as the canonical call:
 
 ```python
-from quant_data.api import get_data
+from alpha_research.quant_data.api import get_data
 
 # Single series (NL alias or canonical ID both work)
 df = get_data("10-year yield", start="2010-01-01")
@@ -112,7 +112,7 @@ df = get_data("SPY", start="2020-01-01", frequency="1w")
 df = get_data("SPY", start="2020-01-01", frequency="1m")
 
 # Convenience aliases (backward-compat)
-from quant_data.api import get_vix, get_spy, get_fred
+from alpha_research.quant_data.api import get_vix, get_spy, get_fred
 vix = get_vix(start="2010-01-01")
 spy = get_spy(start="2010-01-01")
 yields = get_fred(["DGS10", "DGS2"], start="2000-01-01")
@@ -149,13 +149,10 @@ corresponding Python script:
 - New alias → `ticker_map.py` `_FRED_ENTRIES` / `_ETF_ENTRIES` / etc. + alias table above
 - New connector → `api.py` `_fetch_<source>()` + Source Reference table above
 - New analytics helper → `analytics.py` + re-export in `api.py` `__all__`
-- New backward-compat shim needed → `data_helpers.py` + note in Managed Scripts table
 
 Run verification after any change:
 ```bash
-python -c "from quant_data.api import get_data; print('api ok')"
-python -c "from quant_data.ticker_map import resolve_strict; print(resolve_strict('10-year yield'))"
-python -c "from quant_data.analytics import compute_rolling_sharpe; print('analytics ok')"
+python -c "from alpha_research.quant_data.api import get_data; print('api ok')"
+python -c "from alpha_research.quant_data.ticker_map import resolve_strict; print(resolve_strict('10-year yield'))"
+python -c "from alpha_research.quant_data.analytics import compute_rolling_sharpe; print('analytics ok')"
 ```
-
-

@@ -252,6 +252,64 @@ class TestFetchSingle:
         )
         assert (out["series_id"] == "DGS10").all()
 
+    def test_akshare_source_dispatch_with_dataset(self, cache_dirs, monkeypatch):
+        captured = {}
+
+        def _fake_akshare(symbol, start, end, dataset="us_stock"):
+            captured["dataset"] = dataset
+            return pd.DataFrame(
+                {
+                    "date": pd.bdate_range("2024-01-01", periods=3),
+                    "ticker": symbol,
+                    "open": 1.0,
+                    "high": 1.0,
+                    "low": 1.0,
+                    "close": 700.0,
+                    "volume": 1,
+                }
+            )
+
+        monkeypatch.setattr(api, "_fetch_akshare", _fake_akshare)
+        info = TickerInfo(
+            canonical_id="00700",
+            asset_class="equity",
+            source="akshare:hk_stock",
+            dataset="hk_equities",
+            name="Tencent",
+        )
+        out = api._fetch_single(info, "2024-01-01", "2024-01-10", "akshare:hk_stock")
+        assert (out["close"] == 700.0).all()
+        assert captured["dataset"] == "hk_stock"  # suffix parsed from source
+
+    def test_akshare_source_defaults_to_us_stock(self, cache_dirs, monkeypatch):
+        captured = {}
+
+        def _fake_akshare(symbol, start, end, dataset="us_stock"):
+            captured["dataset"] = dataset
+            return pd.DataFrame(
+                {
+                    "date": pd.bdate_range("2024-01-01", periods=2),
+                    "ticker": symbol,
+                    "open": 1.0,
+                    "high": 1.0,
+                    "low": 1.0,
+                    "close": 190.0,
+                    "volume": 1,
+                }
+            )
+
+        monkeypatch.setattr(api, "_fetch_akshare", _fake_akshare)
+        info = TickerInfo(
+            canonical_id="AAPL",
+            asset_class="equity",
+            source="akshare",
+            dataset="us_equities",
+            name="Apple",
+        )
+        out = api._fetch_single(info, "2024-01-01", "2024-01-10", "akshare")
+        assert not out.empty
+        assert captured["dataset"] == "us_stock"
+
     def test_binance_source_dispatch(self, cache_dirs, monkeypatch):
         fetched = pd.DataFrame(
             {
